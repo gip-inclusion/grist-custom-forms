@@ -6,9 +6,11 @@ This enables Grist-backed forms that need a more custom UI than Grist itself all
 
 ## Structure
 
+```
 assets/     # Shared JS library
 forms/      # Form HTML (one folder per form)
 server/     # Flask API proxy
+```
 
 ## Setup
 
