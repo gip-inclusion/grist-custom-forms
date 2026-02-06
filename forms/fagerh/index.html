@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>RA FAGERH 2025 - Formulaire</title>
+    <style>
+        :root { --fagerh-blue: #2c3e50; --fagerh-light: #3498db; --orange: #e67e22; --success: #27ae60; --grey: #f4f7f6; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--grey); padding: 20px; color: #333; line-height: 1.4; }
+        .page-layout { display: flex; gap: 20px; max-width: 1400px; margin: 0 auto; align-items: flex-start; }
+        .main-content { flex: 1; min-width: 0; }
+        .sidebar { width: 280px; flex-shrink: 0; position: sticky; top: 20px; }
+        .card { background: white; border-radius: 12px; padding: 30px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); margin-bottom: 20px; }
+        h2 { color: var(--fagerh-blue); border-bottom: 3px solid var(--fagerh-light); padding-bottom: 10px; margin-top: 0; }
+        h3 { color: var(--orange); margin-top: 30px; border-left: 5px solid var(--orange); padding-left: 15px; margin-bottom: 15px; }
+        .question-row { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; padding: 12px; border-bottom: 1px solid #eee; align-items: center; }
+        .sub-question-box { background: #fffcf9; border-left: 4px solid var(--orange); padding: 15px; margin: 10px 0 10px 20px; border-radius: 0 8px 8px 0; display: none; }
+        .setup-zone { background: #eef7ff; padding: 20px; border-radius: 8px; margin-bottom: 25px; border: 1px solid #d1e9ff; }
+        .dispositif-row { display: flex; align-items: center; justify-content: space-between; padding: 8px; background: white; margin-bottom: 4px; border-radius: 4px; border: 1px solid #eee; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; background: white; }
+        th { background: #ecf0f1; padding: 12px; text-align: center; font-size: 0.85em; border: 1px solid #ddd; }
+        td { padding: 8px; border: 1px solid #eee; text-align: center; }
+        .grid-compact { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; background: #fdfdfd; padding: 15px; border: 1px solid #eee; border-radius: 8px; }
+        .grid-item { display: flex; justify-content: space-between; align-items: center; padding: 6px; border-bottom: 1px solid #f0f0f0; font-size: 0.9em; }
+        .indent-1 { padding-left: 30px; border-left: 3px solid #ddd; margin-left: 10px; }
+        .indent-2 { padding-left: 60px; border-left: 3px dotted #ddd; margin-left: 20px; }
+        input[type="number"], select, input[type="text"] { padding: 8px; border: 1px solid #ccc; border-radius: 5px; font-size: 0.95em; width: 100%; box-sizing: border-box; }
+        input[type="number"] { width: 85px; text-align: center; }
+        .hidden { display: none; }
+        .table-10-container { overflow-x: auto; margin-top: 15px; }
+        .table-10 { min-width: 1200px; }
+        .table-10 th { font-size: 0.75em; padding: 5px; }
+        .table-10 input[type="number"] { width: 50px; padding: 4px; font-size: 0.85em; }
+        .submit-zone { display: none; }
+        .sidebar .card { padding: 20px; }
+        .sidebar h3 { margin-top: 0; font-size: 1em; color: var(--fagerh-blue); border: none; padding: 0; }
+        .sidebar-btn { width: 100%; padding: 12px 20px; font-size: 1em; border-radius: 8px; cursor: pointer; border: none; margin-bottom: 10px; font-family: inherit; }
+        .sidebar-btn.primary { background: var(--success); color: white; }
+        .sidebar-btn.primary:hover { background: #219a52; }
+        .sidebar-btn.primary:disabled { background: #999; cursor: not-allowed; }
+        .sidebar-btn.secondary { background: var(--fagerh-light); color: white; }
+        .sidebar-btn.secondary:hover { background: #2980b9; }
+        .url-box { margin-top: 15px; padding: 12px; background: #f8f9fa; border: 1px solid #e0e0e0; border-radius: 6px; }
+        .url-box p { margin: 0 0 8px 0; font-size: 0.85em; color: #666; }
+        .url-field { display: flex; gap: 8px; align-items: center; }
+        .url-field input { flex: 1; padding: 8px; font-size: 0.8em; border: 1px solid #ccc; border-radius: 4px; background: white; }
+        .url-field button { padding: 8px 12px; font-size: 0.8em; background: var(--fagerh-blue); color: white; border: none; border-radius: 4px; cursor: pointer; white-space: nowrap; }
+        .url-field button:hover { background: #1a252f; }
+        .status-msg { padding: 10px; border-radius: 6px; font-size: 0.9em; margin-bottom: 10px; display: none; }
+        .status-msg.error { background: #fee; color: #c0392b; display: block; }
+        .status-msg.success { background: #efd; color: var(--success); display: block; }
+        .status-msg.loading { background: #fff8e6; color: #f39c12; display: block; }
+        .control-bar { margin-top: 20px; padding: 15px; background: var(--fagerh-blue); color: white; border-radius: 8px; display: flex; justify-content: space-between; position: sticky; bottom: 10px; z-index: 100; }
+        .btn-del { color: red; cursor: pointer; background: none; border: none; font-weight: bold; font-size: 1.2em; }
+        .btn-add { background: var(--fagerh-light); color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; }
+        .dept-row { display: flex; align-items: center; gap: 10px; padding: 8px; background: white; margin-bottom: 4px; border-radius: 4px; border: 1px solid #eee; }
+    </style>
+</head>
+<body>
+
+<div class="page-layout">
+<div class="main-content">
+<form id="form">
+<!-- Hidden fields for JSON data and UUID -->
+<input type="hidden" name="metiers_json" id="metiers_json" value="[]">
+<input type="hidden" name="geographie_json" id="geographie_json" value="[]">
+<input type="hidden" name="prestations_json" id="prestations_json" value="{}">
+<input type="hidden" name="uuid" id="uuid" value="">
+
+<div class="card">
+    <h2>Réadaptation Professionnelle - Volet RH</h2>
+    <div class="setup-zone">
+        <strong>1. Effectifs globaux par Dispositif (ETP au 31/12)</strong>
+        <div class="dispositif-row">
+            <label><input type="checkbox" name="check_esrp" value="true" onchange="toggleDispo('etp-esrp', this); calcGlobalETP()"> <strong>ESRP</strong></label>
+            <div id="etp-esrp" class="hidden">ETP : <input type="number" step="0.1" name="etp_esrp" class="dispo-val" oninput="calcGlobalETP()"></div>
+        </div>
+        <div class="dispositif-row">
+            <label><input type="checkbox" name="check_espo" value="true" onchange="toggleDispo('etp-espo', this); calcGlobalETP()"> <strong>ESPO</strong></label>
+            <div id="etp-espo" class="hidden">ETP : <input type="number" step="0.1" name="etp_espo" class="dispo-val" oninput="calcGlobalETP()"></div>
+        </div>
+        <div class="dispositif-row">
+            <label><input type="checkbox" name="check_ueros" value="true" onchange="toggleDispo('etp-ueros', this); calcGlobalETP()"> <strong>UEROS</strong></label>
+            <div id="etp-ueros" class="hidden">ETP : <input type="number" step="0.1" name="etp_ueros" class="dispo-val" oninput="calcGlobalETP()"></div>
+        </div>
+        <div class="dispositif-row">
+            <label><input type="checkbox" name="check_deac" value="true" onchange="toggleDispo('etp-deac', this); calcGlobalETP()"> <strong>DEAc</strong></label>
+            <div id="etp-deac" class="hidden">ETP : <input type="number" step="0.1" name="etp_deac" class="dispo-val" oninput="calcGlobalETP()"></div>
+        </div>
+        <div style="margin-top: 15px; text-align: right; font-weight: bold;">TOTAL STRUCTURE : <span id="total-global-display">0.0</span> ETP</div>
+    </div>
+
+    <div class="question-row" style="background:#f0f9ff; border: 1px solid var(--fagerh-light); border-radius: 8px; padding:15px">
+        <strong>Délivrez-vous des prestations d'évaluations et de conseils (PEC) ?</strong>
+        <select name="pec"><option value="">-- Choisir --</option><option value="Non">Non</option><option value="Oui">Oui</option></select>
+    </div>
+
+    <h3>2. Répartition par Métier (Lignes 6 à 31)</h3>
+    <select id="metier-picker" onchange="addMetierRow()" style="margin-bottom: 15px;">
+        <option value="">-- Choisir un métier à ajouter --</option>
+        <optgroup label="DIRECTION & ADMIN">
+            <option>Directeur / Directeur Adjoint</option>
+            <option>Cadre administratif / Chef de service</option>
+            <option>Secrétariat / Accueil</option>
+            <option>Comptabilité / RH / Gestion</option>
+        </optgroup>
+        <optgroup label="MÉDICAL & PARAMÉDICAL">
+            <option>Médecin Généraliste</option>
+            <option>Médecin Psychiatre</option>
+            <option>Médecin Spécialiste</option>
+            <option>Infirmier (IDE)</option>
+            <option>Ergothérapeute</option>
+            <option>Kinésithérapeute</option>
+            <option>Psychologue Clinicien / Neuro</option>
+            <option>Psychomotricien</option>
+            <option>Orthophoniste</option>
+        </optgroup>
+        <optgroup label="PÉDAGOGIQUE & SOCIAL">
+            <option>Formateur / Enseignant</option>
+            <option>Chargé d'Insertion Professionnelle (CIP)</option>
+            <option>Coordonnateur Pédagogique</option>
+            <option>Accompagnateur / Tutorat</option>
+            <option>Assistant de Service Social</option>
+            <option>Éducateur Spécialisé / Technique</option>
+            <option>Animateur</option>
+        </optgroup>
+        <optgroup label="TECHNIQUE & SERVICES">
+            <option>Cuisine / Restauration</option>
+            <option>Entretien / Maintenance / Veille</option>
+            <option>Chauffeur / Logistique</option>
+            <option>Autres fonctions (Ligne 31)</option>
+        </optgroup>
+    </select>
+
+    <table id="table-metiers">
+        <thead><tr><th style="text-align:left">Métier</th><th>Mode</th><th style="width:100px">ETP</th><th style="width:50px">X</th></tr></thead>
+        <tbody id="body-metiers"></tbody>
+    </table>
+
+    <div class="control-bar">
+        <span>Cible : <span id="target-etp">0.0</span> ETP | Saisie : <span id="current-etp">0.0</span> ETP | <span id="status-rh" style="font-weight:bold">EN ATTENTE</span></span>
+    </div>
+</div>
+
+<div class="card">
+    <h2 style="color: var(--orange); border-bottom-color: var(--orange);">Contexte écologique</h2>
+    <div class="question-row"><span>32. Type d'implantation territoriale principale ?</span><select name="q32_implantation"><option value="">-- Choisir --</option><option>Urbaine</option><option>Rurale</option><option>Mixte</option></select></div>
+    <div class="question-row">
+        <span>33. Votre ES est-il desservi par des transports en commun ?</span>
+        <select name="q33_transports" onchange="toggleBox('sub-33-oui', this.value === 'Oui'); toggleBox('sub-33-non', this.value === 'Non')"><option value="">-- Choisir --</option><option value="Oui">Oui</option><option value="Non">Non</option></select>
+    </div>
+    <div id="sub-33-oui" class="sub-question-box"><span>Accessible PMR ?</span><select name="q33_pmr"><option value="">-- Choisir --</option><option>Oui</option><option>Non</option></select></div>
+    <div id="sub-33-non" class="sub-question-box"><span>Des transports alternatifs sont-ils organisés ?</span><select name="q33_alternatif"><option value="">-- Choisir --</option><option>Oui</option><option>Non</option></select></div>
+    <div class="question-row"><span>34. Votre ES est-il en agglomération de la préfecture ?</span><select name="q34_prefecture"><option value="">-- Choisir --</option><option>Oui</option><option>Non</option></select></div>
+    <div class="question-row">
+        <span>35. Votre ES porte-t-il un hébergement ?</span>
+        <select name="q35_hebergement" onchange="toggleBox('sub-35', this.value === 'Oui')"><option value="">-- Choisir --</option><option value="Non">Non</option><option value="Oui">Oui</option></select>
+    </div>
+    <div id="sub-35" class="sub-question-box">
+        <div class="question-row"><span>Combien de places ?</span><input type="number" name="q35_places"></div>
+        <div class="question-row"><span>Ouvert le week-end ?</span><select name="q35_weekend" onchange="toggleBox('sub-35-we', this.value === 'Oui')"><option value="">-- Choisir --</option><option>Non</option><option>Oui</option></select></div>
+        <div id="sub-35-we" class="sub-question-box"><span>Comptabilité différente pour le WE ?</span><select name="q35_comptabilite"><option value="">-- Choisir --</option><option>Oui</option><option>Non</option></select></div>
+    </div>
+    <div class="question-row">
+        <span>36. Votre ES porte-t-il un restaurant collectif ?</span>
+        <select name="q36_restaurant" id="36-select" onchange="runLogic36()"><option value="">-- Choisir --</option><option value="Non">Non</option><option value="Oui">Oui</option></select>
+    </div>
+    <div id="box-39-we" class="sub-question-box"><span>39. Est-il ouvert le week-end ?</span><select name="q39_weekend"><option value="">-- Choisir --</option><option>Oui</option><option>Non</option></select></div>
+    <div id="box-38-ext" class="sub-question-box">
+        <div class="question-row"><span>38. Une restauration est-elle prévue à l'externe ?</span><select name="q38_externe" onchange="toggleBox('sub-38-fin', this.value === 'Oui')"><option value="">-- Choisir --</option><option value="Non">Non</option><option value="Oui">Oui</option></select></div>
+        <div id="sub-38-fin" class="sub-question-box"><span>Avec participation financière de l'ES ?</span><select name="q38_participation"><option value="">-- Choisir --</option><option>Oui</option><option>Non</option></select></div>
+    </div>
+    <div class="question-row"><span>37. Votre ES porte-t-il un coin cuisine à disposition ?</span><select name="q37_cuisine" id="37-select" onchange="runLogic36()"><option value="">-- Choisir --</option><option value="Non">Non</option><option value="Oui">Oui</option></select></div>
+
+    <h3>Rémunération & Environnement</h3>
+    <div class="question-row"><span>40. Traitement rémunération délégué à un opérateur ?</span><select name="q40_remuneration" onchange="toggleBox('sub-40', this.value === 'Oui')"><option value="">-- Choisir --</option><option value="Non">Non</option><option value="Oui">Oui</option></select></div>
+    <div id="sub-40" class="sub-question-box"><span>Nom de l'opérateur :</span><input type="text" name="q40_operateur"></div>
+    <div class="question-row"><span>41. Nombre d'ESAT sur le département ?</span><select name="q41_esat"><option value="">-- Choisir --</option><option>1-5</option><option>6-10</option><option>au-delà</option></select></div>
+    <div class="question-row"><span>42. Nombre d'EA sur le département ?</span><select name="q42_ea"><option value="">-- Choisir --</option><option>1-5</option><option>6-10</option><option>au-delà</option></select></div>
+    <div class="question-row"><span>43. Nombre d'EI sur le département ?</span><select name="q43_ei"><option value="">-- Choisir --</option><option>1-5</option><option>6-10</option><option>au-delà</option></select></div>
+
+    <h3>Vos comités</h3>
+    <div class="question-row"><span>44. CCAS ?</span><select name="q44_ccas"><option value="">-- Choisir --</option><option>Oui</option><option>Non</option></select></div>
+    <div class="question-row"><span>45. CPTS ?</span><select name="q45_cpts"><option value="">-- Choisir --</option><option>Oui</option><option>Non</option></select></div>
+    <div class="question-row"><span>46. CPT ?</span><select name="q46_cpt" onchange="toggleBox('sub-46', this.value === 'Non')"><option value="">-- Choisir --</option><option value="Oui">Oui</option><option value="Non">Non</option></select></div>
+    <div id="sub-46" class="sub-question-box"><span>Réseau Fagerh représenté ?</span><select name="q46_fagerh"><option value="">-- Choisir --</option><option>Oui</option><option>Non</option></select></div>
+    <div class="question-row"><span>47. CLSM ?</span><select name="q47_clsm" onchange="toggleBox('sub-47', this.value === 'Non')"><option value="">-- Choisir --</option><option value="Oui">Oui</option><option value="Non">Non</option></select></div>
+    <div id="sub-47" class="sub-question-box"><span>Réseau Fagerh représenté ?</span><select name="q47_fagerh"><option value="">-- Choisir --</option><option>Oui</option><option>Non</option></select></div>
+    <div class="question-row"><span>48. CLE ?</span><select name="q48_cle" onchange="toggleBox('sub-48', this.value === 'Non')"><option value="">-- Choisir --</option><option value="Oui">Oui</option><option value="Non">Non</option></select></div>
+    <div id="sub-48" class="sub-question-box"><span>Réseau Fagerh représenté ?</span><select name="q48_fagerh"><option value="">-- Choisir --</option><option>Oui</option><option>Non</option></select></div>
+    <div class="question-row"><span>49. CRE ?</span><select name="q49_cre" onchange="toggleBox('sub-49', this.value === 'Non')"><option value="">-- Choisir --</option><option value="Oui">Oui</option><option value="Non">Non</option></select></div>
+    <div id="sub-49" class="sub-question-box"><span>Réseau Fagerh représenté ?</span><select name="q49_fagerh"><option value="">-- Choisir --</option><option>Oui</option><option>Non</option></select></div>
+    <div class="question-row"><span>50. Comité FIPHFP ?</span><select name="q50_fiphfp" onchange="toggleBox('sub-50', this.value === 'Non')"><option value="">-- Choisir --</option><option value="Oui">Oui</option><option value="Non">Non</option></select></div>
+    <div id="sub-50" class="sub-question-box"><span>Réseau Fagerh représenté ?</span><select name="q50_fagerh"><option value="">-- Choisir --</option><option>Oui</option><option>Non</option></select></div>
+    <div class="question-row"><span>51. PLITH/PRITH ?</span><select name="q51_plith" onchange="toggleBox('sub-51', this.value === 'Non')"><option value="">-- Choisir --</option><option value="Oui">Oui</option><option value="Non">Non</option></select></div>
+    <div id="sub-51" class="sub-question-box"><span>Réseau Fagerh représenté ?</span><select name="q51_fagerh"><option value="">-- Choisir --</option><option>Oui</option><option>Non</option></select></div>
+    <div class="question-row"><span>52. AFPA ?</span><select name="q52_afpa"><option value="">-- Choisir --</option><option>Oui</option><option>Non</option></select></div>
+</div>
+
+<div class="card">
+    <h2 style="color: var(--fagerh-light);">Prestations directes</h2>
+    <h3>1. File active & Journées</h3>
+    <div class="question-row"><span>53. Nombre de personnes accompagnées au 31/12 ?</span><input type="number" name="q53_accompagnes"></div>
+    <div class="question-row"><span>54. Nombre de sorties définitives dans l'année ?</span><input type="number" name="q54_sorties"></div>
+    <div class="question-row"><span>55. Journées réalisées en ESRP ?</span><input type="number" name="q55_journees_esrp"></div>
+    <div class="question-row"><span>56. Journées réalisées en ESPO ?</span><input type="number" name="q56_journees_espo"></div>
+    <div class="question-row"><span>57. Journées réalisées en UEROS ?</span><input type="number" name="q57_journees_ueros"></div>
+
+    <h3>2. Public : Genre & Âge</h3>
+    <div class="grid-compact">
+        <div class="grid-item">Hommes <input type="number" name="genre_hommes"></div>
+        <div class="grid-item">Femmes <input type="number" name="genre_femmes"></div>
+        <div class="grid-item">Non-binaires <input type="number" name="genre_nonbinaires"></div>
+    </div>
+    <div class="grid-compact" style="margin-top:10px">
+        <div class="grid-item">16-17 ans <input type="number" name="age_16_17"></div>
+        <div class="grid-item">18-19 ans <input type="number" name="age_18_19"></div>
+        <div class="grid-item">20-24 ans <input type="number" name="age_20_24"></div>
+        <div class="grid-item">25-29 ans <input type="number" name="age_25_29"></div>
+        <div class="grid-item">30-34 ans <input type="number" name="age_30_34"></div>
+        <div class="grid-item">35-39 ans <input type="number" name="age_35_39"></div>
+        <div class="grid-item">40-44 ans <input type="number" name="age_40_44"></div>
+        <div class="grid-item">45-49 ans <input type="number" name="age_45_49"></div>
+        <div class="grid-item">50-54 ans <input type="number" name="age_50_54"></div>
+        <div class="grid-item">60 ans et + <input type="number" name="age_60_plus"></div>
+    </div>
+
+    <h3>3. Public : Niveau de formation à l'entrée</h3>
+    <div class="grid-compact">
+        <div class="grid-item">Niveau 2 (CEP, sans formation) <input type="number" name="formation_niveau2"></div>
+        <div class="grid-item">Niveau 3 (CAP, BEP) <input type="number" name="formation_niveau3"></div>
+        <div class="grid-item">Niveau 4 (Bac, Bac pro) <input type="number" name="formation_niveau4"></div>
+        <div class="grid-item">Niveau 5 (Bac +2, BTS) <input type="number" name="formation_niveau5"></div>
+        <div class="grid-item">Niveau 6 (Bac +3, Bac +4) <input type="number" name="formation_niveau6"></div>
+        <div class="grid-item">Niveau 7 (Bac +5) <input type="number" name="formation_niveau7"></div>
+    </div>
+
+    <h3>4. Public : Handicap</h3>
+    <p><strong>De combien de pathologies les personnes portaient-elles ?</strong></p>
+    <div class="grid-compact">
+        <div class="grid-item">1 pathologie <input type="number" name="pathologies_1"></div>
+        <div class="grid-item">2 pathologies <input type="number" name="pathologies_2"></div>
+        <div class="grid-item">3 pathologies et plus <input type="number" name="pathologies_3plus"></div>
+        <div class="grid-item">Non connu <input type="number" name="pathologies_inconnu"></div>
+    </div>
+    <p style="margin-top:15px"><strong>Handicap Principal / Associé</strong></p>
+    <div class="grid-compact">
+        <div class="grid-item">Déficiences intellectuelles <span><input type="number" name="handicap_intellectuelles_p"> / <input type="number" name="handicap_intellectuelles_a"></span></div>
+        <div class="grid-item">Autisme et autres TED <span><input type="number" name="handicap_autisme_p"> / <input type="number" name="handicap_autisme_a"></span></div>
+        <div class="grid-item">Troubles psychiques <span><input type="number" name="handicap_psychiques_p"> / <input type="number" name="handicap_psychiques_a"></span></div>
+        <div class="grid-item">Troubles langage/apprentissages <span><input type="number" name="handicap_langage_p"> / <input type="number" name="handicap_langage_a"></span></div>
+        <div class="grid-item">Déficiences auditives <span><input type="number" name="handicap_auditives_p"> / <input type="number" name="handicap_auditives_a"></span></div>
+        <div class="grid-item">Déficiences visuelles <span><input type="number" name="handicap_visuelles_p"> / <input type="number" name="handicap_visuelles_a"></span></div>
+        <div class="grid-item">Déficiences motrices <span><input type="number" name="handicap_motrices_p"> / <input type="number" name="handicap_motrices_a"></span></div>
+        <div class="grid-item">Déf. métaboliques/nutritionnelles <span><input type="number" name="handicap_metaboliques_p"> / <input type="number" name="handicap_metaboliques_a"></span></div>
+        <div class="grid-item">Cérébro-lésions <span><input type="number" name="handicap_cerebrolesions_p"> / <input type="number" name="handicap_cerebrolesions_a"></span></div>
+        <div class="grid-item">Polyhandicap <span><input type="number" name="handicap_polyhandicap_p"> / <input type="number" name="handicap_polyhandicap_a"></span></div>
+        <div class="grid-item">TCC (comportement/com.) <span><input type="number" name="handicap_tcc_p"> / <input type="number" name="handicap_tcc_a"></span></div>
+        <div class="grid-item">Diagnostics en cours <span><input type="number" name="handicap_diagnostics_p"> / <input type="number" name="handicap_diagnostics_a"></span></div>
+        <div class="grid-item">Autres types de déficiences <span><input type="number" name="handicap_autres_p"> / <input type="number" name="handicap_autres_a"></span></div>
+    </div>
+    <p style="margin-top:15px"><strong>Origine du handicap</strong></p>
+    <div class="grid-compact">
+        <div class="grid-item">Congénitale <input type="number" name="origine_congenitale"></div>
+        <div class="grid-item">Maladie <input type="number" name="origine_maladie"></div>
+        <div class="grid-item">Accident de vie privée <input type="number" name="origine_accident_vie"></div>
+        <div class="grid-item">Accident travail / Pro <input type="number" name="origine_accident_travail"></div>
+        <div class="grid-item">Maladie Professionnelle <input type="number" name="origine_maladie_pro"></div>
+        <div class="grid-item">Autres <input type="number" name="origine_autres"></div>
+        <div class="grid-item">Non connue <input type="number" name="origine_inconnue"></div>
+    </div>
+
+    <div class="sub-question-box" style="display:block; margin-top:20px">
+        <strong>80. Origine de la lésion cérébrale (UEROS)</strong>
+        <div class="grid-compact" style="margin-top:10px">
+            <div class="grid-item">Traumatisme crânien <input type="number" name="lesion_traumatisme"></div>
+            <div class="grid-item">AVC <input type="number" name="lesion_avc"></div>
+            <div class="grid-item">Tumeur cérébrale <input type="number" name="lesion_tumeur"></div>
+            <div class="grid-item">Epilepsie <input type="number" name="lesion_epilepsie"></div>
+            <div class="grid-item">Autres pathologies neuro <input type="number" name="lesion_autres"></div>
+            <div class="grid-item">Non connue <input type="number" name="lesion_inconnue"></div>
+        </div>
+    </div>
+
+    <h3>5. Public : Situation à l'entrée</h3>
+    <div class="question-row"><span>1. En emploi du secteur privé ?</span><input type="number" name="entree_emploi_prive"></div>
+    <div class="question-row indent-1"><span>- dont en entreprises adaptées</span><input type="number" name="entree_emploi_prive_ea"></div>
+    <div class="question-row indent-1"><span>- dont en alternance</span><input type="number" name="entree_emploi_prive_alternance"></div>
+    <div class="question-row"><span>2. En emploi secteur public ?</span><input type="number" name="entree_emploi_public"></div>
+    <div class="question-row indent-1"><span>- dont de la FPT (Territoriale)</span><input type="number" name="entree_fpt"></div>
+    <div class="question-row indent-2"><span>- dont contractuels</span><input type="number" name="entree_fpt_contractuels"></div>
+    <div class="question-row indent-2"><span>- dont alternance</span><input type="number" name="entree_fpt_alternance"></div>
+    <div class="question-row indent-1"><span>- dont de la FPH (Hospitalière)</span><input type="number" name="entree_fph"></div>
+    <div class="question-row indent-2"><span>- dont contractuels</span><input type="number" name="entree_fph_contractuels"></div>
+    <div class="question-row indent-2"><span>- dont alternance</span><input type="number" name="entree_fph_alternance"></div>
+    <div class="question-row indent-1"><span>- dont de la FPE (État)</span><input type="number" name="entree_fpe"></div>
+    <div class="question-row indent-2"><span>- dont contractuels</span><input type="number" name="entree_fpe_contractuels"></div>
+    <div class="question-row indent-2"><span>- dont alternance</span><input type="number" name="entree_fpe_alternance"></div>
+    <div class="question-row"><span>3. Activité non salariée (Indépendants, Service civique)</span><input type="number" name="entree_non_salarie"></div>
+    <div class="question-row"><span>4. Travailleurs d'ESAT</span><input type="number" name="entree_esat"></div>
+    <div class="question-row"><span>5. Sans emploi ?</span><input type="number" name="entree_sans_emploi"></div>
+    <div class="grid-compact indent-1">
+        <div class="grid-item">Depuis moins d'un an <input type="number" name="entree_sans_emploi_moins1an"></div>
+        <div class="grid-item">Entre 1 et 2 ans <input type="number" name="entree_sans_emploi_1_2ans"></div>
+        <div class="grid-item">Plus de 2 ans <input type="number" name="entree_sans_emploi_plus2ans"></div>
+    </div>
+    <div class="question-row"><span>6. N'avaient jamais travaillé</span><input type="number" name="entree_jamais_travaille"></div>
+    <div class="question-row"><span>7. En formation</span><input type="number" name="entree_formation"></div>
+
+    <h3>6. Public : Ressources à l'entrée</h3>
+    <p><strong>Quelle était la ressource principale avant l'entrée ?</strong></p>
+    <div class="grid-compact">
+        <div class="grid-item">Rémunération <input type="number" name="ressources_remuneration"></div>
+        <div class="grid-item">AAH <input type="number" name="ressources_aah"></div>
+        <div class="grid-item">Allocations chômage <input type="number" name="ressources_chomage"></div>
+        <div class="grid-item">RSA <input type="number" name="ressources_rsa"></div>
+        <div class="grid-item">Indemnités Journalières <input type="number" name="ressources_ij"></div>
+        <div class="grid-item">Rentes AT/MP / Pension inval <input type="number" name="ressources_rentes"></div>
+        <div class="grid-item">Autres <input type="number" name="ressources_autres"></div>
+        <div class="grid-item">Aucune <input type="number" name="ressources_aucune"></div>
+        <div class="grid-item">Ne sait pas <input type="number" name="ressources_inconnu"></div>
+    </div>
+
+    <h3>7. Absentéisme</h3>
+    <div class="question-row"><span>7.1 Nombre d'heures d'absence total ?</span><input type="number" name="abs_heures" id="abs-h" oninput="calcTauxAbs()"></div>
+    <div class="question-row"><span>7.2 Nombre d'heures théoriques travaillées ?</span><input type="number" name="abs_heures_theoriques" id="theo-h" oninput="calcTauxAbs()"></div>
+    <div class="question-row" style="background: #fff7e6; font-weight: bold;"><span>Taux d'absentéisme calculé :</span><span id="taux-abs-display">0.00 %</span></div>
+
+    <h3>8. Sorties & Suspensions</h3>
+    <p><strong>8.1 Combien de personnes sont sorties définitivement avant le terme ?</strong></p>
+    <div class="question-row"><span>Nombre de sorties anticipées</span><input type="number" name="sorties_anticipees"></div>
+    <p style="margin-top:15px"><strong>Quelle en a été la raison ?</strong></p>
+    <div class="grid-compact">
+        <div class="grid-item">Départ volontaire <input type="number" name="sorties_raison_volontaire"></div>
+        <div class="grid-item">Raisons de santé <input type="number" name="sorties_raison_sante"></div>
+        <div class="grid-item">Réorientation <input type="number" name="sorties_raison_reorientation"></div>
+        <div class="grid-item">Raison disciplinaire <input type="number" name="sorties_raison_disciplinaire"></div>
+        <div class="grid-item">Atteinte de l'objectif <input type="number" name="sorties_raison_objectif"></div>
+        <div class="grid-item">Emploi <input type="number" name="sorties_raison_emploi"></div>
+        <div class="grid-item">Raison non connue <input type="number" name="sorties_raison_inconnue"></div>
+        <div class="grid-item">Autres, précisez : <input type="text" name="sorties_raison_autres" style="width: 150px"></div>
+    </div>
+    <p style="margin-top:25px"><strong>8.2 Combien de personnes ont connu une suspension de parcours ?</strong></p>
+    <div class="question-row"><span>Nombre de suspensions de parcours</span><input type="number" name="suspensions_nb"></div>
+    <p style="margin-top:15px"><strong>Quelle en était la raison ?</strong></p>
+    <div class="grid-compact">
+        <div class="grid-item">Raisons de santé non liée au handicap <input type="number" name="suspensions_sante"></div>
+        <div class="grid-item">Évolution du retentissement handicap <input type="number" name="suspensions_handicap"></div>
+        <div class="grid-item">Situation sociale et familiale dégradée <input type="number" name="suspensions_sociale"></div>
+        <div class="grid-item">Parcours contractualisé <input type="number" name="suspensions_parcours"></div>
+        <div class="grid-item">Autres : <input type="text" name="suspensions_autres" style="width: 150px"></div>
+    </div>
+    <div class="question-row" style="margin-top:15px"><span>Parmi celles-ci combien ont repris ?</span><input type="number" name="suspensions_reprises"></div>
+
+    <h3>9. Géographie</h3>
+    <p><strong>Combien de personnes proviennent de...</strong></p>
+    <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+        <input type="text" id="dept-code-input" placeholder="Code (ex: 75)" style="width: 120px;">
+        <button type="button" class="btn-add" onclick="addDeptRow()">Ajouter département</button>
+    </div>
+    <div id="dept-rows-container"></div>
+</div>
+
+<div class="card">
+    <h2>10. Prestations directes réalisées (Détail par parcours)</h2>
+    <div class="table-10-container">
+        <table class="table-10">
+            <thead>
+                <tr>
+                    <th rowspan="3" style="width: 200px; text-align: left; background: #ecf0f1;">Prestations</th>
+                    <th colspan="6">Dont, combien en présentiel ?</th>
+                    <th colspan="3" rowspan="2">Accompagnés hors les murs ?</th>
+                    <th colspan="2" rowspan="2">Hébergées ?</th>
+                </tr>
+                <tr>
+                    <th colspan="2">En présentiel ?</th>
+                    <th colspan="2">Format hybride</th>
+                    <th colspan="2">En distanciel ?</th>
+                </tr>
+                <tr>
+                    <th>T. Complet</th><th>T. Partiel</th>
+                    <th>T. Complet</th><th>T. Partiel</th>
+                    <th>T. Complet</th><th>T. Partiel</th>
+                    <th>T. Complet</th><th>T. Partiel</th><th>Journées</th>
+                    <th>Pers.</th><th>Journées</th>
+                </tr>
+            </thead>
+            <tbody id="prestations-tbody">
+                <tr data-row="espo"><td style="text-align: left;"><strong>D'une Orientation en ESPO</strong></td><td><input type="number" data-col="pres_c"></td><td><input type="number" data-col="pres_p"></td><td><input type="number" data-col="hyb_c"></td><td><input type="number" data-col="hyb_p"></td><td><input type="number" data-col="dist_c"></td><td><input type="number" data-col="dist_p"></td><td><input type="number" data-col="hlm_c"></td><td><input type="number" data-col="hlm_p"></td><td><input type="number" data-col="hlm_j"></td><td><input type="number" data-col="heb_p"></td><td><input type="number" data-col="heb_j"></td></tr>
+                <tr data-row="sociopro"><td style="text-align: left;"><strong>D'un parcours Socio Professionnel</strong></td><td><input type="number" data-col="pres_c"></td><td><input type="number" data-col="pres_p"></td><td><input type="number" data-col="hyb_c"></td><td><input type="number" data-col="hyb_p"></td><td><input type="number" data-col="dist_c"></td><td><input type="number" data-col="dist_p"></td><td><input type="number" data-col="hlm_c"></td><td><input type="number" data-col="hlm_p"></td><td><input type="number" data-col="hlm_j"></td><td><input type="number" data-col="heb_p"></td><td><input type="number" data-col="heb_j"></td></tr>
+                <tr data-row="sociopro_projet"><td style="text-align: left; padding-left: 30px;">dont projet professionnel*</td><td><input type="number" data-col="pres_c"></td><td><input type="number" data-col="pres_p"></td><td><input type="number" data-col="hyb_c"></td><td><input type="number" data-col="hyb_p"></td><td><input type="number" data-col="dist_c"></td><td><input type="number" data-col="dist_p"></td><td><input type="number" data-col="hlm_c"></td><td><input type="number" data-col="hlm_p"></td><td><input type="number" data-col="hlm_j"></td><td><input type="number" data-col="heb_p"></td><td><input type="number" data-col="heb_j"></td></tr>
+                <tr data-row="sociopro_emploi"><td style="text-align: left; padding-left: 30px;">dont accès à l'emploi**</td><td><input type="number" data-col="pres_c"></td><td><input type="number" data-col="pres_p"></td><td><input type="number" data-col="hyb_c"></td><td><input type="number" data-col="hyb_p"></td><td><input type="number" data-col="dist_c"></td><td><input type="number" data-col="dist_p"></td><td><input type="number" data-col="hlm_c"></td><td><input type="number" data-col="hlm_p"></td><td><input type="number" data-col="hlm_j"></td><td><input type="number" data-col="heb_p"></td><td><input type="number" data-col="heb_j"></td></tr>
+                <tr data-row="autre"><td style="text-align: left;"><strong>Autre type (FLE, réentrainement...)</strong></td><td><input type="number" data-col="pres_c"></td><td><input type="number" data-col="pres_p"></td><td><input type="number" data-col="hyb_c"></td><td><input type="number" data-col="hyb_p"></td><td><input type="number" data-col="dist_c"></td><td><input type="number" data-col="dist_p"></td><td><input type="number" data-col="hlm_c"></td><td><input type="number" data-col="hlm_p"></td><td><input type="number" data-col="hlm_j"></td><td><input type="number" data-col="heb_p"></td><td><input type="number" data-col="heb_j"></td></tr>
+                <tr data-row="qualifiant"><td style="text-align: left;"><strong>D'un parcours Qualifiant</strong></td><td><input type="number" data-col="pres_c"></td><td><input type="number" data-col="pres_p"></td><td><input type="number" data-col="hyb_c"></td><td><input type="number" data-col="hyb_p"></td><td><input type="number" data-col="dist_c"></td><td><input type="number" data-col="dist_p"></td><td><input type="number" data-col="hlm_c"></td><td><input type="number" data-col="hlm_p"></td><td><input type="number" data-col="hlm_j"></td><td><input type="number" data-col="heb_p"></td><td><input type="number" data-col="heb_j"></td></tr>
+                <tr data-row="qualifiant_base"><td style="text-align: left; padding-left: 30px;">Formation / mise à niveau base</td><td><input type="number" data-col="pres_c"></td><td><input type="number" data-col="pres_p"></td><td><input type="number" data-col="hyb_c"></td><td><input type="number" data-col="hyb_p"></td><td><input type="number" data-col="dist_c"></td><td><input type="number" data-col="dist_p"></td><td><input type="number" data-col="hlm_c"></td><td><input type="number" data-col="hlm_p"></td><td><input type="number" data-col="hlm_j"></td><td><input type="number" data-col="heb_p"></td><td><input type="number" data-col="heb_j"></td></tr>
+                <tr data-row="qualifiant_pro"><td style="text-align: left; padding-left: 30px;">Formation professionnalisante</td><td><input type="number" data-col="pres_c"></td><td><input type="number" data-col="pres_p"></td><td><input type="number" data-col="hyb_c"></td><td><input type="number" data-col="hyb_p"></td><td><input type="number" data-col="dist_c"></td><td><input type="number" data-col="dist_p"></td><td><input type="number" data-col="hlm_c"></td><td><input type="number" data-col="hlm_p"></td><td><input type="number" data-col="hlm_j"></td><td><input type="number" data-col="heb_p"></td><td><input type="number" data-col="heb_j"></td></tr>
+                <tr data-row="qualifiant_certif"><td style="text-align: left; padding-left: 30px;">Formation certifiante / diplômante</td><td><input type="number" data-col="pres_c"></td><td><input type="number" data-col="pres_p"></td><td><input type="number" data-col="hyb_c"></td><td><input type="number" data-col="hyb_p"></td><td><input type="number" data-col="dist_c"></td><td><input type="number" data-col="dist_p"></td><td><input type="number" data-col="hlm_c"></td><td><input type="number" data-col="hlm_p"></td><td><input type="number" data-col="hlm_j"></td><td><input type="number" data-col="heb_p"></td><td><input type="number" data-col="heb_j"></td></tr>
+                <tr data-row="accomp_pro"><td style="text-align: left;"><strong>Formation accompagnée pro.</strong></td><td><input type="number" data-col="pres_c"></td><td><input type="number" data-col="pres_p"></td><td><input type="number" data-col="hyb_c"></td><td><input type="number" data-col="hyb_p"></td><td><input type="number" data-col="dist_c"></td><td><input type="number" data-col="dist_p"></td><td><input type="number" data-col="hlm_c"></td><td><input type="number" data-col="hlm_p"></td><td><input type="number" data-col="hlm_j"></td><td><input type="number" data-col="heb_p"></td><td><input type="number" data-col="heb_j"></td></tr>
+                <tr data-row="accomp_certif"><td style="text-align: left;"><strong>Formation accompagnée certifiante</strong></td><td><input type="number" data-col="pres_c"></td><td><input type="number" data-col="pres_p"></td><td><input type="number" data-col="hyb_c"></td><td><input type="number" data-col="hyb_p"></td><td><input type="number" data-col="dist_c"></td><td><input type="number" data-col="dist_p"></td><td><input type="number" data-col="hlm_c"></td><td><input type="number" data-col="hlm_p"></td><td><input type="number" data-col="hlm_j"></td><td><input type="number" data-col="heb_p"></td><td><input type="number" data-col="heb_j"></td></tr>
+            </tbody>
+        </table>
+    </div>
+
+</div>
+</form>
+</div><!-- end main-content -->
+
+<div class="sidebar">
+    <div class="card">
+        <h3>Actions</h3>
+        <div id="status" class="status-msg"></div>
+        <button type="submit" form="form" id="submit-btn" class="sidebar-btn primary">Enregistrer</button>
+        <button type="button" id="new-form-btn" class="sidebar-btn secondary">Nouveau formulaire</button>
+
+        <div class="url-box">
+            <p>Utilisez ce lien pour reprendre le formulaire plus tard :</p>
+            <div class="url-field">
+                <input type="text" id="share-url" readonly placeholder="Enregistrez d'abord...">
+                <button type="button" id="copy-url-btn">Copier</button>
+            </div>
+        </div>
+    </div>
+</div>
+</div><!-- end page-layout -->
+
+<script src="/assets/grist-form.js"></script>
+<script>
+
+    // =====================================
+    // TOGGLE & VISIBILITY
+    // =====================================
+    function toggleDispo(id, cb) {
+        document.getElementById(id).classList.toggle('hidden', !cb.checked);
+    }
+    function toggleBox(id, show) {
+        document.getElementById(id).style.display = show ? 'block' : 'none';
+    }
+    function runLogic36() {
+        const r36 = document.getElementById('36-select').value;
+        const r37 = document.getElementById('37-select').value;
+        const bWE = document.getElementById('box-39-we');
+        const bExt = document.getElementById('box-38-ext');
+        if (r36 === 'Oui' || r37 === 'Oui') {
+            bWE.style.display = 'block'; bExt.style.display = 'none';
+        } else if (r36 === 'Non' && r37 === 'Non') {
+            bExt.style.display = 'block'; bWE.style.display = 'none';
+        } else {
+            bWE.style.display = 'none'; bExt.style.display = 'none';
+        }
+    }
+
+    // =====================================
+    // ETP VALIDATION
+    // =====================================
+    function calcGlobalETP() {
+        let sum = 0;
+        document.querySelectorAll('.dispo-val').forEach(i => sum += parseFloat(i.value) || 0);
+        document.getElementById('total-global-display').innerText = sum.toFixed(1);
+        document.getElementById('target-etp').innerText = sum.toFixed(1);
+        checkCoherence();
+    }
+
+    function checkCoherence() {
+        const target = parseFloat(document.getElementById('target-etp').innerText) || 0;
+        let current = 0;
+        document.querySelectorAll('.metier-val').forEach(i => current += parseFloat(i.value) || 0);
+        document.getElementById('current-etp').innerText = current.toFixed(1);
+        const st = document.getElementById('status-rh');
+        if (target > 0 && Math.abs(target - current) < 0.01) {
+            st.innerText = "COHÉRENT ✓"; st.style.color = "#2ecc71";
+        } else {
+            st.innerText = "ÉCART ⚠"; st.style.color = "#e74c3c";
+        }
+    }
+
+    // =====================================
+    // MÉTIERS MANAGEMENT
+    // =====================================
+    function addMetierRow() {
+        const sel = document.getElementById('metier-picker');
+        if (!sel.value) return;
+        const tbody = document.getElementById('body-metiers');
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td style="text-align:left">${sel.value}</td>
+            <td><select class="metier-mode"><option>Interne</option><option>Externe</option></select></td>
+            <td><input type="number" step="0.1" class="metier-val" oninput="checkCoherence()" value="0"></td>
+            <td><button type="button" class="btn-del" onclick="this.closest('tr').remove(); checkCoherence()">×</button></td>
+        `;
+        tbody.appendChild(tr);
+        sel.selectedIndex = 0;
+        checkCoherence();
+    }
+
+    function collectMetiers() {
+        const rows = document.querySelectorAll('#body-metiers tr');
+        const metiers = [];
+        rows.forEach(row => {
+            const metier = row.cells[0].innerText;
+            const mode = row.querySelector('.metier-mode').value;
+            const etp = parseFloat(row.querySelector('.metier-val').value) || 0;
+            metiers.push({ metier, mode, etp });
+        });
+        return metiers;
+    }
+
+    // =====================================
+    // DÉPARTEMENT MANAGEMENT
+    // =====================================
+    function addDeptRow() {
+        const code = document.getElementById('dept-code-input').value.trim();
+        if (!code) return;
+        const container = document.getElementById('dept-rows-container');
+        const div = document.createElement('div');
+        div.className = 'dept-row';
+        div.innerHTML = `
+            <span>Département : <strong>${code}</strong></span>
+            <input type="number" class="dept-nb" placeholder="Nb personnes" style="width: 120px;" data-dept="${code}">
+            <button type="button" class="btn-del" onclick="this.parentElement.remove()">×</button>
+        `;
+        container.appendChild(div);
+        document.getElementById('dept-code-input').value = '';
+    }
+
+    function collectGeographie() {
+        const rows = document.querySelectorAll('.dept-nb');
+        const geo = [];
+        rows.forEach(input => {
+            const departement = input.dataset.dept;
+            const nb = parseInt(input.value) || 0;
+            if (nb > 0) geo.push({ departement, nb });
+        });
+        return geo;
+    }
+
+    // =====================================
+    // PRESTATIONS TABLE COLLECTION
+    // =====================================
+    function collectPrestations() {
+        const data = {};
+        document.querySelectorAll('#prestations-tbody tr').forEach(row => {
+            const rowId = row.dataset.row;
+            data[rowId] = {};
+            row.querySelectorAll('input[data-col]').forEach(input => {
+                data[rowId][input.dataset.col] = parseInt(input.value) || 0;
+            });
+        });
+        return data;
+    }
+
+    // =====================================
+    // ABSENTÉISME CALCULATION
+    // =====================================
+    function calcTauxAbs() {
+        const h = parseFloat(document.getElementById('abs-h').value) || 0;
+        const t = parseFloat(document.getElementById('theo-h').value) || 0;
+        document.getElementById('taux-abs-display').innerText = t > 0 ? ((h / t) * 100).toFixed(2) + " %" : "0.00 %";
+    }
+
+    // =====================================
+    // GRIST FORM INITIALIZATION
+    // =====================================
+    const gristForm = new GristForm({
+        apiBase: '/api/forms',  // Will be updated for production
+        formId: 'fagerh',
+        uuidField: 'uuid',
+        urlParam: 'formulaire',
+
+        // Custom callback: populate complex fields from JSON
+        onPopulate: (record, uuid) => {
+            // Populate métiers from JSON
+            if (record.metiers_json) {
+                try {
+                    const metiers = JSON.parse(record.metiers_json);
+                    metiers.forEach(m => {
+                        const tbody = document.getElementById('body-metiers');
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td style="text-align:left">${m.metier}</td>
+                            <td><select class="metier-mode"><option ${m.mode==='Interne'?'selected':''}>Interne</option><option ${m.mode==='Externe'?'selected':''}>Externe</option></select></td>
+                            <td><input type="number" step="0.1" class="metier-val" oninput="checkCoherence()" value="${m.etp}"></td>
+                            <td><button type="button" class="btn-del" onclick="this.closest('tr').remove(); checkCoherence()">×</button></td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                    calcGlobalETP();
+                } catch(e) { console.error('metiers parse error', e); }
+            }
+
+            // Populate géographie from JSON
+            if (record.geographie_json) {
+                try {
+                    const geo = JSON.parse(record.geographie_json);
+                    geo.forEach(g => {
+                        const container = document.getElementById('dept-rows-container');
+                        const div = document.createElement('div');
+                        div.className = 'dept-row';
+                        div.innerHTML = `
+                            <span>Département : <strong>${g.departement}</strong></span>
+                            <input type="number" class="dept-nb" value="${g.nb}" style="width: 120px;" data-dept="${g.departement}">
+                            <button type="button" class="btn-del" onclick="this.parentElement.remove()">×</button>
+                        `;
+                        container.appendChild(div);
+                    });
+                } catch(e) { console.error('geo parse error', e); }
+            }
+
+            // Populate prestations table from JSON
+            if (record.prestations_json) {
+                try {
+                    const prestations = JSON.parse(record.prestations_json);
+                    for (const [rowId, cols] of Object.entries(prestations)) {
+                        const row = document.querySelector(`tr[data-row="${rowId}"]`);
+                        if (!row) continue;
+                        for (const [col, val] of Object.entries(cols)) {
+                            const input = row.querySelector(`input[data-col="${col}"]`);
+                            if (input) input.value = val || '';
+                        }
+                    }
+                } catch(e) { console.error('prestations parse error', e); }
+            }
+
+            // Recalculate derived values
+            calcTauxAbs();
+        },
+
+        // Custom callback: collect complex fields before save
+        onBeforeSave: (fields) => {
+            fields.metiers_json = JSON.stringify(collectMetiers());
+            fields.geographie_json = JSON.stringify(collectGeographie());
+            fields.prestations_json = JSON.stringify(collectPrestations());
+            return fields;
+        }
+    });
+
+    // Bind UI elements
+    gristForm.bindSidebar({
+        statusEl: document.getElementById('status'),
+        shareUrlEl: document.getElementById('share-url'),
+        copyBtn: document.getElementById('copy-url-btn'),
+        newBtn: document.getElementById('new-form-btn')
+    });
+
+    gristForm.bindForm(
+        document.getElementById('form'),
+        document.getElementById('submit-btn')
+    );
+
+    // Load existing record if UUID in URL
+    gristForm.init();
+</script>
+</body>
+</html>
