@@ -15,7 +15,7 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 import requests
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, request, jsonify, redirect, send_from_directory
 
 load_dotenv()
 
@@ -128,6 +128,11 @@ def save_record(form_id: str):
 def health():
     """Health check endpoint."""
     return jsonify({'status': 'ok'})
+
+
+@app.route('/')
+def index():
+    return redirect('/forms/fagerh/')
 
 
 # Static file serving for forms and frontend
