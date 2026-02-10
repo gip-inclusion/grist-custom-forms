@@ -19,8 +19,7 @@ from flask import Flask, request, jsonify, send_from_directory
 
 load_dotenv()
 
-# Paths relative to server directory
-BASE_DIR = Path(__file__).parent.parent
+BASE_DIR = Path(__file__).parent
 FORMS_DIR = BASE_DIR / 'forms'
 ASSETS_DIR = BASE_DIR / 'assets'
 
