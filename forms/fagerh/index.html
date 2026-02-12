@@ -953,7 +953,6 @@
 
     function isFieldVisible(field) {
         if (!field || field.disabled) return false;
-        if (!field.name) return false;
         if (field.type === 'hidden') return false;
         if (field.closest('.hidden')) return false;
         if (field.closest('template')) return false;
@@ -969,9 +968,9 @@
         let filled = 0;
         let total = 0;
 
-        fields.forEach((field) => {
+        fields.forEach((field, idx) => {
             if (field.type === 'checkbox' || field.type === 'radio') {
-                const key = `${field.type}:${field.name}`;
+                const key = `${field.type}:${field.name || field.id || field.dataset.detailField || `__${idx}`}`;
                 if (!groupStates.has(key)) groupStates.set(key, false);
                 if (field.checked) groupStates.set(key, true);
                 return;
@@ -1039,7 +1038,8 @@
             const key = block.dataset.prestationKey || 'orp';
             block.id = block.id || `dyn-orp-${key}`;
             const label = (block.querySelector('h4')?.textContent || key).trim();
-            entries.push({ id: block.id, label, root: block });
+            const result = computeCompletionForScope(block);
+            entries.push({ id: block.id, label, root: block, result });
         });
 
         document.querySelectorAll('#pd-blocks-container [data-pd-block]').forEach((block) => {
@@ -1047,7 +1047,8 @@
             const type = block.dataset.pdType || 'pd';
             block.id = block.id || `dyn-pd-${type}`;
             const label = (block.querySelector('h2')?.textContent || type).trim();
-            entries.push({ id: block.id, label, root: block });
+            const result = computeCompletionForScope(block);
+            entries.push({ id: block.id, label, root: block, result });
         });
 
         if (entries.length === 0) {
@@ -1059,8 +1060,9 @@
 
         let filled = 0;
         let total = 0;
+
         entries.forEach((entry) => {
-            const result = computeCompletionForScope(entry.root);
+            const result = entry.result || computeCompletionForScope(entry.root);
             filled += result.filled;
             total += result.total;
             const li = document.createElement('li');
