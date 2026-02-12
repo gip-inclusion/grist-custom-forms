@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>RA FAGERH 2025 - Formulaire</title>
+    <title>RA FAGERH 2025 - Formulaire - TEST LOCAL</title>
     <style>
         :root { --fagerh-blue: #2c3e50; --fagerh-light: #3498db; --orange: #e67e22; --success: #27ae60; --grey: #f4f7f6; }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--grey); padding: 20px; color: #333; line-height: 1.4; }
@@ -10,9 +10,31 @@
         .main-content { flex: 1; min-width: 0; }
         .sidebar { width: 280px; flex-shrink: 0; position: sticky; top: 20px; }
         .card { background: white; border-radius: 12px; padding: 30px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); margin-bottom: 20px; }
+        .quick-actions-card {
+            position: sticky;
+            top: 12px;
+            z-index: 120;
+            padding: 14px 16px;
+        }
+        .quick-actions-row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .quick-actions-row .sidebar-btn {
+            width: auto;
+            margin-bottom: 0;
+            padding: 10px 14px;
+        }
+        .quick-actions-hint {
+            font-size: 0.88em;
+            color: #4f6477;
+            margin-top: 8px;
+        }
         h2 { color: var(--fagerh-blue); border-bottom: 3px solid var(--fagerh-light); padding-bottom: 10px; margin-top: 0; }
         h3 { color: var(--orange); margin-top: 30px; border-left: 5px solid var(--orange); padding-left: 15px; margin-bottom: 15px; }
-        .question-row { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; padding: 12px; border-bottom: 1px solid #eee; align-items: center; }
+        .question-row { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; padding: 12px; border-bottom: 1px solid #eee; align-items: center; margin-bottom: 25px; }
         .sub-question-box { background: #fffcf9; border-left: 4px solid var(--orange); padding: 15px; margin: 10px 0 10px 20px; border-radius: 0 8px 8px 0; display: none; }
         .setup-zone { background: #eef7ff; padding: 20px; border-radius: 8px; margin-bottom: 25px; border: 1px solid #d1e9ff; }
         .dispositif-row { display: flex; align-items: center; justify-content: space-between; padding: 8px; background: white; margin-bottom: 4px; border-radius: 4px; border: 1px solid #eee; }
@@ -26,6 +48,7 @@
         input[type="number"], select, input[type="text"] { padding: 8px; border: 1px solid #ccc; border-radius: 5px; font-size: 0.95em; width: 100%; box-sizing: border-box; }
         input[type="number"] { width: 85px; text-align: center; }
         .hidden { display: none; }
+        .volet-subtitle { margin: 6px 0 15px 0; color: #555; font-size: 0.95em; }
         .table-10-container { overflow-x: auto; margin-top: 15px; }
         .table-10 { min-width: 1200px; }
         .table-10 th { font-size: 0.75em; padding: 5px; }
@@ -53,6 +76,110 @@
         .btn-del { color: red; cursor: pointer; background: none; border: none; font-weight: bold; font-size: 1.2em; }
         .btn-add { background: var(--fagerh-light); color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; }
         .dept-row { display: flex; align-items: center; gap: 10px; padding: 8px; background: white; margin-bottom: 4px; border-radius: 4px; border: 1px solid #eee; }
+        #metier-picker { margin-top: 15px;}
+        .setup-zone > strong {display: block;margin-bottom: 15px;}
+        .pd-block { display: none; margin-bottom: 24px; }
+        .pd-card-themed {
+            background: var(--pd-bg, #eef7ff);
+            border: 1px solid var(--pd-border, #d1e9ff);
+        }
+        .pd-card-themed h2 {
+            color: var(--pd-title, var(--fagerh-blue));
+        }
+        .pd-card-themed h3 {
+            color: #2f527a;
+            border-left: 4px solid #9fc2e6;
+            border-bottom: none;
+            margin-top: 24px;
+            margin-bottom: 10px;
+            padding-left: 10px;
+            font-size: 1.03em;
+        }
+        .pd-card-themed .question-row {
+            margin-bottom: 10px;
+            border-bottom: 1px solid rgba(0,0,0,0.06);
+            background: rgba(255,255,255,0.55);
+            border-radius: 6px;
+            padding: 10px 12px;
+        }
+        .pd-card-themed .grid-compact {
+            background: rgba(255,255,255,0.6);
+            border: 1px solid rgba(0,0,0,0.08);
+        }
+        .pd-card-themed p > strong {
+            color: #2b4661;
+        }
+        .handicap-matrix {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            background: rgba(255,255,255,0.65);
+            border: 1px solid rgba(0,0,0,0.1);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .handicap-matrix th, .handicap-matrix td {
+            border: 1px solid rgba(0,0,0,0.08);
+            padding: 8px 10px;
+            text-align: center;
+        }
+        .handicap-matrix th:first-child,
+        .handicap-matrix td:first-child {
+            text-align: left;
+            font-weight: 600;
+        }
+        .handicap-matrix thead th {
+            background: rgba(47,82,122,0.12);
+            color: #243f59;
+        }
+        .finess-field { width: 100%; }
+        .finess-msg { font-size: 0.82em; margin-top: 4px; display: none; }
+        .finess-msg.error { color: #b94a48; }
+        .finess-msg.ok { color: #2e7d32; }
+        .finess-input.finess-invalid { border-color: #e67e22; background: #fff8f1; }
+        .orp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 24px; margin-top: 10px; }
+        .orp-item { display: flex; align-items: flex-start; gap: 8px; font-size: 0.95em; }
+        .orp-item input[type="checkbox"] { margin-top: 2px; }
+        .orp-precision { margin-left: 28px; margin-top: 6px; }
+        .orp-precision.hidden { display: none; }
+        .rh-frame { background: #fff; border: 1px solid #e6ecef; border-radius: 10px; padding: 14px; margin-bottom: 20px; }
+        .orp-instruction {
+            background: #eaf4ff;
+            border: 1px solid #cfe4fb;
+            border-left: 4px solid var(--fagerh-light);
+            border-radius: 8px;
+            padding: 10px 12px;
+            margin: 8px 0 14px 0;
+            font-size: 0.94em;
+            color: #2f527a;
+        }
+        .prestations-details-card { margin-top: 0; }
+        .prest-details-block { border: 1px solid #dfe6ee; border-radius: 10px; padding: 14px; margin-bottom: 14px; }
+        .prest-details-block h4 { margin: 0 0 10px 0; color: #1f3347; }
+        .prest-details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 20px; }
+        .prest-details-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+        .prest-details-panels { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 14px; margin-top: 10px; }
+        .prest-details-panels.three { grid-template-columns: 1.6fr 1fr 1fr; }
+        .prest-details-panel { background: rgba(255,255,255,0.68); border: 1px solid rgba(0,0,0,0.12); border-radius: 8px; padding: 10px; }
+        .prest-details-panel h5 { margin: 0 0 8px 0; font-size: 0.92em; color: #26415a; }
+        .prest-details-sub { margin-top: 10px; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.55); border: 1px dashed rgba(0,0,0,0.12); }
+        .consistency-help { margin-top: 10px; padding: 8px 10px; border-radius: 8px; border: 1px solid #9dbdd8; background: #edf5fc; color: #2f527a; font-size: 0.9em; }
+        .consistency-msg { margin-top: 10px; padding: 8px 10px; border-radius: 8px; border: 1px solid #d9534f; background: #fff2f2; color: #8a1f1c; font-size: 0.9em; }
+        .consistency-msg.ok { border-color: #89c89a; background: #effaf2; color: #1f6d34; }
+        .theme-esrp { background: #dceeff; border-left: 6px solid #2f78cf; }
+        .theme-espo { background: #fff2ba; border-left: 6px solid #b98600; }
+        .theme-ueros { background: #dff5e5; border-left: 6px solid #2e8f4f; }
+        .theme-pec { background: #ffe4cf; border-left: 6px solid #c86411; }
+        @media (max-width: 1080px) {
+            .pd-card-themed .question-row { grid-template-columns: 1fr; gap: 8px; }
+        }
+        @media (max-width: 980px) {
+            .page-layout { flex-direction: column; }
+            .sidebar { width: 100%; position: static; }
+            .quick-actions-card { position: static; }
+            .question-row { grid-template-columns: 1fr; gap: 8px; }
+        }
+        #pd-blocks-container { margin-top: 12px; }
     </style>
 </head>
 <body>
@@ -60,74 +187,119 @@
 <div class="page-layout">
 <div class="main-content">
 <form id="form">
+<div class="card quick-actions-card">
+    <div class="quick-actions-row">
+        <button type="submit" form="form" class="sidebar-btn primary">Enregistrer</button>
+        <button type="button" id="quick-new-btn" class="sidebar-btn secondary">Nouveau formulaire</button>
+        <button type="button" id="quick-copy-btn" class="sidebar-btn secondary">Copier lien de reprise</button>
+    </div>
+    <div class="quick-actions-hint">Astuce: enregistrez pour générer (ou mettre à jour) le lien de reprise.</div>
+</div>
 <!-- Hidden fields for JSON data and UUID -->
 <input type="hidden" name="metiers_json" id="metiers_json" value="[]">
 <input type="hidden" name="geographie_json" id="geographie_json" value="[]">
 <input type="hidden" name="prestations_json" id="prestations_json" value="{}">
+<input type="hidden" name="prestations_orp_json" id="prestations_orp_json" value="{}">
+<input type="hidden" name="prestations_details_json" id="prestations_details_json" value="{}">
+<input type="hidden" name="finess_json" id="finess_json" value="[]">
 <input type="hidden" name="uuid" id="uuid" value="">
 
 <div class="card">
-    <h2>Réadaptation Professionnelle - Volet RH</h2>
+    <h2>Identification de l'établissement</h2>
     <div class="setup-zone">
-        <strong>1. Effectifs globaux par Dispositif (ETP au 31/12)</strong>
+        <strong>Informations générales</strong>
+        <div class="question-row">
+            <span>Nom de l'ES (Établissement et service)</span>
+            <input type="text" name="es_nom" placeholder="Nom de l'établissement">
+        </div>
+        <div class="question-row">
+            <span>Département</span>
+            <div style="width:100%;">
+                <input type="text" id="es-departement-input" name="es_departement" placeholder="Ex: 75 ou Paris">
+            </div>
+        </div>
+        <div class="question-row">
+            <span>Numéro FINESS</span>
+            <div class="finess-field">
+                <input type="text" class="finess-input" name="finess_main" placeholder="Numéro FINESS">
+                <div class="finess-msg">Format attendu: 9 caractères (généralement 9 chiffres, ex: 123456789).</div>
+            </div>
+        </div>
+        <div id="finess-extra-container"></div>
+        <div style="margin-top: 12px;">
+            <button type="button" class="btn-add" onclick="addFinessRow()">Ajouter un FINESS</button>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <h2>Réadaptation Professionnelle - Votre structure</h2>
+    <h3>Volet RH</h3>
+    <div class="rh-frame">
+    <div class="setup-zone">
+        <strong>1. Effectifs globaux par Dispositif (ETP au 31/12/2025)</strong>
+        <p class="volet-subtitle">Cochez d'abord le dispositif pour afficher la zone de saisie ETP correspondante. Cette sélection active aussi les parties associées dans la suite du formulaire. Les valeurs négatives ne sont pas autorisées.</p>
         <div class="dispositif-row">
             <label><input type="checkbox" name="check_esrp" value="true" onchange="toggleDispo('etp-esrp', this); calcGlobalETP()"> <strong>ESRP</strong></label>
-            <div id="etp-esrp" class="hidden">ETP : <input type="number" step="0.1" name="etp_esrp" class="dispo-val" oninput="calcGlobalETP()"></div>
+            <div id="etp-esrp" class="hidden">ETP : <input type="number" min="0" step="0.1" name="etp_esrp" class="dispo-val" oninput="sanitizeNonNegative(this); calcGlobalETP()"></div>
         </div>
         <div class="dispositif-row">
             <label><input type="checkbox" name="check_espo" value="true" onchange="toggleDispo('etp-espo', this); calcGlobalETP()"> <strong>ESPO</strong></label>
-            <div id="etp-espo" class="hidden">ETP : <input type="number" step="0.1" name="etp_espo" class="dispo-val" oninput="calcGlobalETP()"></div>
+            <div id="etp-espo" class="hidden">ETP : <input type="number" min="0" step="0.1" name="etp_espo" class="dispo-val" oninput="sanitizeNonNegative(this); calcGlobalETP()"></div>
         </div>
         <div class="dispositif-row">
             <label><input type="checkbox" name="check_ueros" value="true" onchange="toggleDispo('etp-ueros', this); calcGlobalETP()"> <strong>UEROS</strong></label>
-            <div id="etp-ueros" class="hidden">ETP : <input type="number" step="0.1" name="etp_ueros" class="dispo-val" oninput="calcGlobalETP()"></div>
+            <div id="etp-ueros" class="hidden">ETP : <input type="number" min="0" step="0.1" name="etp_ueros" class="dispo-val" oninput="sanitizeNonNegative(this); calcGlobalETP()"></div>
         </div>
         <div class="dispositif-row">
             <label><input type="checkbox" name="check_deac" value="true" onchange="toggleDispo('etp-deac', this); calcGlobalETP()"> <strong>DEAc</strong></label>
-            <div id="etp-deac" class="hidden">ETP : <input type="number" step="0.1" name="etp_deac" class="dispo-val" oninput="calcGlobalETP()"></div>
+            <div id="etp-deac" class="hidden">ETP : <input type="number" min="0" step="0.1" name="etp_deac" class="dispo-val" oninput="sanitizeNonNegative(this); calcGlobalETP()"></div>
         </div>
         <div style="margin-top: 15px; text-align: right; font-weight: bold;">TOTAL STRUCTURE : <span id="total-global-display">0.0</span> ETP</div>
     </div>
 
-    <div class="question-row" style="background:#f0f9ff; border: 1px solid var(--fagerh-light); border-radius: 8px; padding:15px">
-        <strong>Délivrez-vous des prestations d'évaluations et de conseils (PEC) ?</strong>
-        <select name="pec"><option value="">-- Choisir --</option><option value="Non">Non</option><option value="Oui">Oui</option></select>
-    </div>
-
-    <h3>2. Répartition par Métier (Lignes 6 à 31)</h3>
+    <div class="setup-zone">
+        <strong>2. Répartition des effectifs par métier</strong>
+        <p class="volet-subtitle">Ajoutez une ligne par métier et renseignez l'ETP. Si un même métier intervient en interne et en externe, ajoutez deux lignes distinctes (une « Interne », une « Externe »).</p>
     <select id="metier-picker" onchange="addMetierRow()" style="margin-bottom: 15px;">
         <option value="">-- Choisir un métier à ajouter --</option>
-        <optgroup label="DIRECTION & ADMIN">
-            <option>Directeur / Directeur Adjoint</option>
-            <option>Cadre administratif / Chef de service</option>
-            <option>Secrétariat / Accueil</option>
-            <option>Comptabilité / RH / Gestion</option>
+        <optgroup label="MÉDICAL">
+            <option>Médecin</option>
+            <option>Psychiatre</option>
         </optgroup>
-        <optgroup label="MÉDICAL & PARAMÉDICAL">
-            <option>Médecin Généraliste</option>
-            <option>Médecin Psychiatre</option>
-            <option>Médecin Spécialiste</option>
+        <optgroup label="PARAMÉDICAL">
             <option>Infirmier (IDE)</option>
             <option>Ergothérapeute</option>
             <option>Kinésithérapeute</option>
-            <option>Psychologue Clinicien / Neuro</option>
-            <option>Psychomotricien</option>
+            <option>Orthoptiste</option>
             <option>Orthophoniste</option>
         </optgroup>
-        <optgroup label="PÉDAGOGIQUE & SOCIAL">
-            <option>Formateur / Enseignant</option>
-            <option>Chargé d'Insertion Professionnelle (CIP)</option>
-            <option>Coordonnateur Pédagogique</option>
-            <option>Accompagnateur / Tutorat</option>
-            <option>Assistant de Service Social</option>
-            <option>Éducateur Spécialisé / Technique</option>
+        <optgroup label="SOCIO-EDUCATIF">
             <option>Animateur</option>
+            <option>Professionnel d'activité physique adaptée</option>
+            <option>Moniteur éducateur</option>
+            <option>Educateur spécialisé</option>
+            <option>Assistant social</option>
+            <option>CESF</option>
+            <option>Interprète/interface de communication</option>
+            <option>Instructeur en locomotion</option>
         </optgroup>
-        <optgroup label="TECHNIQUE & SERVICES">
-            <option>Cuisine / Restauration</option>
-            <option>Entretien / Maintenance / Veille</option>
-            <option>Chauffeur / Logistique</option>
-            <option>Autres fonctions (Ligne 31)</option>
+        <optgroup label="PSYCHOLOGUE">
+            <option>Psychologue clinicien (dont TCC)</option>
+            <option>Neuropsychologue</option>
+            <option>Psychologue du travail</option>
+        </optgroup>
+        <optgroup label="PEDAGOGIE">
+            <option>Formateur/Formatrice</option>
+            <option>Référent formation accompagnée</option>
+            <option>Jobcoach</option>
+            <option>CIP</option>
+        </optgroup>
+        <optgroup label="SUPPORT & ADMINISTRATIF">
+            <option>Assistant administratif</option>
+            <option>Service hébergement</option>
+            <option>Service logistique</option>
+            <option>Service restauration</option>
         </optgroup>
     </select>
 
@@ -137,270 +309,517 @@
     </table>
 
     <div class="control-bar">
-        <span>Cible : <span id="target-etp">0.0</span> ETP | Saisie : <span id="current-etp">0.0</span> ETP | <span id="status-rh" style="font-weight:bold">EN ATTENTE</span></span>
+        <span>Cible : <span id="target-etp">0.0</span> ETP | Saisie : <span id="current-etp">0.0</span> ETP | Écart : <span id="delta-etp">0.0</span> ETP | <span id="status-rh" style="font-weight:bold">AUCUNE CIBLE</span></span>
+    </div>
     </div>
 </div>
 
 <div class="card">
-    <h2 style="color: var(--orange); border-bottom-color: var(--orange);">Contexte écologique</h2>
-    <div class="question-row"><span>32. Type d'implantation territoriale principale ?</span><select name="q32_implantation"><option value="">-- Choisir --</option><option>Urbaine</option><option>Rurale</option><option>Mixte</option></select></div>
+    <h3>Vos prestations</h3>
+    <div class="setup-zone" id="orp-prestations-zone">
+        <div class="question-row" style="margin-top:10px; margin-bottom:10px; background:#f0f9ff; border: 1px solid var(--fagerh-light); border-radius: 8px; padding:15px">
+            <strong>Délivrez-vous des prestations d'évaluation et de conseil (PEC) ?</strong>
+            <select name="pec" id="pec-select"><option value="">-- Choisir --</option><option value="Non">Non</option><option value="Oui">Oui</option></select>
+        </div>
+        <div class="orp-instruction">
+            <strong>Prestations délivrées dans le cadre des ORP CDAPH.</strong><br>
+            Cochez les prestations que vous délivrez. Vos choix ouvriront automatiquement les parties correspondantes de la suite du formulaire.
+        </div>
+        <div class="orp-grid" id="orp-prestations-list">
+            <label class="orp-item"><input type="checkbox" name="orp_pec"> PEC</label>
+            <div>
+                <label class="orp-item"><input type="checkbox" name="orp_autre_eval"> Autre dispositif d'évaluation</label>
+                <div class="orp-precision hidden" id="orp-autre-eval-precision-box">
+                    <input type="text" name="orp_autre_eval_precision" placeholder="Précisez">
+                </div>
+            </div>
+            <label class="orp-item"><input type="checkbox" name="orp_orientation_espo"> Orientation ESPO</label>
+            <label class="orp-item"><input type="checkbox" name="orp_parcours_sociopro"> Parcours à visée socio-professionnelle</label>
+            <div>
+                <label class="orp-item"><input type="checkbox" name="orp_autre_parcours"> Autre type de parcours</label>
+                <div class="orp-precision hidden" id="orp-autre-parcours-precision-box">
+                    <input type="text" name="orp_autre_parcours_precision" placeholder="Précisez">
+                </div>
+            </div>
+            <label class="orp-item"><input type="checkbox" name="orp_parcours_qualif"> Parcours à visée qualifiante</label>
+            <label class="orp-item"><input type="checkbox" name="orp_remise_niveau"> Préparation à une formation / remise à niveau des savoirs de base</label>
+            <label class="orp-item"><input type="checkbox" name="orp_formation_pro"> Formation professionnalisante (non diplômante)</label>
+            <label class="orp-item"><input type="checkbox" name="orp_formation_certif"> Formation certifiante ou diplômante</label>
+            <label class="orp-item"><input type="checkbox" name="orp_formation_accomp_pro"> Formation accompagnée professionnalisante (non diplômante)</label>
+            <label class="orp-item"><input type="checkbox" name="orp_formation_accomp_certif"> Formation accompagnée certifiante (titre pro ou diplôme)</label>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <h3>Contexte écologique</h3>
+    <div class="setup-zone">
+    <strong>3. Votre environnement</strong>    
+    <div class="question-row"><span>31. Votre ES est situé dans quelle zone ?</span><select name="q32_implantation"><option value="">-- Choisir --</option><option>Urbaine</option><option>Rurale</option><option>Mixte</option></select></div>
     <div class="question-row">
-        <span>33. Votre ES est-il desservi par des transports en commun ?</span>
+        <span>32. Votre ES est-il desservi par des transports en commun ?</span>
         <select name="q33_transports" onchange="toggleBox('sub-33-oui', this.value === 'Oui'); toggleBox('sub-33-non', this.value === 'Non')"><option value="">-- Choisir --</option><option value="Oui">Oui</option><option value="Non">Non</option></select>
     </div>
     <div id="sub-33-oui" class="sub-question-box"><span>Accessible PMR ?</span><select name="q33_pmr"><option value="">-- Choisir --</option><option>Oui</option><option>Non</option></select></div>
-    <div id="sub-33-non" class="sub-question-box"><span>Des transports alternatifs sont-ils organisés ?</span><select name="q33_alternatif"><option value="">-- Choisir --</option><option>Oui</option><option>Non</option></select></div>
-    <div class="question-row"><span>34. Votre ES est-il en agglomération de la préfecture ?</span><select name="q34_prefecture"><option value="">-- Choisir --</option><option>Oui</option><option>Non</option></select></div>
+    <div id="sub-33-non" class="sub-question-box"><span>Des transports alternatifs sont-ils organisés ?</span><select name="q33_alternatif"><option value="">-- Choisir --</option><option>Oui</option><option>Oui, par un sous-traitant</option><option>Non</option></select></div>
     <div class="question-row">
-        <span>35. Votre ES porte-t-il un hébergement ?</span>
-        <select name="q35_hebergement" onchange="toggleBox('sub-35', this.value === 'Oui')"><option value="">-- Choisir --</option><option value="Non">Non</option><option value="Oui">Oui</option></select>
+    <span>33. Votre ES est-il en agglomération de la préfecture de votre département ?</span>
+    <select name="q34_prefecture"
+        onchange="toggleBox('sub-34-non', this.value === 'Non')">
+        <option value="">-- Choisir --</option>
+        <option value="Oui">Oui</option>
+        <option value="Non">Non</option>
+    </select>
     </div>
-    <div id="sub-35" class="sub-question-box">
-        <div class="question-row"><span>Combien de places ?</span><input type="number" name="q35_places"></div>
-        <div class="question-row"><span>Ouvert le week-end ?</span><select name="q35_weekend" onchange="toggleBox('sub-35-we', this.value === 'Oui')"><option value="">-- Choisir --</option><option>Non</option><option>Oui</option></select></div>
-        <div id="sub-35-we" class="sub-question-box"><span>Comptabilité différente pour le WE ?</span><select name="q35_comptabilite"><option value="">-- Choisir --</option><option>Oui</option><option>Non</option></select></div>
     </div>
-    <div class="question-row">
-        <span>36. Votre ES porte-t-il un restaurant collectif ?</span>
-        <select name="q36_restaurant" id="36-select" onchange="runLogic36()"><option value="">-- Choisir --</option><option value="Non">Non</option><option value="Oui">Oui</option></select>
+    <div id="sub-34-non" class="sub-question-box">
+        <span>Votre ES est à quelle distance de la préfecture ?</span>
+        <select name="q34_alternatif">
+             <option value="">-- Choisir --</option>
+            <option value="- de 25 km">- de 25 km</option>
+            <option value="De 25 à 50 km">De 25 à 50 km</option>
+         <option value="+ de 50 km">+ de 50 km</option>
+        </select>
     </div>
-    <div id="box-39-we" class="sub-question-box"><span>39. Est-il ouvert le week-end ?</span><select name="q39_weekend"><option value="">-- Choisir --</option><option>Oui</option><option>Non</option></select></div>
-    <div id="box-38-ext" class="sub-question-box">
-        <div class="question-row"><span>38. Une restauration est-elle prévue à l'externe ?</span><select name="q38_externe" onchange="toggleBox('sub-38-fin', this.value === 'Oui')"><option value="">-- Choisir --</option><option value="Non">Non</option><option value="Oui">Oui</option></select></div>
-        <div id="sub-38-fin" class="sub-question-box"><span>Avec participation financière de l'ES ?</span><select name="q38_participation"><option value="">-- Choisir --</option><option>Oui</option><option>Non</option></select></div>
-    </div>
-    <div class="question-row"><span>37. Votre ES porte-t-il un coin cuisine à disposition ?</span><select name="q37_cuisine" id="37-select" onchange="runLogic36()"><option value="">-- Choisir --</option><option value="Non">Non</option><option value="Oui">Oui</option></select></div>
-
-    <h3>Rémunération & Environnement</h3>
-    <div class="question-row"><span>40. Traitement rémunération délégué à un opérateur ?</span><select name="q40_remuneration" onchange="toggleBox('sub-40', this.value === 'Oui')"><option value="">-- Choisir --</option><option value="Non">Non</option><option value="Oui">Oui</option></select></div>
-    <div id="sub-40" class="sub-question-box"><span>Nom de l'opérateur :</span><input type="text" name="q40_operateur"></div>
-    <div class="question-row"><span>41. Nombre d'ESAT sur le département ?</span><select name="q41_esat"><option value="">-- Choisir --</option><option>1-5</option><option>6-10</option><option>au-delà</option></select></div>
-    <div class="question-row"><span>42. Nombre d'EA sur le département ?</span><select name="q42_ea"><option value="">-- Choisir --</option><option>1-5</option><option>6-10</option><option>au-delà</option></select></div>
-    <div class="question-row"><span>43. Nombre d'EI sur le département ?</span><select name="q43_ei"><option value="">-- Choisir --</option><option>1-5</option><option>6-10</option><option>au-delà</option></select></div>
-
-    <h3>Vos comités</h3>
-    <div class="question-row"><span>44. CCAS ?</span><select name="q44_ccas"><option value="">-- Choisir --</option><option>Oui</option><option>Non</option></select></div>
-    <div class="question-row"><span>45. CPTS ?</span><select name="q45_cpts"><option value="">-- Choisir --</option><option>Oui</option><option>Non</option></select></div>
-    <div class="question-row"><span>46. CPT ?</span><select name="q46_cpt" onchange="toggleBox('sub-46', this.value === 'Non')"><option value="">-- Choisir --</option><option value="Oui">Oui</option><option value="Non">Non</option></select></div>
-    <div id="sub-46" class="sub-question-box"><span>Réseau Fagerh représenté ?</span><select name="q46_fagerh"><option value="">-- Choisir --</option><option>Oui</option><option>Non</option></select></div>
-    <div class="question-row"><span>47. CLSM ?</span><select name="q47_clsm" onchange="toggleBox('sub-47', this.value === 'Non')"><option value="">-- Choisir --</option><option value="Oui">Oui</option><option value="Non">Non</option></select></div>
-    <div id="sub-47" class="sub-question-box"><span>Réseau Fagerh représenté ?</span><select name="q47_fagerh"><option value="">-- Choisir --</option><option>Oui</option><option>Non</option></select></div>
-    <div class="question-row"><span>48. CLE ?</span><select name="q48_cle" onchange="toggleBox('sub-48', this.value === 'Non')"><option value="">-- Choisir --</option><option value="Oui">Oui</option><option value="Non">Non</option></select></div>
-    <div id="sub-48" class="sub-question-box"><span>Réseau Fagerh représenté ?</span><select name="q48_fagerh"><option value="">-- Choisir --</option><option>Oui</option><option>Non</option></select></div>
-    <div class="question-row"><span>49. CRE ?</span><select name="q49_cre" onchange="toggleBox('sub-49', this.value === 'Non')"><option value="">-- Choisir --</option><option value="Oui">Oui</option><option value="Non">Non</option></select></div>
-    <div id="sub-49" class="sub-question-box"><span>Réseau Fagerh représenté ?</span><select name="q49_fagerh"><option value="">-- Choisir --</option><option>Oui</option><option>Non</option></select></div>
-    <div class="question-row"><span>50. Comité FIPHFP ?</span><select name="q50_fiphfp" onchange="toggleBox('sub-50', this.value === 'Non')"><option value="">-- Choisir --</option><option value="Oui">Oui</option><option value="Non">Non</option></select></div>
-    <div id="sub-50" class="sub-question-box"><span>Réseau Fagerh représenté ?</span><select name="q50_fagerh"><option value="">-- Choisir --</option><option>Oui</option><option>Non</option></select></div>
-    <div class="question-row"><span>51. PLITH/PRITH ?</span><select name="q51_plith" onchange="toggleBox('sub-51', this.value === 'Non')"><option value="">-- Choisir --</option><option value="Oui">Oui</option><option value="Non">Non</option></select></div>
-    <div id="sub-51" class="sub-question-box"><span>Réseau Fagerh représenté ?</span><select name="q51_fagerh"><option value="">-- Choisir --</option><option>Oui</option><option>Non</option></select></div>
-    <div class="question-row"><span>52. AFPA ?</span><select name="q52_afpa"><option value="">-- Choisir --</option><option>Oui</option><option>Non</option></select></div>
+    <div class="setup-zone">
+    <strong>4. Vos équipements et services</strong> 
+<div class="question-row">
+    <span>41. Votre ES porte-t-il un hébergement ?</span>
+    <select name="q35_hebergement"
+            onchange="toggleBox('sub-35', this.value === 'Oui')">
+        <option value="">-- Choisir --</option>
+        <option value="Non">Non</option>
+        <option value="Oui">Oui</option>
+    </select>
 </div>
-
-<div class="card">
-    <h2 style="color: var(--fagerh-light);">Prestations directes</h2>
-    <h3>1. File active & Journées</h3>
-    <div class="question-row"><span>53. Nombre de personnes accompagnées au 31/12 ?</span><input type="number" name="q53_accompagnes"></div>
-    <div class="question-row"><span>54. Nombre de sorties définitives dans l'année ?</span><input type="number" name="q54_sorties"></div>
-    <div class="question-row"><span>55. Journées réalisées en ESRP ?</span><input type="number" name="q55_journees_esrp"></div>
-    <div class="question-row"><span>56. Journées réalisées en ESPO ?</span><input type="number" name="q56_journees_espo"></div>
-    <div class="question-row"><span>57. Journées réalisées en UEROS ?</span><input type="number" name="q57_journees_ueros"></div>
-
-    <h3>2. Public : Genre & Âge</h3>
-    <div class="grid-compact">
-        <div class="grid-item">Hommes <input type="number" name="genre_hommes"></div>
-        <div class="grid-item">Femmes <input type="number" name="genre_femmes"></div>
-        <div class="grid-item">Non-binaires <input type="number" name="genre_nonbinaires"></div>
-    </div>
-    <div class="grid-compact" style="margin-top:10px">
-        <div class="grid-item">16-17 ans <input type="number" name="age_16_17"></div>
-        <div class="grid-item">18-19 ans <input type="number" name="age_18_19"></div>
-        <div class="grid-item">20-24 ans <input type="number" name="age_20_24"></div>
-        <div class="grid-item">25-29 ans <input type="number" name="age_25_29"></div>
-        <div class="grid-item">30-34 ans <input type="number" name="age_30_34"></div>
-        <div class="grid-item">35-39 ans <input type="number" name="age_35_39"></div>
-        <div class="grid-item">40-44 ans <input type="number" name="age_40_44"></div>
-        <div class="grid-item">45-49 ans <input type="number" name="age_45_49"></div>
-        <div class="grid-item">50-54 ans <input type="number" name="age_50_54"></div>
-        <div class="grid-item">60 ans et + <input type="number" name="age_60_plus"></div>
+    
+<div id="sub-35" class="sub-question-box">
+    <div class="question-row">
+        <span>Pour combien de places ?</span>
+        <input type="number" name="q35_places" min="0" step="1">
     </div>
 
-    <h3>3. Public : Niveau de formation à l'entrée</h3>
-    <div class="grid-compact">
-        <div class="grid-item">Niveau 2 (CEP, sans formation) <input type="number" name="formation_niveau2"></div>
-        <div class="grid-item">Niveau 3 (CAP, BEP) <input type="number" name="formation_niveau3"></div>
-        <div class="grid-item">Niveau 4 (Bac, Bac pro) <input type="number" name="formation_niveau4"></div>
-        <div class="grid-item">Niveau 5 (Bac +2, BTS) <input type="number" name="formation_niveau5"></div>
-        <div class="grid-item">Niveau 6 (Bac +3, Bac +4) <input type="number" name="formation_niveau6"></div>
-        <div class="grid-item">Niveau 7 (Bac +5) <input type="number" name="formation_niveau7"></div>
+    <div class="question-row">
+        <span>Est-il ouvert le week-end ?</span>
+        <select name="q35_weekend"
+                onchange="toggleBox('sub-35-we', this.value === 'Oui')">
+            <option value="">-- Choisir --</option>
+            <option value="Non">Non</option>
+            <option value="Oui">Oui</option>
+        </select>
     </div>
 
-    <h3>4. Public : Handicap</h3>
-    <p><strong>De combien de pathologies les personnes portaient-elles ?</strong></p>
-    <div class="grid-compact">
-        <div class="grid-item">1 pathologie <input type="number" name="pathologies_1"></div>
-        <div class="grid-item">2 pathologies <input type="number" name="pathologies_2"></div>
-        <div class="grid-item">3 pathologies et plus <input type="number" name="pathologies_3plus"></div>
-        <div class="grid-item">Non connu <input type="number" name="pathologies_inconnu"></div>
-    </div>
-    <p style="margin-top:15px"><strong>Handicap Principal / Associé</strong></p>
-    <div class="grid-compact">
-        <div class="grid-item">Déficiences intellectuelles <span><input type="number" name="handicap_intellectuelles_p"> / <input type="number" name="handicap_intellectuelles_a"></span></div>
-        <div class="grid-item">Autisme et autres TED <span><input type="number" name="handicap_autisme_p"> / <input type="number" name="handicap_autisme_a"></span></div>
-        <div class="grid-item">Troubles psychiques <span><input type="number" name="handicap_psychiques_p"> / <input type="number" name="handicap_psychiques_a"></span></div>
-        <div class="grid-item">Troubles langage/apprentissages <span><input type="number" name="handicap_langage_p"> / <input type="number" name="handicap_langage_a"></span></div>
-        <div class="grid-item">Déficiences auditives <span><input type="number" name="handicap_auditives_p"> / <input type="number" name="handicap_auditives_a"></span></div>
-        <div class="grid-item">Déficiences visuelles <span><input type="number" name="handicap_visuelles_p"> / <input type="number" name="handicap_visuelles_a"></span></div>
-        <div class="grid-item">Déficiences motrices <span><input type="number" name="handicap_motrices_p"> / <input type="number" name="handicap_motrices_a"></span></div>
-        <div class="grid-item">Déf. métaboliques/nutritionnelles <span><input type="number" name="handicap_metaboliques_p"> / <input type="number" name="handicap_metaboliques_a"></span></div>
-        <div class="grid-item">Cérébro-lésions <span><input type="number" name="handicap_cerebrolesions_p"> / <input type="number" name="handicap_cerebrolesions_a"></span></div>
-        <div class="grid-item">Polyhandicap <span><input type="number" name="handicap_polyhandicap_p"> / <input type="number" name="handicap_polyhandicap_a"></span></div>
-        <div class="grid-item">TCC (comportement/com.) <span><input type="number" name="handicap_tcc_p"> / <input type="number" name="handicap_tcc_a"></span></div>
-        <div class="grid-item">Diagnostics en cours <span><input type="number" name="handicap_diagnostics_p"> / <input type="number" name="handicap_diagnostics_a"></span></div>
-        <div class="grid-item">Autres types de déficiences <span><input type="number" name="handicap_autres_p"> / <input type="number" name="handicap_autres_a"></span></div>
-    </div>
-    <p style="margin-top:15px"><strong>Origine du handicap</strong></p>
-    <div class="grid-compact">
-        <div class="grid-item">Congénitale <input type="number" name="origine_congenitale"></div>
-        <div class="grid-item">Maladie <input type="number" name="origine_maladie"></div>
-        <div class="grid-item">Accident de vie privée <input type="number" name="origine_accident_vie"></div>
-        <div class="grid-item">Accident travail / Pro <input type="number" name="origine_accident_travail"></div>
-        <div class="grid-item">Maladie Professionnelle <input type="number" name="origine_maladie_pro"></div>
-        <div class="grid-item">Autres <input type="number" name="origine_autres"></div>
-        <div class="grid-item">Non connue <input type="number" name="origine_inconnue"></div>
-    </div>
-
-    <div class="sub-question-box" style="display:block; margin-top:20px">
-        <strong>80. Origine de la lésion cérébrale (UEROS)</strong>
-        <div class="grid-compact" style="margin-top:10px">
-            <div class="grid-item">Traumatisme crânien <input type="number" name="lesion_traumatisme"></div>
-            <div class="grid-item">AVC <input type="number" name="lesion_avc"></div>
-            <div class="grid-item">Tumeur cérébrale <input type="number" name="lesion_tumeur"></div>
-            <div class="grid-item">Epilepsie <input type="number" name="lesion_epilepsie"></div>
-            <div class="grid-item">Autres pathologies neuro <input type="number" name="lesion_autres"></div>
-            <div class="grid-item">Non connue <input type="number" name="lesion_inconnue"></div>
+    <div id="sub-35-we" class="sub-question-box">
+        <div class="question-row">
+            <span>Avez-vous une comptabilité différente pour le week-end ?</span>
+            <select name="q35_comptabilite_we">
+                <option value="">-- Choisir --</option>
+                <option value="Non">Non</option>
+                <option value="Oui">Oui</option>
+            </select>
         </div>
     </div>
 
-    <h3>5. Public : Situation à l'entrée</h3>
-    <div class="question-row"><span>1. En emploi du secteur privé ?</span><input type="number" name="entree_emploi_prive"></div>
-    <div class="question-row indent-1"><span>- dont en entreprises adaptées</span><input type="number" name="entree_emploi_prive_ea"></div>
-    <div class="question-row indent-1"><span>- dont en alternance</span><input type="number" name="entree_emploi_prive_alternance"></div>
-    <div class="question-row"><span>2. En emploi secteur public ?</span><input type="number" name="entree_emploi_public"></div>
-    <div class="question-row indent-1"><span>- dont de la FPT (Territoriale)</span><input type="number" name="entree_fpt"></div>
-    <div class="question-row indent-2"><span>- dont contractuels</span><input type="number" name="entree_fpt_contractuels"></div>
-    <div class="question-row indent-2"><span>- dont alternance</span><input type="number" name="entree_fpt_alternance"></div>
-    <div class="question-row indent-1"><span>- dont de la FPH (Hospitalière)</span><input type="number" name="entree_fph"></div>
-    <div class="question-row indent-2"><span>- dont contractuels</span><input type="number" name="entree_fph_contractuels"></div>
-    <div class="question-row indent-2"><span>- dont alternance</span><input type="number" name="entree_fph_alternance"></div>
-    <div class="question-row indent-1"><span>- dont de la FPE (État)</span><input type="number" name="entree_fpe"></div>
-    <div class="question-row indent-2"><span>- dont contractuels</span><input type="number" name="entree_fpe_contractuels"></div>
-    <div class="question-row indent-2"><span>- dont alternance</span><input type="number" name="entree_fpe_alternance"></div>
-    <div class="question-row"><span>3. Activité non salariée (Indépendants, Service civique)</span><input type="number" name="entree_non_salarie"></div>
-    <div class="question-row"><span>4. Travailleurs d'ESAT</span><input type="number" name="entree_esat"></div>
-    <div class="question-row"><span>5. Sans emploi ?</span><input type="number" name="entree_sans_emploi"></div>
-    <div class="grid-compact indent-1">
-        <div class="grid-item">Depuis moins d'un an <input type="number" name="entree_sans_emploi_moins1an"></div>
-        <div class="grid-item">Entre 1 et 2 ans <input type="number" name="entree_sans_emploi_1_2ans"></div>
-        <div class="grid-item">Plus de 2 ans <input type="number" name="entree_sans_emploi_plus2ans"></div>
-    </div>
-    <div class="question-row"><span>6. N'avaient jamais travaillé</span><input type="number" name="entree_jamais_travaille"></div>
-    <div class="question-row"><span>7. En formation</span><input type="number" name="entree_formation"></div>
-
-    <h3>6. Public : Ressources à l'entrée</h3>
-    <p><strong>Quelle était la ressource principale avant l'entrée ?</strong></p>
-    <div class="grid-compact">
-        <div class="grid-item">Rémunération <input type="number" name="ressources_remuneration"></div>
-        <div class="grid-item">AAH <input type="number" name="ressources_aah"></div>
-        <div class="grid-item">Allocations chômage <input type="number" name="ressources_chomage"></div>
-        <div class="grid-item">RSA <input type="number" name="ressources_rsa"></div>
-        <div class="grid-item">Indemnités Journalières <input type="number" name="ressources_ij"></div>
-        <div class="grid-item">Rentes AT/MP / Pension inval <input type="number" name="ressources_rentes"></div>
-        <div class="grid-item">Autres <input type="number" name="ressources_autres"></div>
-        <div class="grid-item">Aucune <input type="number" name="ressources_aucune"></div>
-        <div class="grid-item">Ne sait pas <input type="number" name="ressources_inconnu"></div>
+    <div class="question-row">
+        <span>Votre hébergement prévoit-il des périodes de fermetures ?</span>
+        <select name="q35_fermetures"
+                onchange="toggleBox('sub-35-fermetures', this.value === 'Oui')">
+            <option value="">-- Choisir --</option>
+            <option value="Non">Non</option>
+            <option value="Oui">Oui</option>
+        </select>
     </div>
 
-    <h3>7. Absentéisme</h3>
-    <div class="question-row"><span>7.1 Nombre d'heures d'absence total ?</span><input type="number" name="abs_heures" id="abs-h" oninput="calcTauxAbs()"></div>
-    <div class="question-row"><span>7.2 Nombre d'heures théoriques travaillées ?</span><input type="number" name="abs_heures_theoriques" id="theo-h" oninput="calcTauxAbs()"></div>
-    <div class="question-row" style="background: #fff7e6; font-weight: bold;"><span>Taux d'absentéisme calculé :</span><span id="taux-abs-display">0.00 %</span></div>
+    <div id="sub-35-fermetures" class="sub-question-box">
+        <div class="question-row">
+            <span>Combien de semaines de fermeture ?</span>
+            <input type="number" name="q35_fermetures_semaines" min="0" step="0.5">
+        </div>
 
-    <h3>8. Sorties & Suspensions</h3>
-    <p><strong>8.1 Combien de personnes sont sorties définitivement avant le terme ?</strong></p>
-    <div class="question-row"><span>Nombre de sorties anticipées</span><input type="number" name="sorties_anticipees"></div>
-    <p style="margin-top:15px"><strong>Quelle en a été la raison ?</strong></p>
-    <div class="grid-compact">
-        <div class="grid-item">Départ volontaire <input type="number" name="sorties_raison_volontaire"></div>
-        <div class="grid-item">Raisons de santé <input type="number" name="sorties_raison_sante"></div>
-        <div class="grid-item">Réorientation <input type="number" name="sorties_raison_reorientation"></div>
-        <div class="grid-item">Raison disciplinaire <input type="number" name="sorties_raison_disciplinaire"></div>
-        <div class="grid-item">Atteinte de l'objectif <input type="number" name="sorties_raison_objectif"></div>
-        <div class="grid-item">Emploi <input type="number" name="sorties_raison_emploi"></div>
-        <div class="grid-item">Raison non connue <input type="number" name="sorties_raison_inconnue"></div>
-        <div class="grid-item">Autres, précisez : <input type="text" name="sorties_raison_autres" style="width: 150px"></div>
+        <div class="question-row">
+            <span>Des alternatives sont-elles proposées ?</span>
+            <select name="q35_alternatives"
+                    onchange="toggleBox('sub-35-alternatives', this.value === 'Oui')">
+                <option value="">-- Choisir --</option>
+                <option value="Non">Non</option>
+                <option value="Oui">Oui</option>
+            </select>
+        </div>
+        
     </div>
-    <p style="margin-top:25px"><strong>8.2 Combien de personnes ont connu une suspension de parcours ?</strong></p>
-    <div class="question-row"><span>Nombre de suspensions de parcours</span><input type="number" name="suspensions_nb"></div>
-    <p style="margin-top:15px"><strong>Quelle en était la raison ?</strong></p>
-    <div class="grid-compact">
-        <div class="grid-item">Raisons de santé non liée au handicap <input type="number" name="suspensions_sante"></div>
-        <div class="grid-item">Évolution du retentissement handicap <input type="number" name="suspensions_handicap"></div>
-        <div class="grid-item">Situation sociale et familiale dégradée <input type="number" name="suspensions_sociale"></div>
-        <div class="grid-item">Parcours contractualisé <input type="number" name="suspensions_parcours"></div>
-        <div class="grid-item">Autres : <input type="text" name="suspensions_autres" style="width: 150px"></div>
-    </div>
-    <div class="question-row" style="margin-top:15px"><span>Parmi celles-ci combien ont repris ?</span><input type="number" name="suspensions_reprises"></div>
-
-    <h3>9. Géographie</h3>
-    <p><strong>Combien de personnes proviennent de...</strong></p>
-    <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-        <input type="text" id="dept-code-input" placeholder="Code (ex: 75)" style="width: 120px;">
-        <button type="button" class="btn-add" onclick="addDeptRow()">Ajouter département</button>
-    </div>
-    <div id="dept-rows-container"></div>
 </div>
+
+
+<!-- Question 36 -->
+<div class="question-row">
+  <span>42. Votre ES porte-t-il un restaurant collectif ?</span>
+  <select name="q36_restaurant"
+          onchange="
+            toggleBox('q36_yes', this.value === 'Oui');
+            toggleBox('q36_no', this.value === 'Non');
+          ">
+    <option value="">-- Choisir --</option>
+    <option value="Non">Non</option>
+    <option value="Oui">Oui</option>
+  </select>
+</div>
+
+<div id="q36_yes" class="sub-question-box">
+  <div class="question-row">
+    <span>Le restaurant est-il ouvert le week-end ?</span>
+    <select name="q36_weekend">
+      <option value="">-- Choisir --</option>
+      <option value="Oui">Oui</option>
+      <option value="Non">Non</option>
+    </select>
+  </div>
+</div>
+
+<div id="q36_no" class="sub-question-box">
+  <div class="question-row">
+    <span>Une restauration est-elle prévue à l'externe ?</span>
+    <select name="q36_externe"
+            onchange="toggleBox('q36_no_ext_yes', this.value === 'Oui')">
+      <option value="">-- Choisir --</option>
+      <option value="Non">Non</option>
+      <option value="Oui">Oui</option>
+    </select>
+  </div>
+
+  <div id="q36_no_ext_yes" class="sub-question-box">
+    <div class="question-row">
+      <span>Avec participation financière de l'ES ?</span>
+      <select name="q36_participation">
+        <option value="">-- Choisir --</option>
+        <option value="Oui">Oui</option>
+        <option value="Non">Non</option>
+      </select>
+    </div>
+  </div>
+</div>
+
+<div class="question-row">
+  <span>43. Votre ES porte-t-il un coin cuisine à disposition ?</span>
+  <select name="q37_cuisine"
+          onchange="toggleBox('q37_yes', this.value === 'Oui')">
+    <option value="">-- Choisir --</option>
+    <option value="Non">Non</option>
+    <option value="Oui">Oui</option>
+  </select>
+</div>
+
+<div id="q37_yes" class="sub-question-box">
+  <div class="question-row">
+    <span>Le coin cuisine est-il ouvert le week-end ?</span>
+    <select name="q37_weekend">
+      <option value="">-- Choisir --</option>
+      <option value="Oui">Oui</option>
+      <option value="Non">Non</option>
+    </select>
+  </div>
+</div>
+</div> <!-- fin setup-zone -->
+<div class="setup-zone">
+    <strong>5. Rémunération & environnement</strong>
+    <div class="question-row"><span>51. Traitement rémunération délégué à un opérateur ?</span><select name="q40_remuneration" onchange="toggleBox('sub-40', this.value === 'Oui')"><option value="">-- Choisir --</option><option value="Non">Non</option><option value="Oui">Oui</option></select></div>
+    <div id="sub-40" class="sub-question-box"><span>Nom de l'opérateur :</span><input type="text" name="q40_operateur"></div>
+    <div class="question-row">
+        <span>52. Nombre d'ESAT sur le département ?</span>
+        <div style="width:100%;">
+            <select name="q41_esat"><option value="">-- Choisir --</option><option>1-5</option><option>6-10</option><option>au-delà</option></select>
+            <div id="note-q41-esat" class="volet-subtitle"></div>
+        </div>
+    </div>
+    <div class="question-row">
+        <span>53. Nombre d'EA sur le département ?</span>
+        <div style="width:100%;">
+            <select name="q42_ea"><option value="">-- Choisir --</option><option>1-5</option><option>6-10</option><option>au-delà</option></select>
+            <div id="note-q42-ea" class="volet-subtitle"></div>
+        </div>
+    </div>
+    <div class="question-row">
+        <span>54. Nombre d'EI sur le département ?</span>
+        <div style="width:100%;">
+            <select name="q43_ei"><option value="">-- Choisir --</option><option>1-5</option><option>6-10</option><option>au-delà</option></select>
+            <div id="note-q43-ei" class="volet-subtitle"></div>
+        </div>
+    </div>
+</div> <!-- fin setup-zone -->
+<div class="setup-zone">
+    <strong>6. Participez-vous à ces instances ?</strong>   
+    <div class="question-row"><span>61. Commissions Communales d'Action Sociale (CCAS) ?</span><select name="q44_ccas"><option value="">-- Choisir --</option><option>Oui</option><option>Non</option></select></div>
+    <div class="question-row"><span>62. Communauté Professionnelle Territoire de Santé (CPTS) ?</span><select name="q45_cpts"><option value="">-- Choisir --</option><option>Oui</option><option>Non</option></select></div>
+    <div class="question-row"><span>63. Communauté Psychiatrique de Territoire (CPT) ?</span><select name="q46_cpt" onchange="toggleBox('sub-46', this.value === 'Non')"><option value="">-- Choisir --</option><option value="Oui">Oui</option><option value="Non">Non</option></select></div>
+    <div id="sub-46" class="sub-question-box"><span>Le réseau Fagerh est-il représenté ?</span><select name="q46_fagerh"><option value="">-- Choisir --</option><option>Oui</option><option>Non</option></select></div>
+    <div class="question-row"><span>64. Comité Local de Santé Mentale (CLSM) ?</span><select name="q47_clsm" onchange="toggleBox('sub-47', this.value === 'Non')"><option value="">-- Choisir --</option><option value="Oui">Oui</option><option value="Non">Non</option></select></div>
+    <div id="sub-47" class="sub-question-box"><span>Le réseau Fagerh est-il représenté ?</span><select name="q47_fagerh"><option value="">-- Choisir --</option><option>Oui</option><option>Non</option></select></div>
+    <div class="question-row"><span>65. Comité Local pour l'Emploi (CLE) ?</span><select name="q48_cle" onchange="toggleBox('sub-48', this.value === 'Non')"><option value="">-- Choisir --</option><option value="Oui">Oui</option><option value="Non">Non</option></select></div>
+    <div id="sub-48" class="sub-question-box"><span>Le réseau Fagerh est-il représenté ?</span><select name="q48_fagerh"><option value="">-- Choisir --</option><option>Oui</option><option>Non</option></select></div>
+    <div class="question-row"><span>66. Comité Régional pour l'Emploi (CRE) ?</span><select name="q49_cre" onchange="toggleBox('sub-49', this.value === 'Non')"><option value="">-- Choisir --</option><option value="Oui">Oui</option><option value="Non">Non</option></select></div>
+    <div id="sub-49" class="sub-question-box"><span>Le réseau Fagerh est-il représenté ?</span><select name="q49_fagerh"><option value="">-- Choisir --</option><option>Oui</option><option>Non</option></select></div>
+    <div class="question-row"><span>67. Comité local FIPHFP ?</span><select name="q50_fiphfp" onchange="toggleBox('sub-50', this.value === 'Non')"><option value="">-- Choisir --</option><option value="Oui">Oui</option><option value="Non">Non</option></select></div>
+    <div id="sub-50" class="sub-question-box"><span>Le réseau Fagerh est-il représenté ?</span><select name="q50_fagerh"><option value="">-- Choisir --</option><option>Oui</option><option>Non</option></select></div>
+    <div class="question-row"><span>68. Comité local PLITH/PRITH ?</span><select name="q51_plith" onchange="toggleBox('sub-51', this.value === 'Non')"><option value="">-- Choisir --</option><option value="Oui">Oui</option><option value="Non">Non</option></select></div>
+    <div id="sub-51" class="sub-question-box"><span>Le réseau Fagerh est-il représenté ?</span><select name="q51_fagerh"><option value="">-- Choisir --</option><option>Oui</option><option>Non</option></select></div>
+    <div class="question-row">
+    <span>69. Autre instance ?</span>
+    <select name="q52_autre"
+            onchange="toggleBox('sub-52', this.value === 'Oui')">
+        <option value="">-- Choisir --</option>
+        <option value="Non">Non</option>
+        <option value="Oui">Oui</option>
+    </select>
+</div>
+
+<div id="sub-52" class="sub-question-box">
+    <div class="question-row">
+        <span>Laquelle ?</span>
+        <input type="text" name="q52_autre_precision" placeholder="Précisez l'instance">
+    </div>
+</div>
+</div> <!-- fin setup-zone -->
+   <div class="question-row" style="background:#f0f9ff; border: 1px solid var(--fagerh-light); border-radius: 8px; padding:15px">
+        <strong>L'AFPA est-elle présente sur votre territoire ?</strong>
+        <select name="q53_afpa"><option value="">-- Choisir --</option><option value="Non">Non</option><option value="Oui">Oui</option></select>
+    </div>
+
+    <div class="card prestations-details-card" id="prestations-details-card">
+        <h2>Prestations délivrées dans le cadre des ORP CDAPH</h2>
+        <div class="setup-zone">
+            <strong>Formulaires sélectionnés</strong>
+            <p class="volet-subtitle">Les blocs ci-dessous correspondent aux prestations cochées plus haut.</p>
+            <div class="control-bar" style="position: static; margin-top: 8px;">
+                <span>Prestations sélectionnées : <span id="pd-total-selected">0</span> | Bénéficiaires cumulés : <span id="pd-total-benef">0</span> | Journées HLM cumulées : <span id="pd-total-hlm-days">0</span> | Nuitées cumulées : <span id="pd-total-nuits">0</span></span>
+            </div>
+            <div id="prestations-detail-blocks" style="margin-top: 12px;"></div>
+        </div>
+    </div>
 
 <div class="card">
-    <h2>10. Prestations directes réalisées (Détail par parcours)</h2>
-    <div class="table-10-container">
-        <table class="table-10">
-            <thead>
-                <tr>
-                    <th rowspan="3" style="width: 200px; text-align: left; background: #ecf0f1;">Prestations</th>
-                    <th colspan="6">Dont, combien en présentiel ?</th>
-                    <th colspan="3" rowspan="2">Accompagnés hors les murs ?</th>
-                    <th colspan="2" rowspan="2">Hébergées ?</th>
-                </tr>
-                <tr>
-                    <th colspan="2">En présentiel ?</th>
-                    <th colspan="2">Format hybride</th>
-                    <th colspan="2">En distanciel ?</th>
-                </tr>
-                <tr>
-                    <th>T. Complet</th><th>T. Partiel</th>
-                    <th>T. Complet</th><th>T. Partiel</th>
-                    <th>T. Complet</th><th>T. Partiel</th>
-                    <th>T. Complet</th><th>T. Partiel</th><th>Journées</th>
-                    <th>Pers.</th><th>Journées</th>
-                </tr>
-            </thead>
-            <tbody id="prestations-tbody">
-                <tr data-row="espo"><td style="text-align: left;"><strong>D'une Orientation en ESPO</strong></td><td><input type="number" data-col="pres_c"></td><td><input type="number" data-col="pres_p"></td><td><input type="number" data-col="hyb_c"></td><td><input type="number" data-col="hyb_p"></td><td><input type="number" data-col="dist_c"></td><td><input type="number" data-col="dist_p"></td><td><input type="number" data-col="hlm_c"></td><td><input type="number" data-col="hlm_p"></td><td><input type="number" data-col="hlm_j"></td><td><input type="number" data-col="heb_p"></td><td><input type="number" data-col="heb_j"></td></tr>
-                <tr data-row="sociopro"><td style="text-align: left;"><strong>D'un parcours Socio Professionnel</strong></td><td><input type="number" data-col="pres_c"></td><td><input type="number" data-col="pres_p"></td><td><input type="number" data-col="hyb_c"></td><td><input type="number" data-col="hyb_p"></td><td><input type="number" data-col="dist_c"></td><td><input type="number" data-col="dist_p"></td><td><input type="number" data-col="hlm_c"></td><td><input type="number" data-col="hlm_p"></td><td><input type="number" data-col="hlm_j"></td><td><input type="number" data-col="heb_p"></td><td><input type="number" data-col="heb_j"></td></tr>
-                <tr data-row="sociopro_projet"><td style="text-align: left; padding-left: 30px;">dont projet professionnel*</td><td><input type="number" data-col="pres_c"></td><td><input type="number" data-col="pres_p"></td><td><input type="number" data-col="hyb_c"></td><td><input type="number" data-col="hyb_p"></td><td><input type="number" data-col="dist_c"></td><td><input type="number" data-col="dist_p"></td><td><input type="number" data-col="hlm_c"></td><td><input type="number" data-col="hlm_p"></td><td><input type="number" data-col="hlm_j"></td><td><input type="number" data-col="heb_p"></td><td><input type="number" data-col="heb_j"></td></tr>
-                <tr data-row="sociopro_emploi"><td style="text-align: left; padding-left: 30px;">dont accès à l'emploi**</td><td><input type="number" data-col="pres_c"></td><td><input type="number" data-col="pres_p"></td><td><input type="number" data-col="hyb_c"></td><td><input type="number" data-col="hyb_p"></td><td><input type="number" data-col="dist_c"></td><td><input type="number" data-col="dist_p"></td><td><input type="number" data-col="hlm_c"></td><td><input type="number" data-col="hlm_p"></td><td><input type="number" data-col="hlm_j"></td><td><input type="number" data-col="heb_p"></td><td><input type="number" data-col="heb_j"></td></tr>
-                <tr data-row="autre"><td style="text-align: left;"><strong>Autre type (FLE, réentrainement...)</strong></td><td><input type="number" data-col="pres_c"></td><td><input type="number" data-col="pres_p"></td><td><input type="number" data-col="hyb_c"></td><td><input type="number" data-col="hyb_p"></td><td><input type="number" data-col="dist_c"></td><td><input type="number" data-col="dist_p"></td><td><input type="number" data-col="hlm_c"></td><td><input type="number" data-col="hlm_p"></td><td><input type="number" data-col="hlm_j"></td><td><input type="number" data-col="heb_p"></td><td><input type="number" data-col="heb_j"></td></tr>
-                <tr data-row="qualifiant"><td style="text-align: left;"><strong>D'un parcours Qualifiant</strong></td><td><input type="number" data-col="pres_c"></td><td><input type="number" data-col="pres_p"></td><td><input type="number" data-col="hyb_c"></td><td><input type="number" data-col="hyb_p"></td><td><input type="number" data-col="dist_c"></td><td><input type="number" data-col="dist_p"></td><td><input type="number" data-col="hlm_c"></td><td><input type="number" data-col="hlm_p"></td><td><input type="number" data-col="hlm_j"></td><td><input type="number" data-col="heb_p"></td><td><input type="number" data-col="heb_j"></td></tr>
-                <tr data-row="qualifiant_base"><td style="text-align: left; padding-left: 30px;">Formation / mise à niveau base</td><td><input type="number" data-col="pres_c"></td><td><input type="number" data-col="pres_p"></td><td><input type="number" data-col="hyb_c"></td><td><input type="number" data-col="hyb_p"></td><td><input type="number" data-col="dist_c"></td><td><input type="number" data-col="dist_p"></td><td><input type="number" data-col="hlm_c"></td><td><input type="number" data-col="hlm_p"></td><td><input type="number" data-col="hlm_j"></td><td><input type="number" data-col="heb_p"></td><td><input type="number" data-col="heb_j"></td></tr>
-                <tr data-row="qualifiant_pro"><td style="text-align: left; padding-left: 30px;">Formation professionnalisante</td><td><input type="number" data-col="pres_c"></td><td><input type="number" data-col="pres_p"></td><td><input type="number" data-col="hyb_c"></td><td><input type="number" data-col="hyb_p"></td><td><input type="number" data-col="dist_c"></td><td><input type="number" data-col="dist_p"></td><td><input type="number" data-col="hlm_c"></td><td><input type="number" data-col="hlm_p"></td><td><input type="number" data-col="hlm_j"></td><td><input type="number" data-col="heb_p"></td><td><input type="number" data-col="heb_j"></td></tr>
-                <tr data-row="qualifiant_certif"><td style="text-align: left; padding-left: 30px;">Formation certifiante / diplômante</td><td><input type="number" data-col="pres_c"></td><td><input type="number" data-col="pres_p"></td><td><input type="number" data-col="hyb_c"></td><td><input type="number" data-col="hyb_p"></td><td><input type="number" data-col="dist_c"></td><td><input type="number" data-col="dist_p"></td><td><input type="number" data-col="hlm_c"></td><td><input type="number" data-col="hlm_p"></td><td><input type="number" data-col="hlm_j"></td><td><input type="number" data-col="heb_p"></td><td><input type="number" data-col="heb_j"></td></tr>
-                <tr data-row="accomp_pro"><td style="text-align: left;"><strong>Formation accompagnée pro.</strong></td><td><input type="number" data-col="pres_c"></td><td><input type="number" data-col="pres_p"></td><td><input type="number" data-col="hyb_c"></td><td><input type="number" data-col="hyb_p"></td><td><input type="number" data-col="dist_c"></td><td><input type="number" data-col="dist_p"></td><td><input type="number" data-col="hlm_c"></td><td><input type="number" data-col="hlm_p"></td><td><input type="number" data-col="hlm_j"></td><td><input type="number" data-col="heb_p"></td><td><input type="number" data-col="heb_j"></td></tr>
-                <tr data-row="accomp_certif"><td style="text-align: left;"><strong>Formation accompagnée certifiante</strong></td><td><input type="number" data-col="pres_c"></td><td><input type="number" data-col="pres_p"></td><td><input type="number" data-col="hyb_c"></td><td><input type="number" data-col="hyb_p"></td><td><input type="number" data-col="dist_c"></td><td><input type="number" data-col="dist_p"></td><td><input type="number" data-col="hlm_c"></td><td><input type="number" data-col="hlm_p"></td><td><input type="number" data-col="hlm_j"></td><td><input type="number" data-col="heb_p"></td><td><input type="number" data-col="heb_j"></td></tr>
-            </tbody>
-        </table>
+    <h2>Prestations totales délivrées (Avec ou sans ORP CDAPH)</h2>
+    <div class="setup-zone">
+        <strong>Formulaires par dispositif</strong>
+        <p class="volet-subtitle">Les formulaires ci-dessous s'ouvrent automatiquement selon les dispositifs cochés dans « 1. Effectifs globaux par Dispositif ».</p>
+        <div id="pd-blocks-container"></div>
     </div>
-
 </div>
+
+<template id="pd-block-template">
+    <section class="pd-block" data-pd-block>
+        <div class="card pd-card-themed">
+            <h2>Prestations directes - <span data-pd-type-label></span></h2>
+            <h3>File active & Journées</h3>
+            <div class="question-row"><span>Nombre de personnes accompagnées au 31/12</span><input type="number" min="0" name="q53_accompagnes" class="pd-fileactive-nb"></div>
+            <div class="question-row"><span>Nombre de sorties définitives dans l'année</span><input type="number" name="q54_sorties"></div>
+            <div class="question-row"><span>Journées réalisées en <span data-pd-type-label></span></span><input type="number" min="0" name="q55_journees" class="pd-journees-nb"></div>
+            <div class="question-row" style="background: #fff7e6; font-weight: bold;"><span>Durée moyenne de séjour (jours)</span><span class="pd-dms-display">-</span></div>
+
+            <h3>Public : Genre & Âge</h3>
+            <div class="grid-compact">
+                <div class="grid-item">Hommes <input type="number" name="genre_hommes"></div>
+                <div class="grid-item">Femmes <input type="number" name="genre_femmes"></div>
+                <div class="grid-item">Non-binaires <input type="number" name="genre_nonbinaires"></div>
+            </div>
+            <div class="grid-compact" style="margin-top:10px">
+                <div class="grid-item">16-17 ans <input type="number" name="age_16_17"></div>
+                <div class="grid-item">18-19 ans <input type="number" name="age_18_19"></div>
+                <div class="grid-item">20-24 ans <input type="number" name="age_20_24"></div>
+                <div class="grid-item">25-29 ans <input type="number" name="age_25_29"></div>
+                <div class="grid-item">30-34 ans <input type="number" name="age_30_34"></div>
+                <div class="grid-item">35-39 ans <input type="number" name="age_35_39"></div>
+                <div class="grid-item">40-44 ans <input type="number" name="age_40_44"></div>
+                <div class="grid-item">45-49 ans <input type="number" name="age_45_49"></div>
+                <div class="grid-item">50-54 ans <input type="number" name="age_50_54"></div>
+                <div class="grid-item">60 ans et + <input type="number" name="age_60_plus"></div>
+            </div>
+
+            <h3>Public : Niveau de formation à l'entrée</h3>
+            <div class="grid-compact">
+                <div class="grid-item">Niveau 2 (CEP, sans formation) <input type="number" name="formation_niveau2"></div>
+                <div class="grid-item">Niveau 3 (CAP, BEP) <input type="number" name="formation_niveau3"></div>
+                <div class="grid-item">Niveau 4 (Bac, Bac pro) <input type="number" name="formation_niveau4"></div>
+                <div class="grid-item">Niveau 5 (Bac +2, BTS) <input type="number" name="formation_niveau5"></div>
+                <div class="grid-item">Niveau 6 (Bac +3, Bac +4) <input type="number" name="formation_niveau6"></div>
+                <div class="grid-item">Niveau 7 (Bac +5) <input type="number" name="formation_niveau7"></div>
+            </div>
+
+            <h3>Public : Handicap</h3>
+            <p><strong>De combien de pathologies les personnes portaient-elles ?</strong></p>
+            <div class="grid-compact">
+                <div class="grid-item">1 pathologie <input type="number" name="pathologies_1"></div>
+                <div class="grid-item">2 pathologies <input type="number" name="pathologies_2"></div>
+                <div class="grid-item">3 pathologies et plus <input type="number" name="pathologies_3plus"></div>
+                <div class="grid-item">Non connu <input type="number" name="pathologies_inconnu"></div>
+            </div>
+            <p style="margin-top:15px"><strong>Handicap Principal / Associé</strong></p>
+            <table class="handicap-matrix">
+                <thead>
+                    <tr>
+                        <th>Type de handicap</th>
+                        <th>Principal</th>
+                        <th>Associé</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>Déficiences intellectuelles</td><td><input type="number" name="handicap_intellectuelles_p"></td><td><input type="number" name="handicap_intellectuelles_a"></td></tr>
+                    <tr><td>Autisme et autres TED</td><td><input type="number" name="handicap_autisme_p"></td><td><input type="number" name="handicap_autisme_a"></td></tr>
+                    <tr><td>Troubles psychiques</td><td><input type="number" name="handicap_psychiques_p"></td><td><input type="number" name="handicap_psychiques_a"></td></tr>
+                    <tr><td>Troubles langage/apprentissages</td><td><input type="number" name="handicap_langage_p"></td><td><input type="number" name="handicap_langage_a"></td></tr>
+                    <tr><td>Déficiences auditives</td><td><input type="number" name="handicap_auditives_p"></td><td><input type="number" name="handicap_auditives_a"></td></tr>
+                    <tr><td>Déficiences visuelles</td><td><input type="number" name="handicap_visuelles_p"></td><td><input type="number" name="handicap_visuelles_a"></td></tr>
+                    <tr><td>Déficiences motrices</td><td><input type="number" name="handicap_motrices_p"></td><td><input type="number" name="handicap_motrices_a"></td></tr>
+                    <tr><td>Déf. métaboliques/nutritionnelles</td><td><input type="number" name="handicap_metaboliques_p"></td><td><input type="number" name="handicap_metaboliques_a"></td></tr>
+                    <tr><td>Cérébro-lésions</td><td><input type="number" name="handicap_cerebrolesions_p"></td><td><input type="number" name="handicap_cerebrolesions_a"></td></tr>
+                    <tr><td>Polyhandicap</td><td><input type="number" name="handicap_polyhandicap_p"></td><td><input type="number" name="handicap_polyhandicap_a"></td></tr>
+                    <tr><td>TCC (comportement/com.)</td><td><input type="number" name="handicap_tcc_p"></td><td><input type="number" name="handicap_tcc_a"></td></tr>
+                    <tr><td>Diagnostics en cours</td><td><input type="number" name="handicap_diagnostics_p"></td><td><input type="number" name="handicap_diagnostics_a"></td></tr>
+                    <tr><td>Autres types de déficiences</td><td><input type="number" name="handicap_autres_p"></td><td><input type="number" name="handicap_autres_a"></td></tr>
+                </tbody>
+            </table>
+            <p style="margin-top:15px"><strong>Origine du handicap</strong></p>
+            <div class="grid-compact">
+                <div class="grid-item">Congénitale <input type="number" name="origine_congenitale"></div>
+                <div class="grid-item">Maladie <input type="number" name="origine_maladie"></div>
+                <div class="grid-item">Accident de vie privée <input type="number" name="origine_accident_vie"></div>
+                <div class="grid-item">Accident travail / Pro <input type="number" name="origine_accident_travail"></div>
+                <div class="grid-item">Maladie Professionnelle <input type="number" name="origine_maladie_pro"></div>
+                <div class="grid-item">Autres <input type="number" name="origine_autres"></div>
+                <div class="grid-item">Non connue <input type="number" name="origine_inconnue"></div>
+            </div>
+
+            <div class="sub-question-box" style="display:block; margin-top:20px">
+                <strong>Origine de la lésion cérébrale (<span data-pd-type-label></span>)</strong>
+                <div class="grid-compact" style="margin-top:10px">
+                    <div class="grid-item">Traumatisme crânien <input type="number" name="lesion_traumatisme"></div>
+                    <div class="grid-item">AVC <input type="number" name="lesion_avc"></div>
+                    <div class="grid-item">Tumeur cérébrale <input type="number" name="lesion_tumeur"></div>
+                    <div class="grid-item">Epilepsie <input type="number" name="lesion_epilepsie"></div>
+                    <div class="grid-item">Autres pathologies neuro <input type="number" name="lesion_autres"></div>
+                    <div class="grid-item">Non connue <input type="number" name="lesion_inconnue"></div>
+                </div>
+            </div>
+
+            <h3>Public : Situation à l'entrée</h3>
+            <div class="question-row"><span>En emploi du secteur privé ?</span><input type="number" name="entree_emploi_prive"></div>
+            <div class="question-row indent-1" data-show-if="entree_emploi_prive"><span>- dont en entreprises adaptées</span><input type="number" name="entree_emploi_prive_ea"></div>
+            <div class="question-row indent-1" data-show-if="entree_emploi_prive"><span>- dont en alternance</span><input type="number" name="entree_emploi_prive_alternance"></div>
+            <div class="question-row"><span>En emploi secteur public ?</span><input type="number" name="entree_emploi_public"></div>
+            <div class="question-row indent-1" data-show-if="entree_emploi_public"><span>- dont de la FPT (Territoriale)</span><input type="number" name="entree_fpt"></div>
+            <div class="question-row indent-2" data-show-if="entree_fpt"><span>- dont contractuels</span><input type="number" name="entree_fpt_contractuels"></div>
+            <div class="question-row indent-2" data-show-if="entree_fpt"><span>- dont alternance</span><input type="number" name="entree_fpt_alternance"></div>
+            <div class="question-row indent-1" data-show-if="entree_emploi_public"><span>- dont de la FPH (Hospitalière)</span><input type="number" name="entree_fph"></div>
+            <div class="question-row indent-2" data-show-if="entree_fph"><span>- dont contractuels</span><input type="number" name="entree_fph_contractuels"></div>
+            <div class="question-row indent-2" data-show-if="entree_fph"><span>- dont alternance</span><input type="number" name="entree_fph_alternance"></div>
+            <div class="question-row indent-1" data-show-if="entree_emploi_public"><span>- dont de la FPE (État)</span><input type="number" name="entree_fpe"></div>
+            <div class="question-row indent-2" data-show-if="entree_fpe"><span>- dont contractuels</span><input type="number" name="entree_fpe_contractuels"></div>
+            <div class="question-row indent-2" data-show-if="entree_fpe"><span>- dont alternance</span><input type="number" name="entree_fpe_alternance"></div>
+            <div class="question-row"><span>Activité non salariée (Indépendants, Service civique)</span><input type="number" name="entree_non_salarie"></div>
+            <div class="question-row"><span>Travailleurs d'ESAT</span><input type="number" name="entree_esat"></div>
+            <div class="question-row"><span>Sans emploi ?</span><input type="number" name="entree_sans_emploi"></div>
+            <div class="grid-compact indent-1" data-show-if="entree_sans_emploi">
+                <div class="grid-item">Depuis moins d'un an <input type="number" name="entree_sans_emploi_moins1an"></div>
+                <div class="grid-item">Entre 1 et 2 ans <input type="number" name="entree_sans_emploi_1_2ans"></div>
+                <div class="grid-item">Plus de 2 ans <input type="number" name="entree_sans_emploi_plus2ans"></div>
+            </div>
+            <div class="question-row"><span>N'avaient jamais travaillé</span><input type="number" name="entree_jamais_travaille"></div>
+            <div class="question-row"><span>En formation</span><input type="number" name="entree_formation"></div>
+
+            <h3>Public : Ressources à l'entrée</h3>
+            <p><strong>Quelle était la ressource principale avant l'entrée ?</strong></p>
+            <div class="grid-compact">
+                <div class="grid-item">Rémunération <input type="number" name="ressources_remuneration"></div>
+                <div class="grid-item">AAH <input type="number" name="ressources_aah"></div>
+                <div class="grid-item">Allocations chômage <input type="number" name="ressources_chomage"></div>
+                <div class="grid-item">RSA <input type="number" name="ressources_rsa"></div>
+                <div class="grid-item">Indemnités Journalières <input type="number" name="ressources_ij"></div>
+                <div class="grid-item">Rentes AT/MP / Pension inval <input type="number" name="ressources_rentes"></div>
+                <div class="grid-item">Autres <input type="number" name="ressources_autres"></div>
+                <div class="grid-item">Aucune <input type="number" name="ressources_aucune"></div>
+                <div class="grid-item">Ne sait pas <input type="number" name="ressources_inconnu"></div>
+            </div>
+
+            <h3>Absentéisme</h3>
+            <div class="question-row"><span>Nombre d'heures d'absence total</span><input type="number" name="abs_heures" class="pd-abs-h"></div>
+            <div class="question-row"><span>Nombre d'heures théoriques travaillées</span><input type="number" name="abs_heures_theoriques" class="pd-theo-h"></div>
+            <div class="question-row" style="background: #fff7e6; font-weight: bold;"><span>Taux d'absentéisme calculé :</span><span class="pd-taux-abs-display">0.00 %</span></div>
+
+            <h3>Sorties & Suspensions</h3>
+            <p><strong>Combien de personnes sont sorties définitivement avant le terme ?</strong></p>
+            <div class="question-row"><span>Nombre de sorties anticipées</span><input type="number" name="sorties_anticipees"></div>
+            <p style="margin-top:15px" data-show-if="sorties_anticipees"><strong>Quelle en a été la raison ?</strong></p>
+            <div class="grid-compact" data-show-if="sorties_anticipees">
+                <div class="grid-item">Départ volontaire <input type="number" name="sorties_raison_volontaire"></div>
+                <div class="grid-item">Raisons de santé <input type="number" name="sorties_raison_sante"></div>
+                <div class="grid-item">Réorientation <input type="number" name="sorties_raison_reorientation"></div>
+                <div class="grid-item">Raison disciplinaire <input type="number" name="sorties_raison_disciplinaire"></div>
+                <div class="grid-item">Atteinte de l'objectif <input type="number" name="sorties_raison_objectif"></div>
+                <div class="grid-item">Emploi <input type="number" name="sorties_raison_emploi"></div>
+                <div class="grid-item">Raison non connue <input type="number" name="sorties_raison_inconnue"></div>
+                <div class="grid-item">Autres, précisez : <input type="text" name="sorties_raison_autres" style="width: 150px"></div>
+            </div>
+            <p style="margin-top:25px"><strong>Combien de personnes ont connu une suspension de parcours ?</strong></p>
+            <div class="question-row"><span>Nombre de suspensions de parcours</span><input type="number" name="suspensions_nb"></div>
+            <p style="margin-top:15px" data-show-if="suspensions_nb"><strong>Quelle en était la raison ?</strong></p>
+            <div class="grid-compact" data-show-if="suspensions_nb">
+                <div class="grid-item">Raisons de santé non liée au handicap <input type="number" name="suspensions_sante"></div>
+                <div class="grid-item">Évolution du retentissement handicap <input type="number" name="suspensions_handicap"></div>
+                <div class="grid-item">Situation sociale et familiale dégradée <input type="number" name="suspensions_sociale"></div>
+                <div class="grid-item">Parcours contractualisé <input type="number" name="suspensions_parcours"></div>
+                <div class="grid-item">Autres : <input type="text" name="suspensions_autres" style="width: 150px"></div>
+            </div>
+            <div class="question-row" style="margin-top:15px" data-show-if="suspensions_nb"><span>Parmi celles-ci combien ont repris ?</span><input type="number" name="suspensions_reprises"></div>
+
+            <h3>Géographie</h3>
+            <p><strong>Combien de personnes proviennent de...</strong></p>
+            <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                <input type="text" class="pd-dept-code-input" placeholder="Code (ex: 75)" style="width: 120px;">
+                <button type="button" class="btn-add pd-add-dept-btn">Ajouter département</button>
+            </div>
+            <div class="pd-dept-rows-container"></div>
+        </div>
+
+        <div class="card pd-card-themed">
+            <h2>10. Prestations directes réalisées - <span data-pd-type-label></span> (Détail par parcours)</h2>
+            <div class="table-10-container">
+                <table class="table-10">
+                    <thead>
+                        <tr>
+                            <th rowspan="3" style="width: 200px; text-align: left; background: #ecf0f1;">Prestations</th>
+                            <th colspan="6">Dont, combien en présentiel ?</th>
+                            <th colspan="3" rowspan="2">Accompagnés hors les murs ?</th>
+                            <th colspan="2" rowspan="2">Hébergées ?</th>
+                        </tr>
+                        <tr>
+                            <th colspan="2">En présentiel ?</th>
+                            <th colspan="2">Format hybride</th>
+                            <th colspan="2">En distanciel ?</th>
+                        </tr>
+                        <tr>
+                            <th>T. Complet</th><th>T. Partiel</th>
+                            <th>T. Complet</th><th>T. Partiel</th>
+                            <th>T. Complet</th><th>T. Partiel</th>
+                            <th>T. Complet</th><th>T. Partiel</th><th>Journées</th>
+                            <th>Pers.</th><th>Journées</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr data-row="espo" data-pd-section="espo"><td style="text-align: left;"><strong>D'une Orientation en ESPO</strong></td><td><input type="number" data-col="pres_c"></td><td><input type="number" data-col="pres_p"></td><td><input type="number" data-col="hyb_c"></td><td><input type="number" data-col="hyb_p"></td><td><input type="number" data-col="dist_c"></td><td><input type="number" data-col="dist_p"></td><td><input type="number" data-col="hlm_c"></td><td><input type="number" data-col="hlm_p"></td><td><input type="number" data-col="hlm_j"></td><td><input type="number" data-col="heb_p"></td><td><input type="number" data-col="heb_j"></td></tr>
+                        <tr data-row="sociopro" data-pd-section="sociopro"><td style="text-align: left;"><strong>D'un parcours Socio Professionnel</strong></td><td><input type="number" data-col="pres_c"></td><td><input type="number" data-col="pres_p"></td><td><input type="number" data-col="hyb_c"></td><td><input type="number" data-col="hyb_p"></td><td><input type="number" data-col="dist_c"></td><td><input type="number" data-col="dist_p"></td><td><input type="number" data-col="hlm_c"></td><td><input type="number" data-col="hlm_p"></td><td><input type="number" data-col="hlm_j"></td><td><input type="number" data-col="heb_p"></td><td><input type="number" data-col="heb_j"></td></tr>
+                        <tr data-row="sociopro_projet" data-pd-section="sociopro"><td style="text-align: left; padding-left: 30px;">dont projet professionnel*</td><td><input type="number" data-col="pres_c"></td><td><input type="number" data-col="pres_p"></td><td><input type="number" data-col="hyb_c"></td><td><input type="number" data-col="hyb_p"></td><td><input type="number" data-col="dist_c"></td><td><input type="number" data-col="dist_p"></td><td><input type="number" data-col="hlm_c"></td><td><input type="number" data-col="hlm_p"></td><td><input type="number" data-col="hlm_j"></td><td><input type="number" data-col="heb_p"></td><td><input type="number" data-col="heb_j"></td></tr>
+                        <tr data-row="sociopro_emploi" data-pd-section="sociopro"><td style="text-align: left; padding-left: 30px;">dont accès à l'emploi**</td><td><input type="number" data-col="pres_c"></td><td><input type="number" data-col="pres_p"></td><td><input type="number" data-col="hyb_c"></td><td><input type="number" data-col="hyb_p"></td><td><input type="number" data-col="dist_c"></td><td><input type="number" data-col="dist_p"></td><td><input type="number" data-col="hlm_c"></td><td><input type="number" data-col="hlm_p"></td><td><input type="number" data-col="hlm_j"></td><td><input type="number" data-col="heb_p"></td><td><input type="number" data-col="heb_j"></td></tr>
+                        <tr data-row="autre" data-pd-section="autre"><td style="text-align: left;"><strong>Autre type (FLE, réentrainement...)</strong></td><td><input type="number" data-col="pres_c"></td><td><input type="number" data-col="pres_p"></td><td><input type="number" data-col="hyb_c"></td><td><input type="number" data-col="hyb_p"></td><td><input type="number" data-col="dist_c"></td><td><input type="number" data-col="dist_p"></td><td><input type="number" data-col="hlm_c"></td><td><input type="number" data-col="hlm_p"></td><td><input type="number" data-col="hlm_j"></td><td><input type="number" data-col="heb_p"></td><td><input type="number" data-col="heb_j"></td></tr>
+                        <tr data-row="qualifiant" data-pd-section="qualif"><td style="text-align: left;"><strong>D'un parcours Qualifiant</strong></td><td><input type="number" data-col="pres_c"></td><td><input type="number" data-col="pres_p"></td><td><input type="number" data-col="hyb_c"></td><td><input type="number" data-col="hyb_p"></td><td><input type="number" data-col="dist_c"></td><td><input type="number" data-col="dist_p"></td><td><input type="number" data-col="hlm_c"></td><td><input type="number" data-col="hlm_p"></td><td><input type="number" data-col="hlm_j"></td><td><input type="number" data-col="heb_p"></td><td><input type="number" data-col="heb_j"></td></tr>
+                        <tr data-row="qualifiant_base" data-pd-section="base"><td style="text-align: left; padding-left: 30px;">Formation / mise à niveau base</td><td><input type="number" data-col="pres_c"></td><td><input type="number" data-col="pres_p"></td><td><input type="number" data-col="hyb_c"></td><td><input type="number" data-col="hyb_p"></td><td><input type="number" data-col="dist_c"></td><td><input type="number" data-col="dist_p"></td><td><input type="number" data-col="hlm_c"></td><td><input type="number" data-col="hlm_p"></td><td><input type="number" data-col="hlm_j"></td><td><input type="number" data-col="heb_p"></td><td><input type="number" data-col="heb_j"></td></tr>
+                        <tr data-row="qualifiant_pro" data-pd-section="formpro"><td style="text-align: left; padding-left: 30px;">Formation professionnalisante</td><td><input type="number" data-col="pres_c"></td><td><input type="number" data-col="pres_p"></td><td><input type="number" data-col="hyb_c"></td><td><input type="number" data-col="hyb_p"></td><td><input type="number" data-col="dist_c"></td><td><input type="number" data-col="dist_p"></td><td><input type="number" data-col="hlm_c"></td><td><input type="number" data-col="hlm_p"></td><td><input type="number" data-col="hlm_j"></td><td><input type="number" data-col="heb_p"></td><td><input type="number" data-col="heb_j"></td></tr>
+                        <tr data-row="qualifiant_certif" data-pd-section="formcertif"><td style="text-align: left; padding-left: 30px;">Formation certifiante / diplômante</td><td><input type="number" data-col="pres_c"></td><td><input type="number" data-col="pres_p"></td><td><input type="number" data-col="hyb_c"></td><td><input type="number" data-col="hyb_p"></td><td><input type="number" data-col="dist_c"></td><td><input type="number" data-col="dist_p"></td><td><input type="number" data-col="hlm_c"></td><td><input type="number" data-col="hlm_p"></td><td><input type="number" data-col="hlm_j"></td><td><input type="number" data-col="heb_p"></td><td><input type="number" data-col="heb_j"></td></tr>
+                        <tr data-row="accomp_pro" data-pd-section="accomppro"><td style="text-align: left;"><strong>Formation accompagnée pro.</strong></td><td><input type="number" data-col="pres_c"></td><td><input type="number" data-col="pres_p"></td><td><input type="number" data-col="hyb_c"></td><td><input type="number" data-col="hyb_p"></td><td><input type="number" data-col="dist_c"></td><td><input type="number" data-col="dist_p"></td><td><input type="number" data-col="hlm_c"></td><td><input type="number" data-col="hlm_p"></td><td><input type="number" data-col="hlm_j"></td><td><input type="number" data-col="heb_p"></td><td><input type="number" data-col="heb_j"></td></tr>
+                        <tr data-row="accomp_certif" data-pd-section="accompcertif"><td style="text-align: left;"><strong>Formation accompagnée certifiante</strong></td><td><input type="number" data-col="pres_c"></td><td><input type="number" data-col="pres_p"></td><td><input type="number" data-col="hyb_c"></td><td><input type="number" data-col="hyb_p"></td><td><input type="number" data-col="dist_c"></td><td><input type="number" data-col="dist_p"></td><td><input type="number" data-col="hlm_c"></td><td><input type="number" data-col="hlm_p"></td><td><input type="number" data-col="hlm_j"></td><td><input type="number" data-col="heb_p"></td><td><input type="number" data-col="heb_j"></td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+</template>
 </form>
 </div><!-- end main-content -->
 
@@ -429,7 +848,12 @@
     // TOGGLE & VISIBILITY
     // =====================================
     function toggleDispo(id, cb) {
-        document.getElementById(id).classList.toggle('hidden', !cb.checked);
+        const box = document.getElementById(id);
+        box.classList.toggle('hidden', !cb.checked);
+        if (!cb.checked) {
+            const input = box.querySelector('input.dispo-val');
+            if (input) input.value = '0';
+        }
     }
     function toggleBox(id, show) {
         document.getElementById(id).style.display = show ? 'block' : 'none';
@@ -447,6 +871,20 @@
             bWE.style.display = 'none'; bExt.style.display = 'none';
         }
     }
+    function sanitizeNonNegative(input) {
+        if (!input) return;
+        const value = parseFloat(input.value);
+        if (!Number.isNaN(value) && value < 0) {
+            input.value = '0';
+        }
+    }
+
+    function ensureNonNegativeNumberInputs(root = document) {
+        root.querySelectorAll('input[type="number"]').forEach((input) => {
+            if (input.min === '') input.min = '0';
+            sanitizeNonNegative(input);
+        });
+    }
 
     // =====================================
     // ETP VALIDATION
@@ -457,6 +895,7 @@
         document.getElementById('total-global-display').innerText = sum.toFixed(1);
         document.getElementById('target-etp').innerText = sum.toFixed(1);
         checkCoherence();
+        syncPdBlocks();
     }
 
     function checkCoherence() {
@@ -464,12 +903,1035 @@
         let current = 0;
         document.querySelectorAll('.metier-val').forEach(i => current += parseFloat(i.value) || 0);
         document.getElementById('current-etp').innerText = current.toFixed(1);
+        const delta = current - target;
+        document.getElementById('delta-etp').innerText = `${delta >= 0 ? '+' : ''}${delta.toFixed(1)}`;
         const st = document.getElementById('status-rh');
-        if (target > 0 && Math.abs(target - current) < 0.01) {
-            st.innerText = "COHÉRENT ✓"; st.style.color = "#2ecc71";
-        } else {
-            st.innerText = "ÉCART ⚠"; st.style.color = "#e74c3c";
+        if (target <= 0) {
+            st.innerText = "AUCUNE CIBLE";
+            st.style.color = "#95a5a6";
+            return;
         }
+        if (Math.abs(delta) < 0.01) {
+            st.innerText = "COHÉRENT";
+            st.style.color = "#2ecc71";
+            return;
+        }
+        if (delta < 0) {
+            st.innerText = "À COMPLÉTER";
+            st.style.color = "#f39c12";
+            return;
+        }
+        st.innerText = "DÉPASSEMENT";
+        st.style.color = "#e74c3c";
+    }
+
+    // =====================================
+    // PRESTATIONS DIRECTES DYNAMIQUES
+    // =====================================
+    const PD_CONFIG = {
+        esrp: { label: 'ESRP', bg: '#eef5ff', border: '#cfdff4', title: '#2f527a' },
+        espo: { label: 'ESPO', bg: '#effaf8', border: '#cde9e3', title: '#2b5c56' },
+        ueros: { label: 'UEROS', bg: '#f4f7ff', border: '#d6def4', title: '#3f4f82' },
+        deac: { label: 'DEAc', bg: '#fff7ef', border: '#f0dcc8', title: '#7b5a3a' },
+    };
+    const pdBlocks = {};
+    const ORP_CHECKBOX_NAMES = [
+        'orp_pec',
+        'orp_autre_eval',
+        'orp_orientation_espo',
+        'orp_parcours_sociopro',
+        'orp_autre_parcours',
+        'orp_parcours_qualif',
+        'orp_remise_niveau',
+        'orp_formation_pro',
+        'orp_formation_certif',
+        'orp_formation_accomp_pro',
+        'orp_formation_accomp_certif',
+    ];
+    // Mapping checkbox ORP -> section(s) Prestations directes à afficher.
+    const ORP_SECTION_BY_CHECKBOX = {
+        orp_orientation_espo: 'pd-espo',
+        orp_parcours_sociopro: 'pd-sociopro',
+        orp_autre_parcours: 'pd-autre',
+        orp_parcours_qualif: 'pd-qualif',
+        orp_remise_niveau: 'pd-base',
+        orp_formation_pro: 'pd-formpro',
+        orp_formation_certif: 'pd-formcertif',
+        orp_formation_accomp_pro: 'pd-accomppro',
+        orp_formation_accomp_certif: 'pd-accompcertif',
+    };
+    let isRestoringOrp = false;
+    const prestationsDetailsState = {};
+    const PRESTATION_DETAIL_DEFS = {
+        orp_pec: { label: 'PEC', device: 'pec' },
+        orp_autre_eval: { label: 'Autre dispositif d’évaluation', device: 'pec', withDuration: true },
+        orp_orientation_espo: { label: 'Orientation ESPO', device: 'espo' },
+        orp_parcours_sociopro: {
+            label: 'Parcours à visée socio-professionnelle',
+            device: 'auto',
+            subgroups: [
+                { key: 'projet', label: "dont préparation d’un projet professionnel" },
+                { key: 'emploi', label: "dont préparation à l’emploi" },
+            ],
+        },
+        orp_autre_parcours: { label: 'Autre type de parcours', device: 'auto' },
+        orp_parcours_qualif: { label: 'Parcours à visée qualifiante', device: 'auto' },
+        orp_remise_niveau: { label: 'Préparation à une formation / remise à niveau des savoirs de base', device: 'auto' },
+        orp_formation_pro: { label: 'Formation professionnalisante (non diplômante)', device: 'auto' },
+        orp_formation_certif: { label: 'Formation certifiante ou diplômante', device: 'auto' },
+        orp_formation_accomp_pro: { label: 'Formation accompagnée professionnalisante (non diplômante)', device: 'auto' },
+        orp_formation_accomp_certif: { label: 'Formation accompagnée certifiante (titre pro ou diplôme)', device: 'auto' },
+    };
+
+    function getSelectedPdTypes() {
+        const selected = [];
+        if (document.querySelector('input[name="check_esrp"]')?.checked) selected.push('esrp');
+        if (document.querySelector('input[name="check_espo"]')?.checked) selected.push('espo');
+        if (document.querySelector('input[name="check_ueros"]')?.checked) selected.push('ueros');
+        if (document.querySelector('input[name="check_deac"]')?.checked) selected.push('deac');
+        return selected;
+    }
+
+    function getOrpCheckbox(name) {
+        return document.querySelector(`input[name="${name}"]`);
+    }
+
+    function isOrpSelected(name) {
+        return !!getOrpCheckbox(name)?.checked;
+    }
+
+    function syncOrpPrecisionVisibility() {
+        const autreEvalChecked = isOrpSelected('orp_autre_eval');
+        const autreEvalBox = document.getElementById('orp-autre-eval-precision-box');
+        const autreEvalInput = document.querySelector('input[name="orp_autre_eval_precision"]');
+        if (autreEvalBox) autreEvalBox.classList.toggle('hidden', !autreEvalChecked);
+        if (autreEvalInput) autreEvalInput.disabled = !autreEvalChecked;
+
+        const autreParcoursChecked = isOrpSelected('orp_autre_parcours');
+        const autreParcoursBox = document.getElementById('orp-autre-parcours-precision-box');
+        const autreParcoursInput = document.querySelector('input[name="orp_autre_parcours_precision"]');
+        if (autreParcoursBox) autreParcoursBox.classList.toggle('hidden', !autreParcoursChecked);
+        if (autreParcoursInput) autreParcoursInput.disabled = !autreParcoursChecked;
+    }
+
+    function collectPrestationsOrp() {
+        const checks = {};
+        ORP_CHECKBOX_NAMES.forEach((name) => {
+            checks[name] = isOrpSelected(name);
+        });
+        const autreEvalChecked = checks.orp_autre_eval;
+        const autreParcoursChecked = checks.orp_autre_parcours;
+        return {
+            pec_select: document.getElementById('pec-select')?.value || '',
+            checks,
+            precision: {
+                orp_autre_eval_precision: autreEvalChecked ? (document.querySelector('input[name="orp_autre_eval_precision"]')?.value || '').trim() : '',
+                orp_autre_parcours_precision: autreParcoursChecked ? (document.querySelector('input[name="orp_autre_parcours_precision"]')?.value || '').trim() : '',
+            },
+        };
+    }
+
+    function restorePrestationsOrp(record) {
+        isRestoringOrp = true;
+        ORP_CHECKBOX_NAMES.forEach((name) => {
+            const cb = getOrpCheckbox(name);
+            if (cb) cb.checked = false;
+        });
+        const evalPrecInput = document.querySelector('input[name="orp_autre_eval_precision"]');
+        const parcoursPrecInput = document.querySelector('input[name="orp_autre_parcours_precision"]');
+        if (evalPrecInput) evalPrecInput.value = '';
+        if (parcoursPrecInput) parcoursPrecInput.value = '';
+
+        if (record.prestations_orp_json) {
+            try {
+                const data = JSON.parse(record.prestations_orp_json);
+                if (data && data.checks) {
+                    ORP_CHECKBOX_NAMES.forEach((name) => {
+                        const cb = getOrpCheckbox(name);
+                        if (cb && typeof data.checks[name] === 'boolean') cb.checked = data.checks[name];
+                    });
+                }
+                if (data?.precision) {
+                    if (evalPrecInput && data.precision.orp_autre_eval_precision) {
+                        evalPrecInput.value = data.precision.orp_autre_eval_precision;
+                    }
+                    if (parcoursPrecInput && data.precision.orp_autre_parcours_precision) {
+                        parcoursPrecInput.value = data.precision.orp_autre_parcours_precision;
+                    }
+                }
+            } catch (e) {
+                console.error('prestations_orp parse error', e);
+            }
+        }
+        syncOrpPrecisionVisibility();
+        updatePrestationsPagesVisibility();
+        renderPrestationsDetailBlocks();
+        isRestoringOrp = false;
+    }
+
+    function refreshOrpUiFromDispositifs() {
+        syncOrpPrecisionVisibility();
+        updatePrestationsPagesVisibility();
+        renderPrestationsDetailBlocks();
+    }
+
+    function getDetailTheme(device) {
+        if (device === 'espo') return 'theme-espo';
+        if (device === 'ueros') return 'theme-ueros';
+        if (device === 'pec') return 'theme-pec';
+        return 'theme-esrp';
+    }
+
+    function resolveDeviceForPrestation(def) {
+        if (def.device && def.device !== 'auto') return def.device;
+        if (document.querySelector('input[name="check_ueros"]')?.checked) return 'ueros';
+        if (document.querySelector('input[name="check_esrp"]')?.checked) return 'esrp';
+        if (document.querySelector('input[name="check_espo"]')?.checked) return 'espo';
+        if (document.getElementById('pec-select')?.value === 'Oui') return 'pec';
+        return 'esrp';
+    }
+
+    function ensurePrestationState(key) {
+        if (!prestationsDetailsState[key]) {
+            prestationsDetailsState[key] = {};
+        }
+        return prestationsDetailsState[key];
+    }
+
+    function getNestedValue(obj, path) {
+        return path.split('.').reduce((acc, part) => (acc ? acc[part] : undefined), obj);
+    }
+
+    function setNestedValue(obj, path, value) {
+        const parts = path.split('.');
+        let cur = obj;
+        for (let i = 0; i < parts.length - 1; i += 1) {
+            if (!cur[parts[i]] || typeof cur[parts[i]] !== 'object') cur[parts[i]] = {};
+            cur = cur[parts[i]];
+        }
+        cur[parts[parts.length - 1]] = value;
+    }
+
+    function renderBeneficiairesMatrix(prefix, state) {
+        const v = (field) => getNestedValue(state, `${prefix}.${field}`) ?? '';
+        return `
+            <table class="table-10" style="min-width: 0; width: 100%;">
+                <thead>
+                    <tr>
+                        <th></th>
+                        <th>Présentiel</th>
+                        <th>Distanciel</th>
+                        <th>Hybride</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td style="text-align:left"><strong>Temps complet</strong></td>
+                        <td><input type="number" min="0" data-detail-field="${prefix}.presentiel_tc" value="${v('presentiel_tc')}"></td>
+                        <td><input type="number" min="0" data-detail-field="${prefix}.distanciel_tc" value="${v('distanciel_tc')}"></td>
+                        <td><input type="number" min="0" data-detail-field="${prefix}.hybride_tc" value="${v('hybride_tc')}"></td>
+                    </tr>
+                    <tr>
+                        <td style="text-align:left"><strong>Temps partiel</strong></td>
+                        <td><input type="number" min="0" data-detail-field="${prefix}.presentiel_tp" value="${v('presentiel_tp')}"></td>
+                        <td><input type="number" min="0" data-detail-field="${prefix}.distanciel_tp" value="${v('distanciel_tp')}"></td>
+                        <td><input type="number" min="0" data-detail-field="${prefix}.hybride_tp" value="${v('hybride_tp')}"></td>
+                    </tr>
+                </tbody>
+            </table>
+        `;
+    }
+
+    function renderBeneficiairesPanel(prefix, state) {
+        return `
+            <div class="prest-details-panel">
+                <h5>Combien de personnes ont bénéficié de cette prestation ?</h5>
+                <div>${renderBeneficiairesMatrix(prefix, state)}</div>
+            </div>
+        `;
+    }
+
+    function renderHorsMursAndHebPanels(prefix, state) {
+        return `
+            <div class="prest-details-panel">
+                <h5>Accompagnés hors les murs</h5>
+                <div class="prest-details-row">
+                    <span>Nombre de personnes</span>
+                    <input type="number" min="0" data-detail-field="${prefix}.hors_murs_personnes" value="${getNestedValue(state, `${prefix}.hors_murs_personnes`) ?? ''}">
+                </div>
+                <div class="prest-details-row">
+                    <span>Nombre de journées total</span>
+                    <input type="number" min="0" data-detail-field="${prefix}.hors_murs_journees" value="${getNestedValue(state, `${prefix}.hors_murs_journees`) ?? ''}">
+                </div>
+            </div>
+            <div class="prest-details-panel">
+                <h5>Hébergées</h5>
+                <div class="prest-details-row">
+                    <span>Nombre de personnes</span>
+                    <input type="number" min="0" data-detail-field="${prefix}.hebergees_personnes" value="${getNestedValue(state, `${prefix}.hebergees_personnes`) ?? ''}">
+                </div>
+                <div class="prest-details-row">
+                    <span>Nombre de nuitées total</span>
+                    <input type="number" min="0" data-detail-field="${prefix}.hebergees_nuitees" value="${getNestedValue(state, `${prefix}.hebergees_nuitees`) ?? ''}">
+                </div>
+            </div>
+        `;
+    }
+
+    function renderAllDetailPanels(prefix, state) {
+        return `
+            <div class="prest-details-panels three">
+                ${renderBeneficiairesPanel(prefix, state)}
+                ${renderHorsMursAndHebPanels(prefix, state)}
+            </div>
+        `;
+    }
+
+    function renderSubgroupDetailPanels(prefix, state) {
+        return `
+            <div class="prest-details-panels">
+                <div class="prest-details-panel">
+                    <h5>Accompagnés hors les murs</h5>
+                    <div class="prest-details-row">
+                        <span>Nombre de personnes</span>
+                        <input type="number" min="0" data-detail-field="${prefix}.hors_murs_personnes" value="${getNestedValue(state, `${prefix}.hors_murs_personnes`) ?? ''}">
+                    </div>
+                    <div class="prest-details-row">
+                        <span>Nombre de journées total</span>
+                        <input type="number" min="0" data-detail-field="${prefix}.hors_murs_journees" value="${getNestedValue(state, `${prefix}.hors_murs_journees`) ?? ''}">
+                    </div>
+                </div>
+                <div class="prest-details-panel">
+                    <h5>Hébergées</h5>
+                    <div class="prest-details-row">
+                        <span>Nombre de personnes</span>
+                        <input type="number" min="0" data-detail-field="${prefix}.hebergees_personnes" value="${getNestedValue(state, `${prefix}.hebergees_personnes`) ?? ''}">
+                    </div>
+                    <div class="prest-details-row">
+                        <span>Nombre de nuitées total</span>
+                        <input type="number" min="0" data-detail-field="${prefix}.hebergees_nuitees" value="${getNestedValue(state, `${prefix}.hebergees_nuitees`) ?? ''}">
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    function resolvePrestationDisplayTitle(key, def) {
+        let title = def.label;
+        if (key === 'orp_autre_eval') {
+            const txt = (document.querySelector('input[name="orp_autre_eval_precision"]')?.value || '').trim();
+            if (txt) title = `${def.label} - ${txt}`;
+        }
+        if (key === 'orp_autre_parcours') {
+            const txt = (document.querySelector('input[name="orp_autre_parcours_precision"]')?.value || '').trim();
+            if (txt) title = `${def.label} - ${txt}`;
+        }
+        return title;
+    }
+
+    function computeTotalsFromState(state, prefix = 'principal') {
+        const safe = (path) => Number(getNestedValue(state, `${prefix}.${path}`) || 0);
+        const benef =
+            safe('presentiel_tc') + safe('presentiel_tp') +
+            safe('distanciel_tc') + safe('distanciel_tp') +
+            safe('hybride_tc') + safe('hybride_tp');
+        return {
+            benef,
+            hlmPersons: safe('hors_murs_personnes'),
+            hlmDays: safe('hors_murs_journees'),
+            hebPersons: safe('hebergees_personnes'),
+            nuits: safe('hebergees_nuitees'),
+        };
+    }
+
+    function sumTotals(a, b) {
+        return {
+            benef: a.benef + b.benef,
+            hlmPersons: a.hlmPersons + b.hlmPersons,
+            hlmDays: a.hlmDays + b.hlmDays,
+            hebPersons: a.hebPersons + b.hebPersons,
+            nuits: a.nuits + b.nuits,
+        };
+    }
+
+    function zeroTotals() {
+        return { benef: 0, hlmPersons: 0, hlmDays: 0, hebPersons: 0, nuits: 0 };
+    }
+
+    const SOCIOPRO_CONSISTENCY_FIELDS = [
+        { path: 'presentiel_tc', label: 'Présentiel - Temps complet' },
+        { path: 'presentiel_tp', label: 'Présentiel - Temps partiel' },
+        { path: 'distanciel_tc', label: 'Distanciel - Temps complet' },
+        { path: 'distanciel_tp', label: 'Distanciel - Temps partiel' },
+        { path: 'hybride_tc', label: 'Hybride - Temps complet' },
+        { path: 'hybride_tp', label: 'Hybride - Temps partiel' },
+        { path: 'hors_murs_personnes', label: 'Accompagnés hors les murs - Nombre de personnes' },
+        { path: 'hors_murs_journees', label: 'Accompagnés hors les murs - Nombre de journées total' },
+        { path: 'hebergees_personnes', label: 'Hébergées - Nombre de personnes' },
+        { path: 'hebergees_nuitees', label: 'Hébergées - Nombre de nuitées total' },
+    ];
+
+    function validateSocioproConsistencyState(state) {
+        if (!state || typeof state !== 'object') return { valid: true, issues: [] };
+
+        const issues = [];
+        SOCIOPRO_CONSISTENCY_FIELDS.forEach(({ path, label }) => {
+            const principal = Number(getNestedValue(state, `principal.${path}`) || 0);
+            const projet = Number(getNestedValue(state, `subgroups.projet.${path}`) || 0);
+            const emploi = Number(getNestedValue(state, `subgroups.emploi.${path}`) || 0);
+            const subTotal = projet + emploi;
+            if (subTotal > principal) {
+                issues.push({ label, principal, subTotal });
+            }
+        });
+        return { valid: issues.length === 0, issues };
+    }
+
+    function updateSocioproConsistencyUI(block) {
+        if (!block || block.dataset.prestationKey !== 'orp_parcours_sociopro') return true;
+        const msg = block.querySelector('[data-sociopro-consistency]');
+        if (!msg) return true;
+        const state = ensurePrestationState('orp_parcours_sociopro');
+        const check = validateSocioproConsistencyState(state);
+        msg.classList.remove('hidden');
+        msg.classList.remove('ok');
+        if (check.valid) {
+            msg.classList.add('ok');
+            msg.innerHTML = '<strong>Contrôle de cohérence :</strong> OK';
+            return true;
+        }
+        const lines = check.issues.map((it) => `${it.label}: sous-parties ${it.subTotal} > global ${it.principal}`);
+        msg.innerHTML = `<strong>Incohérence socio-professionnelle.</strong><br>${lines.join('<br>')}`;
+        return false;
+    }
+
+    function validateSocioproConsistencyBeforeSave(showFeedback = false) {
+        if (!isOrpSelected('orp_parcours_sociopro')) return true;
+        const block = document.querySelector('[data-prestation-key="orp_parcours_sociopro"]');
+        const ok = updateSocioproConsistencyUI(block);
+        if (!ok && showFeedback) {
+            gristForm.showStatus("Incohérence dans 'Parcours à visée socio-professionnelle': la somme des sous-parties doit être inférieure ou égale au bloc global.", 'error');
+        }
+        return ok;
+    }
+
+    function buildPrestationDetailBlock(key) {
+        const def = PRESTATION_DETAIL_DEFS[key];
+        const state = ensurePrestationState(key);
+        const device = resolveDeviceForPrestation(def);
+        const block = document.createElement('div');
+        block.className = 'prest-details-block';
+        block.dataset.prestationKey = key;
+
+        const title = resolvePrestationDisplayTitle(key, def);
+
+        let html = `<h4>${title}</h4>`;
+        if (key === 'orp_parcours_sociopro') {
+            html += `<div class="consistency-help">Règle de cohérence: pour chaque indicateur, la somme des deux sous-parties doit être inférieure ou égale à la valeur du bloc global.</div>`;
+            html += `<div class="consistency-msg" data-sociopro-consistency><strong>Contrôle de cohérence :</strong> OK</div>`;
+        }
+        if (def.withDuration) {
+            const duree = state.duree_jours ?? '';
+            html += `<div class="prest-details-row" style="margin-bottom:10px;"><span>Durée (en nombre de jours)</span><input type="number" min="0" data-detail-field="duree_jours" value="${duree}"></div>`;
+        }
+
+        html += renderAllDetailPanels('principal', state);
+
+        if (Array.isArray(def.subgroups)) {
+            def.subgroups.forEach((sub) => {
+                html += `<div class="prest-details-sub"><p><strong>${sub.label}</strong></p>`;
+                html += `<div>${renderBeneficiairesMatrix(`subgroups.${sub.key}`, state)}</div>`;
+                html += renderSubgroupDetailPanels(`subgroups.${sub.key}`, state);
+                html += `</div>`;
+            });
+        }
+
+        html += `
+            <div class="control-bar" style="position: static; margin-top: 12px;">
+                <span>
+                    Total bénéficiaires : <span data-total-benef>0</span> |
+                    Hors les murs (pers.) : <span data-total-hlm-persons>0</span> |
+                    Hors les murs (journées) : <span data-total-hlm-days>0</span> |
+                    Hébergées (pers.) : <span data-total-heb-persons>0</span> |
+                    Nuitées : <span data-total-nuits>0</span>
+                </span>
+            </div>
+        `;
+
+        block.innerHTML = html;
+        return block;
+    }
+
+    function updatePrestationBlockTotals(block) {
+        const key = block.dataset.prestationKey;
+        const def = PRESTATION_DETAIL_DEFS[key];
+        const state = ensurePrestationState(key);
+        let totals = computeTotalsFromState(state, 'principal');
+        if (Array.isArray(def.subgroups)) {
+            def.subgroups.forEach((sub) => {
+                totals = sumTotals(totals, computeTotalsFromState(state, `subgroups.${sub.key}`));
+            });
+        }
+        const set = (selector, val) => {
+            const el = block.querySelector(selector);
+            if (el) el.textContent = String(val);
+        };
+        set('[data-total-benef]', totals.benef);
+        set('[data-total-hlm-persons]', totals.hlmPersons);
+        set('[data-total-hlm-days]', totals.hlmDays);
+        set('[data-total-heb-persons]', totals.hebPersons);
+        set('[data-total-nuits]', totals.nuits);
+        if (key === 'orp_parcours_sociopro') updateSocioproConsistencyUI(block);
+        return totals;
+    }
+
+    function updatePrestationsGlobalTotals() {
+        let selectedCount = 0;
+        let totals = zeroTotals();
+        const container = document.getElementById('prestations-detail-blocks');
+        if (container) {
+            container.querySelectorAll('[data-prestation-key]').forEach((block) => {
+                if (block.style.display === 'none') return;
+                selectedCount += 1;
+                totals = sumTotals(totals, updatePrestationBlockTotals(block));
+            });
+        }
+        const set = (id, val) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = String(val);
+        };
+        set('pd-total-selected', selectedCount);
+        set('pd-total-benef', totals.benef);
+        set('pd-total-hlm-days', totals.hlmDays);
+        set('pd-total-nuits', totals.nuits);
+    }
+
+    function renderPrestationsDetailBlocks() {
+        const container = document.getElementById('prestations-detail-blocks');
+        if (!container) return;
+
+        ORP_CHECKBOX_NAMES.forEach((key) => {
+            const def = PRESTATION_DETAIL_DEFS[key];
+            if (!def) return;
+
+            let block = container.querySelector(`[data-prestation-key="${key}"]`);
+            const selected = isOrpSelected(key);
+            if (!block && selected) {
+                block = buildPrestationDetailBlock(key);
+                container.appendChild(block);
+            }
+            if (!block) return;
+
+            const device = resolveDeviceForPrestation(def);
+            block.classList.remove('theme-esrp', 'theme-espo', 'theme-ueros', 'theme-pec');
+            block.classList.add(getDetailTheme(device));
+            const titleText = resolvePrestationDisplayTitle(key, def);
+            const titleNode = block.querySelector('h4');
+            if (titleNode) titleNode.textContent = titleText;
+            block.style.display = selected ? 'block' : 'none';
+            block.querySelectorAll('input, select, textarea').forEach((el) => {
+                el.disabled = !selected;
+            });
+            if (selected) updatePrestationBlockTotals(block);
+        });
+        updatePrestationsGlobalTotals();
+    }
+
+    function collectPrestationsDetails() {
+        return JSON.parse(JSON.stringify(prestationsDetailsState));
+    }
+
+    function restorePrestationsDetails(record) {
+        Object.keys(prestationsDetailsState).forEach((k) => delete prestationsDetailsState[k]);
+        if (record.prestations_details_json) {
+            try {
+                const parsed = JSON.parse(record.prestations_details_json);
+                if (parsed && typeof parsed === 'object') {
+                    Object.entries(parsed).forEach(([k, v]) => {
+                        prestationsDetailsState[k] = v;
+                    });
+                }
+            } catch (e) {
+                console.error('prestations_details parse error', e);
+            }
+        }
+        renderPrestationsDetailBlocks();
+    }
+
+    function bindPrestationsDetailsInputListener() {
+        const container = document.getElementById('prestations-detail-blocks');
+        if (!container) return;
+        container.addEventListener('input', (e) => {
+            const target = e.target;
+            if (!target || !target.dataset.detailField) return;
+            const block = target.closest('[data-prestation-key]');
+            if (!block) return;
+            const key = block.dataset.prestationKey;
+            const state = ensurePrestationState(key);
+            if (target.type === 'number') {
+                const parsed = parseFloat(target.value);
+                const value = Number.isNaN(parsed) ? '' : Math.max(0, parsed);
+                if (value !== '' && String(value) !== target.value) {
+                    target.value = String(value);
+                }
+                setNestedValue(state, target.dataset.detailField, value);
+                updatePrestationBlockTotals(block);
+                updatePrestationsGlobalTotals();
+                return;
+            }
+            setNestedValue(state, target.dataset.detailField, target.value);
+            updatePrestationBlockTotals(block);
+            updatePrestationsGlobalTotals();
+        });
+    }
+
+    function setPrestationsSectionVisibility(block, sectionId, visible) {
+        // Expected section IDs: pd-espo, pd-sociopro, pd-qualif, etc.
+        const rows = block.querySelectorAll(`tr[data-pd-section-id="${sectionId}"]`);
+        rows.forEach((row) => {
+            row.style.display = visible ? '' : 'none';
+            row.querySelectorAll('input, select, textarea').forEach((field) => {
+                field.disabled = !visible;
+            });
+        });
+    }
+
+    function updatePrestationsPagesVisibility() {
+        const sectionVisibility = {};
+        Object.entries(ORP_SECTION_BY_CHECKBOX).forEach(([orpName, sectionId]) => {
+            sectionVisibility[sectionId] = isOrpSelected(orpName);
+        });
+
+        Object.values(pdBlocks).forEach((block) => {
+            Object.entries(sectionVisibility).forEach(([sectionId, visible]) => {
+                setPrestationsSectionVisibility(block, sectionId, visible);
+            });
+        });
+    }
+
+    function addDeptRowToBlock(block, code, nb = '') {
+        const container = block.querySelector('.pd-dept-rows-container');
+        if (!container || !code) return;
+        const div = document.createElement('div');
+        div.className = 'dept-row';
+        div.innerHTML = `
+            <span>Département : <strong>${code}</strong></span>
+            <input type="number" class="dept-nb" ${nb !== '' ? `value="${nb}"` : ''} placeholder="Nb personnes" style="width: 120px;" data-dept="${code}">
+            <button type="button" class="btn-del" onclick="this.parentElement.remove()">×</button>
+        `;
+        container.appendChild(div);
+    }
+
+    function calcTauxAbsForBlock(block) {
+        const h = parseFloat(block.querySelector('.pd-abs-h')?.value) || 0;
+        const t = parseFloat(block.querySelector('.pd-theo-h')?.value) || 0;
+        const target = block.querySelector('.pd-taux-abs-display');
+        if (target) {
+            target.innerText = t > 0 ? ((h / t) * 100).toFixed(2) + " %" : "0.00 %";
+        }
+    }
+
+    function blockHasData(block) {
+        const fields = block.querySelectorAll('input, select, textarea');
+        for (const field of fields) {
+            if (field.type === 'checkbox' || field.type === 'radio') {
+                if (field.checked) return true;
+            } else if ((field.value || '').trim() !== '') {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    function clearPdBlock(block) {
+        block.querySelectorAll('input, select, textarea').forEach((field) => {
+            if (field.type === 'checkbox' || field.type === 'radio') {
+                field.checked = false;
+            } else {
+                field.value = '';
+            }
+        });
+        const container = block.querySelector('.pd-dept-rows-container');
+        if (container) container.innerHTML = '';
+        calcTauxAbsForBlock(block);
+        calcDureeMoyenneSejourForBlock(block);
+        updatePdConditionalSections(block);
+    }
+
+    function calcDureeMoyenneSejourForBlock(block) {
+        if (!block) return;
+        const fileActive = parseFloat(block.querySelector('.pd-fileactive-nb')?.value) || 0;
+        const journees = parseFloat(block.querySelector('.pd-journees-nb')?.value) || 0;
+        const out = block.querySelector('.pd-dms-display');
+        if (!out) return;
+        if (fileActive <= 0 || journees < 0) {
+            out.textContent = '-';
+            return;
+        }
+        out.textContent = `${(journees / fileActive).toFixed(2)} jours`;
+    }
+
+    function getPdValueByBaseName(block, baseName) {
+        const input = block.querySelector(`input[name^="${baseName}__"]`);
+        if (!input) return 0;
+        const n = parseFloat(input.value);
+        return Number.isNaN(n) ? 0 : n;
+    }
+
+    function updatePdConditionalSections(block) {
+        if (!block) return;
+        block.querySelectorAll('[data-show-if]').forEach((el) => {
+            const parentBase = el.dataset.showIf;
+            const visible = getPdValueByBaseName(block, parentBase) > 0;
+            el.classList.toggle('hidden', !visible);
+            el.querySelectorAll('input, select, textarea').forEach((field) => {
+                field.disabled = !visible;
+            });
+        });
+    }
+
+    function initPdBlock(block, type) {
+        const conf = PD_CONFIG[type];
+        block.dataset.pdType = type;
+        block.style.setProperty('--pd-bg', conf.bg);
+        block.style.setProperty('--pd-border', conf.border);
+        block.style.setProperty('--pd-title', conf.title);
+
+        block.querySelectorAll('[data-pd-type-label]').forEach((el) => {
+            el.textContent = conf.label;
+        });
+
+        // Force unique field names per bloc to keep independent data.
+        block.querySelectorAll('[name]').forEach((el) => {
+            el.name = `${el.name}__${type}`;
+        });
+
+        const sectionCounts = {};
+        block.querySelectorAll('tr[data-pd-section]').forEach((row) => {
+            const sectionKey = row.dataset.pdSection;
+            const sectionId = `pd-${sectionKey}`;
+            sectionCounts[sectionId] = (sectionCounts[sectionId] || 0) + 1;
+            row.dataset.pdSectionId = sectionId;
+            row.id = `${sectionId}-${type}-${sectionCounts[sectionId]}`;
+        });
+
+        const orientationCell = block.querySelector('tr[data-row="espo"] strong');
+        if (orientationCell) {
+            orientationCell.textContent = `D'une Orientation en ${conf.label}`;
+        }
+
+        const addBtn = block.querySelector('.pd-add-dept-btn');
+        if (addBtn) {
+            addBtn.addEventListener('click', () => {
+                const input = block.querySelector('.pd-dept-code-input');
+                const code = (input?.value || '').trim();
+                if (!code) return;
+                addDeptRowToBlock(block, code);
+                input.value = '';
+            });
+        }
+
+        block.querySelectorAll('.pd-abs-h, .pd-theo-h').forEach((el) => {
+            el.addEventListener('input', () => calcTauxAbsForBlock(block));
+        });
+        block.querySelectorAll('.pd-fileactive-nb, .pd-journees-nb').forEach((el) => {
+            el.addEventListener('input', () => calcDureeMoyenneSejourForBlock(block));
+        });
+        block.addEventListener('input', () => updatePdConditionalSections(block));
+        calcDureeMoyenneSejourForBlock(block);
+        updatePdConditionalSections(block);
+
+        const cards = block.querySelectorAll('.pd-card-themed');
+        if (cards.length > 1) {
+            cards[1].remove(); // Suppression du bloc 10
+        }
+        ensureNonNegativeNumberInputs(block);
+    }
+
+    function ensurePdBlocks() {
+        const container = document.getElementById('pd-blocks-container');
+        const template = document.getElementById('pd-block-template');
+        if (!container || !template || Object.keys(pdBlocks).length > 0) return;
+
+        Object.keys(PD_CONFIG).forEach((type) => {
+            const fragment = template.content.cloneNode(true);
+            const block = fragment.querySelector('[data-pd-block]');
+            initPdBlock(block, type);
+            pdBlocks[type] = block;
+            container.appendChild(block);
+        });
+    }
+
+    function syncPdBlocks(promptOnHide = true) {
+        ensurePdBlocks();
+        const selected = new Set(getSelectedPdTypes());
+
+        Object.entries(pdBlocks).forEach(([type, block]) => {
+            const shouldShow = selected.has(type);
+            const currentlyVisible = block.style.display !== 'none';
+
+            if (shouldShow) {
+                block.style.display = 'block';
+                return;
+            }
+
+            if (currentlyVisible && promptOnHide && blockHasData(block)) {
+                const keepData = confirm(
+                    `Le bloc Prestations directes ${PD_CONFIG[type].label} va être masqué.\nOK: conserver les données\nAnnuler: vider les données`
+                );
+                if (!keepData) clearPdBlock(block);
+            }
+
+            block.style.display = 'none';
+        });
+        updatePrestationsPagesVisibility();
+    }
+
+    // =====================================
+    // IDENTIFICATION / FINESS
+    // =====================================
+    function addFinessRow(value = '') {
+        const container = document.getElementById('finess-extra-container');
+        if (!container) return;
+        const row = document.createElement('div');
+        row.className = 'question-row';
+        row.innerHTML = `
+            <span>Numéro FINESS supplémentaire</span>
+            <div class="finess-field">
+                <div style="display:flex; gap:8px; align-items:center;">
+                    <input type="text" class="finess-input" placeholder="Numéro FINESS" value="${value}">
+                    <button type="button" class="btn-del" onclick="this.closest('.question-row').remove()">×</button>
+                </div>
+                <div class="finess-msg">Format attendu: 9 caractères (généralement 9 chiffres, ex: 123456789).</div>
+            </div>
+        `;
+        container.appendChild(row);
+        const input = row.querySelector('.finess-input');
+        if (input) attachFinessValidation(input);
+    }
+
+    function collectFiness() {
+        const values = [];
+        document.querySelectorAll('.finess-input').forEach((input) => {
+            const value = (input.value || '').trim().toUpperCase();
+            if (value) values.push(value);
+        });
+        return values;
+    }
+
+    function populateFiness(record) {
+        const extraContainer = document.getElementById('finess-extra-container');
+        if (extraContainer) extraContainer.innerHTML = '';
+
+        const primaryInput = document.querySelector('input[name="finess_main"]');
+        if (!primaryInput) return;
+
+        let finessList = [];
+        if (record.finess_json) {
+            try {
+                const parsed = JSON.parse(record.finess_json);
+                if (Array.isArray(parsed)) finessList = parsed;
+            } catch (e) {
+                console.error('finess parse error', e);
+            }
+        } else if (record.finess_main) {
+            finessList = [record.finess_main];
+        }
+
+        primaryInput.value = finessList[0] || '';
+        attachFinessValidation(primaryInput);
+        finessList.slice(1).forEach((value) => addFinessRow(value));
+    }
+
+    function isValidFiness(value) {
+        const v = (value || '').trim().toUpperCase();
+        if (!v) return true;
+        return /^\d{9}$/.test(v) || /^2[AB]\d{7}$/.test(v);
+    }
+
+    function ensureFinessMessage(input) {
+        const field = input.closest('.finess-field') || input.parentElement;
+        let msg = field?.querySelector('.finess-msg');
+        if (!msg) {
+            msg = document.createElement('div');
+            msg.className = 'finess-msg';
+            msg.textContent = 'Format attendu: 9 caractères (généralement 9 chiffres, ex: 123456789).';
+            field?.appendChild(msg);
+        }
+        return msg;
+    }
+
+    function updateFinessFieldState(input, forceFeedback = false) {
+        if (!input || !input.classList.contains('finess-input')) return;
+        const value = (input.value || '').trim();
+        const ok = isValidFiness(value);
+        const msg = ensureFinessMessage(input);
+        input.classList.toggle('finess-invalid', value !== '' && !ok);
+        if (!msg) return;
+
+        msg.classList.remove('ok', 'error');
+        if (value === '') {
+            msg.style.display = 'none';
+            return;
+        }
+        if (ok) {
+            if (forceFeedback) {
+                msg.textContent = 'FINESS valide';
+                msg.classList.add('ok');
+                msg.style.display = 'block';
+            } else {
+                msg.style.display = 'none';
+            }
+            return;
+        }
+
+        msg.textContent = 'Format attendu: 9 caractères (généralement 9 chiffres, ex: 123456789).';
+        msg.classList.add('error');
+        msg.style.display = 'block';
+    }
+
+    function validateAllFiness() {
+        let allValid = true;
+        document.querySelectorAll('.finess-input').forEach((input) => {
+            updateFinessFieldState(input, true);
+            if (!isValidFiness(input.value)) allValid = false;
+        });
+        return allValid;
+    }
+
+    function attachFinessValidation(input) {
+        if (!input || input.dataset.finessBound === '1') return;
+        input.dataset.finessBound = '1';
+        input.addEventListener('blur', () => updateFinessFieldState(input, true));
+        input.addEventListener('input', () => updateFinessFieldState(input, false));
+        updateFinessFieldState(input, false);
+    }
+
+    // =====================================
+    // AUTO-REMPLISSAGE EA/EI/ESAT PAR DEPARTEMENT (CSV)
+    // =====================================
+    const deptStatsByCode = {};
+    const deptStatsByName = {};
+
+    function normalizeDeptCode(value) {
+        return (value || '').trim().toUpperCase().replace(/\s+/g, '');
+    }
+
+    function normalizeDeptName(value) {
+        return (value || '')
+            .trim()
+            .toLowerCase()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .replace(/\s+/g, ' ');
+    }
+
+    function parseCsvLine(line, delimiter) {
+        const out = [];
+        let current = '';
+        let inQuotes = false;
+        for (let i = 0; i < line.length; i += 1) {
+            const ch = line[i];
+            if (ch === '"') {
+                if (inQuotes && line[i + 1] === '"') {
+                    current += '"';
+                    i += 1;
+                } else {
+                    inQuotes = !inQuotes;
+                }
+                continue;
+            }
+            if (ch === delimiter && !inQuotes) {
+                out.push(current.trim());
+                current = '';
+                continue;
+            }
+            current += ch;
+        }
+        out.push(current.trim());
+        return out;
+    }
+
+    function parseIntSafe(value) {
+        const n = parseInt(String(value || '').replace(/[^\d-]/g, ''), 10);
+        return Number.isNaN(n) ? 0 : n;
+    }
+
+    function countToRange(value) {
+        if (value <= 0) return '';
+        if (value <= 5) return '1-5';
+        if (value <= 10) return '6-10';
+        return 'au-delà';
+    }
+
+    function setDeptCountNotes(esat, ea, ei) {
+        const nEsat = document.getElementById('note-q41-esat');
+        const nEa = document.getElementById('note-q42-ea');
+        const nEi = document.getElementById('note-q43-ei');
+        if (nEsat) nEsat.textContent = esat === null ? '' : `Nombre exact: ${esat} (source: Plateforme de l'inclusion).`;
+        if (nEa) nEa.textContent = ea === null ? '' : `Nombre exact: ${ea} (source: Plateforme de l'inclusion).`;
+        if (nEi) nEi.textContent = ei === null ? '' : `Nombre exact: ${ei} (source: Plateforme de l'inclusion).`;
+    }
+
+    function applyDeptStats(inputValue) {
+        const byCode = deptStatsByCode[normalizeDeptCode(inputValue)];
+        const byName = deptStatsByName[normalizeDeptName(inputValue)];
+        const row = byCode || byName;
+
+        if (!row) {
+            setDeptCountNotes(null, null, null);
+            return;
+        }
+
+        const esatSelect = document.querySelector('select[name="q41_esat"]');
+        const eaSelect = document.querySelector('select[name="q42_ea"]');
+        const eiSelect = document.querySelector('select[name="q43_ei"]');
+
+        if (esatSelect) esatSelect.value = countToRange(row.esat);
+        if (eaSelect) eaSelect.value = countToRange(row.ea);
+        if (eiSelect) eiSelect.value = countToRange(row.ei);
+
+        setDeptCountNotes(row.esat, row.ea, row.ei);
+    }
+
+    async function loadDeptStatsFromCsv() {
+        try {
+            const response = await fetch('/assets/departements_stats.csv', { cache: 'no-store' });
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+            const text = await response.text();
+            const lines = text.split(/\r?\n/).filter((l) => l.trim() !== '');
+            if (lines.length < 2) return;
+
+            const delimiter = (lines[0].match(/;/g) || []).length >= (lines[0].match(/,/g) || []).length ? ';' : ',';
+            const headers = parseCsvLine(lines[0], delimiter).map((h) => normalizeDeptName(h));
+            const iCode = headers.indexOf('code_departement');
+            const iName = headers.indexOf('nom_departement') >= 0 ? headers.indexOf('nom_departement') : headers.indexOf('nom_département');
+            const iEI = headers.indexOf('ei');
+            const iEA = headers.indexOf('ea');
+            const iESAT = headers.indexOf('esat');
+
+            if (iCode < 0 || iEI < 0 || iEA < 0 || iESAT < 0) {
+                return;
+            }
+
+            for (let idx = 1; idx < lines.length; idx += 1) {
+                const cols = parseCsvLine(lines[idx], delimiter);
+                const code = normalizeDeptCode(cols[iCode]);
+                if (!code) continue;
+
+                const row = {
+                    code,
+                    name: iName >= 0 ? (cols[iName] || '').trim() : '',
+                    ei: parseIntSafe(cols[iEI]),
+                    ea: parseIntSafe(cols[iEA]),
+                    esat: parseIntSafe(cols[iESAT]),
+                };
+
+                deptStatsByCode[code] = row;
+                if (row.name) deptStatsByName[normalizeDeptName(row.name)] = row;
+            }
+        } catch {}
     }
 
     // =====================================
@@ -506,30 +1968,18 @@
     // =====================================
     // DÉPARTEMENT MANAGEMENT
     // =====================================
-    function addDeptRow() {
-        const code = document.getElementById('dept-code-input').value.trim();
-        if (!code) return;
-        const container = document.getElementById('dept-rows-container');
-        const div = document.createElement('div');
-        div.className = 'dept-row';
-        div.innerHTML = `
-            <span>Département : <strong>${code}</strong></span>
-            <input type="number" class="dept-nb" placeholder="Nb personnes" style="width: 120px;" data-dept="${code}">
-            <button type="button" class="btn-del" onclick="this.parentElement.remove()">×</button>
-        `;
-        container.appendChild(div);
-        document.getElementById('dept-code-input').value = '';
-    }
-
     function collectGeographie() {
-        const rows = document.querySelectorAll('.dept-nb');
-        const geo = [];
-        rows.forEach(input => {
-            const departement = input.dataset.dept;
-            const nb = parseInt(input.value) || 0;
-            if (nb > 0) geo.push({ departement, nb });
+        const geoByType = {};
+        Object.entries(pdBlocks).forEach(([type, block]) => {
+            const geo = [];
+            block.querySelectorAll('.dept-nb').forEach((input) => {
+                const departement = input.dataset.dept;
+                const nb = parseInt(input.value) || 0;
+                if (nb > 0) geo.push({ departement, nb });
+            });
+            if (geo.length > 0) geoByType[type] = geo;
         });
-        return geo;
+        return geoByType;
     }
 
     // =====================================
@@ -537,23 +1987,17 @@
     // =====================================
     function collectPrestations() {
         const data = {};
-        document.querySelectorAll('#prestations-tbody tr').forEach(row => {
-            const rowId = row.dataset.row;
-            data[rowId] = {};
-            row.querySelectorAll('input[data-col]').forEach(input => {
-                data[rowId][input.dataset.col] = parseInt(input.value) || 0;
+        Object.entries(pdBlocks).forEach(([type, block]) => {
+            data[type] = {};
+            block.querySelectorAll('tr[data-row]').forEach((row) => {
+                const rowId = row.dataset.row;
+                data[type][rowId] = {};
+                row.querySelectorAll('input[data-col]:not(:disabled)').forEach((input) => {
+                    data[type][rowId][input.dataset.col] = parseInt(input.value) || 0;
+                });
             });
         });
         return data;
-    }
-
-    // =====================================
-    // ABSENTÉISME CALCULATION
-    // =====================================
-    function calcTauxAbs() {
-        const h = parseFloat(document.getElementById('abs-h').value) || 0;
-        const t = parseFloat(document.getElementById('theo-h').value) || 0;
-        document.getElementById('taux-abs-display').innerText = t > 0 ? ((h / t) * 100).toFixed(2) + " %" : "0.00 %";
     }
 
     // =====================================
@@ -567,6 +2011,10 @@
 
         // Custom callback: populate complex fields from JSON
         onPopulate: (record, uuid) => {
+            populateFiness(record);
+            restorePrestationsOrp(record);
+            restorePrestationsDetails(record);
+
             // Populate métiers from JSON
             if (record.metiers_json) {
                 try {
@@ -590,17 +2038,20 @@
             if (record.geographie_json) {
                 try {
                     const geo = JSON.parse(record.geographie_json);
-                    geo.forEach(g => {
-                        const container = document.getElementById('dept-rows-container');
-                        const div = document.createElement('div');
-                        div.className = 'dept-row';
-                        div.innerHTML = `
-                            <span>Département : <strong>${g.departement}</strong></span>
-                            <input type="number" class="dept-nb" value="${g.nb}" style="width: 120px;" data-dept="${g.departement}">
-                            <button type="button" class="btn-del" onclick="this.parentElement.remove()">×</button>
-                        `;
-                        container.appendChild(div);
-                    });
+                    if (Array.isArray(geo)) {
+                        // Legacy format: single array
+                        const fallbackType = getSelectedPdTypes()[0] || 'esrp';
+                        const block = pdBlocks[fallbackType];
+                        if (block) {
+                            geo.forEach(g => addDeptRowToBlock(block, g.departement, g.nb));
+                        }
+                    } else {
+                        Object.entries(geo).forEach(([type, rows]) => {
+                            const block = pdBlocks[type];
+                            if (!block || !Array.isArray(rows)) return;
+                            rows.forEach(g => addDeptRowToBlock(block, g.departement, g.nb));
+                        });
+                    }
                 } catch(e) { console.error('geo parse error', e); }
             }
 
@@ -608,23 +2059,56 @@
             if (record.prestations_json) {
                 try {
                     const prestations = JSON.parse(record.prestations_json);
-                    for (const [rowId, cols] of Object.entries(prestations)) {
-                        const row = document.querySelector(`tr[data-row="${rowId}"]`);
-                        if (!row) continue;
-                        for (const [col, val] of Object.entries(cols)) {
-                            const input = row.querySelector(`input[data-col="${col}"]`);
-                            if (input) input.value = val || '';
+                    const hasTypeKeys = Object.keys(prestations).some((k) => !!PD_CONFIG[k]);
+
+                    if (hasTypeKeys) {
+                        Object.entries(prestations).forEach(([type, rows]) => {
+                            const block = pdBlocks[type];
+                            if (!block || !rows) return;
+                            for (const [rowId, cols] of Object.entries(rows)) {
+                                const row = block.querySelector(`tr[data-row="${rowId}"]`);
+                                if (!row) continue;
+                                for (const [col, val] of Object.entries(cols)) {
+                                    const input = row.querySelector(`input[data-col="${col}"]`);
+                                    if (input) input.value = val || '';
+                                }
+                            }
+                        });
+                    } else {
+                        // Legacy format: one table only
+                        const fallbackType = getSelectedPdTypes()[0] || 'esrp';
+                        const block = pdBlocks[fallbackType];
+                        if (block) {
+                            for (const [rowId, cols] of Object.entries(prestations)) {
+                                const row = block.querySelector(`tr[data-row="${rowId}"]`);
+                                if (!row) continue;
+                                for (const [col, val] of Object.entries(cols)) {
+                                    const input = row.querySelector(`input[data-col="${col}"]`);
+                                    if (input) input.value = val || '';
+                                }
+                            }
                         }
                     }
                 } catch(e) { console.error('prestations parse error', e); }
             }
 
             // Recalculate derived values
-            calcTauxAbs();
+            Object.values(pdBlocks).forEach((block) => {
+                calcTauxAbsForBlock(block);
+                calcDureeMoyenneSejourForBlock(block);
+                updatePdConditionalSections(block);
+            });
+            syncPdBlocks(false);
         },
 
         // Custom callback: collect complex fields before save
         onBeforeSave: (fields) => {
+            if (!validateSocioproConsistencyBeforeSave(true)) {
+                throw new Error('Incohérence socio-professionnelle');
+            }
+            fields.finess_json = JSON.stringify(collectFiness());
+            fields.prestations_orp_json = JSON.stringify(collectPrestationsOrp());
+            fields.prestations_details_json = JSON.stringify(collectPrestationsDetails());
             fields.metiers_json = JSON.stringify(collectMetiers());
             fields.geographie_json = JSON.stringify(collectGeographie());
             fields.prestations_json = JSON.stringify(collectPrestations());
@@ -640,10 +2124,85 @@
         newBtn: document.getElementById('new-form-btn')
     });
 
-    gristForm.bindForm(
-        document.getElementById('form'),
-        document.getElementById('submit-btn')
-    );
+    document.getElementById('quick-new-btn')?.addEventListener('click', () => {
+        document.getElementById('new-form-btn')?.click();
+    });
+    document.getElementById('quick-copy-btn')?.addEventListener('click', () => {
+        const shareUrl = (document.getElementById('share-url')?.value || '').trim();
+        if (!shareUrl) {
+            gristForm.showStatus("Enregistrez d'abord pour générer un lien de reprise.", 'error');
+            return;
+        }
+        document.getElementById('copy-url-btn')?.click();
+    });
+
+    ensurePdBlocks();
+    const orpZone = document.getElementById('orp-prestations-zone');
+    const orpList = document.getElementById('orp-prestations-list');
+    document.getElementById('pec-select')?.addEventListener('change', () => {
+        syncPdBlocks();
+        updatePrestationsPagesVisibility();
+        renderPrestationsDetailBlocks();
+    });
+    if (orpList) {
+        orpList.addEventListener('change', (e) => {
+            const target = e.target;
+            if (!target || target.type !== 'checkbox') return;
+            const name = target.name || '';
+            if (!name.startsWith('orp_')) return;
+            syncOrpPrecisionVisibility();
+            updatePrestationsPagesVisibility();
+            renderPrestationsDetailBlocks();
+        });
+    }
+    document.querySelector('input[name="orp_autre_eval_precision"]')?.addEventListener('input', () => {
+        renderPrestationsDetailBlocks();
+    });
+    document.querySelector('input[name="orp_autre_parcours_precision"]')?.addEventListener('input', () => {
+        renderPrestationsDetailBlocks();
+    });
+    ['check_esrp', 'check_espo', 'check_ueros'].forEach((name) => {
+        document.querySelector(`input[name="${name}"]`)?.addEventListener('change', () => {
+            refreshOrpUiFromDispositifs();
+        });
+    });
+    if (orpZone) {
+        syncOrpPrecisionVisibility();
+    }
+    syncPdBlocks(false);
+    refreshOrpUiFromDispositifs();
+    bindPrestationsDetailsInputListener();
+    renderPrestationsDetailBlocks();
+    ensureNonNegativeNumberInputs(document);
+    document.getElementById('form')?.addEventListener('input', (e) => {
+        const target = e.target;
+        if (target instanceof HTMLInputElement && target.type === 'number') {
+            sanitizeNonNegative(target);
+        }
+    });
+    document.querySelectorAll('.finess-input').forEach((input) => attachFinessValidation(input));
+    loadDeptStatsFromCsv().then(() => {
+        const deptInput = document.getElementById('es-departement-input');
+        if (!deptInput) return;
+        const apply = () => applyDeptStats(deptInput.value);
+        deptInput.addEventListener('change', apply);
+        deptInput.addEventListener('blur', apply);
+        apply();
+    });
+    document.getElementById('form')?.addEventListener('submit', (e) => {
+        if (!validateAllFiness()) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            gristForm.showStatus('Un ou plusieurs numéros FINESS sont invalides.', 'error');
+            return;
+        }
+        if (!validateSocioproConsistencyBeforeSave(true)) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+        }
+    }, true);
+
+    gristForm.bindForm(document.getElementById('form'), document.getElementById('submit-btn'));
 
     // Load existing record if UUID in URL
     gristForm.init();
