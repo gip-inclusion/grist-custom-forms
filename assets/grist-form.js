@@ -15,8 +15,9 @@ class GristForm {
    * @param {string} options.formId - Form identifier (e.g., 'fagerh')
    * @param {string} [options.uuidField='uuid'] - Name of the UUID field in the form
    * @param {string} [options.urlParam='formulaire'] - URL parameter name for the UUID
-   * @param {Function} [options.onPopulate] - Callback after populating form: (record, uuid) => void
-   * @param {Function} [options.onBeforeSave] - Callback before saving: (fields) => fields
+ * @param {Function} [options.onPopulate] - Callback after populating form: (record, uuid) => void
+ * @param {Function} [options.onBeforeSave] - Callback before saving: (fields) => fields
+ * @param {Function} [options.onAfterSave] - Callback after successful save: ({ fields, uuid, response }) => void
    */
   constructor(options) {
     this.apiBase = options.apiBase;
@@ -25,6 +26,7 @@ class GristForm {
     this.urlParam = options.urlParam || 'formulaire';
     this.onPopulate = options.onPopulate || null;
     this.onBeforeSave = options.onBeforeSave || null;
+    this.onAfterSave = options.onAfterSave || null;
 
     // UI elements (set via bindSidebar)
     this.statusEl = null;
@@ -199,7 +201,7 @@ class GristForm {
       this.showStatus('Enregistrement en cours...', 'loading');
 
       try {
-        await this.save(fields);
+        const response = await this.save(fields);
 
         this.showStatus('Enregistré !', 'success');
         this.hideStatusAfter();
@@ -208,6 +210,10 @@ class GristForm {
         this.updateUrl(uuid);
         if (this.shareUrlEl) {
           this.shareUrlEl.value = this.getShareUrl(uuid);
+        }
+
+        if (this.onAfterSave) {
+          this.onAfterSave({ fields, uuid, response });
         }
       } catch (err) {
         console.error('Save failed:', err);

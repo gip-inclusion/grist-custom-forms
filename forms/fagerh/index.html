@@ -29,10 +29,33 @@
             margin-bottom: 0;
             padding: 10px 14px;
         }
+        .sidebar-btn.finish {
+            background: var(--orange);
+            color: white;
+            margin-left: auto;
+        }
+        .sidebar-btn.finish:hover {
+            background: #cf7118;
+        }
         .quick-actions-hint {
             font-size: 0.88em;
             color: #4f6477;
             margin-top: 8px;
+        }
+        .save-reminder {
+            margin-top: 10px;
+            padding: 9px 12px;
+            border-radius: 8px;
+            border: 1px solid #f0b35a;
+            background: #fff4e5;
+            color: #7a4d00;
+            font-size: 0.9em;
+            font-weight: 600;
+        }
+        .save-reminder.saved {
+            border-color: #89c89a;
+            background: #effaf2;
+            color: #1f6d34;
         }
         .progress-top-grid {
             display: grid;
@@ -213,8 +236,9 @@
         <button type="submit" form="form" class="sidebar-btn primary">Enregistrer</button>
         <button type="button" id="quick-new-btn" class="sidebar-btn secondary">Nouveau formulaire</button>
         <button type="button" id="quick-copy-btn" class="sidebar-btn secondary">Copier lien de reprise</button>
+        <button type="button" id="quick-finish-btn" class="sidebar-btn finish">Envoyer mes réponses</button>
     </div>
-    <div class="quick-actions-hint">Astuce: enregistrez pour générer (ou mettre à jour) le lien de reprise.</div>
+    <div id="save-reminder-msg" class="save-reminder">Obligatoire: cliquez sur « Enregistrer » après chaque modification, sinon vos changements ne seront pas conservés.</div>
     <div id="status" class="status-msg" style="margin-top:8px;"></div>
     <input type="text" id="share-url" readonly style="display:none;">
 </div>
@@ -265,6 +289,7 @@
 <input type="hidden" name="prestations_orp_json" id="prestations_orp_json" value="{}">
 <input type="hidden" name="prestations_details_json" id="prestations_details_json" value="{}">
 <input type="hidden" name="finess_json" id="finess_json" value="[]">
+<input type="hidden" name="saisie_terminee" id="saisie_terminee" value="false">
 <input type="hidden" name="uuid" id="uuid" value="">
 
 <div class="card" id="step-identification">
@@ -274,6 +299,18 @@
         <div class="question-row">
             <span>Nom de l'ES (Établissement et service)</span>
             <input type="text" name="es_nom" placeholder="Nom de l'établissement">
+        </div>
+        <div class="question-row">
+            <span>Nom de la personne en charge de la validation</span>
+            <input type="text" name="validateur_nom" placeholder="Nom">
+        </div>
+        <div class="question-row">
+            <span>Prénom de la personne en charge de la validation</span>
+            <input type="text" name="validateur_prenom" placeholder="Prénom">
+        </div>
+        <div class="question-row">
+            <span>Email de la personne en charge de la validation</span>
+            <input type="email" name="validateur_email" placeholder="email@exemple.fr">
         </div>
         <div class="question-row">
             <span>Département</span>
@@ -950,6 +987,31 @@
         { id: 'step-vos-prestations', label: 'Vos prestations' },
         { id: 'step-contexte', label: 'Contexte écologique' },
     ];
+    let hasUnsavedChanges = false;
+    let suppressDirtyTracking = true;
+
+    function updateSaveReminderUi() {
+        const el = document.getElementById('save-reminder-msg');
+        if (!el) return;
+        if (hasUnsavedChanges) {
+            el.classList.remove('saved');
+            el.textContent = 'Obligatoire: des modifications ne sont pas enregistrées. Cliquez sur « Enregistrer » avant de quitter la page.';
+            return;
+        }
+        el.classList.add('saved');
+        el.textContent = 'Toutes les modifications sont enregistrées.';
+    }
+
+    function markFormDirty() {
+        if (suppressDirtyTracking) return;
+        hasUnsavedChanges = true;
+        updateSaveReminderUi();
+    }
+
+    function markFormSaved() {
+        hasUnsavedChanges = false;
+        updateSaveReminderUi();
+    }
 
     function isFieldVisible(field) {
         if (!field || field.disabled) return false;
@@ -2310,7 +2372,11 @@
             fields.metiers_json = JSON.stringify(collectMetiers());
             fields.geographie_json = JSON.stringify(collectGeographie());
             fields.prestations_json = JSON.stringify(collectPrestations());
+            fields.saisie_terminee = fields.saisie_terminee === 'true' ? 'true' : 'false';
             return fields;
+        },
+        onAfterSave: () => {
+            markFormSaved();
         }
     });
 
@@ -2327,6 +2393,19 @@
     });
     document.getElementById('quick-copy-btn')?.addEventListener('click', () => {
         gristForm.copyShareUrl();
+    });
+    document.getElementById('quick-finish-btn')?.addEventListener('click', () => {
+        const hidden = document.getElementById('saisie_terminee');
+        if (!hidden) return;
+        const next = hidden.value !== 'true';
+        hidden.value = next ? 'true' : 'false';
+        markFormDirty();
+        gristForm.showStatus(
+            next
+                ? "Réponses marquées comme envoyées. Cliquez sur Enregistrer pour conserver ce statut."
+                : "Statut \"réponses envoyées\" retiré. Cliquez sur Enregistrer pour conserver ce changement.",
+            'info'
+        );
     });
 
     ensurePdBlocks();
@@ -2372,10 +2451,15 @@
         if (target instanceof HTMLInputElement && target.type === 'number') {
             sanitizeNonNegative(target);
         }
+        markFormDirty();
     });
     document.getElementById('form')?.addEventListener('input', refreshProgressUi);
-    document.getElementById('form')?.addEventListener('change', refreshProgressUi);
+    document.getElementById('form')?.addEventListener('change', () => {
+        markFormDirty();
+        refreshProgressUi();
+    });
     refreshProgressUi();
+    updateSaveReminderUi();
     document.querySelectorAll('.finess-input').forEach((input) => attachFinessValidation(input));
     loadDeptStatsFromCsv().then(() => {
         const deptInput = document.getElementById('es-departement-input');
@@ -2400,8 +2484,18 @@
 
     gristForm.bindForm(document.getElementById('form'), null);
 
+    window.addEventListener('beforeunload', (e) => {
+        if (!hasUnsavedChanges) return;
+        e.preventDefault();
+        e.returnValue = "Tout n'est pas enregistré, cela sera perdu.";
+    });
+
     // Load existing record if UUID in URL
-    gristForm.init();
+    (async () => {
+        await gristForm.init();
+        suppressDirtyTracking = false;
+        markFormSaved();
+    })();
 </script>
 </body>
 </html>
