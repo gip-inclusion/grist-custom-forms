@@ -5,10 +5,12 @@
     <title>RA FAGERH 2025 - Formulaire - TEST LOCAL</title>
     <style>
         :root { --fagerh-blue: #2c3e50; --fagerh-light: #3498db; --orange: #e67e22; --success: #27ae60; --grey: #f4f7f6; }
+        html { scroll-behavior: smooth; }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--grey); padding: 20px; color: #333; line-height: 1.4; }
         .page-layout { display: flex; gap: 20px; max-width: 1400px; margin: 0 auto; align-items: flex-start; }
         .main-content { flex: 1; min-width: 0; }
         .sidebar { width: 280px; flex-shrink: 0; position: sticky; top: 20px; }
+        .sidebar:empty { display: none; }
         .card { background: white; border-radius: 12px; padding: 30px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); margin-bottom: 20px; }
         .quick-actions-card {
             position: sticky;
@@ -32,6 +34,23 @@
             color: #4f6477;
             margin-top: 8px;
         }
+        .progress-top-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+        .progress-wrap { margin-top: 10px; }
+        .progress-head { display: flex; justify-content: space-between; font-size: 0.86em; color: #46617b; margin-bottom: 6px; }
+        .progress-track { height: 10px; background: #e7eef5; border-radius: 999px; overflow: hidden; }
+        .progress-fill { height: 100%; width: 0; background: linear-gradient(90deg, #3ca25b, #2f78cf); transition: width 0.2s ease; }
+        .toc-list { list-style: none; padding: 0; margin: 10px 0 0 0; max-height: 320px; overflow: auto; }
+        .toc-list li { margin: 4px 0; }
+        .toc-list a { color: #2f527a; text-decoration: none; font-size: 0.9em; }
+        .toc-list a:hover { text-decoration: underline; }
+        .toc-l3 a { padding-left: 12px; display: inline-block; font-size: 0.86em; }
+        .toc-item-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+        .toc-percent { font-size: 0.78em; color: #345; background: #eaf2fb; border: 1px solid #cfe0f3; border-radius: 999px; padding: 1px 7px; white-space: nowrap; }
         h2 { color: var(--fagerh-blue); border-bottom: 3px solid var(--fagerh-light); padding-bottom: 10px; margin-top: 0; }
         h3 { color: var(--orange); margin-top: 30px; border-left: 5px solid var(--orange); padding-left: 15px; margin-bottom: 15px; }
         .question-row { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; padding: 12px; border-bottom: 1px solid #eee; align-items: center; margin-bottom: 25px; }
@@ -178,6 +197,8 @@
             .sidebar { width: 100%; position: static; }
             .quick-actions-card { position: static; }
             .question-row { grid-template-columns: 1fr; gap: 8px; }
+            .toc-list { max-height: none; }
+            .progress-top-grid { grid-template-columns: 1fr; }
         }
         #pd-blocks-container { margin-top: 12px; }
     </style>
@@ -194,6 +215,48 @@
         <button type="button" id="quick-copy-btn" class="sidebar-btn secondary">Copier lien de reprise</button>
     </div>
     <div class="quick-actions-hint">Astuce: enregistrez pour générer (ou mettre à jour) le lien de reprise.</div>
+    <div id="status" class="status-msg" style="margin-top:8px;"></div>
+    <input type="text" id="share-url" readonly style="display:none;">
+</div>
+<div class="card" id="intro-remplissage">
+    <h2>Avant de commencer</h2>
+    <div class="setup-zone">
+        <p class="volet-subtitle" style="margin:0;">
+            Renseignez d'abord les volets principaux dans cet ordre :
+            <strong>Identification</strong>, <strong>Volet RH</strong>, <strong>Vos prestations</strong>, puis <strong>Contexte écologique</strong>.
+            Les formulaires conditionnels s'afficheront ensuite selon vos choix.
+        </p>
+    </div>
+</div>
+<div class="progress-top-grid">
+    <div class="card">
+        <h3>Étapes Principales</h3>
+        <div class="progress-wrap">
+            <div class="progress-head">
+                <span>Progression globale</span>
+                <strong id="primary-completion-percent">0%</strong>
+            </div>
+            <div class="progress-track">
+                <div id="primary-completion-fill" class="progress-fill"></div>
+            </div>
+            <div id="primary-completion-stats" class="quick-actions-hint">0 / 0 champs remplis</div>
+        </div>
+        <ul id="primary-toc-list" class="toc-list"></ul>
+    </div>
+    <div class="card">
+        <h3>Étapes Conditionnelles</h3>
+        <div class="progress-wrap">
+            <div class="progress-head">
+                <span>Progression conditionnelle</span>
+                <strong id="secondary-completion-percent">0%</strong>
+            </div>
+            <div class="progress-track">
+                <div id="secondary-completion-fill" class="progress-fill"></div>
+            </div>
+            <div id="secondary-completion-stats" class="quick-actions-hint">0 / 0 champs remplis</div>
+        </div>
+        <ul id="secondary-toc-list" class="toc-list"></ul>
+    </div>
 </div>
 <!-- Hidden fields for JSON data and UUID -->
 <input type="hidden" name="metiers_json" id="metiers_json" value="[]">
@@ -204,7 +267,7 @@
 <input type="hidden" name="finess_json" id="finess_json" value="[]">
 <input type="hidden" name="uuid" id="uuid" value="">
 
-<div class="card">
+<div class="card" id="step-identification">
     <h2>Identification de l'établissement</h2>
     <div class="setup-zone">
         <strong>Informations générales</strong>
@@ -232,7 +295,7 @@
     </div>
 </div>
 
-<div class="card">
+<div class="card" id="step-rh">
     <h2>Réadaptation Professionnelle - Votre structure</h2>
     <h3>Volet RH</h3>
     <div class="rh-frame">
@@ -314,7 +377,7 @@
     </div>
 </div>
 
-<div class="card">
+<div class="card" id="step-vos-prestations">
     <h3>Vos prestations</h3>
     <div class="setup-zone" id="orp-prestations-zone">
         <div class="question-row" style="margin-top:10px; margin-bottom:10px; background:#f0f9ff; border: 1px solid var(--fagerh-light); border-radius: 8px; padding:15px">
@@ -351,7 +414,7 @@
     </div>
 </div>
 
-<div class="card">
+<div class="card" id="step-contexte">
     <h3>Contexte écologique</h3>
     <div class="setup-zone">
     <strong>3. Votre environnement</strong>    
@@ -595,7 +658,7 @@
         </div>
     </div>
 
-<div class="card">
+<div class="card" id="prestations-totales-card">
     <h2>Prestations totales délivrées (Avec ou sans ORP CDAPH)</h2>
     <div class="setup-zone">
         <strong>Formulaires par dispositif</strong>
@@ -824,20 +887,6 @@
 </div><!-- end main-content -->
 
 <div class="sidebar">
-    <div class="card">
-        <h3>Actions</h3>
-        <div id="status" class="status-msg"></div>
-        <button type="submit" form="form" id="submit-btn" class="sidebar-btn primary">Enregistrer</button>
-        <button type="button" id="new-form-btn" class="sidebar-btn secondary">Nouveau formulaire</button>
-
-        <div class="url-box">
-            <p>Utilisez ce lien pour reprendre le formulaire plus tard :</p>
-            <div class="url-field">
-                <input type="text" id="share-url" readonly placeholder="Enregistrez d'abord...">
-                <button type="button" id="copy-url-btn">Copier</button>
-            </div>
-        </div>
-    </div>
 </div>
 </div><!-- end page-layout -->
 
@@ -884,6 +933,151 @@
             if (input.min === '') input.min = '0';
             sanitizeNonNegative(input);
         });
+    }
+
+    function slugify(text) {
+        return (text || '')
+            .toLowerCase()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/(^-|-$)/g, '');
+    }
+
+    const PRIMARY_STEPS = [
+        { id: 'step-identification', label: 'Identification' },
+        { id: 'step-rh', label: 'Volet RH' },
+        { id: 'step-vos-prestations', label: 'Vos prestations' },
+        { id: 'step-contexte', label: 'Contexte écologique' },
+    ];
+
+    function isFieldVisible(field) {
+        if (!field || field.disabled) return false;
+        if (!field.name) return false;
+        if (field.type === 'hidden') return false;
+        if (field.closest('.hidden')) return false;
+        if (field.closest('template')) return false;
+        return field.getClientRects().length > 0;
+    }
+
+    function computeCompletionForScope(root, excludeSelectors = []) {
+        if (!root) return { filled: 0, total: 0, percent: 0 };
+        const fields = Array.from(root.querySelectorAll('input, select, textarea'))
+            .filter(isFieldVisible)
+            .filter((field) => !excludeSelectors.some((sel) => field.closest(sel)));
+        const groupStates = new Map();
+        let filled = 0;
+        let total = 0;
+
+        fields.forEach((field) => {
+            if (field.type === 'checkbox' || field.type === 'radio') {
+                const key = `${field.type}:${field.name}`;
+                if (!groupStates.has(key)) groupStates.set(key, false);
+                if (field.checked) groupStates.set(key, true);
+                return;
+            }
+            total += 1;
+            if ((field.value || '').trim() !== '') filled += 1;
+        });
+
+        groupStates.forEach((isChecked) => {
+            total += 1;
+            if (isChecked) filled += 1;
+        });
+
+        return { filled, total, percent: total > 0 ? Math.round((filled / total) * 100) : 0 };
+    }
+
+    function updateProgressWidget(prefix, result) {
+        const pctEl = document.getElementById(`${prefix}-completion-percent`);
+        const fillEl = document.getElementById(`${prefix}-completion-fill`);
+        const statsEl = document.getElementById(`${prefix}-completion-stats`);
+        if (pctEl) pctEl.textContent = `${result.percent}%`;
+        if (fillEl) fillEl.style.width = `${result.percent}%`;
+        if (statsEl) statsEl.textContent = `${result.filled} / ${result.total} champs remplis`;
+    }
+
+    function renderPrimaryProgress() {
+        const list = document.getElementById('primary-toc-list');
+        if (!list) return;
+        list.innerHTML = '';
+        let filled = 0;
+        let total = 0;
+
+        PRIMARY_STEPS.forEach((step) => {
+            const root = document.getElementById(step.id);
+            if (!root) return;
+            const result = computeCompletionForScope(root, [
+                '#prestations-details-card',
+                '#prestations-totales-card',
+                '#prestations-detail-blocks',
+                '#pd-blocks-container',
+            ]);
+            filled += result.filled;
+            total += result.total;
+            const li = document.createElement('li');
+            li.innerHTML = `
+                <div class="toc-item-row">
+                    <a href="#${step.id}">${step.label}</a>
+                    <span class="toc-percent">${result.percent}%</span>
+                </div>
+            `;
+            list.appendChild(li);
+        });
+
+        updateProgressWidget('primary', { filled, total, percent: total > 0 ? Math.round((filled / total) * 100) : 0 });
+    }
+
+    function renderSecondaryProgress() {
+        const list = document.getElementById('secondary-toc-list');
+        if (!list) return;
+        list.innerHTML = '';
+        const entries = [];
+
+        document.querySelectorAll('#prestations-detail-blocks [data-prestation-key]').forEach((block) => {
+            if (block.style.display === 'none') return;
+            const key = block.dataset.prestationKey || 'orp';
+            block.id = block.id || `dyn-orp-${key}`;
+            const label = (block.querySelector('h4')?.textContent || key).trim();
+            entries.push({ id: block.id, label, root: block });
+        });
+
+        document.querySelectorAll('#pd-blocks-container [data-pd-block]').forEach((block) => {
+            if (block.style.display === 'none') return;
+            const type = block.dataset.pdType || 'pd';
+            block.id = block.id || `dyn-pd-${type}`;
+            const label = (block.querySelector('h2')?.textContent || type).trim();
+            entries.push({ id: block.id, label, root: block });
+        });
+
+        if (entries.length === 0) {
+            updateProgressWidget('secondary', { filled: 0, total: 0, percent: 0 });
+            const statsEl = document.getElementById('secondary-completion-stats');
+            if (statsEl) statsEl.textContent = 'Aucune étape conditionnelle sélectionnée';
+            return;
+        }
+
+        let filled = 0;
+        let total = 0;
+        entries.forEach((entry) => {
+            const result = computeCompletionForScope(entry.root);
+            filled += result.filled;
+            total += result.total;
+            const li = document.createElement('li');
+            li.innerHTML = `
+                <div class="toc-item-row">
+                    <a href="#${entry.id}">${entry.label}</a>
+                    <span class="toc-percent">${result.filled}/${result.total} (${result.percent}%)</span>
+                </div>
+            `;
+            list.appendChild(li);
+        });
+        updateProgressWidget('secondary', { filled, total, percent: total > 0 ? Math.round((filled / total) * 100) : 0 });
+    }
+
+    function refreshProgressUi() {
+        renderPrimaryProgress();
+        renderSecondaryProgress();
     }
 
     // =====================================
@@ -1435,6 +1629,7 @@
             if (selected) updatePrestationBlockTotals(block);
         });
         updatePrestationsGlobalTotals();
+        refreshProgressUi();
     }
 
     function collectPrestationsDetails() {
@@ -1685,6 +1880,7 @@
             block.style.display = 'none';
         });
         updatePrestationsPagesVisibility();
+        refreshProgressUi();
     }
 
     // =====================================
@@ -2120,20 +2316,15 @@
     gristForm.bindSidebar({
         statusEl: document.getElementById('status'),
         shareUrlEl: document.getElementById('share-url'),
-        copyBtn: document.getElementById('copy-url-btn'),
-        newBtn: document.getElementById('new-form-btn')
+        copyBtn: null,
+        newBtn: null
     });
 
     document.getElementById('quick-new-btn')?.addEventListener('click', () => {
-        document.getElementById('new-form-btn')?.click();
+        window.location.href = window.location.pathname;
     });
     document.getElementById('quick-copy-btn')?.addEventListener('click', () => {
-        const shareUrl = (document.getElementById('share-url')?.value || '').trim();
-        if (!shareUrl) {
-            gristForm.showStatus("Enregistrez d'abord pour générer un lien de reprise.", 'error');
-            return;
-        }
-        document.getElementById('copy-url-btn')?.click();
+        gristForm.copyShareUrl();
     });
 
     ensurePdBlocks();
@@ -2180,6 +2371,9 @@
             sanitizeNonNegative(target);
         }
     });
+    document.getElementById('form')?.addEventListener('input', refreshProgressUi);
+    document.getElementById('form')?.addEventListener('change', refreshProgressUi);
+    refreshProgressUi();
     document.querySelectorAll('.finess-input').forEach((input) => attachFinessValidation(input));
     loadDeptStatsFromCsv().then(() => {
         const deptInput = document.getElementById('es-departement-input');
@@ -2202,7 +2396,7 @@
         }
     }, true);
 
-    gristForm.bindForm(document.getElementById('form'), document.getElementById('submit-btn'));
+    gristForm.bindForm(document.getElementById('form'), null);
 
     // Load existing record if UUID in URL
     gristForm.init();
