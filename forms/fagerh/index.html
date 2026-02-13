@@ -87,7 +87,7 @@
         .grid-item { display: flex; justify-content: space-between; align-items: center; padding: 6px; border-bottom: 1px solid #f0f0f0; font-size: 0.9em; }
         .indent-1 { padding-left: 30px; border-left: 3px solid #ddd; margin-left: 10px; }
         .indent-2 { padding-left: 60px; border-left: 3px dotted #ddd; margin-left: 20px; }
-        input[type="number"], select, input[type="text"] { padding: 8px; border: 1px solid #ccc; border-radius: 5px; font-size: 0.95em; width: 100%; box-sizing: border-box; }
+        input[type="number"], select, input[type="text"], input[type="email"] { padding: 8px; border: 1px solid #ccc; border-radius: 5px; font-size: 0.95em; width: 100%; box-sizing: border-box; }
         input[type="number"] { width: 85px; text-align: center; }
         .hidden { display: none; }
         .volet-subtitle { margin: 6px 0 15px 0; color: #555; font-size: 0.95em; }
@@ -179,11 +179,35 @@
         .finess-msg.error { color: #b94a48; }
         .finess-msg.ok { color: #2e7d32; }
         .finess-input.finess-invalid { border-color: #e67e22; background: #fff8f1; }
+        .email-field { width: 100%; }
+        .email-msg { font-size: 0.82em; margin-top: 4px; display: none; }
+        .email-msg.error { color: #b94a48; }
+        .email-msg.ok { color: #2e7d32; }
+        .email-input.email-invalid { border-color: #e67e22; background: #fff8f1; }
+        .dept-input.dept-invalid { border-color: #e67e22; background: #fff8f1; }
         .orp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 24px; margin-top: 10px; }
         .orp-item { display: flex; align-items: flex-start; gap: 8px; font-size: 0.95em; }
         .orp-item input[type="checkbox"] { margin-top: 2px; }
         .orp-precision { margin-left: 28px; margin-top: 6px; }
         .orp-precision.hidden { display: none; }
+        .radio-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+        .radio-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 10px;
+            border: 1px solid #c8d6e5;
+            border-radius: 999px;
+            background: #fff;
+            cursor: pointer;
+            font-size: 0.92em;
+        }
+        .radio-chip.checked {
+            border-color: #2f78cf;
+            background: #eaf3ff;
+        }
+        .radio-chip input { margin: 0; }
+        .select-upgraded { display: none !important; }
         .rh-frame { background: #fff; border: 1px solid #e6ecef; border-radius: 10px; padding: 14px; margin-bottom: 20px; }
         .orp-instruction {
             background: #eaf4ff;
@@ -310,12 +334,16 @@
         </div>
         <div class="question-row">
             <span>Email de la personne en charge de la validation</span>
-            <input type="email" name="validateur_email" placeholder="email@exemple.fr">
+            <div class="email-field">
+                <input type="email" class="email-input" name="validateur_email" placeholder="email@exemple.fr">
+                <div class="email-msg">Format attendu: nom@domaine.fr</div>
+            </div>
         </div>
         <div class="question-row">
             <span>Département</span>
             <div style="width:100%;">
-                <input type="text" id="es-departement-input" name="es_departement" placeholder="Ex: 75 ou Paris">
+                <input type="text" class="dept-input" id="es-departement-input" name="es_departement" inputmode="numeric" maxlength="3" pattern="\\d{1,3}" placeholder="Ex: 75 ou 971">
+                <div class="volet-subtitle" style="margin-top:6px;">Ce champ permet de pré-remplir automatiquement certaines données du formulaire.</div>
             </div>
         </div>
         <div class="question-row">
@@ -327,6 +355,9 @@
         </div>
         <div id="finess-extra-container"></div>
         <div style="margin-top: 12px;">
+            <div class="volet-subtitle" style="margin-bottom:8px;">
+                Si votre ES dispose de plusieurs numéros FINESS, merci de tous les renseigner en cliquant sur « Ajouter un FINESS ».
+            </div>
             <button type="button" class="btn-add" onclick="addFinessRow()">Ajouter un FINESS</button>
         </div>
     </div>
@@ -626,21 +657,21 @@
     <div class="question-row">
         <span>52. Nombre d'ESAT sur le département ?</span>
         <div style="width:100%;">
-            <select name="q41_esat"><option value="">-- Choisir --</option><option>1-5</option><option>6-10</option><option>au-delà</option></select>
+            <input type="number" min="0" step="1" name="q41_esat" placeholder="Nombre exact">
             <div id="note-q41-esat" class="volet-subtitle"></div>
         </div>
     </div>
     <div class="question-row">
         <span>53. Nombre d'EA sur le département ?</span>
         <div style="width:100%;">
-            <select name="q42_ea"><option value="">-- Choisir --</option><option>1-5</option><option>6-10</option><option>au-delà</option></select>
+            <input type="number" min="0" step="1" name="q42_ea" placeholder="Nombre exact">
             <div id="note-q42-ea" class="volet-subtitle"></div>
         </div>
     </div>
     <div class="question-row">
         <span>54. Nombre d'EI sur le département ?</span>
         <div style="width:100%;">
-            <select name="q43_ei"><option value="">-- Choisir --</option><option>1-5</option><option>6-10</option><option>au-delà</option></select>
+            <input type="number" min="0" step="1" name="q43_ei" placeholder="Nombre exact">
             <div id="note-q43-ei" class="volet-subtitle"></div>
         </div>
     </div>
@@ -1018,7 +1049,14 @@
         if (field.type === 'hidden') return false;
         if (field.closest('.hidden')) return false;
         if (field.closest('template')) return false;
-        return field.getClientRects().length > 0;
+        let node = field;
+        while (node && node !== document.body) {
+            if (node.hasAttribute && node.hasAttribute('hidden')) return false;
+            const style = window.getComputedStyle(node);
+            if (style.display === 'none' || style.visibility === 'hidden') return false;
+            node = node.parentElement;
+        }
+        return true;
     }
 
     function computeCompletionForScope(root, excludeSelectors = []) {
@@ -2067,6 +2105,180 @@
         updateFinessFieldState(input, false);
     }
 
+    function isValidEmail(value) {
+        const v = (value || '').trim();
+        if (!v) return true;
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+    }
+
+    function ensureEmailMessage(input) {
+        const field = input.closest('.email-field') || input.parentElement;
+        let msg = field?.querySelector('.email-msg');
+        if (!msg) {
+            msg = document.createElement('div');
+            msg.className = 'email-msg';
+            msg.textContent = 'Format attendu: nom@domaine.fr';
+            field?.appendChild(msg);
+        }
+        return msg;
+    }
+
+    function updateEmailFieldState(input, forceFeedback = false) {
+        if (!input || !input.classList.contains('email-input')) return;
+        const value = (input.value || '').trim();
+        const ok = isValidEmail(value);
+        const msg = ensureEmailMessage(input);
+        input.classList.toggle('email-invalid', value !== '' && !ok);
+        if (!msg) return;
+
+        msg.classList.remove('ok', 'error');
+        if (value === '') {
+            msg.style.display = 'none';
+            return;
+        }
+        if (ok) {
+            if (forceFeedback) {
+                msg.textContent = 'Email valide';
+                msg.classList.add('ok');
+                msg.style.display = 'block';
+            } else {
+                msg.style.display = 'none';
+            }
+            return;
+        }
+
+        msg.textContent = 'Format attendu: nom@domaine.fr';
+        msg.classList.add('error');
+        msg.style.display = 'block';
+    }
+
+    function validateEmailField() {
+        const input = document.querySelector('.email-input');
+        if (!input) return true;
+        updateEmailFieldState(input, true);
+        return isValidEmail(input.value);
+    }
+
+    function attachEmailValidation(input) {
+        if (!input || input.dataset.emailBound === '1') return;
+        input.dataset.emailBound = '1';
+        input.addEventListener('blur', () => updateEmailFieldState(input, true));
+        input.addEventListener('input', () => updateEmailFieldState(input, false));
+        updateEmailFieldState(input, false);
+    }
+
+    function sanitizeDepartmentValue(value) {
+        return String(value || '').replace(/\D/g, '').slice(0, 3);
+    }
+
+    function updateDepartmentState(input, forceFeedback = false) {
+        if (!input) return true;
+        const sanitized = sanitizeDepartmentValue(input.value);
+        if (input.value !== sanitized) input.value = sanitized;
+        const valid = sanitized === '' || /^\d{1,3}$/.test(sanitized);
+        input.classList.toggle('dept-invalid', !valid);
+        if (forceFeedback && !valid) {
+            gristForm.showStatus('Le département doit contenir uniquement des chiffres (3 maximum).', 'error');
+        }
+        return valid;
+    }
+
+    function attachDepartmentValidation(input) {
+        if (!input || input.dataset.deptBound === '1') return;
+        input.dataset.deptBound = '1';
+        input.addEventListener('input', () => updateDepartmentState(input, false));
+        input.addEventListener('blur', () => updateDepartmentState(input, true));
+        updateDepartmentState(input, false);
+    }
+
+    function setRadioGroupCheckedState(container) {
+        if (!container) return;
+        container.querySelectorAll('.radio-chip').forEach((chip) => {
+            const input = chip.querySelector('input[type="radio"]');
+            chip.classList.toggle('checked', !!input?.checked);
+        });
+    }
+
+    function enhanceSelectToRadios(select) {
+        if (!select || select.dataset.radioEnhanced === '1') return;
+        const choices = Array.from(select.options)
+            .map((opt) => ({ value: opt.value, label: opt.textContent?.trim() || opt.value }))
+            .filter((opt) => opt.value !== '');
+        const isBinaryOuiNon = choices.length === 2
+            && choices.some((c) => c.value === 'Oui')
+            && choices.some((c) => c.value === 'Non');
+        if (isBinaryOuiNon) {
+            choices.sort((a, b) => {
+                if (a.value === b.value) return 0;
+                if (a.value === 'Oui') return -1;
+                if (b.value === 'Oui') return 1;
+                return 0;
+            });
+        }
+        if (choices.length < 2) return;
+
+        const container = document.createElement('div');
+        container.className = 'radio-row';
+        container.dataset.forSelect = select.name || select.id || '';
+        const radioName = `${select.name || select.id || 'select'}__radio`;
+
+        choices.forEach((choice, idx) => {
+            const label = document.createElement('label');
+            label.className = 'radio-chip';
+
+            const input = document.createElement('input');
+            input.type = 'radio';
+            input.name = radioName;
+            input.value = choice.value;
+            input.id = `${radioName}-${idx}`;
+            input.checked = select.value === choice.value;
+            input.addEventListener('change', () => {
+                if (!input.checked) return;
+                select.value = input.value;
+                select.dispatchEvent(new Event('change', { bubbles: true }));
+                select.dispatchEvent(new Event('input', { bubbles: true }));
+                setRadioGroupCheckedState(container);
+            });
+
+            const text = document.createElement('span');
+            text.textContent = choice.label;
+            label.appendChild(input);
+            label.appendChild(text);
+            container.appendChild(label);
+        });
+
+        select.addEventListener('change', () => {
+            container.querySelectorAll('input[type="radio"]').forEach((radio) => {
+                radio.checked = radio.value === select.value;
+            });
+            setRadioGroupCheckedState(container);
+        });
+
+        select.classList.add('select-upgraded');
+        select.parentNode.insertBefore(container, select);
+        setRadioGroupCheckedState(container);
+        select.dataset.radioEnhanced = '1';
+    }
+
+    function initQuickChoiceRadios() {
+        const targetNames = [
+            'pec',
+            'q32_implantation',
+            'q33_transports', 'q33_pmr',
+            'q34_prefecture',
+            'q35_hebergement', 'q35_weekend', 'q35_comptabilite_we', 'q35_fermetures', 'q35_alternatives',
+            'q36_restaurant', 'q36_weekend', 'q36_externe', 'q36_participation',
+            'q37_cuisine', 'q37_weekend',
+            'q40_remuneration',
+            'q44_ccas', 'q45_cpts', 'q46_cpt', 'q46_fagerh', 'q47_clsm', 'q47_fagerh',
+            'q48_cle', 'q48_fagerh', 'q49_cre', 'q49_fagerh', 'q50_fiphfp', 'q50_fagerh',
+            'q51_plith', 'q51_fagerh', 'q52_autre', 'q53_afpa'
+        ];
+        targetNames.forEach((name) => {
+            enhanceSelectToRadios(document.querySelector(`select[name="${name}"]`));
+        });
+    }
+
     // =====================================
     // AUTO-REMPLISSAGE EA/EI/ESAT PAR DEPARTEMENT (CSV)
     // =====================================
@@ -2117,13 +2329,6 @@
         return Number.isNaN(n) ? 0 : n;
     }
 
-    function countToRange(value) {
-        if (value <= 0) return '';
-        if (value <= 5) return '1-5';
-        if (value <= 10) return '6-10';
-        return 'au-delà';
-    }
-
     function setDeptCountNotes(esat, ea, ei) {
         const nEsat = document.getElementById('note-q41-esat');
         const nEa = document.getElementById('note-q42-ea');
@@ -2143,13 +2348,13 @@
             return;
         }
 
-        const esatSelect = document.querySelector('select[name="q41_esat"]');
-        const eaSelect = document.querySelector('select[name="q42_ea"]');
-        const eiSelect = document.querySelector('select[name="q43_ei"]');
+        const esatInput = document.querySelector('input[name="q41_esat"]');
+        const eaInput = document.querySelector('input[name="q42_ea"]');
+        const eiInput = document.querySelector('input[name="q43_ei"]');
 
-        if (esatSelect) esatSelect.value = countToRange(row.esat);
-        if (eaSelect) eaSelect.value = countToRange(row.ea);
-        if (eiSelect) eiSelect.value = countToRange(row.ei);
+        if (esatInput) esatInput.value = String(row.esat);
+        if (eaInput) eaInput.value = String(row.ea);
+        if (eiInput) eiInput.value = String(row.ei);
 
         setDeptCountNotes(row.esat, row.ea, row.ei);
     }
@@ -2409,6 +2614,7 @@
     });
 
     ensurePdBlocks();
+    initQuickChoiceRadios();
     const orpZone = document.getElementById('orp-prestations-zone');
     const orpList = document.getElementById('orp-prestations-list');
     document.getElementById('pec-select')?.addEventListener('change', () => {
@@ -2459,11 +2665,14 @@
         refreshProgressUi();
     });
     refreshProgressUi();
+    window.addEventListener('load', refreshProgressUi);
     updateSaveReminderUi();
     document.querySelectorAll('.finess-input').forEach((input) => attachFinessValidation(input));
+    document.querySelectorAll('.email-input').forEach((input) => attachEmailValidation(input));
     loadDeptStatsFromCsv().then(() => {
         const deptInput = document.getElementById('es-departement-input');
         if (!deptInput) return;
+        attachDepartmentValidation(deptInput);
         const apply = () => applyDeptStats(deptInput.value);
         deptInput.addEventListener('change', apply);
         deptInput.addEventListener('blur', apply);
@@ -2474,6 +2683,18 @@
             e.preventDefault();
             e.stopImmediatePropagation();
             gristForm.showStatus('Un ou plusieurs numéros FINESS sont invalides.', 'error');
+            return;
+        }
+        if (!validateEmailField()) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            gristForm.showStatus("L'email de validation est invalide.", 'error');
+            return;
+        }
+        const deptInput = document.getElementById('es-departement-input');
+        if (deptInput && !updateDepartmentState(deptInput, true)) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
             return;
         }
         if (!validateSocioproConsistencyBeforeSave(true)) {
