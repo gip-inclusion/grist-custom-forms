@@ -345,7 +345,7 @@
         <div class="question-row">
             <span>Département</span>
             <div style="width:100%;">
-                <input type="text" class="dept-input" id="es-departement-input" name="es_departement" inputmode="numeric" maxlength="3" pattern="\\d{1,3}" placeholder="Ex: 75 ou 971">
+                <input type="text" class="dept-input" id="es-departement-input" name="es_departement" inputmode="numeric" maxlength="3" placeholder="Ex: 75 ou 971">
                 <div class="volet-subtitle" style="margin-top:6px;">Ce champ permet de pré-remplir automatiquement certaines données du formulaire.</div>
                 <div class="dept-msg">Département attendu: 01 à 95, ou 971, 972, 973, 974, 976.</div>
             </div>
@@ -2098,14 +2098,70 @@
             updateFinessFieldState(input, true);
             if (!isValidFiness(input.value)) allValid = false;
         });
+        if (!validateUniqueFiness(true)) allValid = false;
         return allValid;
+    }
+
+    function validateUniqueFiness(forceFeedback = true) {
+        let unique = true;
+        const seen = new Map();
+        const duplicateMsg = 'Ce numéro FINESS est déjà saisi. Chaque FINESS doit être unique.';
+
+        // Reset duplicate-only feedback before recomputing duplicates.
+        document.querySelectorAll('.finess-input').forEach((input) => {
+            const value = (input.value || '').trim().toUpperCase();
+            const msg = ensureFinessMessage(input);
+            if (!value || !isValidFiness(value)) return;
+            input.classList.remove('finess-invalid');
+            if (!msg) return;
+            msg.classList.remove('error');
+            if (forceFeedback) {
+                msg.textContent = 'FINESS valide';
+                msg.classList.add('ok');
+                msg.style.display = 'block';
+            } else {
+                msg.classList.remove('ok');
+                msg.style.display = 'none';
+            }
+        });
+
+        document.querySelectorAll('.finess-input').forEach((input) => {
+            const value = (input.value || '').trim().toUpperCase();
+            if (!value) return;
+            const previous = seen.get(value);
+            if (!previous) {
+                seen.set(value, input);
+                return;
+            }
+            unique = false;
+            const msg = ensureFinessMessage(input);
+            input.classList.add('finess-invalid');
+            if (!msg) return;
+            msg.textContent = duplicateMsg;
+            msg.classList.remove('ok');
+            msg.classList.add('error');
+            if (forceFeedback) msg.style.display = 'block';
+        });
+
+        return unique;
+    }
+
+    function hasDuplicateFinessValues() {
+        const values = collectFiness();
+        return new Set(values).size !== values.length;
     }
 
     function attachFinessValidation(input) {
         if (!input || input.dataset.finessBound === '1') return;
         input.dataset.finessBound = '1';
-        input.addEventListener('blur', () => updateFinessFieldState(input, true));
-        input.addEventListener('input', () => updateFinessFieldState(input, false));
+        input.addEventListener('blur', () => {
+            updateFinessFieldState(input, true);
+            validateUniqueFiness(true);
+        });
+        input.addEventListener('input', () => {
+            updateFinessFieldState(input, false);
+            validateUniqueFiness(false);
+        });
         updateFinessFieldState(input, false);
     }
 
@@ -2321,7 +2377,7 @@
             'pec',
             'q32_implantation',
             'q33_transports', 'q33_pmr',
-            'q34_prefecture',
+            'q34_prefecture', 'q34_alternatif',
             'q35_hebergement', 'q35_weekend', 'q35_comptabilite_we', 'q35_fermetures', 'q35_alternatives',
             'q36_restaurant', 'q36_weekend', 'q36_externe', 'q36_participation',
             'q37_cuisine', 'q37_weekend',
@@ -2624,6 +2680,9 @@
 
         // Custom callback: collect complex fields before save
         onBeforeSave: (fields) => {
+            if (!validateAllFiness() || hasDuplicateFinessValues()) {
+                throw new Error('Doublon FINESS détecté');
+            }
             if (!validateSocioproConsistencyBeforeSave(true)) {
                 throw new Error('Incohérence socio-professionnelle');
             }
@@ -2735,10 +2794,16 @@
         apply();
     });
     document.getElementById('form')?.addEventListener('submit', (e) => {
-        if (!validateAllFiness()) {
+        const uniqueFiness = validateUniqueFiness(true);
+        if (!validateAllFiness() || !uniqueFiness) {
             e.preventDefault();
             e.stopImmediatePropagation();
-            gristForm.showStatus('Un ou plusieurs numéros FINESS sont invalides.', 'error');
+            gristForm.showStatus(
+                uniqueFiness
+                    ? 'Un ou plusieurs numéros FINESS sont invalides.'
+                    : 'Doublon FINESS détecté : chaque numéro doit être saisi une seule fois.',
+                'error'
+            );
             return;
         }
         if (!validateEmailField()) {
