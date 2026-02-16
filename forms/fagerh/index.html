@@ -18,6 +18,29 @@
             z-index: 120;
             padding: 14px 16px;
         }
+        .report-header-card {
+            padding: 18px 20px;
+        }
+        .report-header-row {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+        .report-logo {
+            width: 58px;
+            height: 58px;
+            object-fit: contain;
+            border-radius: 10px;
+            background: #fff;
+            border: 1px solid #d8e6f2;
+            padding: 6px;
+        }
+        .report-title {
+            margin: 0;
+            color: var(--fagerh-blue);
+            font-size: 1.5rem;
+            line-height: 1.2;
+        }
         .quick-actions-row {
             display: flex;
             gap: 10px;
@@ -42,6 +65,57 @@
             color: #4f6477;
             margin-top: 8px;
         }
+        .lost-link-box {
+            margin-top: 10px;
+            padding: 10px 12px;
+            border: 1px solid #d7e5f2;
+            border-radius: 8px;
+            background: #f8fbff;
+        }
+        .recovery-gate {
+            margin-top: 8px;
+            padding: 8px 10px;
+            border-radius: 8px;
+            border: 1px solid #e6c77b;
+            background: #fff8e8;
+            color: #7a5400;
+            font-size: 0.9em;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .recovery-gate.hidden { display: none; }
+        .recovery-gate-btn {
+            border: 1px solid #e6c77b;
+            background: #fff;
+            color: #7a5400;
+            border-radius: 999px;
+            padding: 4px 10px;
+            font-size: 0.84em;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .recovery-gate-btn:hover { background: #fff5db; }
+        .lost-link-title {
+            margin: 0 0 8px 0;
+            font-size: 0.9em;
+            color: #2c4b68;
+            font-weight: 700;
+        }
+        .lost-link-row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        .lost-link-row input {
+            flex: 1;
+            min-width: 200px;
+        }
+        .lost-link-row button {
+            white-space: nowrap;
+        }
         .save-reminder {
             margin-top: 10px;
             padding: 9px 12px;
@@ -57,6 +131,24 @@
             background: #effaf2;
             color: #1f6d34;
         }
+        .lock-msg-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .lock-reopen-btn {
+            border: 1px solid #89c89a;
+            background: #fff;
+            color: #1f6d34;
+            border-radius: 999px;
+            padding: 5px 10px;
+            font-size: 0.84em;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .lock-reopen-btn:hover { background: #f3fbf5; }
         .progress-top-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -76,9 +168,10 @@
         .toc-percent { font-size: 0.78em; color: #345; background: #eaf2fb; border: 1px solid #cfe0f3; border-radius: 999px; padding: 1px 7px; white-space: nowrap; }
         h2 { color: var(--fagerh-blue); border-bottom: 3px solid var(--fagerh-light); padding-bottom: 10px; margin-top: 0; }
         h3 { color: var(--orange); margin-top: 30px; border-left: 5px solid var(--orange); padding-left: 15px; margin-bottom: 15px; }
-        .question-row { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; padding: 12px; border-bottom: 1px solid #eee; align-items: center; margin-bottom: 25px; }
+        .question-row { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; padding: 10px 12px; border-bottom: 1px solid #eee; align-items: center; margin-bottom: 14px; }
         .sub-question-box { background: #fffcf9; border-left: 4px solid var(--orange); padding: 15px; margin: 10px 0 10px 20px; border-radius: 0 8px 8px 0; display: none; }
-        .setup-zone { background: #eef7ff; padding: 20px; border-radius: 8px; margin-bottom: 25px; border: 1px solid #d1e9ff; }
+        .sub-question-box .question-row { margin-bottom: 8px; }
+        .setup-zone { background: #eef7ff; padding: 20px; border-radius: 8px; margin-bottom: 30px; border: 1px solid #d1e9ff; }
         .dispositif-row { display: flex; align-items: center; justify-content: space-between; padding: 8px; background: white; margin-bottom: 4px; border-radius: 4px; border: 1px solid #eee; }
         table { width: 100%; border-collapse: collapse; margin-top: 15px; background: white; }
         th { background: #ecf0f1; padding: 12px; text-align: center; font-size: 0.85em; border: 1px solid #ddd; }
@@ -188,6 +281,23 @@
         .dept-msg { font-size: 0.82em; margin-top: 4px; display: none; }
         .dept-msg.error { color: #b94a48; }
         .dept-msg.ok { color: #2e7d32; }
+        .auto-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 1px 8px;
+            margin-right: 6px;
+            border-radius: 999px;
+            border: 1px solid #b7d3ee;
+            background: #edf5ff;
+            color: #24507c;
+            font-size: 0.76em;
+            font-weight: 700;
+            letter-spacing: 0.2px;
+        }
+        input.auto-filled {
+            border-color: #9fc1e4;
+            background: #f3f8ff;
+        }
         .orp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 24px; margin-top: 10px; }
         .orp-item { display: flex; align-items: flex-start; gap: 8px; font-size: 0.95em; }
         .orp-item input[type="checkbox"] { margin-top: 2px; }
@@ -224,9 +334,66 @@
         }
         .prestations-details-card { margin-top: 0; }
         .prest-details-block { border: 1px solid #dfe6ee; border-radius: 10px; padding: 14px; margin-bottom: 14px; }
-        .prest-details-block h4 { margin: 0 0 10px 0; color: #1f3347; }
+        .prest-details-block h4 { margin: 0; color: #1f3347; }
+        .block-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+        .title-with-badge { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .block-actions { display: inline-flex; align-items: center; gap: 8px; }
+        .btn-complete {
+            border: 1px solid #7fb48f;
+            background: #eefaf2;
+            color: #1f6d34;
+            border-radius: 999px;
+            padding: 5px 10px;
+            font-size: 0.8em;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .btn-complete:hover { background: #e4f5ea; }
+        .prest-details-block.is-collapsed .prest-content { display: none; }
+        .toc-list li.toc-done .toc-percent { background: #e8f6ec; border-color: #8bc79b; color: #1f6d34; }
+        .toc-list li.toc-done a { color: #1f6d34; font-weight: 600; }
+        .step-actions { display: flex; justify-content: flex-end; margin-bottom: 10px; }
+        .btn-step-complete {
+            border: 1px solid #8ca7c2;
+            background: #eef4fb;
+            color: #274866;
+            border-radius: 999px;
+            padding: 5px 10px;
+            font-size: 0.8em;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .btn-step-complete:hover { background: #e3edf8; }
+        .step-card.is-collapsed .step-content { display: none; }
+        .volet-actions { display: flex; justify-content: flex-end; margin: 4px 0 10px 0; }
+        .volet-collapsible.is-collapsed .volet-content { display: none; }
+        .scope-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-size: 0.78em;
+            font-weight: 700;
+            letter-spacing: 0.2px;
+            white-space: nowrap;
+            border: 1px solid rgba(0,0,0,0.14);
+        }
+        .scope-badge.with-orp { background: #e8f2ff; color: #244f84; border-color: #9ec1ea; }
+        .scope-badge.all-paths { background: #fff1de; color: #855019; border-color: #f0bd83; }
         .prest-details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 20px; }
-        .prest-details-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+        .prest-details-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 8px 10px;
+            border: 1px solid rgba(0,0,0,0.12);
+            border-radius: 8px;
+            background: rgba(255,255,255,0.88);
+        }
+        .prest-details-row + .prest-details-row { margin-top: 8px; }
+        .metric-label { font-weight: 600; color: #26415a; }
+        .metric-label.total { color: #7a4b00; }
         .prest-details-panels { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 14px; margin-top: 10px; }
         .prest-details-panels.three { grid-template-columns: 1.6fr 1fr 1fr; }
         .prest-details-panel { background: rgba(255,255,255,0.68); border: 1px solid rgba(0,0,0,0.12); border-radius: 8px; padding: 10px; }
@@ -246,9 +413,61 @@
             .page-layout { flex-direction: column; }
             .sidebar { width: 100%; position: static; }
             .quick-actions-card { position: static; }
+            .report-header-row { align-items: flex-start; }
             .question-row { grid-template-columns: 1fr; gap: 8px; }
             .toc-list { max-height: none; }
             .progress-top-grid { grid-template-columns: 1fr; }
+            .lost-link-row { flex-direction: column; align-items: stretch; }
+        }
+        @media print {
+            body {
+                background: #fff;
+                padding: 0;
+                color: #111;
+                font-size: 11pt;
+            }
+            .page-layout {
+                display: block;
+                max-width: none;
+                margin: 0;
+            }
+            .quick-actions-card,
+            #intro-remplissage,
+            .progress-top-grid,
+            .submit-zone,
+            .control-bar,
+            .btn-add,
+            .btn-del,
+            .btn-complete,
+            .btn-step-complete,
+            .sidebar-btn {
+                display: none !important;
+            }
+            .card {
+                box-shadow: none;
+                border: 1px solid #ddd;
+                margin: 0 0 14px 0;
+                padding: 14px;
+                break-inside: avoid;
+                page-break-inside: avoid;
+            }
+            .question-row {
+                margin-bottom: 8px;
+                padding: 8px 10px;
+            }
+            input, select, textarea {
+                border: 1px solid #bbb !important;
+                background: #fff !important;
+                color: #111 !important;
+            }
+            .hidden {
+                display: none !important;
+            }
+            [data-pd-block],
+            [data-prestation-key] {
+                break-inside: avoid;
+                page-break-inside: avoid;
+            }
         }
         #pd-blocks-container { margin-top: 12px; }
     </style>
@@ -258,14 +477,35 @@
 <div class="page-layout">
 <div class="main-content">
 <form id="form">
+<div class="card report-header-card">
+    <div class="report-header-row">
+        <img src="/assets/logo_carre.png" alt="Logo FAGERH" class="report-logo">
+        <h1 class="report-title">Rapport d'activité année 2025</h1>
+    </div>
+</div>
 <div class="card quick-actions-card">
     <div class="quick-actions-row">
-        <button type="submit" form="form" class="sidebar-btn primary">Enregistrer</button>
-        <button type="button" id="quick-new-btn" class="sidebar-btn secondary">Nouveau formulaire</button>
+        <button type="submit" form="form" id="quick-save-btn" class="sidebar-btn primary">Enregistrer</button>
         <button type="button" id="quick-copy-btn" class="sidebar-btn secondary">Copier lien de reprise</button>
+        <button type="button" id="quick-export-csv-btn" class="sidebar-btn secondary">Exporter en CSV</button>
+        <button type="button" id="quick-export-pdf-btn" class="sidebar-btn secondary">Exporter en PDF</button>
         <button type="button" id="quick-finish-btn" class="sidebar-btn finish">Envoyer mes réponses</button>
     </div>
     <div id="save-reminder-msg" class="save-reminder">Obligatoire: cliquez sur « Enregistrer » après chaque modification, sinon vos changements ne seront pas conservés.</div>
+    <div id="lost-link-box" class="lost-link-box hidden">
+        <p class="lost-link-title">J'ai perdu mon lien de reprise</p>
+        <div class="lost-link-row">
+            <input type="email" id="recover-email-input" placeholder="Email de la personne en charge de la validation">
+            <button type="button" id="recover-by-email-btn" class="btn-add">Retrouver mon questionnaire</button>
+        </div>
+        <div class="quick-actions-hint">Saisissez l'email de validation pour réouvrir votre questionnaire.</div>
+    </div>
+    <div id="submission-lock-msg" class="save-reminder saved" style="display:none; margin-top:8px;">
+        <div class="lock-msg-row">
+            <span>Votre questionnaire a déjà été envoyé. Souhaitez-vous y revenir pour mettre à jour vos réponses ?</span>
+            <button type="button" id="lock-reopen-btn" class="lock-reopen-btn">Revenir en modification</button>
+        </div>
+    </div>
     <div id="status" class="status-msg" style="margin-top:8px;"></div>
     <input type="text" id="share-url" readonly style="display:none;">
 </div>
@@ -355,6 +595,10 @@
             <div class="finess-field">
                 <input type="text" class="finess-input" name="finess_main" placeholder="Numéro FINESS">
                 <div class="finess-msg">Format attendu: 9 caractères (généralement 9 chiffres, ex: 123456789).</div>
+                <div id="finess-recovery-gate" class="recovery-gate hidden">
+                    <span>Ce FINESS est déjà connu. Utilisez votre lien de reprise.</span>
+                    <button type="button" id="open-lost-link-btn" class="recovery-gate-btn">J'ai perdu mon lien</button>
+                </div>
             </div>
         </div>
         <div id="finess-extra-container"></div>
@@ -495,8 +739,18 @@
         <span>32. Votre ES est-il desservi par des transports en commun ?</span>
         <select name="q33_transports" onchange="toggleBox('sub-33-oui', this.value === 'Oui'); toggleBox('sub-33-non', this.value === 'Non')"><option value="">-- Choisir --</option><option value="Oui">Oui</option><option value="Non">Non</option></select>
     </div>
-    <div id="sub-33-oui" class="sub-question-box"><span>Accessible PMR ?</span><select name="q33_pmr"><option value="">-- Choisir --</option><option>Oui</option><option>Non</option></select></div>
-    <div id="sub-33-non" class="sub-question-box"><span>Des transports alternatifs sont-ils organisés ?</span><select name="q33_alternatif"><option value="">-- Choisir --</option><option>Oui</option><option>Oui, par un sous-traitant</option><option>Non</option></select></div>
+    <div id="sub-33-oui" class="sub-question-box">
+        <div class="question-row">
+            <span>Accessible PMR ?</span>
+            <select name="q33_pmr"><option value="">-- Choisir --</option><option>Oui</option><option>Non</option></select>
+        </div>
+    </div>
+    <div id="sub-33-non" class="sub-question-box">
+        <div class="question-row">
+            <span>Des transports alternatifs sont-ils organisés ?</span>
+            <select name="q33_alternatif"><option value="">-- Choisir --</option><option>Oui</option><option>Oui, par un sous-traitant</option><option>Non</option></select>
+        </div>
+    </div>
     <div class="question-row">
     <span>33. Votre ES est-il en agglomération de la préfecture de votre département ?</span>
     <select name="q34_prefecture"
@@ -506,15 +760,17 @@
         <option value="Non">Non</option>
     </select>
     </div>
-    </div>
     <div id="sub-34-non" class="sub-question-box">
-        <span>Votre ES est à quelle distance de la préfecture ?</span>
-        <select name="q34_alternatif">
-             <option value="">-- Choisir --</option>
-            <option value="- de 25 km">- de 25 km</option>
-            <option value="De 25 à 50 km">De 25 à 50 km</option>
-         <option value="+ de 50 km">+ de 50 km</option>
-        </select>
+        <div class="question-row">
+            <span>Votre ES est à quelle distance de la préfecture ?</span>
+            <select name="q34_alternatif">
+                 <option value="">-- Choisir --</option>
+                <option value="- de 25 km">- de 25 km</option>
+                <option value="De 25 à 50 km">De 25 à 50 km</option>
+             <option value="+ de 50 km">+ de 50 km</option>
+            </select>
+        </div>
+    </div>
     </div>
     <div class="setup-zone">
     <strong>4. Vos équipements et services</strong> 
@@ -657,7 +913,12 @@
 <div class="setup-zone">
     <strong>5. Rémunération & environnement</strong>
     <div class="question-row"><span>51. Traitement rémunération délégué à un opérateur ?</span><select name="q40_remuneration" onchange="toggleBox('sub-40', this.value === 'Oui')"><option value="">-- Choisir --</option><option value="Non">Non</option><option value="Oui">Oui</option></select></div>
-    <div id="sub-40" class="sub-question-box"><span>Nom de l'opérateur :</span><input type="text" name="q40_operateur"></div>
+    <div id="sub-40" class="sub-question-box">
+        <div class="question-row">
+            <span>Nom de l'opérateur :</span>
+            <input type="text" name="q40_operateur">
+        </div>
+    </div>
     <div class="question-row">
         <span>52. Nombre d'ESAT sur le département ?</span>
         <div style="width:100%;">
@@ -685,17 +946,47 @@
     <div class="question-row"><span>61. Commissions Communales d'Action Sociale (CCAS) ?</span><select name="q44_ccas"><option value="">-- Choisir --</option><option>Oui</option><option>Non</option></select></div>
     <div class="question-row"><span>62. Communauté Professionnelle Territoire de Santé (CPTS) ?</span><select name="q45_cpts"><option value="">-- Choisir --</option><option>Oui</option><option>Non</option></select></div>
     <div class="question-row"><span>63. Communauté Psychiatrique de Territoire (CPT) ?</span><select name="q46_cpt" onchange="toggleBox('sub-46', this.value === 'Non')"><option value="">-- Choisir --</option><option value="Oui">Oui</option><option value="Non">Non</option></select></div>
-    <div id="sub-46" class="sub-question-box"><span>Le réseau Fagerh est-il représenté ?</span><select name="q46_fagerh"><option value="">-- Choisir --</option><option>Oui</option><option>Non</option></select></div>
+    <div id="sub-46" class="sub-question-box">
+        <div class="question-row">
+            <span>Le réseau Fagerh est-il représenté ?</span>
+            <select name="q46_fagerh"><option value="">-- Choisir --</option><option>Oui</option><option>Non</option></select>
+        </div>
+    </div>
     <div class="question-row"><span>64. Comité Local de Santé Mentale (CLSM) ?</span><select name="q47_clsm" onchange="toggleBox('sub-47', this.value === 'Non')"><option value="">-- Choisir --</option><option value="Oui">Oui</option><option value="Non">Non</option></select></div>
-    <div id="sub-47" class="sub-question-box"><span>Le réseau Fagerh est-il représenté ?</span><select name="q47_fagerh"><option value="">-- Choisir --</option><option>Oui</option><option>Non</option></select></div>
+    <div id="sub-47" class="sub-question-box">
+        <div class="question-row">
+            <span>Le réseau Fagerh est-il représenté ?</span>
+            <select name="q47_fagerh"><option value="">-- Choisir --</option><option>Oui</option><option>Non</option></select>
+        </div>
+    </div>
     <div class="question-row"><span>65. Comité Local pour l'Emploi (CLE) ?</span><select name="q48_cle" onchange="toggleBox('sub-48', this.value === 'Non')"><option value="">-- Choisir --</option><option value="Oui">Oui</option><option value="Non">Non</option></select></div>
-    <div id="sub-48" class="sub-question-box"><span>Le réseau Fagerh est-il représenté ?</span><select name="q48_fagerh"><option value="">-- Choisir --</option><option>Oui</option><option>Non</option></select></div>
+    <div id="sub-48" class="sub-question-box">
+        <div class="question-row">
+            <span>Le réseau Fagerh est-il représenté ?</span>
+            <select name="q48_fagerh"><option value="">-- Choisir --</option><option>Oui</option><option>Non</option></select>
+        </div>
+    </div>
     <div class="question-row"><span>66. Comité Régional pour l'Emploi (CRE) ?</span><select name="q49_cre" onchange="toggleBox('sub-49', this.value === 'Non')"><option value="">-- Choisir --</option><option value="Oui">Oui</option><option value="Non">Non</option></select></div>
-    <div id="sub-49" class="sub-question-box"><span>Le réseau Fagerh est-il représenté ?</span><select name="q49_fagerh"><option value="">-- Choisir --</option><option>Oui</option><option>Non</option></select></div>
+    <div id="sub-49" class="sub-question-box">
+        <div class="question-row">
+            <span>Le réseau Fagerh est-il représenté ?</span>
+            <select name="q49_fagerh"><option value="">-- Choisir --</option><option>Oui</option><option>Non</option></select>
+        </div>
+    </div>
     <div class="question-row"><span>67. Comité local FIPHFP ?</span><select name="q50_fiphfp" onchange="toggleBox('sub-50', this.value === 'Non')"><option value="">-- Choisir --</option><option value="Oui">Oui</option><option value="Non">Non</option></select></div>
-    <div id="sub-50" class="sub-question-box"><span>Le réseau Fagerh est-il représenté ?</span><select name="q50_fagerh"><option value="">-- Choisir --</option><option>Oui</option><option>Non</option></select></div>
+    <div id="sub-50" class="sub-question-box">
+        <div class="question-row">
+            <span>Le réseau Fagerh est-il représenté ?</span>
+            <select name="q50_fagerh"><option value="">-- Choisir --</option><option>Oui</option><option>Non</option></select>
+        </div>
+    </div>
     <div class="question-row"><span>68. Comité local PLITH/PRITH ?</span><select name="q51_plith" onchange="toggleBox('sub-51', this.value === 'Non')"><option value="">-- Choisir --</option><option value="Oui">Oui</option><option value="Non">Non</option></select></div>
-    <div id="sub-51" class="sub-question-box"><span>Le réseau Fagerh est-il représenté ?</span><select name="q51_fagerh"><option value="">-- Choisir --</option><option>Oui</option><option>Non</option></select></div>
+    <div id="sub-51" class="sub-question-box">
+        <div class="question-row">
+            <span>Le réseau Fagerh est-il représenté ?</span>
+            <select name="q51_fagerh"><option value="">-- Choisir --</option><option>Oui</option><option>Non</option></select>
+        </div>
+    </div>
     <div class="question-row">
     <span>69. Autre instance ?</span>
     <select name="q52_autre"
@@ -717,6 +1008,7 @@
         <strong>L'AFPA est-elle présente sur votre territoire ?</strong>
         <select name="q53_afpa"><option value="">-- Choisir --</option><option value="Non">Non</option><option value="Oui">Oui</option></select>
     </div>
+</div>
 
     <div class="card prestations-details-card" id="prestations-details-card">
         <h2>Prestations délivrées dans le cadre des ORP CDAPH</h2>
@@ -921,7 +1213,7 @@
                         <tr>
                             <th rowspan="3" style="width: 200px; text-align: left; background: #ecf0f1;">Prestations</th>
                             <th colspan="6">Dont, combien en présentiel ?</th>
-                            <th colspan="3" rowspan="2">Accompagnés hors les murs ?</th>
+                            <th colspan="3" rowspan="2">Accompagnées hors les murs ?</th>
                             <th colspan="2" rowspan="2">Hébergées ?</th>
                         </tr>
                         <tr>
@@ -1048,6 +1340,166 @@
         updateSaveReminderUi();
     }
 
+    function setQuestionnaireLocked(locked, options = {}) {
+        const { announce = true } = options;
+        const form = document.getElementById('form');
+        const finishBtn = document.getElementById('quick-finish-btn');
+        const lockMsg = document.getElementById('submission-lock-msg');
+        const hidden = document.getElementById('saisie_terminee');
+        if (!form || !finishBtn || !hidden) return;
+
+        const allowButtonIds = new Set([
+            'quick-save-btn',
+            'quick-copy-btn',
+            'quick-export-csv-btn',
+            'quick-export-pdf-btn',
+            'quick-finish-btn',
+            'lock-reopen-btn',
+        ]);
+
+        form.querySelectorAll('input, select, textarea, button').forEach((el) => {
+            if (el.tagName === 'BUTTON' && allowButtonIds.has(el.id)) return;
+            if (el.tagName === 'INPUT' && el.type === 'hidden') return;
+
+            if (locked) {
+                if (!el.disabled) {
+                    el.disabled = true;
+                    el.dataset.lockManaged = '1';
+                }
+                return;
+            }
+            if (el.dataset.lockManaged === '1') {
+                el.disabled = false;
+                delete el.dataset.lockManaged;
+            }
+        });
+
+        hidden.value = locked ? 'true' : 'false';
+        finishBtn.textContent = locked ? 'Questionnaire envoyé' : 'Envoyer mes réponses';
+        if (lockMsg) lockMsg.style.display = locked ? 'block' : 'none';
+
+        if (announce) {
+            gristForm.showStatus(
+                locked
+                    ? 'Questionnaire verrouillé. Cliquez sur « Enregistrer » pour conserver ce statut.'
+                    : 'Saisie rouverte. Vous pouvez modifier vos réponses, puis enregistrer.',
+                'info'
+            );
+        }
+    }
+
+    function collectExportData() {
+        const form = document.getElementById('form');
+        const data = {};
+        if (!form) return data;
+
+        const elements = Array.from(form.querySelectorAll('input, select, textarea'));
+        const radioNames = new Set();
+        elements.forEach((el) => {
+            if (!el.name || el.disabled) return;
+            if (el.type === 'radio') {
+                radioNames.add(el.name);
+                return;
+            }
+            if (el.type === 'checkbox') {
+                data[el.name] = el.checked ? 'Oui' : 'Non';
+                return;
+            }
+            data[el.name] = (el.value || '').trim();
+        });
+
+        radioNames.forEach((name) => {
+            const checked = Array.from(form.querySelectorAll(`input[type="radio"][name="${name}"]`))
+                .find((el) => el.checked);
+            data[name] = checked ? (checked.value || '').trim() : '';
+        });
+
+        data.exported_at = new Date().toISOString();
+        data.exported_at_fr = new Date().toLocaleString('fr-FR');
+        return data;
+    }
+
+    function csvEscape(value) {
+        const str = String(value ?? '');
+        return `"${str.replace(/"/g, '""')}"`;
+    }
+
+    function buildCsvFromObject(data) {
+        const keys = Object.keys(data);
+        const header = keys.map(csvEscape).join(';');
+        const row = keys.map((k) => csvEscape(data[k])).join(';');
+        return `${header}\n${row}\n`;
+    }
+
+    function downloadTextFile(content, fileName, mimeType) {
+        const blob = new Blob([content], { type: mimeType });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    function getExportBaseName() {
+        const finess = (document.querySelector('input[name="finess_main"]')?.value || '').trim();
+        const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
+        return `fagerh-${finess || 'saisie'}-${stamp}`;
+    }
+
+    function exportCurrentSaisieCsv() {
+        const data = collectExportData();
+        const csv = buildCsvFromObject(data);
+        downloadTextFile(csv, `${getExportBaseName()}.csv`, 'text/csv;charset=utf-8');
+    }
+
+    function exportCurrentSaisiePdf() {
+        window.print();
+    }
+
+    async function recoverFormByEmail() {
+        const input = document.getElementById('recover-email-input');
+        if (!input) return;
+        const email = (input.value || '').trim();
+        if (!isValidEmail(email)) {
+            gristForm.showStatus("Saisissez un email valide pour retrouver votre lien.", 'error');
+            return;
+        }
+        if (hasUnsavedChanges) {
+            const ok = window.confirm(
+                "Des modifications non enregistrées seront perdues. Voulez-vous continuer ?"
+            );
+            if (!ok) return;
+        }
+        try {
+            gristForm.showStatus('Recherche du questionnaire...', 'loading');
+            const resp = await fetch('/api/forms/fagerh/recover-by-email', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email }),
+            });
+            const data = await resp.json().catch(() => ({}));
+            if (!resp.ok) {
+                gristForm.showStatus(data.error || "Aucun questionnaire trouvé pour cet email.", 'error');
+                return;
+            }
+            const uuid = data.uuid;
+            if (!uuid) {
+                gristForm.showStatus("Aucun questionnaire trouvé pour cet email.", 'error');
+                return;
+            }
+            const info = (data.count || 0) > 1
+                ? `${data.count} questionnaires trouvés. Ouverture du plus récent...`
+                : 'Questionnaire retrouvé. Ouverture...';
+            gristForm.showStatus(info, 'success');
+            window.location.href = `${window.location.pathname}?formulaire=${encodeURIComponent(uuid)}`;
+        } catch {
+            gristForm.showStatus("Impossible de retrouver le lien pour l'instant.", 'error');
+        }
+    }
+
     function isFieldVisible(field) {
         if (!field || field.disabled) return false;
         if (field.type === 'hidden') return false;
@@ -1091,6 +1543,27 @@
         return { filled, total, percent: total > 0 ? Math.round((filled / total) * 100) : 0 };
     }
 
+    function computeFieldTotalIgnoringVisibility(root, excludeSelectors = []) {
+        if (!root) return 0;
+        const fields = Array.from(root.querySelectorAll('input, select, textarea'))
+            .filter((field) => !field.disabled)
+            .filter((field) => field.type !== 'hidden')
+            .filter((field) => !field.closest('template'))
+            .filter((field) => !excludeSelectors.some((sel) => field.closest(sel)));
+        const groupKeys = new Set();
+        let total = 0;
+        fields.forEach((field, idx) => {
+            if (field.type === 'checkbox' || field.type === 'radio') {
+                const key = `${field.type}:${field.name || field.id || field.dataset.detailField || `__${idx}`}`;
+                groupKeys.add(key);
+                return;
+            }
+            total += 1;
+        });
+        total += groupKeys.size;
+        return total;
+    }
+
     function updateProgressWidget(prefix, result) {
         const pctEl = document.getElementById(`${prefix}-completion-percent`);
         const fillEl = document.getElementById(`${prefix}-completion-fill`);
@@ -1110,15 +1583,22 @@
         PRIMARY_STEPS.forEach((step) => {
             const root = document.getElementById(step.id);
             if (!root) return;
-            const result = computeCompletionForScope(root, [
+            const excludeSelectors = [
                 '#prestations-details-card',
                 '#prestations-totales-card',
                 '#prestations-detail-blocks',
                 '#pd-blocks-container',
-            ]);
+            ];
+            let result = computeCompletionForScope(root, excludeSelectors);
+            const completed = root.dataset.completed === '1';
+            if (completed) {
+                const totalFields = computeFieldTotalIgnoringVisibility(root, excludeSelectors);
+                result = { filled: totalFields, total: totalFields, percent: totalFields > 0 ? 100 : 0 };
+            }
             filled += result.filled;
             total += result.total;
             const li = document.createElement('li');
+            li.classList.toggle('toc-done', completed);
             li.innerHTML = `
                 <div class="toc-item-row">
                     <a href="#${step.id}">${step.label}</a>
@@ -1129,6 +1609,115 @@
         });
 
         updateProgressWidget('primary', { filled, total, percent: total > 0 ? Math.round((filled / total) * 100) : 0 });
+    }
+
+    function setPrimaryStepCompletionState(root, completed) {
+        if (!root) return;
+        root.dataset.completed = completed ? '1' : '0';
+        root.classList.toggle('is-collapsed', completed);
+        const btn = root.querySelector('[data-primary-complete-btn]');
+        if (btn) btn.textContent = completed ? 'Reprendre la saisie de cette étape' : 'Saisie terminée pour cette étape';
+        refreshProgressUi();
+    }
+
+    function updateRhStepCompletionFromVolets(root) {
+        if (!root) return;
+        const volets = Array.from(root.querySelectorAll('.rh-frame .setup-zone.volet-collapsible'));
+        if (volets.length === 0) {
+            root.dataset.completed = '0';
+            refreshProgressUi();
+            return;
+        }
+        const allDone = volets.every((zone) => zone.dataset.completed === '1');
+        root.dataset.completed = allDone ? '1' : '0';
+        refreshProgressUi();
+    }
+
+    function setRhVoletCompletionState(zone, completed, root) {
+        if (!zone) return;
+        zone.dataset.completed = completed ? '1' : '0';
+        zone.classList.toggle('is-collapsed', completed);
+        const btn = zone.querySelector('[data-rh-volet-complete-btn]');
+        if (btn) btn.textContent = completed ? 'Reprendre la saisie de ce volet' : 'Saisie terminée pour ce volet';
+        updateRhStepCompletionFromVolets(root);
+    }
+
+    function initRhVoletCompletionControls(root) {
+        if (!root) return;
+        const zones = root.querySelectorAll('.rh-frame .setup-zone');
+        zones.forEach((zone) => {
+            zone.classList.add('volet-collapsible');
+            let actionBtn = zone.querySelector('[data-rh-volet-complete-btn]');
+            if (!actionBtn) {
+                const actions = document.createElement('div');
+                actions.className = 'volet-actions';
+                actions.innerHTML = `<button type="button" class="btn-step-complete" data-rh-volet-complete-btn>Saisie terminée pour ce volet</button>`;
+
+                const title = zone.querySelector('strong');
+                if (title) {
+                    title.insertAdjacentElement('afterend', actions);
+                } else {
+                    zone.insertBefore(actions, zone.firstChild);
+                }
+                actionBtn = actions.querySelector('[data-rh-volet-complete-btn]');
+
+                const content = document.createElement('div');
+                content.className = 'volet-content';
+                let node = actions.nextSibling;
+                while (node) {
+                    const next = node.nextSibling;
+                    content.appendChild(node);
+                    node = next;
+                }
+                zone.appendChild(content);
+            }
+
+            actionBtn?.addEventListener('click', () => {
+                setRhVoletCompletionState(zone, zone.dataset.completed !== '1', root);
+            });
+            setRhVoletCompletionState(zone, zone.dataset.completed === '1', root);
+        });
+        root.classList.remove('is-collapsed');
+    }
+
+    function initPrimaryStepCompletionControls() {
+        PRIMARY_STEPS.forEach((step) => {
+            const root = document.getElementById(step.id);
+            if (!root) return;
+            root.classList.add('step-card');
+
+            if (step.id === 'step-rh') {
+                initRhVoletCompletionControls(root);
+                return;
+            }
+
+            let actionBtn = root.querySelector('[data-primary-complete-btn]');
+            if (!actionBtn) {
+                const title = root.querySelector('h2, h3');
+                if (!title) return;
+
+                const actions = document.createElement('div');
+                actions.className = 'step-actions';
+                actions.innerHTML = `<button type="button" class="btn-step-complete" data-primary-complete-btn>Saisie terminée pour cette étape</button>`;
+                title.insertAdjacentElement('afterend', actions);
+                actionBtn = actions.querySelector('[data-primary-complete-btn]');
+
+                const content = document.createElement('div');
+                content.className = 'step-content';
+                let node = actions.nextSibling;
+                while (node) {
+                    const next = node.nextSibling;
+                    content.appendChild(node);
+                    node = next;
+                }
+                root.appendChild(content);
+            }
+
+            actionBtn?.addEventListener('click', () => {
+                setPrimaryStepCompletionState(root, root.dataset.completed !== '1');
+            });
+            setPrimaryStepCompletionState(root, root.dataset.completed === '1');
+        });
     }
 
     function renderSecondaryProgress() {
@@ -1143,7 +1732,7 @@
             block.id = block.id || `dyn-orp-${key}`;
             const label = (block.querySelector('h4')?.textContent || key).trim();
             const result = computeCompletionForScope(block);
-            entries.push({ id: block.id, label, root: block, result });
+            entries.push({ id: block.id, label, root: block, result, completed: block.dataset.completed === '1' });
         });
 
         document.querySelectorAll('#pd-blocks-container [data-pd-block]').forEach((block) => {
@@ -1166,10 +1755,15 @@
         let total = 0;
 
         entries.forEach((entry) => {
-            const result = entry.result || computeCompletionForScope(entry.root);
+            let result = entry.result || computeCompletionForScope(entry.root);
+            if (entry.completed) {
+                const totalFields = computeFieldTotalIgnoringVisibility(entry.root);
+                result = { filled: totalFields, total: totalFields, percent: totalFields > 0 ? 100 : 0 };
+            }
             filled += result.filled;
             total += result.total;
             const li = document.createElement('li');
+            li.classList.toggle('toc-done', !!entry.completed);
             li.innerHTML = `
                 <div class="toc-item-row">
                     <a href="#${entry.id}">${entry.label}</a>
@@ -1454,24 +2048,24 @@
     function renderHorsMursAndHebPanels(prefix, state) {
         return `
             <div class="prest-details-panel">
-                <h5>Accompagnés hors les murs</h5>
+                <h5>Accompagnées hors les murs</h5>
                 <div class="prest-details-row">
-                    <span>Nombre de personnes</span>
+                    <span class="metric-label">Nombre de personnes</span>
                     <input type="number" min="0" data-detail-field="${prefix}.hors_murs_personnes" value="${getNestedValue(state, `${prefix}.hors_murs_personnes`) ?? ''}">
                 </div>
                 <div class="prest-details-row">
-                    <span>Nombre de journées total</span>
+                    <span class="metric-label total">Nombre de journées totales</span>
                     <input type="number" min="0" data-detail-field="${prefix}.hors_murs_journees" value="${getNestedValue(state, `${prefix}.hors_murs_journees`) ?? ''}">
                 </div>
             </div>
             <div class="prest-details-panel">
                 <h5>Hébergées</h5>
                 <div class="prest-details-row">
-                    <span>Nombre de personnes</span>
+                    <span class="metric-label">Nombre de personnes</span>
                     <input type="number" min="0" data-detail-field="${prefix}.hebergees_personnes" value="${getNestedValue(state, `${prefix}.hebergees_personnes`) ?? ''}">
                 </div>
                 <div class="prest-details-row">
-                    <span>Nombre de nuitées total</span>
+                    <span class="metric-label total">Nombre de nuitées totales</span>
                     <input type="number" min="0" data-detail-field="${prefix}.hebergees_nuitees" value="${getNestedValue(state, `${prefix}.hebergees_nuitees`) ?? ''}">
                 </div>
             </div>
@@ -1491,24 +2085,24 @@
         return `
             <div class="prest-details-panels">
                 <div class="prest-details-panel">
-                    <h5>Accompagnés hors les murs</h5>
+                    <h5>Accompagnées hors les murs</h5>
                     <div class="prest-details-row">
-                        <span>Nombre de personnes</span>
+                        <span class="metric-label">Nombre de personnes</span>
                         <input type="number" min="0" data-detail-field="${prefix}.hors_murs_personnes" value="${getNestedValue(state, `${prefix}.hors_murs_personnes`) ?? ''}">
                     </div>
                     <div class="prest-details-row">
-                        <span>Nombre de journées total</span>
+                        <span class="metric-label total">Nombre de journées totales</span>
                         <input type="number" min="0" data-detail-field="${prefix}.hors_murs_journees" value="${getNestedValue(state, `${prefix}.hors_murs_journees`) ?? ''}">
                     </div>
                 </div>
                 <div class="prest-details-panel">
                     <h5>Hébergées</h5>
                     <div class="prest-details-row">
-                        <span>Nombre de personnes</span>
+                        <span class="metric-label">Nombre de personnes</span>
                         <input type="number" min="0" data-detail-field="${prefix}.hebergees_personnes" value="${getNestedValue(state, `${prefix}.hebergees_personnes`) ?? ''}">
                     </div>
                     <div class="prest-details-row">
-                        <span>Nombre de nuitées total</span>
+                        <span class="metric-label total">Nombre de nuitées totales</span>
                         <input type="number" min="0" data-detail-field="${prefix}.hebergees_nuitees" value="${getNestedValue(state, `${prefix}.hebergees_nuitees`) ?? ''}">
                     </div>
                 </div>
@@ -1565,10 +2159,10 @@
         { path: 'distanciel_tp', label: 'Distanciel - Temps partiel' },
         { path: 'hybride_tc', label: 'Hybride - Temps complet' },
         { path: 'hybride_tp', label: 'Hybride - Temps partiel' },
-        { path: 'hors_murs_personnes', label: 'Accompagnés hors les murs - Nombre de personnes' },
-        { path: 'hors_murs_journees', label: 'Accompagnés hors les murs - Nombre de journées total' },
+        { path: 'hors_murs_personnes', label: 'Accompagnées hors les murs - Nombre de personnes' },
+        { path: 'hors_murs_journees', label: 'Accompagnées hors les murs - Nombre de journées totales' },
         { path: 'hebergees_personnes', label: 'Hébergées - Nombre de personnes' },
-        { path: 'hebergees_nuitees', label: 'Hébergées - Nombre de nuitées total' },
+        { path: 'hebergees_nuitees', label: 'Hébergées - Nombre de nuitées totales' },
     ];
 
     function validateSocioproConsistencyState(state) {
@@ -1625,7 +2219,18 @@
 
         const title = resolvePrestationDisplayTitle(key, def);
 
-        let html = `<h4>${title}</h4>`;
+        let html = `
+            <div class="block-head">
+                <div class="title-with-badge">
+                    <span class="scope-badge with-orp">Avec ORP CDAPH</span>
+                    <h4>${title}</h4>
+                </div>
+                <div class="block-actions">
+                    <button type="button" class="btn-complete" data-mark-complete>Saisie terminée pour cette prestation</button>
+                </div>
+            </div>
+            <div class="prest-content">
+        `;
         if (key === 'orp_parcours_sociopro') {
             html += `<div class="consistency-help">Règle de cohérence: pour chaque indicateur, la somme des deux sous-parties doit être inférieure ou égale à la valeur du bloc global.</div>`;
             html += `<div class="consistency-msg" data-sociopro-consistency><strong>Contrôle de cohérence :</strong> OK</div>`;
@@ -1656,10 +2261,26 @@
                     Nuitées : <span data-total-nuits>0</span>
                 </span>
             </div>
+            </div>
         `;
 
         block.innerHTML = html;
         return block;
+    }
+
+    function setPrestationCompletionState(block, completed, persistState = true) {
+        if (!block) return;
+        const key = block.dataset.prestationKey;
+        if (!key) return;
+        block.dataset.completed = completed ? '1' : '0';
+        block.classList.toggle('is-collapsed', completed);
+        const btn = block.querySelector('[data-mark-complete]');
+        if (btn) btn.textContent = completed ? 'Reprendre la saisie de cette prestation' : 'Saisie terminée pour cette prestation';
+        if (persistState) {
+            const state = ensurePrestationState(key);
+            state.__completed = !!completed;
+        }
+        refreshProgressUi();
     }
 
     function updatePrestationBlockTotals(block) {
@@ -1732,7 +2353,11 @@
             block.querySelectorAll('input, select, textarea').forEach((el) => {
                 el.disabled = !selected;
             });
-            if (selected) updatePrestationBlockTotals(block);
+            if (selected) {
+                updatePrestationBlockTotals(block);
+                const state = ensurePrestationState(key);
+                setPrestationCompletionState(block, !!state.__completed, false);
+            }
         });
         updatePrestationsGlobalTotals();
         refreshProgressUi();
@@ -1762,6 +2387,14 @@
     function bindPrestationsDetailsInputListener() {
         const container = document.getElementById('prestations-detail-blocks');
         if (!container) return;
+        container.addEventListener('click', (e) => {
+            const btn = e.target?.closest?.('[data-mark-complete]');
+            if (!btn) return;
+            const block = btn.closest('[data-prestation-key]');
+            if (!block) return;
+            const completed = block.dataset.completed === '1';
+            setPrestationCompletionState(block, !completed, true);
+        });
         container.addEventListener('input', (e) => {
             const target = e.target;
             if (!target || !target.dataset.detailField) return;
@@ -1901,6 +2534,14 @@
         block.querySelectorAll('[data-pd-type-label]').forEach((el) => {
             el.textContent = conf.label;
         });
+        const title = block.querySelector('h2');
+        if (title && !title.querySelector('.scope-badge')) {
+            const badge = document.createElement('span');
+            badge.className = 'scope-badge all-paths';
+            badge.textContent = 'Avec ou sans ORP CDAPH';
+            badge.style.marginRight = '10px';
+            title.prepend(badge);
+        }
 
         // Force unique field names per bloc to keep independent data.
         block.querySelectorAll('[name]').forEach((el) => {
@@ -2002,7 +2643,7 @@
             <div class="finess-field">
                 <div style="display:flex; gap:8px; align-items:center;">
                     <input type="text" class="finess-input" placeholder="Numéro FINESS" value="${value}">
-                    <button type="button" class="btn-del" onclick="this.closest('.question-row').remove()">×</button>
+                    <button type="button" class="btn-del" onclick="removeFinessRow(this)">×</button>
                 </div>
                 <div class="finess-msg">Format attendu: 9 caractères (généralement 9 chiffres, ex: 123456789).</div>
             </div>
@@ -2010,6 +2651,12 @@
         container.appendChild(row);
         const input = row.querySelector('.finess-input');
         if (input) attachFinessValidation(input);
+    }
+
+    function removeFinessRow(btn) {
+        const row = btn?.closest('.question-row');
+        if (row) row.remove();
+        validateUniqueFiness(false);
     }
 
     function collectFiness() {
@@ -2146,6 +2793,67 @@
         return unique;
     }
 
+    let remoteDuplicateFiness = new Set();
+
+    function updateRecoverSectionVisibility() {
+        const mainInput = document.querySelector('input[name="finess_main"]');
+        const gate = document.getElementById('finess-recovery-gate');
+        const lostBox = document.getElementById('lost-link-box');
+        if (!mainInput || !gate || !lostBox) return;
+        const value = (mainInput.value || '').trim().toUpperCase();
+        const found = !!value && isValidFiness(value) && remoteDuplicateFiness.has(value);
+        gate.classList.toggle('hidden', !found);
+        if (!found) {
+            lostBox.classList.add('hidden');
+        }
+    }
+
+    async function validateFinessNotAlreadyUsed(forceFeedback = true) {
+        const values = collectFiness()
+            .map((v) => (v || '').trim().toUpperCase())
+            .filter((v) => v !== '' && isValidFiness(v));
+        const uniqueValues = Array.from(new Set(values));
+
+        remoteDuplicateFiness = new Set();
+        if (uniqueValues.length === 0) return true;
+
+        const uuid = (document.getElementById('uuid')?.value || '').trim();
+        try {
+            const resp = await fetch('/api/forms/fagerh/check-finess', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ uuid, finess: uniqueValues }),
+            });
+            if (!resp.ok) return true;
+            const data = await resp.json();
+            const duplicates = Array.isArray(data.duplicates) ? data.duplicates : [];
+            remoteDuplicateFiness = new Set(duplicates.map((v) => String(v || '').trim().toUpperCase()));
+        } catch {
+            return true;
+        }
+
+        if (remoteDuplicateFiness.size === 0) return true;
+
+        document.querySelectorAll('.finess-input').forEach((input) => {
+            const value = (input.value || '').trim().toUpperCase();
+            if (!value || !isValidFiness(value)) return;
+            if (!remoteDuplicateFiness.has(value)) return;
+            const msg = ensureFinessMessage(input);
+            input.classList.add('finess-invalid');
+            if (!msg) return;
+            msg.textContent = 'Ce numéro FINESS est déjà utilisé dans un autre questionnaire.';
+            msg.classList.remove('ok');
+            msg.classList.add('error');
+            if (forceFeedback) msg.style.display = 'block';
+        });
+
+        if (forceFeedback) {
+            gristForm.showStatus('FINESS déjà utilisé: vous ne pouvez pas créer un nouveau questionnaire avec ce numéro.', 'error');
+        }
+        updateRecoverSectionVisibility();
+        return false;
+    }
+
     function hasDuplicateFinessValues() {
         const values = collectFiness();
         return new Set(values).size !== values.length;
@@ -2154,13 +2862,16 @@
     function attachFinessValidation(input) {
         if (!input || input.dataset.finessBound === '1') return;
         input.dataset.finessBound = '1';
-        input.addEventListener('blur', () => {
+        input.addEventListener('blur', async () => {
             updateFinessFieldState(input, true);
             validateUniqueFiness(true);
+            await validateFinessNotAlreadyUsed(true);
         });
         input.addEventListener('input', () => {
             updateFinessFieldState(input, false);
             validateUniqueFiness(false);
+            remoteDuplicateFiness = new Set();
+            updateRecoverSectionVisibility();
         });
         updateFinessFieldState(input, false);
     }
@@ -2376,7 +3087,7 @@
         const targetNames = [
             'pec',
             'q32_implantation',
-            'q33_transports', 'q33_pmr',
+            'q33_transports', 'q33_pmr', 'q33_alternatif',
             'q34_prefecture', 'q34_alternatif',
             'q35_hebergement', 'q35_weekend', 'q35_comptabilite_we', 'q35_fermetures', 'q35_alternatives',
             'q36_restaurant', 'q36_weekend', 'q36_externe', 'q36_participation',
@@ -2445,9 +3156,9 @@
         const nEsat = document.getElementById('note-q41-esat');
         const nEa = document.getElementById('note-q42-ea');
         const nEi = document.getElementById('note-q43-ei');
-        if (nEsat) nEsat.textContent = esat === null ? '' : `Nombre exact: ${esat} (source: Plateforme de l'inclusion).`;
-        if (nEa) nEa.textContent = ea === null ? '' : `Nombre exact: ${ea} (source: Plateforme de l'inclusion).`;
-        if (nEi) nEi.textContent = ei === null ? '' : `Nombre exact: ${ei} (source: Plateforme de l'inclusion).`;
+        if (nEsat) nEsat.innerHTML = esat === null ? '' : `<span class="auto-badge">Auto</span>Nombre exact: ${esat} (source: Plateforme de l'inclusion).`;
+        if (nEa) nEa.innerHTML = ea === null ? '' : `<span class="auto-badge">Auto</span>Nombre exact: ${ea} (source: Plateforme de l'inclusion).`;
+        if (nEi) nEi.innerHTML = ei === null ? '' : `<span class="auto-badge">Auto</span>Nombre exact: ${ei} (source: Plateforme de l'inclusion).`;
     }
 
     function applyDeptStats(inputValue) {
@@ -2457,6 +3168,9 @@
 
         if (!row) {
             setDeptCountNotes(null, null, null);
+            document.querySelector('input[name="q41_esat"]')?.classList.remove('auto-filled');
+            document.querySelector('input[name="q42_ea"]')?.classList.remove('auto-filled');
+            document.querySelector('input[name="q43_ei"]')?.classList.remove('auto-filled');
             return;
         }
 
@@ -2467,6 +3181,9 @@
         if (esatInput) esatInput.value = String(row.esat);
         if (eaInput) eaInput.value = String(row.ea);
         if (eiInput) eiInput.value = String(row.ei);
+        esatInput?.classList.add('auto-filled');
+        eaInput?.classList.add('auto-filled');
+        eiInput?.classList.add('auto-filled');
 
         setDeptCountNotes(row.esat, row.ea, row.ei);
     }
@@ -2676,10 +3393,18 @@
                 updatePdConditionalSections(block);
             });
             syncPdBlocks(false);
+
+            const hidden = document.getElementById('saisie_terminee');
+            const sent = String(record.saisie_terminee || hidden?.value || 'false') === 'true';
+            if (hidden) hidden.value = sent ? 'true' : 'false';
+            setQuestionnaireLocked(sent, { announce: false });
         },
 
         // Custom callback: collect complex fields before save
         onBeforeSave: (fields) => {
+            Object.keys(fields).forEach((key) => {
+                if (key.endsWith('__radio')) delete fields[key];
+            });
             if (!validateAllFiness() || hasDuplicateFinessValues()) {
                 throw new Error('Doublon FINESS détecté');
             }
@@ -2708,27 +3433,59 @@
         newBtn: null
     });
 
-    document.getElementById('quick-new-btn')?.addEventListener('click', () => {
-        window.location.href = window.location.pathname;
-    });
     document.getElementById('quick-copy-btn')?.addEventListener('click', () => {
         gristForm.copyShareUrl();
+    });
+    document.getElementById('quick-export-csv-btn')?.addEventListener('click', () => {
+        exportCurrentSaisieCsv();
+    });
+    document.getElementById('quick-export-pdf-btn')?.addEventListener('click', () => {
+        exportCurrentSaisiePdf();
+    });
+    document.getElementById('recover-by-email-btn')?.addEventListener('click', () => {
+        recoverFormByEmail();
+    });
+    document.getElementById('recover-email-input')?.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            recoverFormByEmail();
+        }
+    });
+    document.getElementById('open-lost-link-btn')?.addEventListener('click', () => {
+        const lostBox = document.getElementById('lost-link-box');
+        if (!lostBox) return;
+        lostBox.classList.remove('hidden');
+        document.getElementById('recover-email-input')?.focus();
     });
     document.getElementById('quick-finish-btn')?.addEventListener('click', () => {
         const hidden = document.getElementById('saisie_terminee');
         if (!hidden) return;
-        const next = hidden.value !== 'true';
-        hidden.value = next ? 'true' : 'false';
-        markFormDirty();
-        gristForm.showStatus(
-            next
-                ? "Réponses marquées comme envoyées. Cliquez sur Enregistrer pour conserver ce statut."
-                : "Statut \"réponses envoyées\" retiré. Cliquez sur Enregistrer pour conserver ce changement.",
-            'info'
+        const isLocked = hidden.value === 'true';
+        if (!isLocked) {
+            setQuestionnaireLocked(true, { announce: true });
+            markFormDirty();
+            return;
+        }
+        const wantsEdit = window.confirm(
+            'Votre questionnaire a déjà été envoyé. Souhaitez-vous y revenir pour mettre à jour vos réponses ?'
         );
+        if (!wantsEdit) return;
+        setQuestionnaireLocked(false, { announce: true });
+        markFormDirty();
+    });
+    document.getElementById('lock-reopen-btn')?.addEventListener('click', () => {
+        const hidden = document.getElementById('saisie_terminee');
+        if (!hidden || hidden.value !== 'true') return;
+        const wantsEdit = window.confirm(
+            'Votre questionnaire a déjà été envoyé. Souhaitez-vous y revenir pour mettre à jour vos réponses ?'
+        );
+        if (!wantsEdit) return;
+        setQuestionnaireLocked(false, { announce: true });
+        markFormDirty();
     });
 
     ensurePdBlocks();
+    initPrimaryStepCompletionControls();
     initQuickChoiceRadios();
     const orpZone = document.getElementById('orp-prestations-zone');
     const orpList = document.getElementById('orp-prestations-list');
@@ -2783,6 +3540,7 @@
     window.addEventListener('load', refreshProgressUi);
     updateSaveReminderUi();
     document.querySelectorAll('.finess-input').forEach((input) => attachFinessValidation(input));
+    updateRecoverSectionVisibility();
     document.querySelectorAll('.email-input').forEach((input) => attachEmailValidation(input));
     loadDeptStatsFromCsv().then(() => {
         const deptInput = document.getElementById('es-departement-input');
@@ -2793,11 +3551,16 @@
         deptInput.addEventListener('blur', apply);
         apply();
     });
-    document.getElementById('form')?.addEventListener('submit', (e) => {
+    let allowProgrammaticSubmit = false;
+    document.getElementById('form')?.addEventListener('submit', async (e) => {
+        if (allowProgrammaticSubmit) {
+            allowProgrammaticSubmit = false;
+            return;
+        }
+        e.preventDefault();
+        e.stopImmediatePropagation();
         const uniqueFiness = validateUniqueFiness(true);
         if (!validateAllFiness() || !uniqueFiness) {
-            e.preventDefault();
-            e.stopImmediatePropagation();
             gristForm.showStatus(
                 uniqueFiness
                     ? 'Un ou plusieurs numéros FINESS sont invalides.'
@@ -2806,22 +3569,23 @@
             );
             return;
         }
+        const remoteOk = await validateFinessNotAlreadyUsed(true);
+        if (!remoteOk) {
+            return;
+        }
         if (!validateEmailField()) {
-            e.preventDefault();
-            e.stopImmediatePropagation();
             gristForm.showStatus("L'email de validation est invalide.", 'error');
             return;
         }
         const deptInput = document.getElementById('es-departement-input');
         if (deptInput && !updateDepartmentState(deptInput, true)) {
-            e.preventDefault();
-            e.stopImmediatePropagation();
             return;
         }
         if (!validateSocioproConsistencyBeforeSave(true)) {
-            e.preventDefault();
-            e.stopImmediatePropagation();
+            return;
         }
+        allowProgrammaticSubmit = true;
+        document.getElementById('form')?.requestSubmit();
     }, true);
 
     gristForm.bindForm(document.getElementById('form'), null);
@@ -2835,6 +3599,8 @@
     // Load existing record if UUID in URL
     (async () => {
         await gristForm.init();
+        const hidden = document.getElementById('saisie_terminee');
+        setQuestionnaireLocked(hidden?.value === 'true', { announce: false });
         suppressDirtyTracking = false;
         markFormSaved();
     })();
