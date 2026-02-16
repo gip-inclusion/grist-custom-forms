@@ -4,41 +4,51 @@
     <meta charset="UTF-8">
     <title>RA FAGERH 2025 - Formulaire - TEST LOCAL</title>
     <style>
-        :root { --fagerh-blue: #2c3e50; --fagerh-light: #3498db; --orange: #e67e22; --success: #27ae60; --grey: #f4f7f6; }
+        :root { --fagerh-blue: #2c3e50; --fagerh-light: #3498db; --orange: #e67e22; --success: #27ae60; --grey: #f4f7f6; --header-offset: 240px; }
         html { scroll-behavior: smooth; }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--grey); padding: 20px; color: #333; line-height: 1.4; }
-        .page-layout { display: flex; gap: 20px; max-width: 1400px; margin: 0 auto; align-items: flex-start; }
-        .main-content { flex: 1; min-width: 0; }
+        .app-header {
+            position: sticky;
+            top: 0;
+            z-index: 230;
+            background: var(--grey);
+            padding: 8px 0 12px 0;
+        }
+        .page-layout { display: flex; gap: 20px; max-width: 1600px; margin: 0 auto; align-items: flex-start; }
+        .main-content { flex: 1; min-width: 0; margin-left: 330px; padding-top: 0; }
         .sidebar { width: 280px; flex-shrink: 0; position: sticky; top: 20px; }
         .sidebar:empty { display: none; }
         .card { background: white; border-radius: 12px; padding: 30px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); margin-bottom: 20px; }
         .quick-actions-card {
-            position: sticky;
-            top: 12px;
-            z-index: 120;
+            position: static;
             padding: 14px 16px;
-        }
-        .report-header-card {
-            padding: 18px 20px;
+            margin: 0 auto;
+            display: grid;
+            gap: 10px;
+            width: 100%;
+            max-width: none;
+            box-sizing: border-box;
         }
         .report-header-row {
             display: flex;
             align-items: center;
-            gap: 14px;
+            gap: 10px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #e6edf5;
         }
         .report-logo {
-            width: 58px;
-            height: 58px;
+            width: 42px;
+            height: 42px;
             object-fit: contain;
-            border-radius: 10px;
+            border-radius: 8px;
             background: #fff;
             border: 1px solid #d8e6f2;
-            padding: 6px;
+            padding: 4px;
         }
         .report-title {
             margin: 0;
             color: var(--fagerh-blue);
-            font-size: 1.5rem;
+            font-size: 1.2rem;
             line-height: 1.2;
         }
         .quick-actions-row {
@@ -151,9 +161,18 @@
         .lock-reopen-btn:hover { background: #f3fbf5; }
         .progress-top-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 16px;
-            margin-bottom: 20px;
+            grid-template-columns: 1fr;
+            gap: 12px;
+            position: fixed;
+            top: calc(var(--header-offset) + 18px);
+            left: 20px;
+            width: 300px;
+            z-index: 150;
+            margin: 0;
+        }
+        .progress-top-grid .card {
+            margin-bottom: 0;
+            padding: 18px;
         }
         .progress-wrap { margin-top: 10px; }
         .progress-head { display: flex; justify-content: space-between; font-size: 0.86em; color: #46617b; margin-bottom: 6px; }
@@ -207,6 +226,7 @@
         .status-msg.error { background: #fee; color: #c0392b; display: block; }
         .status-msg.success { background: #efd; color: var(--success); display: block; }
         .status-msg.loading { background: #fff8e6; color: #f39c12; display: block; }
+        .status-msg.info { background: #eef6ff; color: #1f4f7c; display: block; }
         .control-bar { margin-top: 20px; padding: 15px; background: var(--fagerh-blue); color: white; border-radius: 8px; display: flex; justify-content: space-between; position: sticky; bottom: 10px; z-index: 100; }
         .btn-del { color: red; cursor: pointer; background: none; border: none; font-weight: bold; font-size: 1.2em; }
         .btn-add { background: var(--fagerh-light); color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; }
@@ -220,6 +240,12 @@
         }
         .pd-card-themed h2 {
             color: var(--pd-title, var(--fagerh-blue));
+            font-size: 1.1rem;
+            line-height: 1.25;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
         }
         .pd-card-themed h3 {
             color: #2f527a;
@@ -372,30 +398,45 @@
             align-items: center;
             padding: 4px 10px;
             border-radius: 999px;
-            font-size: 0.78em;
+            font-size: 0.78rem;
             font-weight: 700;
             letter-spacing: 0.2px;
             white-space: nowrap;
             border: 1px solid rgba(0,0,0,0.14);
+            line-height: 1;
         }
         .scope-badge.with-orp { background: #e8f2ff; color: #244f84; border-color: #9ec1ea; }
-        .scope-badge.all-paths { background: #fff1de; color: #855019; border-color: #f0bd83; }
-        .prest-details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 20px; }
+        .scope-badge.all-paths {
+            background: #fff1de;
+            color: #855019;
+            border-color: #f0bd83;
+            padding: 4px 10px;
+            font-size: 0.78rem;
+        }
+        .prest-details-grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
         .prest-details-row {
             display: flex;
-            align-items: center;
-            justify-content: space-between;
+            align-items: flex-start;
+            justify-content: flex-start;
+            flex-direction: column;
             gap: 10px;
             padding: 8px 10px;
             border: 1px solid rgba(0,0,0,0.12);
             border-radius: 8px;
             background: rgba(255,255,255,0.88);
         }
+        .prest-details-row > span { min-width: 0; }
+        .prest-details-row input,
+        .prest-details-row select,
+        .prest-details-row textarea {
+            width: 100%;
+            max-width: none;
+        }
         .prest-details-row + .prest-details-row { margin-top: 8px; }
         .metric-label { font-weight: 600; color: #26415a; }
         .metric-label.total { color: #7a4b00; }
-        .prest-details-panels { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 14px; margin-top: 10px; }
-        .prest-details-panels.three { grid-template-columns: 1.6fr 1fr 1fr; }
+        .prest-details-panels { display: grid; grid-template-columns: 1fr; gap: 10px; margin-top: 10px; }
+        .prest-details-panels.three { grid-template-columns: 1fr; }
         .prest-details-panel { background: rgba(255,255,255,0.68); border: 1px solid rgba(0,0,0,0.12); border-radius: 8px; padding: 10px; }
         .prest-details-panel h5 { margin: 0 0 8px 0; font-size: 0.92em; color: #26415a; }
         .prest-details-sub { margin-top: 10px; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.55); border: 1px dashed rgba(0,0,0,0.12); }
@@ -412,12 +453,26 @@
         @media (max-width: 980px) {
             .page-layout { flex-direction: column; }
             .sidebar { width: 100%; position: static; }
+            .app-header { position: static; padding: 0 0 12px 0; }
             .quick-actions-card { position: static; }
             .report-header-row { align-items: flex-start; }
             .question-row { grid-template-columns: 1fr; gap: 8px; }
             .toc-list { max-height: none; }
             .progress-top-grid { grid-template-columns: 1fr; }
             .lost-link-row { flex-direction: column; align-items: stretch; }
+            .main-content { margin-left: 0; padding-top: 0; }
+            .quick-actions-card {
+                width: auto;
+                max-width: none;
+                margin: 0;
+            }
+            .progress-top-grid {
+                position: static;
+                width: auto;
+                top: auto;
+                left: auto;
+                margin-bottom: 20px;
+            }
         }
         @media print {
             body {
@@ -470,26 +525,27 @@
             }
         }
         #pd-blocks-container { margin-top: 12px; }
+        .card,
+        .pd-block,
+        [data-prestation-key] {
+            scroll-margin-top: 130px;
+        }
     </style>
 </head>
 <body>
 
-<div class="page-layout">
-<div class="main-content">
-<form id="form">
-<div class="card report-header-card">
+<header class="app-header">
+<div class="card quick-actions-card">
     <div class="report-header-row">
         <img src="/assets/logo_carre.png" alt="Logo FAGERH" class="report-logo">
         <h1 class="report-title">Rapport d'activité année 2025</h1>
     </div>
-</div>
-<div class="card quick-actions-card">
     <div class="quick-actions-row">
         <button type="submit" form="form" id="quick-save-btn" class="sidebar-btn primary">Enregistrer</button>
         <button type="button" id="quick-copy-btn" class="sidebar-btn secondary">Copier lien de reprise</button>
         <button type="button" id="quick-export-csv-btn" class="sidebar-btn secondary">Exporter en CSV</button>
         <button type="button" id="quick-export-pdf-btn" class="sidebar-btn secondary">Exporter en PDF</button>
-        <button type="button" id="quick-finish-btn" class="sidebar-btn finish">Envoyer mes réponses</button>
+        <button type="button" id="quick-finish-btn" class="sidebar-btn finish">J'ai terminée ma saisie</button>
     </div>
     <div id="save-reminder-msg" class="save-reminder">Obligatoire: cliquez sur « Enregistrer » après chaque modification, sinon vos changements ne seront pas conservés.</div>
     <div id="lost-link-box" class="lost-link-box hidden">
@@ -502,13 +558,18 @@
     </div>
     <div id="submission-lock-msg" class="save-reminder saved" style="display:none; margin-top:8px;">
         <div class="lock-msg-row">
-            <span>Votre questionnaire a déjà été envoyé. Souhaitez-vous y revenir pour mettre à jour vos réponses ?</span>
+            <span>Votre questionnaire a bien été envoyé. Souhaitez-vous y revenir pour mettre à jour vos réponses ?</span>
             <button type="button" id="lock-reopen-btn" class="lock-reopen-btn">Revenir en modification</button>
         </div>
     </div>
     <div id="status" class="status-msg" style="margin-top:8px;"></div>
     <input type="text" id="share-url" readonly style="display:none;">
 </div>
+</header>
+
+<div class="page-layout">
+<div class="main-content">
+<form id="form">
 <div class="card" id="intro-remplissage">
     <h2>Avant de commencer</h2>
     <div class="setup-zone">
@@ -1375,7 +1436,7 @@
         });
 
         hidden.value = locked ? 'true' : 'false';
-        finishBtn.textContent = locked ? 'Questionnaire envoyé' : 'Envoyer mes réponses';
+        finishBtn.textContent = locked ? 'Questionnaire envoyé' : "J'ai terminée ma saisie";
         if (lockMsg) lockMsg.style.display = locked ? 'block' : 'none';
 
         if (announce) {
@@ -3467,7 +3528,7 @@
             return;
         }
         const wantsEdit = window.confirm(
-            'Votre questionnaire a déjà été envoyé. Souhaitez-vous y revenir pour mettre à jour vos réponses ?'
+            'Votre questionnaire a bien été envoyé. Souhaitez-vous y revenir pour mettre à jour vos réponses ?'
         );
         if (!wantsEdit) return;
         setQuestionnaireLocked(false, { announce: true });
@@ -3477,7 +3538,7 @@
         const hidden = document.getElementById('saisie_terminee');
         if (!hidden || hidden.value !== 'true') return;
         const wantsEdit = window.confirm(
-            'Votre questionnaire a déjà été envoyé. Souhaitez-vous y revenir pour mettre à jour vos réponses ?'
+            'Votre questionnaire a bien été envoyé. Souhaitez-vous y revenir pour mettre à jour vos réponses ?'
         );
         if (!wantsEdit) return;
         setQuestionnaireLocked(false, { announce: true });

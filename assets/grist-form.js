@@ -287,6 +287,13 @@ class GristForm {
       return true;
     } catch (err) {
       console.error('Load failed:', err);
+      if (err?.message === 'Record not found') {
+        // Invalid/obsolete resume link: fall back to a fresh form instead of blocking UI.
+        history.replaceState(null, '', window.location.pathname);
+        this.showStatus('Lien de reprise introuvable. Nouveau questionnaire ouvert.', 'info');
+        this.hideStatusAfter(3500);
+        return false;
+      }
       this.showStatus('Erreur chargement: ' + err.message, 'error');
       return false;
     }
