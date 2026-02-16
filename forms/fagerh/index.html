@@ -18,6 +18,29 @@
             z-index: 120;
             padding: 14px 16px;
         }
+        .report-header-card {
+            padding: 18px 20px;
+        }
+        .report-header-row {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+        .report-logo {
+            width: 58px;
+            height: 58px;
+            object-fit: contain;
+            border-radius: 10px;
+            background: #fff;
+            border: 1px solid #d8e6f2;
+            padding: 6px;
+        }
+        .report-title {
+            margin: 0;
+            color: var(--fagerh-blue);
+            font-size: 1.5rem;
+            line-height: 1.2;
+        }
         .quick-actions-row {
             display: flex;
             gap: 10px;
@@ -41,6 +64,57 @@
             font-size: 0.88em;
             color: #4f6477;
             margin-top: 8px;
+        }
+        .lost-link-box {
+            margin-top: 10px;
+            padding: 10px 12px;
+            border: 1px solid #d7e5f2;
+            border-radius: 8px;
+            background: #f8fbff;
+        }
+        .recovery-gate {
+            margin-top: 8px;
+            padding: 8px 10px;
+            border-radius: 8px;
+            border: 1px solid #e6c77b;
+            background: #fff8e8;
+            color: #7a5400;
+            font-size: 0.9em;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .recovery-gate.hidden { display: none; }
+        .recovery-gate-btn {
+            border: 1px solid #e6c77b;
+            background: #fff;
+            color: #7a5400;
+            border-radius: 999px;
+            padding: 4px 10px;
+            font-size: 0.84em;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .recovery-gate-btn:hover { background: #fff5db; }
+        .lost-link-title {
+            margin: 0 0 8px 0;
+            font-size: 0.9em;
+            color: #2c4b68;
+            font-weight: 700;
+        }
+        .lost-link-row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        .lost-link-row input {
+            flex: 1;
+            min-width: 200px;
+        }
+        .lost-link-row button {
+            white-space: nowrap;
         }
         .save-reminder {
             margin-top: 10px;
@@ -339,9 +413,11 @@
             .page-layout { flex-direction: column; }
             .sidebar { width: 100%; position: static; }
             .quick-actions-card { position: static; }
+            .report-header-row { align-items: flex-start; }
             .question-row { grid-template-columns: 1fr; gap: 8px; }
             .toc-list { max-height: none; }
             .progress-top-grid { grid-template-columns: 1fr; }
+            .lost-link-row { flex-direction: column; align-items: stretch; }
         }
         @media print {
             body {
@@ -401,6 +477,12 @@
 <div class="page-layout">
 <div class="main-content">
 <form id="form">
+<div class="card report-header-card">
+    <div class="report-header-row">
+        <img src="/assets/logo_carre.png" alt="Logo FAGERH" class="report-logo">
+        <h1 class="report-title">Rapport d'activité année 2025</h1>
+    </div>
+</div>
 <div class="card quick-actions-card">
     <div class="quick-actions-row">
         <button type="submit" form="form" id="quick-save-btn" class="sidebar-btn primary">Enregistrer</button>
@@ -410,6 +492,14 @@
         <button type="button" id="quick-finish-btn" class="sidebar-btn finish">Envoyer mes réponses</button>
     </div>
     <div id="save-reminder-msg" class="save-reminder">Obligatoire: cliquez sur « Enregistrer » après chaque modification, sinon vos changements ne seront pas conservés.</div>
+    <div id="lost-link-box" class="lost-link-box hidden">
+        <p class="lost-link-title">J'ai perdu mon lien de reprise</p>
+        <div class="lost-link-row">
+            <input type="email" id="recover-email-input" placeholder="Email de la personne en charge de la validation">
+            <button type="button" id="recover-by-email-btn" class="btn-add">Retrouver mon questionnaire</button>
+        </div>
+        <div class="quick-actions-hint">Saisissez l'email de validation pour réouvrir votre questionnaire.</div>
+    </div>
     <div id="submission-lock-msg" class="save-reminder saved" style="display:none; margin-top:8px;">
         <div class="lock-msg-row">
             <span>Votre questionnaire a déjà été envoyé. Souhaitez-vous y revenir pour mettre à jour vos réponses ?</span>
@@ -505,6 +595,10 @@
             <div class="finess-field">
                 <input type="text" class="finess-input" name="finess_main" placeholder="Numéro FINESS">
                 <div class="finess-msg">Format attendu: 9 caractères (généralement 9 chiffres, ex: 123456789).</div>
+                <div id="finess-recovery-gate" class="recovery-gate hidden">
+                    <span>Ce FINESS est déjà connu. Utilisez votre lien de reprise.</span>
+                    <button type="button" id="open-lost-link-btn" class="recovery-gate-btn">J'ai perdu mon lien</button>
+                </div>
             </div>
         </div>
         <div id="finess-extra-container"></div>
@@ -1363,6 +1457,47 @@
 
     function exportCurrentSaisiePdf() {
         window.print();
+    }
+
+    async function recoverFormByEmail() {
+        const input = document.getElementById('recover-email-input');
+        if (!input) return;
+        const email = (input.value || '').trim();
+        if (!isValidEmail(email)) {
+            gristForm.showStatus("Saisissez un email valide pour retrouver votre lien.", 'error');
+            return;
+        }
+        if (hasUnsavedChanges) {
+            const ok = window.confirm(
+                "Des modifications non enregistrées seront perdues. Voulez-vous continuer ?"
+            );
+            if (!ok) return;
+        }
+        try {
+            gristForm.showStatus('Recherche du questionnaire...', 'loading');
+            const resp = await fetch('/api/forms/fagerh/recover-by-email', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email }),
+            });
+            const data = await resp.json().catch(() => ({}));
+            if (!resp.ok) {
+                gristForm.showStatus(data.error || "Aucun questionnaire trouvé pour cet email.", 'error');
+                return;
+            }
+            const uuid = data.uuid;
+            if (!uuid) {
+                gristForm.showStatus("Aucun questionnaire trouvé pour cet email.", 'error');
+                return;
+            }
+            const info = (data.count || 0) > 1
+                ? `${data.count} questionnaires trouvés. Ouverture du plus récent...`
+                : 'Questionnaire retrouvé. Ouverture...';
+            gristForm.showStatus(info, 'success');
+            window.location.href = `${window.location.pathname}?formulaire=${encodeURIComponent(uuid)}`;
+        } catch {
+            gristForm.showStatus("Impossible de retrouver le lien pour l'instant.", 'error');
+        }
     }
 
     function isFieldVisible(field) {
@@ -2658,6 +2793,67 @@
         return unique;
     }
 
+    let remoteDuplicateFiness = new Set();
+
+    function updateRecoverSectionVisibility() {
+        const mainInput = document.querySelector('input[name="finess_main"]');
+        const gate = document.getElementById('finess-recovery-gate');
+        const lostBox = document.getElementById('lost-link-box');
+        if (!mainInput || !gate || !lostBox) return;
+        const value = (mainInput.value || '').trim().toUpperCase();
+        const found = !!value && isValidFiness(value) && remoteDuplicateFiness.has(value);
+        gate.classList.toggle('hidden', !found);
+        if (!found) {
+            lostBox.classList.add('hidden');
+        }
+    }
+
+    async function validateFinessNotAlreadyUsed(forceFeedback = true) {
+        const values = collectFiness()
+            .map((v) => (v || '').trim().toUpperCase())
+            .filter((v) => v !== '' && isValidFiness(v));
+        const uniqueValues = Array.from(new Set(values));
+
+        remoteDuplicateFiness = new Set();
+        if (uniqueValues.length === 0) return true;
+
+        const uuid = (document.getElementById('uuid')?.value || '').trim();
+        try {
+            const resp = await fetch('/api/forms/fagerh/check-finess', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ uuid, finess: uniqueValues }),
+            });
+            if (!resp.ok) return true;
+            const data = await resp.json();
+            const duplicates = Array.isArray(data.duplicates) ? data.duplicates : [];
+            remoteDuplicateFiness = new Set(duplicates.map((v) => String(v || '').trim().toUpperCase()));
+        } catch {
+            return true;
+        }
+
+        if (remoteDuplicateFiness.size === 0) return true;
+
+        document.querySelectorAll('.finess-input').forEach((input) => {
+            const value = (input.value || '').trim().toUpperCase();
+            if (!value || !isValidFiness(value)) return;
+            if (!remoteDuplicateFiness.has(value)) return;
+            const msg = ensureFinessMessage(input);
+            input.classList.add('finess-invalid');
+            if (!msg) return;
+            msg.textContent = 'Ce numéro FINESS est déjà utilisé dans un autre questionnaire.';
+            msg.classList.remove('ok');
+            msg.classList.add('error');
+            if (forceFeedback) msg.style.display = 'block';
+        });
+
+        if (forceFeedback) {
+            gristForm.showStatus('FINESS déjà utilisé: vous ne pouvez pas créer un nouveau questionnaire avec ce numéro.', 'error');
+        }
+        updateRecoverSectionVisibility();
+        return false;
+    }
+
     function hasDuplicateFinessValues() {
         const values = collectFiness();
         return new Set(values).size !== values.length;
@@ -2666,13 +2862,16 @@
     function attachFinessValidation(input) {
         if (!input || input.dataset.finessBound === '1') return;
         input.dataset.finessBound = '1';
-        input.addEventListener('blur', () => {
+        input.addEventListener('blur', async () => {
             updateFinessFieldState(input, true);
             validateUniqueFiness(true);
+            await validateFinessNotAlreadyUsed(true);
         });
         input.addEventListener('input', () => {
             updateFinessFieldState(input, false);
             validateUniqueFiness(false);
+            remoteDuplicateFiness = new Set();
+            updateRecoverSectionVisibility();
         });
         updateFinessFieldState(input, false);
     }
@@ -3243,6 +3442,21 @@
     document.getElementById('quick-export-pdf-btn')?.addEventListener('click', () => {
         exportCurrentSaisiePdf();
     });
+    document.getElementById('recover-by-email-btn')?.addEventListener('click', () => {
+        recoverFormByEmail();
+    });
+    document.getElementById('recover-email-input')?.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            recoverFormByEmail();
+        }
+    });
+    document.getElementById('open-lost-link-btn')?.addEventListener('click', () => {
+        const lostBox = document.getElementById('lost-link-box');
+        if (!lostBox) return;
+        lostBox.classList.remove('hidden');
+        document.getElementById('recover-email-input')?.focus();
+    });
     document.getElementById('quick-finish-btn')?.addEventListener('click', () => {
         const hidden = document.getElementById('saisie_terminee');
         if (!hidden) return;
@@ -3326,6 +3540,7 @@
     window.addEventListener('load', refreshProgressUi);
     updateSaveReminderUi();
     document.querySelectorAll('.finess-input').forEach((input) => attachFinessValidation(input));
+    updateRecoverSectionVisibility();
     document.querySelectorAll('.email-input').forEach((input) => attachEmailValidation(input));
     loadDeptStatsFromCsv().then(() => {
         const deptInput = document.getElementById('es-departement-input');
@@ -3336,11 +3551,16 @@
         deptInput.addEventListener('blur', apply);
         apply();
     });
-    document.getElementById('form')?.addEventListener('submit', (e) => {
+    let allowProgrammaticSubmit = false;
+    document.getElementById('form')?.addEventListener('submit', async (e) => {
+        if (allowProgrammaticSubmit) {
+            allowProgrammaticSubmit = false;
+            return;
+        }
+        e.preventDefault();
+        e.stopImmediatePropagation();
         const uniqueFiness = validateUniqueFiness(true);
         if (!validateAllFiness() || !uniqueFiness) {
-            e.preventDefault();
-            e.stopImmediatePropagation();
             gristForm.showStatus(
                 uniqueFiness
                     ? 'Un ou plusieurs numéros FINESS sont invalides.'
@@ -3349,22 +3569,23 @@
             );
             return;
         }
+        const remoteOk = await validateFinessNotAlreadyUsed(true);
+        if (!remoteOk) {
+            return;
+        }
         if (!validateEmailField()) {
-            e.preventDefault();
-            e.stopImmediatePropagation();
             gristForm.showStatus("L'email de validation est invalide.", 'error');
             return;
         }
         const deptInput = document.getElementById('es-departement-input');
         if (deptInput && !updateDepartmentState(deptInput, true)) {
-            e.preventDefault();
-            e.stopImmediatePropagation();
             return;
         }
         if (!validateSocioproConsistencyBeforeSave(true)) {
-            e.preventDefault();
-            e.stopImmediatePropagation();
+            return;
         }
+        allowProgrammaticSubmit = true;
+        document.getElementById('form')?.requestSubmit();
     }, true);
 
     gristForm.bindForm(document.getElementById('form'), null);
