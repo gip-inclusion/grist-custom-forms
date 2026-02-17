@@ -1753,6 +1753,13 @@
         return '';
     }
 
+    function extractSectionContextText(el) {
+        const section = el.closest('.card, .setup-zone, [data-pd-block], [data-prestation-key]');
+        if (!section) return '';
+        const heading = section.querySelector('h2, h3, h4, strong');
+        return (heading?.textContent || '').trim();
+    }
+
     function addAutoAriaLabels(root = document) {
         const controls = root.querySelectorAll('input, select, textarea');
         controls.forEach((el) => {
@@ -1762,7 +1769,12 @@
             const fromRow = extractRowLabelText(el);
             const fromPlaceholder = String(el.getAttribute('placeholder') || '').trim();
             const fromName = String(el.getAttribute('name') || '').replaceAll('_', ' ').trim();
-            const label = fromRow || fromPlaceholder || fromName;
+            const section = extractSectionContextText(el);
+            const roleHint = el.tagName === 'SELECT'
+                ? 'Sélection'
+                : (el.type === 'checkbox' || el.type === 'radio' ? 'Option' : 'Champ');
+            const fallback = section ? `${roleHint} - ${section}` : roleHint;
+            const label = fromRow || fromPlaceholder || fromName || fallback;
             if (!label) return;
 
             el.setAttribute('aria-label', label);
