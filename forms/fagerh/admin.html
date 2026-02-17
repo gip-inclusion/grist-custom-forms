@@ -57,7 +57,7 @@
 
     .toolbar {
       display: grid;
-      grid-template-columns: 220px minmax(0, 1fr) auto auto auto;
+      grid-template-columns: 220px minmax(0, 1fr) auto;
       gap: 10px;
       align-items: center;
     }
@@ -134,29 +134,35 @@
       display: grid;
       gap: 6px;
     }
+    .toolbar-actions {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+    }
     .mini-btn {
-      height: 28px;
+      height: 26px;
       width: fit-content;
-      padding: 0 8px;
-      font-size: 0.78rem;
+      padding: 0 10px;
+      font-size: 0.76rem;
       border-radius: 999px;
-      border: 1px solid #cfd7e0;
-      background: #f8fafc;
+      border: 1px solid #d6deea;
+      background: #f5f8fc;
       font-weight: 700;
+      color: #3f5268;
     }
     .mini-btn:hover {
-      background: #eef3f8;
+      background: #ebf1f8;
     }
     .masked {
       display: inline-block;
       font-family: ui-monospace, Menlo, Consolas, monospace;
-      letter-spacing: 0.08em;
-      color: #5f7388;
-      background: #edf2f7;
-      border: 1px solid #d6dee7;
-      border-radius: 8px;
-      padding: 2px 8px;
-      font-size: 0.82rem;
+      letter-spacing: 0.06em;
+      color: #6b7f95;
+      background: linear-gradient(135deg, #eef3f8, #e7edf5);
+      border: 1px solid #d5dee9;
+      border-radius: 999px;
+      padding: 3px 10px;
+      font-size: 0.78rem;
       font-weight: 700;
     }
     .chips {
@@ -188,10 +194,20 @@
       background: #f1f5f9;
       border-color: #d2dbe5;
     }
+    .progress-head {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+    }
     @media (max-width: 980px) {
       body { padding: 12px; }
       .kpis { grid-template-columns: 1fr; }
       .toolbar { grid-template-columns: 1fr; }
+      .toolbar-actions {
+        width: 100%;
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+      }
       table { min-width: 760px; }
     }
   </style>
@@ -228,9 +244,11 @@
           <option value="termines">Terminés</option>
         </select>
         <input type="text" id="search-input" placeholder="Rechercher (ES, FINESS, email, département, UUID)">
-        <button id="refresh-btn" type="button">Actualiser</button>
-        <button id="clear-btn" type="button" class="muted-btn">Réinitialiser</button>
-        <button id="toggle-progress-btn" type="button" class="muted-btn">Afficher toutes les étapes</button>
+        <div class="toolbar-actions">
+          <button id="refresh-btn" type="button">Actualiser</button>
+          <button id="clear-btn" type="button" class="muted-btn">Réinitialiser</button>
+          <button id="toggle-progress-btn" type="button" class="muted-btn">Voir tout</button>
+        </div>
       </div>
       <div class="status" id="status">Chargement...</div>
     </div>
@@ -333,9 +351,9 @@
             const remainingHtml = remaining.length
               ? `<div class="chips">${remaining.map((label) => `<span class="chip remaining">${esc(label)}</span>`).join('')}</div>`
               : `<div class="chips"><span class="chip empty">Aucune étape restante</span></div>`;
-            const rowToggleLabel = rowProgressVisible ? 'Masquer' : 'Afficher';
-            const doneCell = rowProgressVisible ? doneHtml : '<span class="masked">••••••••</span>';
-            const remainingCell = rowProgressVisible ? remainingHtml : '<span class="masked">••••••••</span>';
+            const rowToggleLabel = rowProgressVisible ? 'Masquer' : 'Voir';
+            const doneCell = rowProgressVisible ? doneHtml : '<span class="masked">Détails masqués</span>';
+            const remainingCell = rowProgressVisible ? remainingHtml : '<span class="masked">Détails masqués</span>';
             return `
               <tr>
                 <td class="mono">${esc(displayId)}</td>
@@ -349,7 +367,9 @@
                 <td><strong>${esc(condTxt)}</strong></td>
                 <td>
                   <div class="progress-cell progress-detail">
-                    <button type="button" class="mini-btn" data-toggle-progress-row="${esc(rowKey)}">${rowToggleLabel}</button>
+                    <div class="progress-head">
+                      <button type="button" class="mini-btn" data-toggle-progress-row="${esc(rowKey)}">${rowToggleLabel}</button>
+                    </div>
                     ${doneCell}
                   </div>
                 </td>
@@ -365,7 +385,7 @@
 
         const globalBtn = document.getElementById('toggle-progress-btn');
         if (globalBtn) {
-          globalBtn.textContent = showAllProgress ? 'Masquer toutes les étapes' : 'Afficher toutes les étapes';
+          globalBtn.textContent = showAllProgress ? 'Masquer tout' : 'Voir tout';
         }
 
         statusEl.textContent = `${data.rows.length} résultat(s) affiché(s).`;
