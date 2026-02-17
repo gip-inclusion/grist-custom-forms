@@ -127,17 +127,23 @@
     }
     .mono { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 0.84rem; }
     .detail-toggle {
-      height: 28px;
-      width: fit-content;
-      padding: 0 10px;
-      font-size: 0.78rem;
+      height: 30px;
+      min-width: 92px;
+      padding: 0 12px;
+      font-size: 0.8rem;
       border-radius: 999px;
       border: 1px solid #d6deea;
       background: #f5f8fc;
       font-weight: 700;
       color: #3f5268;
+      white-space: nowrap;
+      line-height: 1;
     }
     .detail-toggle:hover { background: #ebf1f8; }
+    th.col-detail, td.col-detail {
+      width: 120px;
+      text-align: center;
+    }
     .detail-row td {
       background: #f8fbff !important;
       border-bottom: 1px solid #dfe8f2;
@@ -249,7 +255,7 @@
               <th>Email</th>
               <th>Étapes principales</th>
               <th>Étapes conditionnelles</th>
-              <th>Détail étapes</th>
+              <th class="col-detail">Détails</th>
               <th>UUID</th>
               <th>ID Grist</th>
             </tr>
@@ -331,7 +337,7 @@
             const remainingHtml = remaining.length
               ? `<div class="chips">${remaining.map((label) => `<span class="chip remaining">${esc(label)}</span>`).join('')}</div>`
               : `<div class="chips"><span class="chip empty">Aucune étape restante</span></div>`;
-            const toggleLabel = isExpanded ? 'Masquer le détail' : 'Voir le détail des étapes';
+            const toggleLabel = isExpanded ? 'Masquer' : 'Voir';
             const detailRow = isExpanded ? `
               <tr class="detail-row">
                 <td colspan="12">
@@ -359,7 +365,7 @@
                 <td>${esc(r.validateur_email)}</td>
                 <td><strong>${esc(mainTxt)}</strong></td>
                 <td><strong>${esc(condTxt)}</strong></td>
-                <td>
+                <td class="col-detail">
                   <button type="button" class="detail-toggle" data-toggle-progress-row="${esc(rowKey)}">${toggleLabel}</button>
                 </td>
                 <td class="mono">${esc(r.uuid)}</td>
