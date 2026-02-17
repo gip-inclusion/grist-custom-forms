@@ -90,7 +90,7 @@
     table {
       width: 100%;
       border-collapse: collapse;
-      min-width: 1180px;
+      min-width: 1260px;
     }
     th, td {
       border-bottom: 1px solid #e5edf5;
@@ -210,6 +210,7 @@
         <table>
           <thead>
             <tr>
+              <th>ID</th>
               <th>Statut</th>
               <th>ES</th>
               <th>Département</th>
@@ -269,9 +270,11 @@
 
         const tbody = document.getElementById('rows');
         if (!Array.isArray(data.rows) || data.rows.length === 0) {
-          tbody.innerHTML = `<tr><td colspan="12">Aucun questionnaire trouvé.</td></tr>`;
+          tbody.innerHTML = `<tr><td colspan="13">Aucun questionnaire trouvé.</td></tr>`;
         } else {
           tbody.innerHTML = data.rows.map((r) => {
+            const shortId = String(r.uuid || '').trim();
+            const displayId = shortId ? shortId.slice(0, 8) : String(r.record_id || '');
             const statut = r.saisie_terminee
               ? '<span class="pill done">Terminé</span>'
               : '<span class="pill pending">En cours</span>';
@@ -297,6 +300,7 @@
               : `<div class="chips"><span class="chip empty">Aucune étape restante</span></div>`;
             return `
               <tr>
+                <td class="mono">${esc(displayId)}</td>
                 <td>${statut}</td>
                 <td>${esc(r.es_nom)}</td>
                 <td>${esc(r.departement)}</td>
@@ -318,7 +322,7 @@
 
         statusEl.textContent = `${data.rows.length} résultat(s) affiché(s).`;
       } catch (e) {
-        document.getElementById('rows').innerHTML = `<tr><td colspan="12">${esc(e.message)}</td></tr>`;
+        document.getElementById('rows').innerHTML = `<tr><td colspan="13">${esc(e.message)}</td></tr>`;
         statusEl.textContent = 'Erreur';
       }
     }
