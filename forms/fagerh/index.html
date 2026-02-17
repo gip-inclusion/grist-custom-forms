@@ -1722,6 +1722,71 @@
 <script>
 
     // =====================================
+    // ACCESSIBILITY: AUTO LABELS FOR FORM CONTROLS
+    // =====================================
+    function hasExplicitAccessibleName(el) {
+        if (!el) return true;
+        if (el.hasAttribute('aria-label')) return true;
+        if (el.hasAttribute('aria-labelledby')) return true;
+        if (el.hasAttribute('title')) return true;
+        if (el.id && document.querySelector(`label[for="${CSS.escape(el.id)}"]`)) return true;
+        if (el.closest('label')) return true;
+        return false;
+    }
+
+    function extractRowLabelText(el) {
+        const questionRow = el.closest('.question-row');
+        if (questionRow) {
+            const span = questionRow.querySelector(':scope > span');
+            const txt = (span?.textContent || '').trim();
+            if (txt) return txt;
+        }
+
+        const tr = el.closest('tr');
+        if (tr) {
+            const th = tr.querySelector('th');
+            const firstCell = tr.querySelector('td');
+            const txt = (th?.textContent || firstCell?.textContent || '').trim();
+            if (txt) return txt;
+        }
+
+        return '';
+    }
+
+    function addAutoAriaLabels(root = document) {
+        const controls = root.querySelectorAll('input, select, textarea');
+        controls.forEach((el) => {
+            if (el.type === 'hidden' || el.type === 'submit' || el.type === 'button' || el.type === 'reset') return;
+            if (hasExplicitAccessibleName(el)) return;
+
+            const fromRow = extractRowLabelText(el);
+            const fromPlaceholder = String(el.getAttribute('placeholder') || '').trim();
+            const fromName = String(el.getAttribute('name') || '').replaceAll('_', ' ').trim();
+            const label = fromRow || fromPlaceholder || fromName;
+            if (!label) return;
+
+            el.setAttribute('aria-label', label);
+            el.setAttribute('data-auto-aria-label', '1');
+        });
+    }
+
+    function watchDynamicControlsForLabels() {
+        const form = document.getElementById('form');
+        if (!form || form.dataset.a11yLabelObserverBound === '1') return;
+        form.dataset.a11yLabelObserverBound = '1';
+        const observer = new MutationObserver((mutations) => {
+            for (const m of mutations) {
+                if (m.type !== 'childList') continue;
+                m.addedNodes.forEach((node) => {
+                    if (!(node instanceof Element)) return;
+                    addAutoAriaLabels(node);
+                });
+            }
+        });
+        observer.observe(form, { childList: true, subtree: true });
+    }
+
+    // =====================================
     // TOGGLE & VISIBILITY
     // =====================================
     function toggleDispo(id, cb) {
@@ -4291,6 +4356,8 @@
     });
     window.addEventListener('resize', updateProgressScrollHint);
     updateSaveReminderUi();
+    addAutoAriaLabels(document);
+    watchDynamicControlsForLabels();
     document.querySelectorAll('.finess-input').forEach((input) => attachFinessValidation(input));
     updateRecoverSectionVisibility();
     document.querySelectorAll('.email-input').forEach((input) => attachEmailValidation(input));
