@@ -780,6 +780,83 @@
                 transition-duration: 0.01ms !important;
             }
         }
+        @media (forced-colors: active) {
+            :root {
+                --fagerh-blue: CanvasText;
+                --fagerh-light: LinkText;
+                --orange: LinkText;
+                --success: CanvasText;
+            }
+            * {
+                forced-color-adjust: auto;
+            }
+            body {
+                background: Canvas;
+                color: CanvasText;
+            }
+            .card,
+            .setup-zone,
+            .quick-actions-card,
+            .pd-card-themed,
+            .control-bar,
+            .url-box,
+            .status-msg,
+            .progress-card {
+                background: Canvas;
+                color: CanvasText;
+                border: 1px solid CanvasText;
+                box-shadow: none;
+            }
+            .sidebar-btn,
+            .btn-add,
+            .btn-del,
+            .recovery-gate-btn,
+            .lock-reopen-btn,
+            .progress-compact-toggle {
+                background: ButtonFace;
+                color: ButtonText;
+                border: 1px solid ButtonText;
+            }
+            .sidebar-btn.primary:disabled {
+                color: GrayText;
+                border-color: GrayText;
+            }
+            a,
+            .toc-list a {
+                color: LinkText;
+            }
+            input,
+            select,
+            textarea {
+                background: Field;
+                color: FieldText;
+                border: 1px solid FieldText;
+            }
+            .progress-track {
+                background: Canvas;
+                border: 1px solid CanvasText;
+            }
+            .progress-fill {
+                background: Highlight;
+            }
+            .chip,
+            .auto-badge,
+            .toc-percent,
+            .scope-badge {
+                background: Canvas;
+                color: CanvasText;
+                border: 1px solid CanvasText;
+            }
+            .skip-link {
+                background: Highlight;
+                color: HighlightText;
+                border: 1px solid HighlightText;
+            }
+            :focus-visible {
+                outline: 2px solid Highlight;
+                outline-offset: 2px;
+            }
+        }
 
     </style>
 </head>
