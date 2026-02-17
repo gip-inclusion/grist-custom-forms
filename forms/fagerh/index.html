@@ -1100,7 +1100,7 @@
     <div class="setup-zone">
         <strong>2. Répartition des effectifs par métier</strong>
         <p class="volet-subtitle">Ajoutez une ligne par métier et renseignez l'ETP. Si un même métier intervient en interne et en externe, ajoutez deux lignes distinctes (une « Interne », une « Externe »).</p>
-    <select id="metier-picker" aria-label="Choisir un métier à ajouter" onchange="addMetierRow()" style="margin-bottom: 15px;">
+    <select id="metier-picker" aria-label="Choisir un métier à ajouter" style="margin-bottom: 15px;">
         <option value="">-- Choisir un métier à ajouter --</option>
         <optgroup label="MÉDICAL">
             <option>Médecin</option>
@@ -1144,6 +1144,7 @@
     <div id="metier-duplicate-msg" class="volet-error hidden" role="alert" aria-live="assertive"></div>
 
     <table id="table-metiers">
+        <caption class="sr-only">Répartition des effectifs par métier et mode</caption>
         <thead><tr><th style="text-align:left">Métier</th><th>Mode</th><th style="width:100px">ETP</th><th style="width:50px">X</th></tr></thead>
         <tbody id="body-metiers"></tbody>
     </table>
@@ -1198,7 +1199,7 @@
     <div class="question-row"><span>31. Votre ES est situé dans quelle zone ?</span><select name="q32_implantation"><option value="">-- Choisir --</option><option>Urbaine</option><option>Rurale</option><option>Mixte</option></select></div>
     <div class="question-row">
         <span>32. Votre ES est-il desservi par des transports en commun ?</span>
-        <select name="q33_transports" onchange="toggleBox('sub-33-oui', this.value === 'Oui'); toggleBox('sub-33-non', this.value === 'Non')"><option value="">-- Choisir --</option><option value="Oui">Oui</option><option value="Non">Non</option></select>
+        <select name="q33_transports"><option value="">-- Choisir --</option><option value="Oui">Oui</option><option value="Non">Non</option></select>
     </div>
     <div id="sub-33-oui" class="sub-question-box">
         <div class="question-row">
@@ -1214,8 +1215,7 @@
     </div>
     <div class="question-row">
     <span>33. Votre ES est-il en agglomération de la préfecture de votre département ?</span>
-    <select name="q34_prefecture"
-        onchange="toggleBox('sub-34-non', this.value === 'Non')">
+    <select name="q34_prefecture">
         <option value="">-- Choisir --</option>
         <option value="Oui">Oui</option>
         <option value="Non">Non</option>
@@ -1237,8 +1237,7 @@
     <strong>4. Vos équipements et services</strong> 
 <div class="question-row">
     <span>41. Votre ES porte-t-il un hébergement ?</span>
-    <select name="q35_hebergement"
-            onchange="toggleBox('sub-35', this.value === 'Oui')">
+    <select name="q35_hebergement">
         <option value="">-- Choisir --</option>
         <option value="Non">Non</option>
         <option value="Oui">Oui</option>
@@ -1253,8 +1252,7 @@
 
     <div class="question-row">
         <span>Est-il ouvert le week-end ?</span>
-        <select name="q35_weekend"
-                onchange="toggleBox('sub-35-we', this.value === 'Oui')">
+        <select name="q35_weekend">
             <option value="">-- Choisir --</option>
             <option value="Non">Non</option>
             <option value="Oui">Oui</option>
@@ -1274,8 +1272,7 @@
 
     <div class="question-row">
         <span>Votre hébergement prévoit-il des périodes de fermetures ?</span>
-        <select name="q35_fermetures"
-                onchange="toggleBox('sub-35-fermetures', this.value === 'Oui')">
+        <select name="q35_fermetures">
             <option value="">-- Choisir --</option>
             <option value="Non">Non</option>
             <option value="Oui">Oui</option>
@@ -1290,8 +1287,7 @@
 
         <div class="question-row">
             <span>Des alternatives sont-elles proposées ?</span>
-            <select name="q35_alternatives"
-                    onchange="toggleBox('sub-35-alternatives', this.value === 'Oui')">
+            <select name="q35_alternatives">
                 <option value="">-- Choisir --</option>
                 <option value="Non">Non</option>
                 <option value="Oui">Oui</option>
@@ -1305,11 +1301,7 @@
 <!-- Question 36 -->
 <div class="question-row">
   <span>42. Votre ES porte-t-il un restaurant collectif ?</span>
-  <select name="q36_restaurant"
-          onchange="
-            toggleBox('q36_yes', this.value === 'Oui');
-            toggleBox('q36_no', this.value === 'Non');
-          ">
+  <select name="q36_restaurant">
     <option value="">-- Choisir --</option>
     <option value="Non">Non</option>
     <option value="Oui">Oui</option>
@@ -1330,8 +1322,7 @@
 <div id="q36_no" class="sub-question-box">
   <div class="question-row">
     <span>Une restauration est-elle prévue à l'externe ?</span>
-    <select name="q36_externe"
-            onchange="toggleBox('q36_no_ext_yes', this.value === 'Oui')">
+    <select name="q36_externe">
       <option value="">-- Choisir --</option>
       <option value="Non">Non</option>
       <option value="Oui">Oui</option>
@@ -1352,8 +1343,7 @@
 
 <div class="question-row">
   <span>43. Votre ES porte-t-il un coin cuisine à disposition ?</span>
-  <select name="q37_cuisine"
-          onchange="toggleBox('q37_yes', this.value === 'Oui')">
+  <select name="q37_cuisine">
     <option value="">-- Choisir --</option>
     <option value="Non">Non</option>
     <option value="Oui">Oui</option>
@@ -1373,7 +1363,7 @@
 </div> <!-- fin setup-zone -->
 <div class="setup-zone">
     <strong>5. Rémunération & environnement</strong>
-    <div class="question-row"><span>51. Traitement rémunération délégué à un opérateur ?</span><select name="q40_remuneration" onchange="toggleBox('sub-40', this.value === 'Oui')"><option value="">-- Choisir --</option><option value="Non">Non</option><option value="Oui">Oui</option></select></div>
+    <div class="question-row"><span>51. Traitement rémunération délégué à un opérateur ?</span><select name="q40_remuneration"><option value="">-- Choisir --</option><option value="Non">Non</option><option value="Oui">Oui</option></select></div>
     <div id="sub-40" class="sub-question-box">
         <div class="question-row">
             <span>Nom de l'opérateur :</span>
@@ -1406,42 +1396,42 @@
     <strong>6. Participez-vous à ces instances ?</strong>   
     <div class="question-row"><span>61. Commissions Communales d'Action Sociale (CCAS) ?</span><select name="q44_ccas"><option value="">-- Choisir --</option><option>Oui</option><option>Non</option></select></div>
     <div class="question-row"><span>62. Communauté Professionnelle Territoire de Santé (CPTS) ?</span><select name="q45_cpts"><option value="">-- Choisir --</option><option>Oui</option><option>Non</option></select></div>
-    <div class="question-row"><span>63. Communauté Psychiatrique de Territoire (CPT) ?</span><select name="q46_cpt" onchange="toggleBox('sub-46', this.value === 'Non')"><option value="">-- Choisir --</option><option value="Oui">Oui</option><option value="Non">Non</option></select></div>
+    <div class="question-row"><span>63. Communauté Psychiatrique de Territoire (CPT) ?</span><select name="q46_cpt"><option value="">-- Choisir --</option><option value="Oui">Oui</option><option value="Non">Non</option></select></div>
     <div id="sub-46" class="sub-question-box">
         <div class="question-row">
             <span>Le réseau Fagerh est-il représenté ?</span>
             <select name="q46_fagerh"><option value="">-- Choisir --</option><option>Oui</option><option>Non</option></select>
         </div>
     </div>
-    <div class="question-row"><span>64. Comité Local de Santé Mentale (CLSM) ?</span><select name="q47_clsm" onchange="toggleBox('sub-47', this.value === 'Non')"><option value="">-- Choisir --</option><option value="Oui">Oui</option><option value="Non">Non</option></select></div>
+    <div class="question-row"><span>64. Comité Local de Santé Mentale (CLSM) ?</span><select name="q47_clsm"><option value="">-- Choisir --</option><option value="Oui">Oui</option><option value="Non">Non</option></select></div>
     <div id="sub-47" class="sub-question-box">
         <div class="question-row">
             <span>Le réseau Fagerh est-il représenté ?</span>
             <select name="q47_fagerh"><option value="">-- Choisir --</option><option>Oui</option><option>Non</option></select>
         </div>
     </div>
-    <div class="question-row"><span>65. Comité Local pour l'Emploi (CLE) ?</span><select name="q48_cle" onchange="toggleBox('sub-48', this.value === 'Non')"><option value="">-- Choisir --</option><option value="Oui">Oui</option><option value="Non">Non</option></select></div>
+    <div class="question-row"><span>65. Comité Local pour l'Emploi (CLE) ?</span><select name="q48_cle"><option value="">-- Choisir --</option><option value="Oui">Oui</option><option value="Non">Non</option></select></div>
     <div id="sub-48" class="sub-question-box">
         <div class="question-row">
             <span>Le réseau Fagerh est-il représenté ?</span>
             <select name="q48_fagerh"><option value="">-- Choisir --</option><option>Oui</option><option>Non</option></select>
         </div>
     </div>
-    <div class="question-row"><span>66. Comité Régional pour l'Emploi (CRE) ?</span><select name="q49_cre" onchange="toggleBox('sub-49', this.value === 'Non')"><option value="">-- Choisir --</option><option value="Oui">Oui</option><option value="Non">Non</option></select></div>
+    <div class="question-row"><span>66. Comité Régional pour l'Emploi (CRE) ?</span><select name="q49_cre"><option value="">-- Choisir --</option><option value="Oui">Oui</option><option value="Non">Non</option></select></div>
     <div id="sub-49" class="sub-question-box">
         <div class="question-row">
             <span>Le réseau Fagerh est-il représenté ?</span>
             <select name="q49_fagerh"><option value="">-- Choisir --</option><option>Oui</option><option>Non</option></select>
         </div>
     </div>
-    <div class="question-row"><span>67. Comité local FIPHFP ?</span><select name="q50_fiphfp" onchange="toggleBox('sub-50', this.value === 'Non')"><option value="">-- Choisir --</option><option value="Oui">Oui</option><option value="Non">Non</option></select></div>
+    <div class="question-row"><span>67. Comité local FIPHFP ?</span><select name="q50_fiphfp"><option value="">-- Choisir --</option><option value="Oui">Oui</option><option value="Non">Non</option></select></div>
     <div id="sub-50" class="sub-question-box">
         <div class="question-row">
             <span>Le réseau Fagerh est-il représenté ?</span>
             <select name="q50_fagerh"><option value="">-- Choisir --</option><option>Oui</option><option>Non</option></select>
         </div>
     </div>
-    <div class="question-row"><span>68. Comité local PLITH/PRITH ?</span><select name="q51_plith" onchange="toggleBox('sub-51', this.value === 'Non')"><option value="">-- Choisir --</option><option value="Oui">Oui</option><option value="Non">Non</option></select></div>
+    <div class="question-row"><span>68. Comité local PLITH/PRITH ?</span><select name="q51_plith"><option value="">-- Choisir --</option><option value="Oui">Oui</option><option value="Non">Non</option></select></div>
     <div id="sub-51" class="sub-question-box">
         <div class="question-row">
             <span>Le réseau Fagerh est-il représenté ?</span>
@@ -1450,8 +1440,7 @@
     </div>
     <div class="question-row">
     <span>69. Autre instance ?</span>
-    <select name="q52_autre"
-            onchange="toggleBox('sub-52', this.value === 'Oui')">
+    <select name="q52_autre">
         <option value="">-- Choisir --</option>
         <option value="Non">Non</option>
         <option value="Oui">Oui</option>
@@ -1542,6 +1531,7 @@
             </div>
             <p style="margin-top:15px"><strong>Handicap Principal / Associé</strong></p>
             <table class="handicap-matrix">
+                <caption class="sr-only">Répartition du public par type de handicap principal et associé</caption>
                 <thead>
                     <tr>
                         <th>Type de handicap</th>
@@ -1673,6 +1663,7 @@
             <h2>10. Prestations directes réalisées - <span data-pd-type-label></span> (Détail par parcours)</h2>
             <div class="table-10-container">
                 <table class="table-10">
+                    <caption class="sr-only">Prestations directes réalisées par type de parcours</caption>
                     <thead>
                         <tr>
                             <th rowspan="3" style="width: 200px; text-align: left; background: #ecf0f1;">Prestations</th>
@@ -1811,6 +1802,40 @@
     }
     function toggleBox(id, show) {
         document.getElementById(id).style.display = show ? 'block' : 'none';
+    }
+
+    function bindContexteSelectToggles() {
+        const bind = (name, handler) => {
+            const select = document.querySelector(`select[name="${name}"]`);
+            if (!select || select.dataset.boundToggle === '1') return;
+            select.dataset.boundToggle = '1';
+            select.addEventListener('change', () => handler(select.value));
+            handler(select.value);
+        };
+
+        bind('q33_transports', (value) => {
+            toggleBox('sub-33-oui', value === 'Oui');
+            toggleBox('sub-33-non', value === 'Non');
+        });
+        bind('q34_prefecture', (value) => toggleBox('sub-34-non', value === 'Non'));
+        bind('q35_hebergement', (value) => toggleBox('sub-35', value === 'Oui'));
+        bind('q35_weekend', (value) => toggleBox('sub-35-we', value === 'Oui'));
+        bind('q35_fermetures', (value) => toggleBox('sub-35-fermetures', value === 'Oui'));
+        bind('q35_alternatives', (value) => toggleBox('sub-35-alternatives', value === 'Oui'));
+        bind('q36_restaurant', (value) => {
+            toggleBox('q36_yes', value === 'Oui');
+            toggleBox('q36_no', value === 'Non');
+        });
+        bind('q36_externe', (value) => toggleBox('q36_no_ext_yes', value === 'Oui'));
+        bind('q37_cuisine', (value) => toggleBox('q37_yes', value === 'Oui'));
+        bind('q40_remuneration', (value) => toggleBox('sub-40', value === 'Oui'));
+        bind('q46_cpt', (value) => toggleBox('sub-46', value === 'Non'));
+        bind('q47_clsm', (value) => toggleBox('sub-47', value === 'Non'));
+        bind('q48_cle', (value) => toggleBox('sub-48', value === 'Non'));
+        bind('q49_cre', (value) => toggleBox('sub-49', value === 'Non'));
+        bind('q50_fiphfp', (value) => toggleBox('sub-50', value === 'Non'));
+        bind('q51_plith', (value) => toggleBox('sub-51', value === 'Non'));
+        bind('q52_autre', (value) => toggleBox('sub-52', value === 'Oui'));
     }
     function runLogic36() {
         const r36 = document.getElementById('36-select').value;
@@ -2635,6 +2660,7 @@
         const v = (field) => getNestedValue(state, `${prefix}.${field}`) ?? '';
         return `
             <table class="table-10" style="min-width: 0; width: 100%;">
+                <caption class="sr-only">Répartition des bénéficiaires par modalité et temps</caption>
                 <thead>
                     <tr>
                         <th></th>
@@ -4368,6 +4394,8 @@
     });
     window.addEventListener('resize', updateProgressScrollHint);
     updateSaveReminderUi();
+    bindContexteSelectToggles();
+    document.getElementById('metier-picker')?.addEventListener('change', addMetierRow);
     addAutoAriaLabels(document);
     watchDynamicControlsForLabels();
     document.querySelectorAll('.finess-input').forEach((input) => attachFinessValidation(input));
