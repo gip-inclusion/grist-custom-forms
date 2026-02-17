@@ -2,11 +2,12 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>RA FAGERH 2025 - Formulaire - TEST LOCAL</title>
     <style>
         :root { --fagerh-blue: #2c3e50; --fagerh-light: #3498db; --orange: #e67e22; --success: #27ae60; --grey: #f4f7f6; --header-offset: 240px; }
         html { scroll-behavior: smooth; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--grey); padding: 20px; color: #333; line-height: 1.4; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--grey); padding: 20px; color: #333; line-height: 1.45; }
         .app-header {
             position: sticky;
             top: 0;
@@ -188,6 +189,10 @@
         h2 { color: var(--fagerh-blue); border-bottom: 3px solid var(--fagerh-light); padding-bottom: 10px; margin-top: 0; }
         h3 { color: var(--orange); margin-top: 30px; border-left: 5px solid var(--orange); padding-left: 15px; margin-bottom: 15px; }
         .question-row { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; padding: 10px 12px; border-bottom: 1px solid #eee; align-items: center; margin-bottom: 14px; }
+        .field-full { width: 100%; }
+        .row-highlight-blue { background:#f0f9ff; border: 1px solid var(--fagerh-light); border-radius: 8px; padding:15px; }
+        .row-highlight-amber { background: #fff7e6; font-weight: bold; }
+        .inline-flex-row { display: flex; gap: 10px; margin-bottom: 15px; }
         .sub-question-box { background: #fffcf9; border-left: 4px solid var(--orange); padding: 15px; margin: 10px 0 10px 20px; border-radius: 0 8px 8px 0; display: none; }
         .sub-question-box .question-row { margin-bottom: 8px; }
         .setup-zone { background: #eef7ff; padding: 20px; border-radius: 8px; margin-bottom: 30px; border: 1px solid #d1e9ff; }
@@ -203,10 +208,19 @@
         input[type="number"] { width: 85px; text-align: center; }
         .hidden { display: none; }
         .volet-subtitle { margin: 6px 0 15px 0; color: #555; font-size: 0.95em; }
-        .table-10-container { overflow-x: auto; margin-top: 15px; }
+        .table-10-container {
+            overflow-x: auto;
+            margin-top: 15px;
+            border: 1px solid rgba(0,0,0,0.1);
+            border-radius: 10px;
+            background: rgba(255,255,255,0.8);
+            box-shadow: inset 0 0 0 1px rgba(255,255,255,0.5);
+        }
         .table-10 { min-width: 1200px; }
         .table-10 th { font-size: 0.75em; padding: 5px; }
         .table-10 input[type="number"] { width: 50px; padding: 4px; font-size: 0.85em; }
+        .table-10 tbody tr:nth-child(odd) { background: rgba(47,82,122,0.04); }
+        .table-10 td:first-child { text-align: left; font-weight: 600; }
         .submit-zone { display: none; }
         .sidebar .card { padding: 20px; }
         .sidebar h3 { margin-top: 0; font-size: 1em; color: var(--fagerh-blue); border: none; padding: 0; }
@@ -231,6 +245,7 @@
         .btn-del { color: red; cursor: pointer; background: none; border: none; font-weight: bold; font-size: 1.2em; }
         .btn-add { background: var(--fagerh-light); color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; }
         .dept-row { display: flex; align-items: center; gap: 10px; padding: 8px; background: white; margin-bottom: 4px; border-radius: 4px; border: 1px solid #eee; }
+        .pd-dept-code-input, .dept-nb { width: 120px; }
         #metier-picker { margin-top: 15px;}
         .setup-zone > strong {display: block;margin-bottom: 15px;}
         .pd-block { display: none; margin-bottom: 24px; }
@@ -253,7 +268,9 @@
             border-bottom: none;
             margin-top: 24px;
             margin-bottom: 10px;
-            padding-left: 10px;
+            padding: 6px 10px;
+            background: rgba(255,255,255,0.55);
+            border-radius: 6px;
             font-size: 1.03em;
         }
         .pd-card-themed .question-row {
@@ -266,6 +283,23 @@
         .pd-card-themed .grid-compact {
             background: rgba(255,255,255,0.6);
             border: 1px solid rgba(0,0,0,0.08);
+            margin-top: 8px;
+            margin-bottom: 14px;
+        }
+        .pd-card-themed .sub-question-box { margin-top: 14px; margin-bottom: 14px; }
+        .pd-card-themed .sub-question-box .grid-item {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            align-items: center;
+            column-gap: 10px;
+        }
+        .pd-card-themed .sub-question-box .grid-item input[type="number"] {
+            width: 96px;
+            min-width: 96px;
+            text-align: center;
+        }
+        .lesion-origin-box .grid-compact {
+            grid-template-columns: 1fr;
         }
         .pd-card-themed p > strong {
             color: #2b4661;
@@ -292,6 +326,9 @@
         .handicap-matrix thead th {
             background: rgba(47,82,122,0.12);
             color: #243f59;
+        }
+        .handicap-matrix tbody tr:nth-child(odd) {
+            background: rgba(47,82,122,0.04);
         }
         .finess-field { width: 100%; }
         .finess-msg { font-size: 0.82em; margin-top: 4px; display: none; }
@@ -364,6 +401,9 @@
         .block-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
         .title-with-badge { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; }
         .block-actions { display: inline-flex; align-items: center; gap: 8px; }
+        .section-actions { display: flex; justify-content: flex-end; }
+        .section-actions.top { margin: 0 0 10px 0; }
+        .section-actions.bottom { margin: 14px 0 0 0; }
         .btn-complete {
             border: 1px solid #7fb48f;
             background: #eefaf2;
@@ -376,6 +416,7 @@
         }
         .btn-complete:hover { background: #e4f5ea; }
         .prest-details-block.is-collapsed .prest-content { display: none; }
+        .pd-block.is-collapsed .pd-content { display: none; }
         .toc-list li.toc-done .toc-percent { background: #e8f6ec; border-color: #8bc79b; color: #1f6d34; }
         .toc-list li.toc-done a { color: #1f6d34; font-weight: 600; }
         .step-actions { display: flex; justify-content: flex-end; margin-bottom: 10px; }
@@ -393,6 +434,26 @@
         .step-card.is-collapsed .step-content { display: none; }
         .volet-actions { display: flex; justify-content: flex-end; margin: 4px 0 10px 0; }
         .volet-collapsible.is-collapsed .volet-content { display: none; }
+        .prest-subsection {
+            border: 1px solid rgba(47,82,122,0.18);
+            border-radius: 8px;
+            padding: 10px;
+            margin: 10px 0;
+            background: rgba(255,255,255,0.45);
+        }
+        .prest-subsection-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+        .prest-subsection-title {
+            font-weight: 700;
+            color: #2b4661;
+            font-size: 0.95em;
+        }
+        .prest-subsection.is-collapsed .prest-subsection-body { display: none; }
         .scope-badge {
             display: inline-flex;
             align-items: center;
@@ -416,21 +477,31 @@
         .prest-details-grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
         .prest-details-row {
             display: flex;
-            align-items: flex-start;
-            justify-content: flex-start;
-            flex-direction: column;
-            gap: 10px;
+            align-items: center;
+            justify-content: space-between;
+            flex-direction: row;
+            gap: 12px;
             padding: 8px 10px;
             border: 1px solid rgba(0,0,0,0.12);
             border-radius: 8px;
             background: rgba(255,255,255,0.88);
         }
-        .prest-details-row > span { min-width: 0; }
+        .prest-details-row > span {
+            min-width: 0;
+            flex: 1;
+        }
         .prest-details-row input,
         .prest-details-row select,
         .prest-details-row textarea {
-            width: 100%;
-            max-width: none;
+            width: auto;
+            max-width: 180px;
+            flex: 0 0 auto;
+        }
+        .prest-details-row input[type="number"] {
+            width: 110px;
+            max-width: 110px;
+            min-width: 110px;
+            text-align: center;
         }
         .prest-details-row + .prest-details-row { margin-top: 8px; }
         .metric-label { font-weight: 600; color: #26415a; }
@@ -456,11 +527,17 @@
             .app-header { position: static; padding: 0 0 12px 0; }
             .quick-actions-card { position: static; }
             .report-header-row { align-items: flex-start; }
+            .report-title { font-size: 1.05rem; }
+            .quick-actions-row { flex-direction: column; align-items: stretch; }
+            .quick-actions-row .sidebar-btn { width: 100%; }
+            .sidebar-btn.finish { margin-left: 0; }
             .question-row { grid-template-columns: 1fr; gap: 8px; }
             .toc-list { max-height: none; }
             .progress-top-grid { grid-template-columns: 1fr; }
             .lost-link-row { flex-direction: column; align-items: stretch; }
+            .lost-link-row input { min-width: 0; }
             .main-content { margin-left: 0; padding-top: 0; }
+            .card { padding: 18px; }
             .quick-actions-card {
                 width: auto;
                 max-width: none;
@@ -472,6 +549,89 @@
                 top: auto;
                 left: auto;
                 margin-bottom: 20px;
+            }
+            .orp-grid { grid-template-columns: 1fr; }
+            .grid-compact { grid-template-columns: 1fr; }
+            .sub-question-box {
+                margin-left: 8px;
+                padding: 10px;
+            }
+            .prest-details-row {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .prest-details-row input,
+            .prest-details-row select,
+            .prest-details-row textarea {
+                width: 100%;
+                max-width: none;
+            }
+            .prest-details-row input[type="number"] {
+                width: 100%;
+                max-width: none;
+                min-width: 0;
+                text-align: left;
+            }
+            .inline-flex-row {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .inline-flex-row input,
+            .inline-flex-row button {
+                width: 100%;
+            }
+            .prest-subsection-head {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .dept-row {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .pd-dept-code-input,
+            .dept-nb {
+                width: 100%;
+                max-width: none;
+            }
+            .indent-1 {
+                padding-left: 12px;
+                margin-left: 0;
+            }
+            .indent-2 {
+                padding-left: 18px;
+                margin-left: 0;
+            }
+            .control-bar {
+                position: static;
+                bottom: auto;
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
+            #step-rh .dispositif-row {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
+            #step-rh .dispositif-row > div {
+                width: 100%;
+            }
+            #step-rh #table-metiers {
+                display: block;
+                width: 100%;
+                overflow-x: auto;
+            }
+            #step-rh .control-bar {
+                position: static;
+                bottom: auto;
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+                font-size: 0.92em;
+            }
+            #step-rh .volet-actions,
+            #step-rh .step-actions {
+                justify-content: flex-start;
             }
         }
         @media print {
@@ -545,7 +705,7 @@
         <button type="button" id="quick-copy-btn" class="sidebar-btn secondary">Copier lien de reprise</button>
         <button type="button" id="quick-export-csv-btn" class="sidebar-btn secondary">Exporter en CSV</button>
         <button type="button" id="quick-export-pdf-btn" class="sidebar-btn secondary">Exporter en PDF</button>
-        <button type="button" id="quick-finish-btn" class="sidebar-btn finish">J'ai terminée ma saisie</button>
+        <button type="button" id="quick-finish-btn" class="sidebar-btn finish">J'ai terminé ma saisie</button>
     </div>
     <div id="save-reminder-msg" class="save-reminder">Obligatoire: cliquez sur « Enregistrer » après chaque modification, sinon vos changements ne seront pas conservés.</div>
     <div id="lost-link-box" class="lost-link-box hidden">
@@ -554,7 +714,7 @@
             <input type="email" id="recover-email-input" placeholder="Email de la personne en charge de la validation">
             <button type="button" id="recover-by-email-btn" class="btn-add">Retrouver mon questionnaire</button>
         </div>
-        <div class="quick-actions-hint">Saisissez l'email de validation pour réouvrir votre questionnaire.</div>
+        <div class="quick-actions-hint">Saisissez l'email de validation pour rouvrir votre questionnaire.</div>
     </div>
     <div id="submission-lock-msg" class="save-reminder saved" style="display:none; margin-top:8px;">
         <div class="lock-msg-row">
@@ -573,11 +733,20 @@
 <div class="card" id="intro-remplissage">
     <h2>Avant de commencer</h2>
     <div class="setup-zone">
-        <p class="volet-subtitle" style="margin:0;">
-            Renseignez d'abord les volets principaux dans cet ordre :
+        <p class="volet-subtitle" style="margin:0 0 10px 0;">
+            Merci de compléter le questionnaire dans cet ordre :
             <strong>Identification</strong>, <strong>Volet RH</strong>, <strong>Vos prestations</strong>, puis <strong>Contexte écologique</strong>.
-            Les formulaires conditionnels s'afficheront ensuite selon vos choix.
+            Les formulaires conditionnels s'affichent automatiquement selon vos choix.
         </p>
+        <div class="orp-instruction" style="margin: 0;">
+            <strong>Mode d'emploi rapide</strong><br>
+            1. Utilisez les panneaux <strong>Étapes Principales</strong> et <strong>Étapes Conditionnelles</strong> à gauche pour suivre votre avancement.<br>
+            2. Les intitulés dans ces panneaux sont <strong>cliquables</strong> : cliquez pour aller directement à la section concernée.<br>
+            3. Le bouton <strong>Saisie terminée pour cette étape/ce volet/cette prestation</strong> replie la zone pour faciliter la navigation (vous pouvez la rouvrir à tout moment).<br>
+            4. Cliquez sur <strong>Enregistrer</strong> régulièrement pour conserver vos réponses.<br>
+            5. Utilisez <strong>Copier lien de reprise</strong> pour reprendre la saisie plus tard sur le même questionnaire.<br>
+            6. Quand tout est finalisé, cliquez sur <strong>J'ai terminé ma saisie</strong> (vous pourrez revenir en modification si nécessaire).
+        </div>
     </div>
 </div>
 <div class="progress-top-grid">
@@ -591,7 +760,7 @@
             <div class="progress-track">
                 <div id="primary-completion-fill" class="progress-fill"></div>
             </div>
-            <div id="primary-completion-stats" class="quick-actions-hint">0 / 0 champs remplis</div>
+            <div id="primary-completion-stats" class="quick-actions-hint">0 / 0 étapes terminées</div>
         </div>
         <ul id="primary-toc-list" class="toc-list"></ul>
     </div>
@@ -605,7 +774,7 @@
             <div class="progress-track">
                 <div id="secondary-completion-fill" class="progress-fill"></div>
             </div>
-            <div id="secondary-completion-stats" class="quick-actions-hint">0 / 0 champs remplis</div>
+            <div id="secondary-completion-stats" class="quick-actions-hint">0 / 0 sections terminées</div>
         </div>
         <ul id="secondary-toc-list" class="toc-list"></ul>
     </div>
@@ -645,7 +814,7 @@
         </div>
         <div class="question-row">
             <span>Département</span>
-            <div style="width:100%;">
+            <div class="field-full">
                 <input type="text" class="dept-input" id="es-departement-input" name="es_departement" inputmode="numeric" maxlength="3" placeholder="Ex: 75 ou 971">
                 <div class="volet-subtitle" style="margin-top:6px;">Ce champ permet de pré-remplir automatiquement certaines données du formulaire.</div>
                 <div class="dept-msg">Département attendu: 01 à 95, ou 971, 972, 973, 974, 976.</div>
@@ -757,7 +926,7 @@
 <div class="card" id="step-vos-prestations">
     <h3>Vos prestations</h3>
     <div class="setup-zone" id="orp-prestations-zone">
-        <div class="question-row" style="margin-top:10px; margin-bottom:10px; background:#f0f9ff; border: 1px solid var(--fagerh-light); border-radius: 8px; padding:15px">
+        <div class="question-row row-highlight-blue" style="margin-top:10px; margin-bottom:10px;">
             <strong>Délivrez-vous des prestations d'évaluation et de conseil (PEC) ?</strong>
             <select name="pec" id="pec-select"><option value="">-- Choisir --</option><option value="Non">Non</option><option value="Oui">Oui</option></select>
         </div>
@@ -982,21 +1151,21 @@
     </div>
     <div class="question-row">
         <span>52. Nombre d'ESAT sur le département ?</span>
-        <div style="width:100%;">
+        <div class="field-full">
             <input type="number" min="0" step="1" name="q41_esat" placeholder="Nombre exact">
             <div id="note-q41-esat" class="volet-subtitle"></div>
         </div>
     </div>
     <div class="question-row">
         <span>53. Nombre d'EA sur le département ?</span>
-        <div style="width:100%;">
+        <div class="field-full">
             <input type="number" min="0" step="1" name="q42_ea" placeholder="Nombre exact">
             <div id="note-q42-ea" class="volet-subtitle"></div>
         </div>
     </div>
     <div class="question-row">
         <span>54. Nombre d'EI sur le département ?</span>
-        <div style="width:100%;">
+        <div class="field-full">
             <input type="number" min="0" step="1" name="q43_ei" placeholder="Nombre exact">
             <div id="note-q43-ei" class="volet-subtitle"></div>
         </div>
@@ -1065,7 +1234,7 @@
     </div>
 </div>
 </div> <!-- fin setup-zone -->
-   <div class="question-row" style="background:#f0f9ff; border: 1px solid var(--fagerh-light); border-radius: 8px; padding:15px">
+        <div class="question-row row-highlight-blue">
         <strong>L'AFPA est-elle présente sur votre territoire ?</strong>
         <select name="q53_afpa"><option value="">-- Choisir --</option><option value="Non">Non</option><option value="Oui">Oui</option></select>
     </div>
@@ -1084,7 +1253,7 @@
     </div>
 
 <div class="card" id="prestations-totales-card">
-    <h2>Prestations totales délivrées (Avec ou sans ORP CDAPH)</h2>
+    <h2>Prestations totales délivrées (avec ou sans ORP CDAPH)</h2>
     <div class="setup-zone">
         <strong>Formulaires par dispositif</strong>
         <p class="volet-subtitle">Les formulaires ci-dessous s'ouvrent automatiquement selon les dispositifs cochés dans « 1. Effectifs globaux par Dispositif ».</p>
@@ -1096,11 +1265,12 @@
     <section class="pd-block" data-pd-block>
         <div class="card pd-card-themed">
             <h2>Prestations directes - <span data-pd-type-label></span></h2>
+            <div class="pd-content">
             <h3>File active & Journées</h3>
             <div class="question-row"><span>Nombre de personnes accompagnées au 31/12</span><input type="number" min="0" name="q53_accompagnes" class="pd-fileactive-nb"></div>
             <div class="question-row"><span>Nombre de sorties définitives dans l'année</span><input type="number" name="q54_sorties"></div>
             <div class="question-row"><span>Journées réalisées en <span data-pd-type-label></span></span><input type="number" min="0" name="q55_journees" class="pd-journees-nb"></div>
-            <div class="question-row" style="background: #fff7e6; font-weight: bold;"><span>Durée moyenne de séjour (jours)</span><span class="pd-dms-display">-</span></div>
+            <div class="question-row row-highlight-amber"><span>Durée moyenne de séjour (jours)</span><span class="pd-dms-display">-</span></div>
 
             <h3>Public : Genre & Âge</h3>
             <div class="grid-compact">
@@ -1175,7 +1345,7 @@
                 <div class="grid-item">Non connue <input type="number" name="origine_inconnue"></div>
             </div>
 
-            <div class="sub-question-box" style="display:block; margin-top:20px">
+            <div class="sub-question-box lesion-origin-box" style="display:block; margin-top:20px">
                 <strong>Origine de la lésion cérébrale (<span data-pd-type-label></span>)</strong>
                 <div class="grid-compact" style="margin-top:10px">
                     <div class="grid-item">Traumatisme crânien <input type="number" name="lesion_traumatisme"></div>
@@ -1229,7 +1399,7 @@
             <h3>Absentéisme</h3>
             <div class="question-row"><span>Nombre d'heures d'absence total</span><input type="number" name="abs_heures" class="pd-abs-h"></div>
             <div class="question-row"><span>Nombre d'heures théoriques travaillées</span><input type="number" name="abs_heures_theoriques" class="pd-theo-h"></div>
-            <div class="question-row" style="background: #fff7e6; font-weight: bold;"><span>Taux d'absentéisme calculé :</span><span class="pd-taux-abs-display">0.00 %</span></div>
+            <div class="question-row row-highlight-amber"><span>Taux d'absentéisme calculé :</span><span class="pd-taux-abs-display">0.00 %</span></div>
 
             <h3>Sorties & Suspensions</h3>
             <p><strong>Combien de personnes sont sorties définitivement avant le terme ?</strong></p>
@@ -1259,11 +1429,13 @@
 
             <h3>Géographie</h3>
             <p><strong>Combien de personnes proviennent de...</strong></p>
-            <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-                <input type="text" class="pd-dept-code-input" placeholder="Code (ex: 75)" style="width: 120px;">
+            <div class="inline-flex-row">
+                <input type="text" class="pd-dept-code-input" placeholder="Code (ex: 75)">
                 <button type="button" class="btn-add pd-add-dept-btn">Ajouter département</button>
             </div>
+            <div class="dept-msg pd-dept-msg">Département attendu: 01 à 95, ou 971, 972, 973, 974, 976.</div>
             <div class="pd-dept-rows-container"></div>
+            </div>
         </div>
 
         <div class="card pd-card-themed">
@@ -1436,7 +1608,7 @@
         });
 
         hidden.value = locked ? 'true' : 'false';
-        finishBtn.textContent = locked ? 'Questionnaire envoyé' : "J'ai terminée ma saisie";
+        finishBtn.textContent = locked ? 'Questionnaire envoyé' : "J'ai terminé ma saisie";
         if (lockMsg) lockMsg.style.display = locked ? 'block' : 'none';
 
         if (announce) {
@@ -1631,7 +1803,10 @@
         const statsEl = document.getElementById(`${prefix}-completion-stats`);
         if (pctEl) pctEl.textContent = `${result.percent}%`;
         if (fillEl) fillEl.style.width = `${result.percent}%`;
-        if (statsEl) statsEl.textContent = `${result.filled} / ${result.total} champs remplis`;
+        if (statsEl) {
+            const label = prefix === 'primary' ? 'étapes terminées' : 'sections terminées';
+            statsEl.textContent = `${result.filled} / ${result.total} ${label}`;
+        }
     }
 
     function renderPrimaryProgress() {
@@ -1650,20 +1825,38 @@
                 '#prestations-detail-blocks',
                 '#pd-blocks-container',
             ];
-            let result = computeCompletionForScope(root, excludeSelectors);
-            const completed = root.dataset.completed === '1';
+            let blockCount = 1;
+            let doneCount = root.dataset.completed === '1' ? 1 : 0;
+
+            if (step.id === 'step-rh') {
+                const zones = Array.from(root.querySelectorAll('.rh-frame .setup-zone.volet-collapsible'));
+                blockCount = zones.length || 1;
+                doneCount = zones.filter((zone) => zone.dataset.completed === '1').length;
+            } else if (step.id === 'step-contexte') {
+                const zones = Array.from(root.querySelectorAll('.setup-zone.volet-collapsible'));
+                blockCount = zones.length || 1;
+                doneCount = zones.filter((zone) => zone.dataset.completed === '1').length;
+            }
+
+            const result = {
+                filled: doneCount,
+                total: blockCount,
+                percent: blockCount > 0 ? Math.round((doneCount / blockCount) * 100) : 0,
+            };
+            const completed = doneCount >= blockCount && blockCount > 0;
+            let fieldResult = computeCompletionForScope(root, excludeSelectors);
             if (completed) {
                 const totalFields = computeFieldTotalIgnoringVisibility(root, excludeSelectors);
-                result = { filled: totalFields, total: totalFields, percent: totalFields > 0 ? 100 : 0 };
+                fieldResult = { filled: totalFields, total: totalFields, percent: totalFields > 0 ? 100 : 0 };
             }
-            filled += result.filled;
-            total += result.total;
+            filled += doneCount;
+            total += blockCount;
             const li = document.createElement('li');
             li.classList.toggle('toc-done', completed);
             li.innerHTML = `
                 <div class="toc-item-row">
                     <a href="#${step.id}">${step.label}</a>
-                    <span class="toc-percent">${result.percent}%</span>
+                    <span class="toc-percent">${fieldResult.filled}/${fieldResult.total} (${fieldResult.percent}%)</span>
                 </div>
             `;
             list.appendChild(li);
@@ -1681,38 +1874,38 @@
         refreshProgressUi();
     }
 
-    function updateRhStepCompletionFromVolets(root) {
+    function updateStepCompletionFromSubBlocks(root, zoneSelector) {
         if (!root) return;
-        const volets = Array.from(root.querySelectorAll('.rh-frame .setup-zone.volet-collapsible'));
-        if (volets.length === 0) {
+        const zones = Array.from(root.querySelectorAll(`${zoneSelector}.volet-collapsible`));
+        if (zones.length === 0) {
             root.dataset.completed = '0';
             refreshProgressUi();
             return;
         }
-        const allDone = volets.every((zone) => zone.dataset.completed === '1');
+        const allDone = zones.every((zone) => zone.dataset.completed === '1');
         root.dataset.completed = allDone ? '1' : '0';
         refreshProgressUi();
     }
 
-    function setRhVoletCompletionState(zone, completed, root) {
+    function setSubBlockCompletionState(zone, completed, root, zoneSelector, doneLabel, resumeLabel) {
         if (!zone) return;
         zone.dataset.completed = completed ? '1' : '0';
         zone.classList.toggle('is-collapsed', completed);
-        const btn = zone.querySelector('[data-rh-volet-complete-btn]');
-        if (btn) btn.textContent = completed ? 'Reprendre la saisie de ce volet' : 'Saisie terminée pour ce volet';
-        updateRhStepCompletionFromVolets(root);
+        const btn = zone.querySelector('[data-subblock-complete-btn]');
+        if (btn) btn.textContent = completed ? resumeLabel : doneLabel;
+        updateStepCompletionFromSubBlocks(root, zoneSelector);
     }
 
-    function initRhVoletCompletionControls(root) {
+    function initStepSubBlockCompletionControls(root, zoneSelector, doneLabel, resumeLabel) {
         if (!root) return;
-        const zones = root.querySelectorAll('.rh-frame .setup-zone');
+        const zones = root.querySelectorAll(zoneSelector);
         zones.forEach((zone) => {
             zone.classList.add('volet-collapsible');
-            let actionBtn = zone.querySelector('[data-rh-volet-complete-btn]');
+            let actionBtn = zone.querySelector('[data-subblock-complete-btn]');
             if (!actionBtn) {
                 const actions = document.createElement('div');
                 actions.className = 'volet-actions';
-                actions.innerHTML = `<button type="button" class="btn-step-complete" data-rh-volet-complete-btn>Saisie terminée pour ce volet</button>`;
+                actions.innerHTML = `<button type="button" class="btn-step-complete" data-subblock-complete-btn>${doneLabel}</button>`;
 
                 const title = zone.querySelector('strong');
                 if (title) {
@@ -1720,7 +1913,7 @@
                 } else {
                     zone.insertBefore(actions, zone.firstChild);
                 }
-                actionBtn = actions.querySelector('[data-rh-volet-complete-btn]');
+                actionBtn = actions.querySelector('[data-subblock-complete-btn]');
 
                 const content = document.createElement('div');
                 content.className = 'volet-content';
@@ -1734,9 +1927,9 @@
             }
 
             actionBtn?.addEventListener('click', () => {
-                setRhVoletCompletionState(zone, zone.dataset.completed !== '1', root);
+                setSubBlockCompletionState(zone, zone.dataset.completed !== '1', root, zoneSelector, doneLabel, resumeLabel);
             });
-            setRhVoletCompletionState(zone, zone.dataset.completed === '1', root);
+            setSubBlockCompletionState(zone, zone.dataset.completed === '1', root, zoneSelector, doneLabel, resumeLabel);
         });
         root.classList.remove('is-collapsed');
     }
@@ -1748,7 +1941,22 @@
             root.classList.add('step-card');
 
             if (step.id === 'step-rh') {
-                initRhVoletCompletionControls(root);
+                initStepSubBlockCompletionControls(
+                    root,
+                    '.rh-frame .setup-zone',
+                    'Saisie terminée pour ce volet',
+                    'Reprendre la saisie de ce volet'
+                );
+                return;
+            }
+
+            if (step.id === 'step-contexte') {
+                initStepSubBlockCompletionControls(
+                    root,
+                    '.setup-zone',
+                    'Saisie terminée pour ce bloc',
+                    'Reprendre la saisie de ce bloc'
+                );
                 return;
             }
 
@@ -1792,8 +2000,15 @@
             const key = block.dataset.prestationKey || 'orp';
             block.id = block.id || `dyn-orp-${key}`;
             const label = (block.querySelector('h4')?.textContent || key).trim();
-            const result = computeCompletionForScope(block);
-            entries.push({ id: block.id, label, root: block, result, completed: block.dataset.completed === '1' });
+            const blockTotal = 1;
+            const blockDone = block.dataset.completed === '1' ? 1 : 0;
+            const result = {
+                filled: blockDone,
+                total: blockTotal,
+                percent: blockTotal > 0 ? Math.round((blockDone / blockTotal) * 100) : 0,
+            };
+            const completed = blockDone >= blockTotal && blockTotal > 0;
+            entries.push({ id: block.id, label, root: block, result, completed });
         });
 
         document.querySelectorAll('#pd-blocks-container [data-pd-block]').forEach((block) => {
@@ -1801,8 +2016,16 @@
             const type = block.dataset.pdType || 'pd';
             block.id = block.id || `dyn-pd-${type}`;
             const label = (block.querySelector('h2')?.textContent || type).trim();
-            const result = computeCompletionForScope(block);
-            entries.push({ id: block.id, label, root: block, result });
+            const sections = Array.from(block.querySelectorAll('.pd-content .prest-subsection'));
+            const blockTotal = sections.length || 1;
+            const blockDone = sections.filter((section) => section.dataset.completed === '1').length;
+            const result = {
+                filled: blockDone,
+                total: blockTotal,
+                percent: blockTotal > 0 ? Math.round((blockDone / blockTotal) * 100) : 0,
+            };
+            const completed = blockDone >= blockTotal && blockTotal > 0;
+            entries.push({ id: block.id, label, root: block, result, completed });
         });
 
         if (entries.length === 0) {
@@ -1816,10 +2039,11 @@
         let total = 0;
 
         entries.forEach((entry) => {
-            let result = entry.result || computeCompletionForScope(entry.root);
+            const result = entry.result;
+            let fieldResult = computeCompletionForScope(entry.root);
             if (entry.completed) {
                 const totalFields = computeFieldTotalIgnoringVisibility(entry.root);
-                result = { filled: totalFields, total: totalFields, percent: totalFields > 0 ? 100 : 0 };
+                fieldResult = { filled: totalFields, total: totalFields, percent: totalFields > 0 ? 100 : 0 };
             }
             filled += result.filled;
             total += result.total;
@@ -1828,7 +2052,7 @@
             li.innerHTML = `
                 <div class="toc-item-row">
                     <a href="#${entry.id}">${entry.label}</a>
-                    <span class="toc-percent">${result.filled}/${result.total} (${result.percent}%)</span>
+                    <span class="toc-percent">${fieldResult.filled}/${fieldResult.total} (${fieldResult.percent}%)</span>
                 </div>
             `;
             list.appendChild(li);
@@ -2286,14 +2510,14 @@
                     <span class="scope-badge with-orp">Avec ORP CDAPH</span>
                     <h4>${title}</h4>
                 </div>
-                <div class="block-actions">
+                <div class="section-actions top">
                     <button type="button" class="btn-complete" data-mark-complete>Saisie terminée pour cette prestation</button>
                 </div>
             </div>
             <div class="prest-content">
         `;
         if (key === 'orp_parcours_sociopro') {
-            html += `<div class="consistency-help">Règle de cohérence: pour chaque indicateur, la somme des deux sous-parties doit être inférieure ou égale à la valeur du bloc global.</div>`;
+            html += `<div class="consistency-help"><strong>Fonctionnement :</strong> ce parcours comprend un <strong>bloc global</strong> et deux <strong>sous-parties</strong> (« préparation d'un projet professionnel » et « préparation à l'emploi »).<br><strong>Règle de cohérence :</strong> pour chaque indicateur, la somme des deux sous-parties doit être inférieure ou égale à la valeur du bloc global.</div>`;
             html += `<div class="consistency-msg" data-sociopro-consistency><strong>Contrôle de cohérence :</strong> OK</div>`;
         }
         if (def.withDuration) {
@@ -2312,18 +2536,7 @@
             });
         }
 
-        html += `
-            <div class="control-bar" style="position: static; margin-top: 12px;">
-                <span>
-                    Total bénéficiaires : <span data-total-benef>0</span> |
-                    Hors les murs (pers.) : <span data-total-hlm-persons>0</span> |
-                    Hors les murs (journées) : <span data-total-hlm-days>0</span> |
-                    Hébergées (pers.) : <span data-total-heb-persons>0</span> |
-                    Nuitées : <span data-total-nuits>0</span>
-                </span>
-            </div>
-            </div>
-        `;
+        html += `</div>`;
 
         block.innerHTML = html;
         return block;
@@ -2335,13 +2548,71 @@
         if (!key) return;
         block.dataset.completed = completed ? '1' : '0';
         block.classList.toggle('is-collapsed', completed);
-        const btn = block.querySelector('[data-mark-complete]');
-        if (btn) btn.textContent = completed ? 'Reprendre la saisie de cette prestation' : 'Saisie terminée pour cette prestation';
+        block.querySelectorAll('[data-mark-complete]').forEach((btn) => {
+            btn.textContent = completed ? 'Reprendre la saisie de cette prestation' : 'Saisie terminée pour cette prestation';
+        });
         if (persistState) {
             const state = ensurePrestationState(key);
             state.__completed = !!completed;
         }
         refreshProgressUi();
+    }
+
+    function setInnerPrestSectionCompletion(section, completed) {
+        if (!section) return;
+        section.dataset.completed = completed ? '1' : '0';
+        section.classList.toggle('is-collapsed', completed);
+        const btn = section.querySelector('[data-inner-section-complete-btn]');
+        if (btn) {
+            btn.textContent = completed
+                ? 'Reprendre la saisie de cette section'
+                : 'Saisie terminée pour cette section';
+        }
+        refreshProgressUi();
+    }
+
+    function wrapNodesAsPrestSubsection(content, nodes, title) {
+        if (!content || !Array.isArray(nodes) || nodes.length === 0) return;
+        const wrapper = document.createElement('div');
+        wrapper.className = 'prest-subsection';
+        wrapper.innerHTML = `
+            <div class="prest-subsection-head">
+                <span class="prest-subsection-title">${title}</span>
+                <button type="button" class="btn-step-complete" data-inner-section-complete-btn>Saisie terminée pour cette section</button>
+            </div>
+            <div class="prest-subsection-body"></div>
+        `;
+        const first = nodes[0];
+        content.insertBefore(wrapper, first);
+        const body = wrapper.querySelector('.prest-subsection-body');
+        nodes.forEach((node) => body?.appendChild(node));
+        const btn = wrapper.querySelector('[data-inner-section-complete-btn]');
+        btn?.addEventListener('click', () => {
+            setInnerPrestSectionCompletion(wrapper, wrapper.dataset.completed !== '1');
+        });
+        setInnerPrestSectionCompletion(wrapper, false);
+    }
+
+    function initPdInnerSectionCompletion(block) {
+        if (!block || block.dataset.pdInnerSectionsInit === '1') return;
+        const content = block.querySelector('.pd-content');
+        if (!content) return;
+        const children = Array.from(content.children);
+        const sections = [];
+        let current = null;
+        children.forEach((child) => {
+            if (child.matches('h3')) {
+                current = { title: child.textContent.trim(), nodes: [] };
+                sections.push(current);
+                child.remove();
+                return;
+            }
+            if (current) current.nodes.push(child);
+        });
+        sections.forEach((section) => {
+            wrapNodesAsPrestSubsection(content, section.nodes, section.title || 'Section');
+        });
+        block.dataset.pdInnerSectionsInit = '1';
     }
 
     function updatePrestationBlockTotals(block) {
@@ -2511,7 +2782,7 @@
         div.className = 'dept-row';
         div.innerHTML = `
             <span>Département : <strong>${code}</strong></span>
-            <input type="number" class="dept-nb" ${nb !== '' ? `value="${nb}"` : ''} placeholder="Nb personnes" style="width: 120px;" data-dept="${code}">
+            <input type="number" class="dept-nb" ${nb !== '' ? `value="${nb}"` : ''} placeholder="Nb personnes" data-dept="${code}">
             <button type="button" class="btn-del" onclick="this.parentElement.remove()">×</button>
         `;
         container.appendChild(div);
@@ -2624,13 +2895,54 @@
         }
 
         const addBtn = block.querySelector('.pd-add-dept-btn');
+        const deptInput = block.querySelector('.pd-dept-code-input');
+        const deptMsg = block.querySelector('.pd-dept-msg');
+        const updatePdDeptState = (forceFeedback = false) => {
+            if (!deptInput) return { valid: true, empty: true, code: '' };
+            const sanitized = sanitizeDepartmentValue(deptInput.value);
+            if (deptInput.value !== sanitized) deptInput.value = sanitized;
+            if (!sanitized) {
+                deptInput.classList.remove('dept-invalid');
+                if (deptMsg) {
+                    deptMsg.classList.remove('ok', 'error');
+                    deptMsg.style.display = 'none';
+                }
+                return { valid: true, empty: true, code: '' };
+            }
+            const valid = isAllowedDepartmentCode(sanitized);
+            deptInput.classList.toggle('dept-invalid', !valid);
+            if (deptMsg) {
+                deptMsg.classList.remove('ok', 'error');
+                if (valid) {
+                    deptMsg.style.display = 'none';
+                } else if (forceFeedback) {
+                    deptMsg.textContent = 'Département attendu: 01 à 95, ou 971, 972, 973, 974, 976.';
+                    deptMsg.classList.add('error');
+                    deptMsg.style.display = 'block';
+                } else {
+                    deptMsg.style.display = 'none';
+                }
+            }
+            return { valid, empty: false, code: sanitized };
+        };
+        if (deptInput) {
+            deptInput.setAttribute('inputmode', 'numeric');
+            deptInput.setAttribute('maxlength', '3');
+            deptInput.addEventListener('input', () => updatePdDeptState(false));
+            deptInput.addEventListener('blur', () => updatePdDeptState(true));
+        }
         if (addBtn) {
             addBtn.addEventListener('click', () => {
-                const input = block.querySelector('.pd-dept-code-input');
-                const code = (input?.value || '').trim();
-                if (!code) return;
-                addDeptRowToBlock(block, code);
-                input.value = '';
+                const state = updatePdDeptState(true);
+                if (state.empty) return; // optionnel
+                if (!state.valid) {
+                    gristForm.showStatus('Département invalide. Utilisez 01 à 95, ou 971, 972, 973, 974, 976.', 'error');
+                    deptInput?.focus();
+                    return;
+                }
+                addDeptRowToBlock(block, state.code);
+                if (deptInput) deptInput.value = '';
+                updatePdDeptState(false);
             });
         }
 
@@ -2648,6 +2960,7 @@
         if (cards.length > 1) {
             cards[1].remove(); // Suppression du bloc 10
         }
+        initPdInnerSectionCompletion(block);
         ensureNonNegativeNumberInputs(block);
     }
 
