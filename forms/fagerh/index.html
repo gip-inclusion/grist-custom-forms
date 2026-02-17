@@ -168,12 +168,36 @@
             top: calc(var(--header-offset) + 18px);
             left: 20px;
             width: 300px;
+            max-height: calc(100vh - (var(--header-offset) + 28px));
+            overflow-y: auto;
+            overscroll-behavior: contain;
+            padding-right: 4px;
             z-index: 150;
             margin: 0;
         }
         .progress-top-grid .card {
             margin-bottom: 0;
             padding: 18px;
+        }
+        .progress-scroll-hint {
+            display: none;
+            position: sticky;
+            bottom: 0;
+            z-index: 2;
+            margin: -2px 0 0 0;
+            padding: 7px 10px;
+            border-radius: 8px;
+            border: 1px solid #c9dbef;
+            background: linear-gradient(180deg, rgba(244,247,246,0.9), rgba(226,238,248,0.98));
+            color: #355879;
+            font-size: 0.82em;
+            font-weight: 700;
+            text-align: center;
+            cursor: pointer;
+            user-select: none;
+        }
+        .progress-top-grid.is-scrollable:not(.is-at-bottom) .progress-scroll-hint {
+            display: block;
         }
         .progress-wrap { margin-top: 10px; }
         .progress-head { display: flex; justify-content: space-between; font-size: 0.86em; color: #46617b; margin-bottom: 6px; }
@@ -534,6 +558,7 @@
             .question-row { grid-template-columns: 1fr; gap: 8px; }
             .toc-list { max-height: none; }
             .progress-top-grid { grid-template-columns: 1fr; }
+            .progress-scroll-hint { display: none !important; }
             .lost-link-row { flex-direction: column; align-items: stretch; }
             .lost-link-row input { min-width: 0; }
             .main-content { margin-left: 0; padding-top: 0; }
@@ -778,6 +803,7 @@
         </div>
         <ul id="secondary-toc-list" class="toc-list"></ul>
     </div>
+    <div class="progress-scroll-hint" aria-hidden="true">Faites défiler les étapes</div>
 </div>
 <!-- Hidden fields for JSON data and UUID -->
 <input type="hidden" name="metiers_json" id="metiers_json" value="[]">
@@ -2063,6 +2089,16 @@
     function refreshProgressUi() {
         renderPrimaryProgress();
         renderSecondaryProgress();
+        updateProgressScrollHint();
+    }
+
+    function updateProgressScrollHint() {
+        const panel = document.querySelector('.progress-top-grid');
+        if (!panel) return;
+        const scrollable = panel.scrollHeight > panel.clientHeight + 4;
+        panel.classList.toggle('is-scrollable', scrollable);
+        const atBottom = panel.scrollTop + panel.clientHeight >= panel.scrollHeight - 4;
+        panel.classList.toggle('is-at-bottom', atBottom);
     }
 
     // =====================================
@@ -3912,6 +3948,13 @@
     });
     refreshProgressUi();
     window.addEventListener('load', refreshProgressUi);
+    document.querySelector('.progress-top-grid')?.addEventListener('scroll', updateProgressScrollHint);
+    document.querySelector('.progress-scroll-hint')?.addEventListener('click', () => {
+        const panel = document.querySelector('.progress-top-grid');
+        if (!panel) return;
+        panel.scrollBy({ top: 220, behavior: 'smooth' });
+    });
+    window.addEventListener('resize', updateProgressScrollHint);
     updateSaveReminderUi();
     document.querySelectorAll('.finess-input').forEach((input) => attachFinessValidation(input));
     updateRecoverSectionVisibility();
