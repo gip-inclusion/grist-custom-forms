@@ -87,6 +87,167 @@ def _as_bool(value) -> bool:
     return txt in {'1', 'true', 'vrai', 'oui', 'yes'}
 
 
+def _has_value(value) -> bool:
+    if value is None:
+        return False
+    if isinstance(value, bool):
+        return value
+    return str(value).strip() != ''
+
+
+def _safe_json(value, fallback):
+    if isinstance(value, str):
+        txt = value.strip()
+        if not txt:
+            return fallback
+        try:
+            return json.loads(txt)
+        except Exception:
+            return fallback
+    return value if value is not None else fallback
+
+
+def _has_any_checked(data: dict) -> bool:
+    if not isinstance(data, dict):
+        return False
+    for v in data.values():
+        if isinstance(v, dict):
+            if _has_any_checked(v):
+                return True
+        elif _as_bool(v):
+            return True
+    return False
+
+
+def _has_any_number_data(data) -> bool:
+    if isinstance(data, dict):
+        return any(_has_any_number_data(v) for v in data.values())
+    if isinstance(data, list):
+        return any(_has_any_number_data(v) for v in data)
+    if data is None:
+        return False
+    txt = str(data).strip()
+    if txt == '':
+        return False
+    try:
+        return float(txt) >= 0
+    except Exception:
+        return False
+
+
+def compute_quick_step_progress(fields: dict) -> dict:
+    """
+    Fast progress estimator by major sections.
+    Returns counts + list of done/remaining step labels.
+    """
+    finess_values = extract_finess_values(fields)
+    identification_done = (
+        _has_value(fields.get('es_nom'))
+        and _has_value(fields.get('validateur_email'))
+        and _has_value(fields.get('es_departement'))
+        and len(finess_values) > 0
+    )
+
+    selected_dispositifs = [
+        _as_bool(fields.get('check_esrp')),
+        _as_bool(fields.get('check_espo')),
+        _as_bool(fields.get('check_ueros')),
+        _as_bool(fields.get('check_deac')),
+    ]
+    rh_done = any(selected_dispositifs) and _has_value(fields.get('metiers_json'))
+
+    prestations_orp = _safe_json(fields.get('prestations_orp_json'), {})
+    vos_prestations_done = _has_value(fields.get('pec')) or _has_any_checked(prestations_orp)
+
+    contexte_done = (
+        _has_value(fields.get('q32_implantation'))
+        and _has_value(fields.get('q33_transports'))
+        and _has_value(fields.get('q53_afpa'))
+    )
+
+    steps = [
+        ('Identification', identification_done),
+        ('Volet RH', rh_done),
+        ('Vos prestations', vos_prestations_done),
+        ('Contexte écologique', contexte_done),
+    ]
+
+    # Conditional quick estimator (very lightweight).
+    cond_expected_labels = []
+    cond_done_labels = []
+
+    if _as_bool(fields.get('check_esrp')):
+        cond_expected_labels.append('Prestations totales ESRP')
+    if _as_bool(fields.get('check_espo')):
+        cond_expected_labels.append('Prestations totales ESPO')
+    if _as_bool(fields.get('check_ueros')):
+        cond_expected_labels.append('Prestations totales UEROS')
+    if _as_bool(fields.get('check_deac')):
+        cond_expected_labels.append('Prestations totales DEAc')
+
+    prestations_json = _safe_json(fields.get('prestations_json'), {})
+    if isinstance(prestations_json, dict):
+        if _has_any_number_data(prestations_json.get('esrp')):
+            cond_done_labels.append('Prestations totales ESRP')
+        if _has_any_number_data(prestations_json.get('espo')):
+            cond_done_labels.append('Prestations totales ESPO')
+        if _has_any_number_data(prestations_json.get('ueros')):
+            cond_done_labels.append('Prestations totales UEROS')
+        if _has_any_number_data(prestations_json.get('deac')):
+            cond_done_labels.append('Prestations totales DEAc')
+
+    orp_map = {
+        'orp_pec': 'Prestation ORP: PEC',
+        'orp_autre_eval': "Prestation ORP: Autre dispositif d'évaluation",
+        'orp_orientation_espo': 'Prestation ORP: Orientation ESPO',
+        'orp_parcours_sociopro': 'Prestation ORP: Parcours socio-professionnel',
+        'orp_autre_parcours': 'Prestation ORP: Autre type de parcours',
+        'orp_parcours_qualif': 'Prestation ORP: Parcours qualifiant',
+        'orp_remise_niveau': 'Prestation ORP: Remise à niveau',
+        'orp_formation_pro': 'Prestation ORP: Formation professionnalisante',
+        'orp_formation_certif': 'Prestation ORP: Formation certifiante',
+        'orp_formation_accomp_pro': 'Prestation ORP: Formation accompagnée pro',
+        'orp_formation_accomp_certif': 'Prestation ORP: Formation accompagnée certifiante',
+    }
+    selected_orp_keys = []
+    if isinstance(prestations_orp, dict):
+        for key, label in orp_map.items():
+            if _as_bool(prestations_orp.get(key)):
+                selected_orp_keys.append((key, label))
+                cond_expected_labels.append(label)
+
+    details_json = _safe_json(fields.get('prestations_details_json'), {})
+    if isinstance(details_json, dict):
+        for key, label in selected_orp_keys:
+            state = details_json.get(key, {})
+            if isinstance(state, dict) and _as_bool(state.get('__completed')):
+                cond_done_labels.append(label)
+
+    done_main = sum(1 for _, ok in steps if ok)
+    total_main = len(steps)
+    done_main_labels = [label for label, ok in steps if ok]
+    remaining_main = [label for label, ok in steps if not ok]
+
+    cond_expected_labels = list(dict.fromkeys(cond_expected_labels))
+    cond_done_labels = list(dict.fromkeys(cond_done_labels))
+    remaining_cond = [label for label in cond_expected_labels if label not in cond_done_labels]
+
+    return {
+        'main': {
+            'done': done_main,
+            'total': total_main,
+            'done_labels': done_main_labels,
+            'remaining_labels': remaining_main,
+        },
+        'conditional': {
+            'done': len(cond_done_labels),
+            'total': len(cond_expected_labels),
+            'done_labels': cond_done_labels,
+            'remaining_labels': remaining_cond,
+        },
+    }
+
+
 def fetch_all_records(config: dict, headers: dict):
     """Fetch records for a form table (single pass, up to 5000 rows)."""
     url = f"{GRIST_BASE_URL}/api/docs/{config['doc_id']}/tables/{config['table_id']}/records"
@@ -376,6 +537,7 @@ def admin_overview(form_id: str):
             'validateur_email': fields.get('validateur_email', ''),
             'saisie_terminee': _as_bool(fields.get('saisie_terminee')),
         }
+        row['quick_progress'] = compute_quick_step_progress(fields)
         rows.append(row)
 
     total = len(rows)
