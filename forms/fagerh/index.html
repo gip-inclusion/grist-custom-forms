@@ -6,7 +6,7 @@
     <title>RA FAGERH 2025 - Formulaire - TEST LOCAL</title>
     <style>
         :root { --fagerh-blue: #2c3e50; --fagerh-light: #1f5f97; --orange: #a35a0a; --success: #1f7a43; --grey: #f4f7f6; --header-offset: 240px; }
-        html { scroll-behavior: smooth; }
+        html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--grey); padding: 20px; color: #333; line-height: 1.45; }
         .skip-link {
             position: absolute;
@@ -35,6 +35,9 @@
         :focus-visible {
             outline: 3px solid #1b7fcc;
             outline-offset: 2px;
+        }
+        input, select, textarea, button {
+            accent-color: #1f5f97;
         }
         .app-header {
             position: sticky;
@@ -778,6 +781,55 @@
                 animation-duration: 0.01ms !important;
                 animation-iteration-count: 1 !important;
                 transition-duration: 0.01ms !important;
+            }
+        }
+        @media (prefers-reduced-transparency: reduce) {
+            .card,
+            .setup-zone,
+            .quick-actions-card,
+            .progress-card,
+            .url-box,
+            .status-msg {
+                background: #ffffff !important;
+                backdrop-filter: none !important;
+                box-shadow: none !important;
+            }
+        }
+        @media (prefers-contrast: more) {
+            body {
+                color: #1a1a1a;
+            }
+            .card,
+            .setup-zone,
+            .url-box,
+            .status-msg,
+            .progress-card {
+                border: 2px solid #1f3347;
+                box-shadow: none;
+            }
+            .sidebar-btn,
+            .btn-add,
+            .recovery-gate-btn,
+            .lock-reopen-btn,
+            .progress-compact-toggle {
+                border: 2px solid #163a5a;
+                font-weight: 800;
+            }
+            .quick-actions-hint,
+            .volet-subtitle,
+            .toc-percent,
+            .finess-msg,
+            .email-msg,
+            .dept-msg {
+                color: #22394f;
+            }
+            .status-msg.error { color: #6f140f; border-color: #6f140f; }
+            .status-msg.success { color: #124a27; border-color: #124a27; }
+            .status-msg.loading { color: #6d4100; border-color: #6d4100; }
+            .status-msg.info { color: #173f63; border-color: #173f63; }
+            :focus-visible {
+                outline: 4px solid #0f5fa2;
+                outline-offset: 3px;
             }
         }
         @media (forced-colors: active) {
