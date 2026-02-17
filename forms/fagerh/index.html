@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>RA FAGERH 2025 - Formulaire - TEST LOCAL</title>
     <style>
-        :root { --fagerh-blue: #2c3e50; --fagerh-light: #1f5f97; --orange: #a35a0a; --success: #1f7a43; --grey: #f4f7f6; --header-offset: 240px; }
+        :root { --fagerh-blue: #2c3e50; --fagerh-light: #1f5f97; --orange: #a35a0a; --success: #1f7a43; --grey: #f4f7f6; --header-offset: 240px; --content-max-width: 1820px; }
         html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--grey); padding: 20px; color: #333; line-height: 1.45; }
         .skip-link {
@@ -46,7 +46,7 @@
             background: var(--grey);
             padding: 8px 0 12px 0;
         }
-        .page-layout { display: flex; gap: 20px; max-width: 1600px; margin: 0 auto; align-items: flex-start; }
+        .page-layout { display: flex; gap: 20px; max-width: var(--content-max-width); margin: 0 auto; align-items: flex-start; }
         .main-content {
             flex: 1;
             min-width: 0;
@@ -64,7 +64,7 @@
             display: grid;
             gap: 10px;
             width: 100%;
-            max-width: none;
+            max-width: var(--content-max-width);
             box-sizing: border-box;
         }
         .report-header-row {
