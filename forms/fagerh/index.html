@@ -3729,6 +3729,42 @@
         return false;
     }
 
+    function getUsedModesForMetier(metier, exceptRow = null) {
+        const used = new Set();
+        const wantedMetier = String(metier || '').trim();
+        if (!wantedMetier) return used;
+        document.querySelectorAll('#body-metiers tr').forEach((row) => {
+            if (exceptRow && row === exceptRow) return;
+            const rowMetier = String(row.cells?.[0]?.innerText || '').trim();
+            if (rowMetier !== wantedMetier) return;
+            const rowMode = String(row.querySelector('.metier-mode')?.value || '').trim();
+            if (rowMode) used.add(rowMode);
+        });
+        return used;
+    }
+
+    function resolveNextModeForMetier(metier) {
+        const used = getUsedModesForMetier(metier);
+        if (!used.has('Interne')) return 'Interne';
+        if (!used.has('Externe')) return 'Externe';
+        return null;
+    }
+
+    function refreshMetierModeLocks() {
+        const rows = Array.from(document.querySelectorAll('#body-metiers tr'));
+        rows.forEach((row) => {
+            const metier = String(row.cells?.[0]?.innerText || '').trim();
+            const modeSelect = row.querySelector('.metier-mode');
+            if (!metier || !modeSelect) return;
+            const used = getUsedModesForMetier(metier);
+            const bothModesExist = used.has('Interne') && used.has('Externe');
+            modeSelect.disabled = bothModesExist;
+            modeSelect.title = bothModesExist
+                ? 'Interne et Externe existent déjà pour ce métier.'
+                : '';
+        });
+    }
+
     function bindMetierRowEvents(row) {
         if (!row) return;
         const modeSelect = row.querySelector('.metier-mode');
@@ -3749,6 +3785,7 @@
             }
             modeSelect.dataset.prevValue = chosenMode;
             setMetierDuplicateMessage('');
+            refreshMetierModeLocks();
         });
     }
 
@@ -3761,10 +3798,11 @@
             <td style="text-align:left">${metier}</td>
             <td><select class="metier-mode"><option ${safeMode === 'Interne' ? 'selected' : ''}>Interne</option><option ${safeMode === 'Externe' ? 'selected' : ''}>Externe</option></select></td>
             <td><input type="number" step="0.1" class="metier-val" oninput="checkCoherence()" value="${etp}"></td>
-            <td><button type="button" class="btn-del" onclick="this.closest('tr').remove(); checkCoherence(); setMetierDuplicateMessage('')">×</button></td>
+            <td><button type="button" class="btn-del" onclick="this.closest('tr').remove(); checkCoherence(); setMetierDuplicateMessage(''); refreshMetierModeLocks()">×</button></td>
         `;
         tbody.appendChild(tr);
         bindMetierRowEvents(tr);
+        refreshMetierModeLocks();
         return tr;
     }
 
@@ -3772,9 +3810,9 @@
         const sel = document.getElementById('metier-picker');
         if (!sel.value) return;
         const metier = sel.value;
-        const mode = 'Interne';
-        if (hasMetierModeDuplicate(metier, mode)) {
-            setMetierDuplicateMessage(`Le métier « ${metier} » avec le mode « ${mode} » existe déjà.`);
+        const mode = resolveNextModeForMetier(metier);
+        if (!mode) {
+            setMetierDuplicateMessage(`Le métier « ${metier} » existe déjà en Interne et en Externe.`);
             sel.selectedIndex = 0;
             return;
         }
@@ -3854,6 +3892,7 @@
                     metiers.forEach(m => {
                         appendMetierRow(m.metier, m.mode, m.etp);
                     });
+                    refreshMetierModeLocks();
                     calcGlobalETP();
                 } catch(e) { console.error('metiers parse error', e); }
             }
