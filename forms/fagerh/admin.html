@@ -57,7 +57,7 @@
 
     .toolbar {
       display: grid;
-      grid-template-columns: 220px minmax(0, 1fr) auto auto;
+      grid-template-columns: 220px minmax(0, 1fr) auto auto auto;
       gap: 10px;
       align-items: center;
     }
@@ -130,6 +130,35 @@
       line-height: 1.35;
       font-size: 0.88rem;
     }
+    .progress-cell {
+      display: grid;
+      gap: 6px;
+    }
+    .mini-btn {
+      height: 28px;
+      width: fit-content;
+      padding: 0 8px;
+      font-size: 0.78rem;
+      border-radius: 999px;
+      border: 1px solid #cfd7e0;
+      background: #f8fafc;
+      font-weight: 700;
+    }
+    .mini-btn:hover {
+      background: #eef3f8;
+    }
+    .masked {
+      display: inline-block;
+      font-family: ui-monospace, Menlo, Consolas, monospace;
+      letter-spacing: 0.08em;
+      color: #5f7388;
+      background: #edf2f7;
+      border: 1px solid #d6dee7;
+      border-radius: 8px;
+      padding: 2px 8px;
+      font-size: 0.82rem;
+      font-weight: 700;
+    }
     .chips {
       display: flex;
       flex-wrap: wrap;
@@ -201,6 +230,7 @@
         <input type="text" id="search-input" placeholder="Rechercher (ES, FINESS, email, département, UUID)">
         <button id="refresh-btn" type="button">Actualiser</button>
         <button id="clear-btn" type="button" class="muted-btn">Réinitialiser</button>
+        <button id="toggle-progress-btn" type="button" class="muted-btn">Afficher toutes les étapes</button>
       </div>
       <div class="status" id="status">Chargement...</div>
     </div>
@@ -232,6 +262,9 @@
   </div>
 
   <script>
+    const revealedProgressRows = new Set();
+    let showAllProgress = false;
+
     function currentFormId() {
       const parts = window.location.pathname.split('/').filter(Boolean);
       return parts[1] || 'fagerh';
@@ -275,6 +308,8 @@
           tbody.innerHTML = data.rows.map((r) => {
             const shortId = String(r.uuid || '').trim();
             const displayId = shortId ? shortId.slice(0, 8) : String(r.record_id || '');
+            const rowKey = String(r.uuid || r.record_id || '');
+            const rowProgressVisible = showAllProgress || revealedProgressRows.has(rowKey);
             const statut = r.saisie_terminee
               ? '<span class="pill done">Terminé</span>'
               : '<span class="pill pending">En cours</span>';
@@ -298,6 +333,9 @@
             const remainingHtml = remaining.length
               ? `<div class="chips">${remaining.map((label) => `<span class="chip remaining">${esc(label)}</span>`).join('')}</div>`
               : `<div class="chips"><span class="chip empty">Aucune étape restante</span></div>`;
+            const rowToggleLabel = rowProgressVisible ? 'Masquer' : 'Afficher';
+            const doneCell = rowProgressVisible ? doneHtml : '<span class="masked">••••••••</span>';
+            const remainingCell = rowProgressVisible ? remainingHtml : '<span class="masked">••••••••</span>';
             return `
               <tr>
                 <td class="mono">${esc(displayId)}</td>
@@ -310,14 +348,24 @@
                 <td><strong>${esc(mainTxt)}</strong></td>
                 <td><strong>${esc(condTxt)}</strong></td>
                 <td>
-                  <div class="progress-detail">${doneHtml}</div>
+                  <div class="progress-cell progress-detail">
+                    <button type="button" class="mini-btn" data-toggle-progress-row="${esc(rowKey)}">${rowToggleLabel}</button>
+                    ${doneCell}
+                  </div>
                 </td>
-                <td>${remainingHtml}</td>
+                <td>
+                  <div class="progress-detail">${remainingCell}</div>
+                </td>
                 <td class="mono">${esc(r.uuid)}</td>
                 <td>${esc(r.record_id)}</td>
               </tr>
             `;
           }).join('');
+        }
+
+        const globalBtn = document.getElementById('toggle-progress-btn');
+        if (globalBtn) {
+          globalBtn.textContent = showAllProgress ? 'Masquer toutes les étapes' : 'Afficher toutes les étapes';
         }
 
         statusEl.textContent = `${data.rows.length} résultat(s) affiché(s).`;
@@ -333,9 +381,25 @@
       document.getElementById('search-input').value = '';
       loadOverview();
     });
+    document.getElementById('toggle-progress-btn').addEventListener('click', () => {
+      showAllProgress = !showAllProgress;
+      loadOverview();
+    });
     document.getElementById('filter-status').addEventListener('change', loadOverview);
     document.getElementById('search-input').addEventListener('keydown', (e) => {
       if (e.key === 'Enter') loadOverview();
+    });
+    document.getElementById('rows').addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-toggle-progress-row]');
+      if (!btn) return;
+      const key = String(btn.dataset.toggleProgressRow || '');
+      if (!key) return;
+      if (revealedProgressRows.has(key)) {
+        revealedProgressRows.delete(key);
+      } else {
+        revealedProgressRows.add(key);
+      }
+      loadOverview();
     });
 
     loadOverview();
