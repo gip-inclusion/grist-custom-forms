@@ -200,6 +200,34 @@
             display: block;
         }
         .progress-wrap { margin-top: 10px; }
+        .progress-card .progress-compact-note { display: none; }
+        .progress-card.is-complete .progress-compact-note { display: flex; }
+        .progress-card.is-compact .progress-wrap,
+        .progress-card.is-compact .toc-list { display: none; }
+        .progress-card.is-complete .progress-compact-note {
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            margin-top: 8px;
+            padding: 8px 10px;
+            border: 1px solid #9dc7a8;
+            border-radius: 8px;
+            background: #effaf2;
+            color: #1f6d34;
+            font-size: 0.86em;
+            font-weight: 700;
+        }
+        .progress-compact-toggle {
+            border: 1px solid #9dc7a8;
+            background: #fff;
+            color: #1f6d34;
+            border-radius: 999px;
+            padding: 4px 10px;
+            font-size: 0.82em;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .progress-compact-toggle:hover { background: #f4fbf6; }
         .progress-head { display: flex; justify-content: space-between; font-size: 0.86em; color: #46617b; margin-bottom: 6px; }
         .progress-track { height: 10px; background: #e7eef5; border-radius: 999px; overflow: hidden; }
         .progress-fill { height: 100%; width: 0; background: linear-gradient(90deg, #3ca25b, #2f78cf); transition: width 0.2s ease; }
@@ -775,7 +803,7 @@
     </div>
 </div>
 <div class="progress-top-grid">
-    <div class="card">
+    <div class="card progress-card" id="primary-progress-card">
         <h3>Étapes Principales</h3>
         <div class="progress-wrap">
             <div class="progress-head">
@@ -788,8 +816,12 @@
             <div id="primary-completion-stats" class="quick-actions-hint">0 / 0 étapes terminées</div>
         </div>
         <ul id="primary-toc-list" class="toc-list"></ul>
+        <div class="progress-compact-note">
+            <span>Toutes les étapes sont complétées.</span>
+            <button type="button" class="progress-compact-toggle" data-progress-expand="primary">Voir les étapes</button>
+        </div>
     </div>
-    <div class="card">
+    <div class="card progress-card" id="secondary-progress-card">
         <h3>Étapes Conditionnelles</h3>
         <div class="progress-wrap">
             <div class="progress-head">
@@ -802,6 +834,10 @@
             <div id="secondary-completion-stats" class="quick-actions-hint">0 / 0 sections terminées</div>
         </div>
         <ul id="secondary-toc-list" class="toc-list"></ul>
+        <div class="progress-compact-note">
+            <span>Toutes les étapes sont complétées.</span>
+            <button type="button" class="progress-compact-toggle" data-progress-expand="secondary">Voir les étapes</button>
+        </div>
     </div>
     <div class="progress-scroll-hint" aria-hidden="true">Faites défiler les étapes</div>
 </div>
@@ -1573,6 +1609,10 @@
         { id: 'step-vos-prestations', label: 'Vos prestations' },
         { id: 'step-contexte', label: 'Contexte écologique' },
     ];
+    const progressCardExpanded = {
+        primary: false,
+        secondary: false,
+    };
     let hasUnsavedChanges = false;
     let suppressDirtyTracking = true;
 
@@ -1835,6 +1875,18 @@
         }
     }
 
+    function updateProgressCardCompaction(prefix, result, listCount) {
+        const card = document.getElementById(`${prefix}-progress-card`);
+        if (!card) return;
+        const enoughGain = listCount >= 3;
+        const fullyComplete = result.total > 0 && result.filled >= result.total;
+        card.classList.toggle('is-complete', fullyComplete && enoughGain);
+        const shouldCompact = fullyComplete && enoughGain && !progressCardExpanded[prefix];
+        card.classList.toggle('is-compact', shouldCompact);
+        const btn = card.querySelector(`[data-progress-expand="${prefix}"]`);
+        if (btn) btn.textContent = shouldCompact ? 'Voir les étapes' : 'Refermer les étapes';
+    }
+
     function renderPrimaryProgress() {
         const list = document.getElementById('primary-toc-list');
         if (!list) return;
@@ -1888,7 +1940,9 @@
             list.appendChild(li);
         });
 
-        updateProgressWidget('primary', { filled, total, percent: total > 0 ? Math.round((filled / total) * 100) : 0 });
+        const result = { filled, total, percent: total > 0 ? Math.round((filled / total) * 100) : 0 };
+        updateProgressWidget('primary', result);
+        updateProgressCardCompaction('primary', result, list.children.length);
     }
 
     function setPrimaryStepCompletionState(root, completed) {
@@ -2055,7 +2109,9 @@
         });
 
         if (entries.length === 0) {
-            updateProgressWidget('secondary', { filled: 0, total: 0, percent: 0 });
+            const result = { filled: 0, total: 0, percent: 0 };
+            updateProgressWidget('secondary', result);
+            updateProgressCardCompaction('secondary', result, 0);
             const statsEl = document.getElementById('secondary-completion-stats');
             if (statsEl) statsEl.textContent = 'Aucune étape conditionnelle sélectionnée';
             return;
@@ -2083,7 +2139,9 @@
             `;
             list.appendChild(li);
         });
-        updateProgressWidget('secondary', { filled, total, percent: total > 0 ? Math.round((filled / total) * 100) : 0 });
+        const result = { filled, total, percent: total > 0 ? Math.round((filled / total) * 100) : 0 };
+        updateProgressWidget('secondary', result);
+        updateProgressCardCompaction('secondary', result, list.children.length);
     }
 
     function refreshProgressUi() {
@@ -3949,6 +4007,14 @@
     refreshProgressUi();
     window.addEventListener('load', refreshProgressUi);
     document.querySelector('.progress-top-grid')?.addEventListener('scroll', updateProgressScrollHint);
+    document.querySelectorAll('[data-progress-expand]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            const prefix = btn.dataset.progressExpand;
+            if (!prefix || !(prefix in progressCardExpanded)) return;
+            progressCardExpanded[prefix] = !progressCardExpanded[prefix];
+            refreshProgressUi();
+        });
+    });
     document.querySelector('.progress-scroll-hint')?.addEventListener('click', () => {
         const panel = document.querySelector('.progress-top-grid');
         if (!panel) return;
