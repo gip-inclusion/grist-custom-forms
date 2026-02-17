@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Admin FAGERH - Suivi des questionnaires</title>
+  <style>
+    :root {
+      --bg: #f4f7f6;
+      --card: #ffffff;
+      --text: #243447;
+      --muted: #5d7187;
+      --blue: #2f78cf;
+      --green: #27ae60;
+      --orange: #e67e22;
+      --border: #dce5ee;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 20px;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+    .wrap { max-width: 1300px; margin: 0 auto; }
+    .card {
+      background: var(--card);
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      padding: 16px;
+      margin-bottom: 14px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+    }
+    h1 {
+      margin: 0 0 6px 0;
+      color: #2c3e50;
+      font-size: 1.6rem;
+    }
+    .subtitle { color: var(--muted); margin: 0; }
+    .kpis {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+    .kpi {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px;
+      background: #fff;
+    }
+    .kpi .label { color: var(--muted); font-size: 0.9rem; }
+    .kpi .value { font-size: 2rem; font-weight: 800; margin-top: 4px; }
+    .kpi.total .value { color: var(--blue); }
+    .kpi.pending .value { color: var(--orange); }
+    .kpi.done .value { color: var(--green); }
+
+    .toolbar {
+      display: grid;
+      grid-template-columns: 220px minmax(0, 1fr) auto auto;
+      gap: 10px;
+      align-items: center;
+    }
+    select, input, button {
+      height: 38px;
+      border: 1px solid #cdd9e5;
+      border-radius: 8px;
+      padding: 0 10px;
+      font-size: 0.95rem;
+      background: #fff;
+      color: #2c3e50;
+    }
+    button {
+      cursor: pointer;
+      font-weight: 700;
+      border-color: #84b6e8;
+      background: #eaf3ff;
+    }
+    button:hover { background: #dfedff; }
+    .muted-btn {
+      border-color: #cfd7e0;
+      background: #f8fafc;
+    }
+    .status {
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+    .table-wrap { overflow-x: auto; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 980px;
+    }
+    th, td {
+      border-bottom: 1px solid #e5edf5;
+      padding: 9px 8px;
+      text-align: left;
+      vertical-align: middle;
+      font-size: 0.92rem;
+    }
+    th {
+      background: #f5f9fe;
+      color: #36506b;
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+    tr:nth-child(even) td { background: #fbfdff; }
+    .pill {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      border: 1px solid transparent;
+    }
+    .pill.pending {
+      color: #8a5100;
+      background: #fff2de;
+      border-color: #efc089;
+    }
+    .pill.done {
+      color: #1f6d34;
+      background: #effaf2;
+      border-color: #8ecb9f;
+    }
+    .mono { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 0.84rem; }
+    @media (max-width: 980px) {
+      body { padding: 12px; }
+      .kpis { grid-template-columns: 1fr; }
+      .toolbar { grid-template-columns: 1fr; }
+      table { min-width: 760px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>Console admin - FAGERH</h1>
+      <p class="subtitle">Suivi des questionnaires en cours et terminés</p>
+    </div>
+
+    <div class="card">
+      <div class="kpis">
+        <div class="kpi total">
+          <div class="label">Total questionnaires</div>
+          <div class="value" id="kpi-total">0</div>
+        </div>
+        <div class="kpi pending">
+          <div class="label">En cours de remplissage</div>
+          <div class="value" id="kpi-pending">0</div>
+        </div>
+        <div class="kpi done">
+          <div class="label">Saisie terminée</div>
+          <div class="value" id="kpi-done">0</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="toolbar">
+        <select id="filter-status">
+          <option value="all">Tous les statuts</option>
+          <option value="en_cours">En cours</option>
+          <option value="termines">Terminés</option>
+        </select>
+        <input type="text" id="search-input" placeholder="Rechercher (ES, FINESS, email, département, UUID)">
+        <button id="refresh-btn" type="button">Actualiser</button>
+        <button id="clear-btn" type="button" class="muted-btn">Réinitialiser</button>
+      </div>
+      <div class="status" id="status">Chargement...</div>
+    </div>
+
+    <div class="card">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Statut</th>
+              <th>ES</th>
+              <th>Département</th>
+              <th>FINESS</th>
+              <th>Référent validation</th>
+              <th>Email</th>
+              <th>UUID</th>
+              <th>ID Grist</th>
+            </tr>
+          </thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function currentFormId() {
+      const parts = window.location.pathname.split('/').filter(Boolean);
+      return parts[1] || 'fagerh';
+    }
+
+    function esc(v) {
+      return String(v ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+    }
+
+    async function loadOverview() {
+      const formId = currentFormId();
+      const status = document.getElementById('filter-status').value;
+      const search = document.getElementById('search-input').value.trim();
+      const statusEl = document.getElementById('status');
+      statusEl.textContent = 'Chargement...';
+
+      const url = new URL(`/api/forms/${formId}/admin/overview`, window.location.origin);
+      if (status) url.searchParams.set('status', status);
+      if (search) url.searchParams.set('search', search);
+
+      try {
+        const resp = await fetch(url.toString(), { credentials: 'same-origin' });
+        const data = await resp.json();
+        if (!resp.ok || !data.ok) {
+          throw new Error(data.error || 'Erreur de chargement');
+        }
+
+        document.getElementById('kpi-total').textContent = data.stats.total_questionnaires;
+        document.getElementById('kpi-pending').textContent = data.stats.en_cours;
+        document.getElementById('kpi-done').textContent = data.stats.termines;
+
+        const tbody = document.getElementById('rows');
+        if (!Array.isArray(data.rows) || data.rows.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="8">Aucun questionnaire trouvé.</td></tr>`;
+        } else {
+          tbody.innerHTML = data.rows.map((r) => {
+            const statut = r.saisie_terminee
+              ? '<span class="pill done">Terminé</span>'
+              : '<span class="pill pending">En cours</span>';
+            const referent = `${esc(r.validateur_prenom || '')} ${esc(r.validateur_nom || '')}`.trim();
+            return `
+              <tr>
+                <td>${statut}</td>
+                <td>${esc(r.es_nom)}</td>
+                <td>${esc(r.departement)}</td>
+                <td class="mono">${esc(r.finess_main)}</td>
+                <td>${referent || '-'}</td>
+                <td>${esc(r.validateur_email)}</td>
+                <td class="mono">${esc(r.uuid)}</td>
+                <td>${esc(r.record_id)}</td>
+              </tr>
+            `;
+          }).join('');
+        }
+
+        statusEl.textContent = `${data.rows.length} résultat(s) affiché(s).`;
+      } catch (e) {
+        document.getElementById('rows').innerHTML = `<tr><td colspan="8">${esc(e.message)}</td></tr>`;
+        statusEl.textContent = 'Erreur';
+      }
+    }
+
+    document.getElementById('refresh-btn').addEventListener('click', loadOverview);
+    document.getElementById('clear-btn').addEventListener('click', () => {
+      document.getElementById('filter-status').value = 'all';
+      document.getElementById('search-input').value = '';
+      loadOverview();
+    });
+    document.getElementById('filter-status').addEventListener('change', loadOverview);
+    document.getElementById('search-input').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') loadOverview();
+    });
+
+    loadOverview();
+  </script>
+</body>
+</html>

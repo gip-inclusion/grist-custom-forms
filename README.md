@@ -44,6 +44,19 @@ uv run flask run -p 5005
 - `GET /api/forms/<id>/record?uuid=...` - fetch record
 - `POST /api/forms/<id>/record` - create/update record
 - `GET /forms/<id>/` - serve form HTML
+- `GET /api/forms/<id>/admin/overview` - admin stats (basic auth)
+
+### Admin console
+
+- URL: `/admin/<form-id>/` (example: `/admin/fagerh/`)
+- Required env vars:
+  - `ADMIN_USERNAME`
+  - `ADMIN_PASSWORD`
+- The admin page shows:
+  - total questionnaires,
+  - in progress (`saisie_terminee != true`),
+  - completed (`saisie_terminee == true`),
+  - searchable/filterable list.
 
 ### TODO
 

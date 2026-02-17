@@ -13,10 +13,11 @@ Environment variables:
 
 import os
 import json
+from functools import wraps
 from pathlib import Path
 from dotenv import load_dotenv
 import requests
-from flask import Flask, request, jsonify, redirect, send_from_directory
+from flask import Flask, request, jsonify, redirect, send_from_directory, Response
 
 load_dotenv()
 
@@ -27,6 +28,38 @@ ASSETS_DIR = BASE_DIR / 'assets'
 app = Flask(__name__)
 
 GRIST_BASE_URL = os.environ.get('GRIST_BASE_URL', 'https://grist.numerique.gouv.fr')
+
+
+def _require_admin_auth():
+    """HTTP Basic auth guard for admin endpoints."""
+    username = os.environ.get('ADMIN_USERNAME')
+    password = os.environ.get('ADMIN_PASSWORD')
+    if not username or not password:
+        return Response(
+            'Admin access not configured. Set ADMIN_USERNAME and ADMIN_PASSWORD.',
+            503,
+            {'Content-Type': 'text/plain; charset=utf-8'},
+        )
+
+    auth = request.authorization
+    if not auth or auth.username != username or auth.password != password:
+        return Response(
+            'Authentication required',
+            401,
+            {'WWW-Authenticate': 'Basic realm="Grist Admin"'},
+        )
+    return None
+
+
+def admin_required(fn):
+    """Decorator to protect admin pages and APIs with basic auth."""
+    @wraps(fn)
+    def wrapper(*args, **kwargs):
+        denied = _require_admin_auth()
+        if denied:
+            return denied
+        return fn(*args, **kwargs)
+    return wrapper
 
 
 def get_form_config(form_id: str) -> dict:
@@ -42,6 +75,26 @@ def get_form_config(form_id: str) -> dict:
         'table_id': os.environ.get(f'GRIST_TABLE_{form_id_upper}', 'Reponses'),
         'api_key': os.environ.get(f'GRIST_API_KEY_{form_id_upper}') or os.environ.get('GRIST_API_KEY'),
     }
+
+
+def _as_bool(value) -> bool:
+    """Normalize truthy values from Grist fields."""
+    if isinstance(value, bool):
+        return value
+    if value is None:
+        return False
+    txt = str(value).strip().lower()
+    return txt in {'1', 'true', 'vrai', 'oui', 'yes'}
+
+
+def fetch_all_records(config: dict, headers: dict):
+    """Fetch records for a form table (single pass, up to 5000 rows)."""
+    url = f"{GRIST_BASE_URL}/api/docs/{config['doc_id']}/tables/{config['table_id']}/records"
+    resp = requests.get(url, params={'limit': 5000}, headers=headers)
+    if resp.status_code != 200:
+        raise RuntimeError(f'Failed to read records: HTTP {resp.status_code} - {resp.text}')
+    payload = resp.json()
+    return payload.get('records', [])
 
 
 def normalize_finess(value) -> str:
@@ -87,13 +140,7 @@ def find_duplicate_finess(config: dict, current_uuid: str, finess_values: set, h
     if not finess_values:
         return set()
 
-    base_url = f"{GRIST_BASE_URL}/api/docs/{config['doc_id']}/tables/{config['table_id']}"
-    resp = requests.get(f"{base_url}/records", headers=headers)
-    if resp.status_code != 200:
-        raise RuntimeError(f'Failed to read records: HTTP {resp.status_code}')
-
-    payload = resp.json()
-    records = payload.get('records', [])
+    records = fetch_all_records(config, headers)
     duplicates = set()
     cur = normalize_finess(current_uuid)
 
@@ -293,6 +340,81 @@ def recover_by_email(form_id: str):
         return jsonify({'error': str(e)}), 500
 
 
+@app.route('/api/forms/<form_id>/admin/overview', methods=['GET'])
+@admin_required
+def admin_overview(form_id: str):
+    """Admin dashboard data: counts + questionnaire list."""
+    config = get_form_config(form_id)
+    if not config:
+        return jsonify({'error': f'Unknown form: {form_id}'}), 404
+
+    headers = {'Accept': 'application/json'}
+    if config['api_key']:
+        headers['Authorization'] = f"Bearer {config['api_key']}"
+
+    search = str(request.args.get('search', '') or '').strip().lower()
+    status = str(request.args.get('status', 'all') or 'all').strip().lower()
+
+    try:
+        records = fetch_all_records(config, headers)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+    rows = []
+    for rec in records:
+        fields = rec.get('fields', {}) if isinstance(rec, dict) else {}
+        if not fields:
+            continue
+        row = {
+            'record_id': rec.get('id'),
+            'uuid': fields.get('uuid', ''),
+            'es_nom': fields.get('es_nom', ''),
+            'departement': fields.get('es_departement', ''),
+            'finess_main': fields.get('finess_main', ''),
+            'validateur_nom': fields.get('validateur_nom', ''),
+            'validateur_prenom': fields.get('validateur_prenom', ''),
+            'validateur_email': fields.get('validateur_email', ''),
+            'saisie_terminee': _as_bool(fields.get('saisie_terminee')),
+        }
+        rows.append(row)
+
+    total = len(rows)
+    termines = sum(1 for r in rows if r['saisie_terminee'])
+    en_cours = total - termines
+
+    # Newest first by record id.
+    rows.sort(key=lambda r: int(r['record_id'] or 0), reverse=True)
+
+    if status in {'en_cours', 'termines'}:
+        want_done = status == 'termines'
+        rows = [r for r in rows if r['saisie_terminee'] is want_done]
+
+    if search:
+        def _matches(r):
+            haystack = ' '.join([
+                str(r.get('es_nom', '')),
+                str(r.get('departement', '')),
+                str(r.get('finess_main', '')),
+                str(r.get('validateur_nom', '')),
+                str(r.get('validateur_prenom', '')),
+                str(r.get('validateur_email', '')),
+                str(r.get('uuid', '')),
+            ]).lower()
+            return search in haystack
+        rows = [r for r in rows if _matches(r)]
+
+    return jsonify({
+        'ok': True,
+        'form_id': form_id,
+        'stats': {
+            'total_questionnaires': total,
+            'en_cours': en_cours,
+            'termines': termines,
+        },
+        'rows': rows,
+    }), 200
+
+
 @app.route('/health')
 def health():
     """Health check endpoint."""
@@ -310,6 +432,14 @@ def index():
 def serve_form(form_id: str):
     """Serve form HTML."""
     return send_from_directory(FORMS_DIR / form_id, 'index.html')
+
+
+@app.route('/admin/<form_id>/')
+@app.route('/admin/<form_id>')
+@admin_required
+def serve_admin(form_id: str):
+    """Serve admin dashboard HTML for a form."""
+    return send_from_directory(FORMS_DIR / form_id, 'admin.html')
 
 
 @app.route('/assets/<path:filename>')
