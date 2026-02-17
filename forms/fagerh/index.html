@@ -5,9 +5,37 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>RA FAGERH 2025 - Formulaire - TEST LOCAL</title>
     <style>
-        :root { --fagerh-blue: #2c3e50; --fagerh-light: #3498db; --orange: #e67e22; --success: #27ae60; --grey: #f4f7f6; --header-offset: 240px; }
+        :root { --fagerh-blue: #2c3e50; --fagerh-light: #1f5f97; --orange: #a35a0a; --success: #1f7a43; --grey: #f4f7f6; --header-offset: 240px; }
         html { scroll-behavior: smooth; }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--grey); padding: 20px; color: #333; line-height: 1.45; }
+        .skip-link {
+            position: absolute;
+            left: 12px;
+            top: -44px;
+            z-index: 400;
+            background: #0f2f4a;
+            color: #fff;
+            padding: 10px 12px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 700;
+        }
+        .skip-link:focus { top: 10px; }
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+        :focus-visible {
+            outline: 3px solid #1b7fcc;
+            outline-offset: 2px;
+        }
         .app-header {
             position: sticky;
             top: 0;
@@ -69,11 +97,11 @@
             margin-left: auto;
         }
         .sidebar-btn.finish:hover {
-            background: #cf7118;
+            background: #844706;
         }
         .quick-actions-hint {
             font-size: 0.88em;
-            color: #4f6477;
+            color: #3e556b;
             margin-top: 8px;
         }
         .lost-link-box {
@@ -279,10 +307,10 @@
         .sidebar h3 { margin-top: 0; font-size: 1em; color: var(--fagerh-blue); border: none; padding: 0; }
         .sidebar-btn { width: 100%; padding: 12px 20px; font-size: 1em; border-radius: 8px; cursor: pointer; border: none; margin-bottom: 10px; font-family: inherit; }
         .sidebar-btn.primary { background: var(--success); color: white; }
-        .sidebar-btn.primary:hover { background: #219a52; }
-        .sidebar-btn.primary:disabled { background: #999; cursor: not-allowed; }
+        .sidebar-btn.primary:hover { background: #196a39; }
+        .sidebar-btn.primary:disabled { background: #767676; color: #f5f5f5; cursor: not-allowed; }
         .sidebar-btn.secondary { background: var(--fagerh-light); color: white; }
-        .sidebar-btn.secondary:hover { background: #2980b9; }
+        .sidebar-btn.secondary:hover { background: #174f82; }
         .url-box { margin-top: 15px; padding: 12px; background: #f8f9fa; border: 1px solid #e0e0e0; border-radius: 6px; }
         .url-box p { margin: 0 0 8px 0; font-size: 0.85em; color: #666; }
         .url-field { display: flex; gap: 8px; align-items: center; }
@@ -290,12 +318,12 @@
         .url-field button { padding: 8px 12px; font-size: 0.8em; background: var(--fagerh-blue); color: white; border: none; border-radius: 4px; cursor: pointer; white-space: nowrap; }
         .url-field button:hover { background: #1a252f; }
         .status-msg { padding: 10px; border-radius: 6px; font-size: 0.9em; margin-bottom: 10px; display: none; }
-        .status-msg.error { background: #fee; color: #c0392b; display: block; }
-        .status-msg.success { background: #efd; color: var(--success); display: block; }
-        .status-msg.loading { background: #fff8e6; color: #f39c12; display: block; }
+        .status-msg.error { background: #fff0ef; color: #8f2118; display: block; }
+        .status-msg.success { background: #e7f7ed; color: #175d32; display: block; }
+        .status-msg.loading { background: #fff8e6; color: #8a5200; display: block; }
         .status-msg.info { background: #eef6ff; color: #1f4f7c; display: block; }
         .control-bar { margin-top: 20px; padding: 15px; background: var(--fagerh-blue); color: white; border-radius: 8px; display: flex; justify-content: space-between; position: sticky; bottom: 10px; z-index: 100; }
-        .btn-del { color: red; cursor: pointer; background: none; border: none; font-weight: bold; font-size: 1.2em; }
+        .btn-del { color: #a01c14; cursor: pointer; background: none; border: none; font-weight: bold; font-size: 1.2em; }
         .btn-add { background: var(--fagerh-light); color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; }
         .dept-row { display: flex; align-items: center; gap: 10px; padding: 8px; background: white; margin-bottom: 4px; border-radius: 4px; border: 1px solid #eee; }
         .pd-dept-code-input, .dept-nb { width: 120px; }
@@ -385,18 +413,18 @@
         }
         .finess-field { width: 100%; }
         .finess-msg { font-size: 0.82em; margin-top: 4px; display: none; }
-        .finess-msg.error { color: #b94a48; }
-        .finess-msg.ok { color: #2e7d32; }
+        .finess-msg.error { color: #962822; }
+        .finess-msg.ok { color: #1c6937; }
         .finess-input.finess-invalid { border-color: #e67e22; background: #fff8f1; }
         .email-field { width: 100%; }
         .email-msg { font-size: 0.82em; margin-top: 4px; display: none; }
-        .email-msg.error { color: #b94a48; }
-        .email-msg.ok { color: #2e7d32; }
+        .email-msg.error { color: #962822; }
+        .email-msg.ok { color: #1c6937; }
         .email-input.email-invalid { border-color: #e67e22; background: #fff8f1; }
         .dept-input.dept-invalid { border-color: #e67e22; background: #fff8f1; }
         .dept-msg { font-size: 0.82em; margin-top: 4px; display: none; }
-        .dept-msg.error { color: #b94a48; }
-        .dept-msg.ok { color: #2e7d32; }
+        .dept-msg.error { color: #962822; }
+        .dept-msg.ok { color: #1c6937; }
         .auto-badge {
             display: inline-flex;
             align-items: center;
@@ -744,9 +772,19 @@
         [data-prestation-key] {
             scroll-margin-top: 130px;
         }
+        @media (prefers-reduced-motion: reduce) {
+            html { scroll-behavior: auto; }
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+
     </style>
 </head>
 <body>
+<a href="#main-form-content" class="skip-link">Aller au contenu principal</a>
 
 <header class="app-header">
 <div class="card quick-actions-card">
@@ -776,13 +814,13 @@
             <button type="button" id="lock-reopen-btn" class="lock-reopen-btn">Revenir en modification</button>
         </div>
     </div>
-    <div id="status" class="status-msg" style="margin-top:8px;"></div>
+    <div id="status" class="status-msg" style="margin-top:8px;" role="status" aria-live="polite"></div>
     <input type="text" id="share-url" readonly style="display:none;">
 </div>
 </header>
 
 <div class="page-layout">
-<div class="main-content">
+<main class="main-content" id="main-form-content" role="main">
 <form id="form">
 <div class="card" id="intro-remplissage">
     <h2>Avant de commencer</h2>
@@ -974,7 +1012,7 @@
             <option>Service restauration</option>
         </optgroup>
     </select>
-    <div id="metier-duplicate-msg" class="volet-error hidden"></div>
+    <div id="metier-duplicate-msg" class="volet-error hidden" role="alert" aria-live="assertive"></div>
 
     <table id="table-metiers">
         <thead><tr><th style="text-align:left">Métier</th><th>Mode</th><th style="width:100px">ETP</th><th style="width:50px">X</th></tr></thead>
@@ -1545,7 +1583,7 @@
     </section>
 </template>
 </form>
-</div><!-- end main-content -->
+</main><!-- end main-content -->
 
 <div class="sidebar">
 </div>
@@ -2879,7 +2917,7 @@
         div.innerHTML = `
             <span>Département : <strong>${code}</strong></span>
             <input type="number" class="dept-nb" ${nb !== '' ? `value="${nb}"` : ''} placeholder="Nb personnes" data-dept="${code}">
-            <button type="button" class="btn-del" onclick="this.parentElement.remove()">×</button>
+            <button type="button" class="btn-del" aria-label="Supprimer cette ligne" title="Supprimer cette ligne" onclick="this.parentElement.remove()">×</button>
         `;
         container.appendChild(div);
     }
@@ -3113,7 +3151,7 @@
             <div class="finess-field">
                 <div style="display:flex; gap:8px; align-items:center;">
                     <input type="text" class="finess-input" placeholder="Numéro FINESS" value="${value}">
-                    <button type="button" class="btn-del" onclick="removeFinessRow(this)">×</button>
+                    <button type="button" class="btn-del" aria-label="Supprimer ce FINESS" title="Supprimer ce FINESS" onclick="removeFinessRow(this)">×</button>
                 </div>
                 <div class="finess-msg">Format attendu: 9 caractères (généralement 9 chiffres, ex: 123456789).</div>
             </div>
@@ -3798,7 +3836,7 @@
             <td style="text-align:left">${metier}</td>
             <td><select class="metier-mode"><option ${safeMode === 'Interne' ? 'selected' : ''}>Interne</option><option ${safeMode === 'Externe' ? 'selected' : ''}>Externe</option></select></td>
             <td><input type="number" step="0.1" class="metier-val" oninput="checkCoherence()" value="${etp}"></td>
-            <td><button type="button" class="btn-del" onclick="this.closest('tr').remove(); checkCoherence(); setMetierDuplicateMessage(''); refreshMetierModeLocks()">×</button></td>
+            <td><button type="button" class="btn-del" aria-label="Supprimer ce métier" title="Supprimer ce métier" onclick="this.closest('tr').remove(); checkCoherence(); setMetierDuplicateMessage(''); refreshMetierModeLocks()">×</button></td>
         `;
         tbody.appendChild(tr);
         bindMetierRowEvents(tr);
@@ -4119,7 +4157,8 @@
     document.querySelector('.progress-scroll-hint')?.addEventListener('click', () => {
         const panel = document.querySelector('.progress-top-grid');
         if (!panel) return;
-        panel.scrollBy({ top: 220, behavior: 'smooth' });
+        const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        panel.scrollBy({ top: 220, behavior: reduceMotion ? 'auto' : 'smooth' });
     });
     window.addEventListener('resize', updateProgressScrollHint);
     updateSaveReminderUi();
