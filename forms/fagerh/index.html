@@ -1801,7 +1801,9 @@
         }
     }
     function toggleBox(id, show) {
-        document.getElementById(id).style.display = show ? 'block' : 'none';
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.style.display = show ? 'block' : 'none';
     }
 
     function bindContexteSelectToggles() {
@@ -4394,10 +4396,14 @@
     });
     window.addEventListener('resize', updateProgressScrollHint);
     updateSaveReminderUi();
-    bindContexteSelectToggles();
-    document.getElementById('metier-picker')?.addEventListener('change', addMetierRow);
     addAutoAriaLabels(document);
     watchDynamicControlsForLabels();
+    try {
+        bindContexteSelectToggles();
+    } catch (e) {
+        console.error('bindContexteSelectToggles error', e);
+    }
+    document.getElementById('metier-picker')?.addEventListener('change', addMetierRow);
     document.querySelectorAll('.finess-input').forEach((input) => attachFinessValidation(input));
     updateRecoverSectionVisibility();
     document.querySelectorAll('.email-input').forEach((input) => attachEmailValidation(input));
