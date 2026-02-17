@@ -57,7 +57,7 @@
 
     .toolbar {
       display: grid;
-      grid-template-columns: 220px minmax(0, 1fr) auto;
+      grid-template-columns: 220px minmax(0, 1fr) auto auto auto;
       gap: 10px;
       align-items: center;
     }
@@ -237,6 +237,7 @@
         <input type="text" id="search-input" placeholder="Rechercher (ES, FINESS, email, département, UUID)">
         <button id="refresh-btn" type="button">Actualiser</button>
         <button id="clear-btn" type="button" class="muted-btn">Réinitialiser</button>
+        <button id="toggle-all-details-btn" type="button" class="muted-btn">Voir tout</button>
       </div>
       <div class="status" id="status">Chargement...</div>
     </div>
@@ -255,7 +256,7 @@
               <th>Email</th>
               <th>Étapes principales</th>
               <th>Étapes conditionnelles</th>
-              <th class="col-detail">Détails</th>
+              <th class="col-detail">Détail des étapes</th>
               <th>UUID</th>
               <th>ID Grist</th>
             </tr>
@@ -268,6 +269,7 @@
 
   <script>
     const expandedRows = new Set();
+    let lastLoadedRowKeys = [];
 
     function currentFormId() {
       const parts = window.location.pathname.split('/').filter(Boolean);
@@ -307,8 +309,12 @@
 
         const tbody = document.getElementById('rows');
         if (!Array.isArray(data.rows) || data.rows.length === 0) {
+          lastLoadedRowKeys = [];
           tbody.innerHTML = `<tr><td colspan="12">Aucun questionnaire trouvé.</td></tr>`;
         } else {
+          lastLoadedRowKeys = data.rows
+            .map((r) => String(r.uuid || r.record_id || ''))
+            .filter((k) => k !== '');
           tbody.innerHTML = data.rows.map((r) => {
             const shortId = String(r.uuid || '').trim();
             const displayId = shortId ? shortId.slice(0, 8) : String(r.record_id || '');
@@ -376,6 +382,15 @@
           }).join('');
         }
 
+        const allVisibleExpanded = (
+          lastLoadedRowKeys.length > 0
+          && lastLoadedRowKeys.every((k) => expandedRows.has(k))
+        );
+        const toggleAllBtn = document.getElementById('toggle-all-details-btn');
+        if (toggleAllBtn) {
+          toggleAllBtn.textContent = allVisibleExpanded ? 'Masquer tout' : 'Voir tout';
+        }
+
         statusEl.textContent = `${data.rows.length} résultat(s) affiché(s).`;
       } catch (e) {
         document.getElementById('rows').innerHTML = `<tr><td colspan="12">${esc(e.message)}</td></tr>`;
@@ -387,6 +402,16 @@
     document.getElementById('clear-btn').addEventListener('click', () => {
       document.getElementById('filter-status').value = 'all';
       document.getElementById('search-input').value = '';
+      loadOverview();
+    });
+    document.getElementById('toggle-all-details-btn').addEventListener('click', () => {
+      if (lastLoadedRowKeys.length === 0) return;
+      const allVisibleExpanded = lastLoadedRowKeys.every((k) => expandedRows.has(k));
+      if (allVisibleExpanded) {
+        lastLoadedRowKeys.forEach((k) => expandedRows.delete(k));
+      } else {
+        lastLoadedRowKeys.forEach((k) => expandedRows.add(k));
+      }
       loadOverview();
     });
     document.getElementById('filter-status').addEventListener('change', loadOverview);
