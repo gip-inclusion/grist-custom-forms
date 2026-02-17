@@ -50,7 +50,7 @@
         .main-content {
             flex: 1;
             min-width: 0;
-            margin-left: clamp(200px, 20vw, 330px);
+            margin-left: clamp(250px, 22vw, 330px);
             padding-top: 0;
             transition: margin-left 0.22s ease;
         }
@@ -204,7 +204,7 @@
             position: fixed;
             top: calc(var(--header-offset) + 18px);
             left: clamp(10px, 2vw, 20px);
-            width: clamp(220px, 20vw, 300px);
+            width: clamp(240px, 20vw, 300px);
             max-height: calc(100vh - (var(--header-offset) + 28px));
             overflow-y: auto;
             overscroll-behavior: contain;
@@ -613,15 +613,15 @@
             .pd-card-themed .question-row { grid-template-columns: 1fr; gap: 8px; }
         }
         @media (max-width: 1320px) {
-            .main-content { margin-left: clamp(180px, 18vw, 280px); }
+            .main-content { margin-left: clamp(230px, 20vw, 280px); }
             .progress-top-grid {
-                width: clamp(180px, 17vw, 260px);
+                width: clamp(220px, 18vw, 260px);
             }
         }
         @media (max-width: 1180px) {
-            .main-content { margin-left: clamp(160px, 16vw, 230px); }
+            .main-content { margin-left: clamp(210px, 18vw, 240px); }
             .progress-top-grid {
-                width: clamp(160px, 15vw, 220px);
+                width: clamp(200px, 16vw, 230px);
             }
         }
         @media (max-width: 1024px) {
