@@ -260,6 +260,7 @@
         input[type="number"] { width: 85px; text-align: center; }
         .hidden { display: none; }
         .volet-subtitle { margin: 6px 0 15px 0; color: #555; font-size: 0.95em; }
+        .volet-error { margin: 6px 0 10px 0; color: #b63b2c; font-size: 0.9em; font-weight: 600; }
         .table-10-container {
             overflow-x: auto;
             margin-top: 15px;
@@ -973,6 +974,7 @@
             <option>Service restauration</option>
         </optgroup>
     </select>
+    <div id="metier-duplicate-msg" class="volet-error hidden"></div>
 
     <table id="table-metiers">
         <thead><tr><th style="text-align:left">Métier</th><th>Mode</th><th style="width:100px">ETP</th><th style="width:50px">X</th></tr></thead>
@@ -3699,18 +3701,85 @@
     // =====================================
     // MÉTIERS MANAGEMENT
     // =====================================
+    function setMetierDuplicateMessage(msg = '') {
+        const el = document.getElementById('metier-duplicate-msg');
+        if (!el) return;
+        if (msg) {
+            el.textContent = msg;
+            el.classList.remove('hidden');
+            return;
+        }
+        el.textContent = '';
+        el.classList.add('hidden');
+    }
+
+    function hasMetierModeDuplicate(metier, mode, exceptRow = null) {
+        const wantedMetier = String(metier || '').trim();
+        const wantedMode = String(mode || '').trim();
+        if (!wantedMetier || !wantedMode) return false;
+        const rows = document.querySelectorAll('#body-metiers tr');
+        for (const row of rows) {
+            if (exceptRow && row === exceptRow) continue;
+            const rowMetier = String(row.cells?.[0]?.innerText || '').trim();
+            const rowMode = String(row.querySelector('.metier-mode')?.value || '').trim();
+            if (rowMetier === wantedMetier && rowMode === wantedMode) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    function bindMetierRowEvents(row) {
+        if (!row) return;
+        const modeSelect = row.querySelector('.metier-mode');
+        if (!modeSelect || modeSelect.dataset.boundDuplicate === '1') return;
+        modeSelect.dataset.boundDuplicate = '1';
+        modeSelect.dataset.prevValue = modeSelect.value;
+        modeSelect.addEventListener('focus', () => {
+            modeSelect.dataset.prevValue = modeSelect.value;
+        });
+        modeSelect.addEventListener('change', () => {
+            const metier = String(row.cells?.[0]?.innerText || '').trim();
+            const chosenMode = String(modeSelect.value || '').trim();
+            if (hasMetierModeDuplicate(metier, chosenMode, row)) {
+                const prev = modeSelect.dataset.prevValue || 'Interne';
+                modeSelect.value = prev;
+                setMetierDuplicateMessage(`Le métier « ${metier} » avec le mode « ${chosenMode} » existe déjà.`);
+                return;
+            }
+            modeSelect.dataset.prevValue = chosenMode;
+            setMetierDuplicateMessage('');
+        });
+    }
+
+    function appendMetierRow(metier, mode = 'Interne', etp = 0) {
+        const tbody = document.getElementById('body-metiers');
+        if (!tbody) return null;
+        const safeMode = mode === 'Externe' ? 'Externe' : 'Interne';
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td style="text-align:left">${metier}</td>
+            <td><select class="metier-mode"><option ${safeMode === 'Interne' ? 'selected' : ''}>Interne</option><option ${safeMode === 'Externe' ? 'selected' : ''}>Externe</option></select></td>
+            <td><input type="number" step="0.1" class="metier-val" oninput="checkCoherence()" value="${etp}"></td>
+            <td><button type="button" class="btn-del" onclick="this.closest('tr').remove(); checkCoherence(); setMetierDuplicateMessage('')">×</button></td>
+        `;
+        tbody.appendChild(tr);
+        bindMetierRowEvents(tr);
+        return tr;
+    }
+
     function addMetierRow() {
         const sel = document.getElementById('metier-picker');
         if (!sel.value) return;
-        const tbody = document.getElementById('body-metiers');
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td style="text-align:left">${sel.value}</td>
-            <td><select class="metier-mode"><option>Interne</option><option>Externe</option></select></td>
-            <td><input type="number" step="0.1" class="metier-val" oninput="checkCoherence()" value="0"></td>
-            <td><button type="button" class="btn-del" onclick="this.closest('tr').remove(); checkCoherence()">×</button></td>
-        `;
-        tbody.appendChild(tr);
+        const metier = sel.value;
+        const mode = 'Interne';
+        if (hasMetierModeDuplicate(metier, mode)) {
+            setMetierDuplicateMessage(`Le métier « ${metier} » avec le mode « ${mode} » existe déjà.`);
+            sel.selectedIndex = 0;
+            return;
+        }
+        appendMetierRow(metier, mode, 0);
+        setMetierDuplicateMessage('');
         sel.selectedIndex = 0;
         checkCoherence();
     }
@@ -3773,6 +3842,7 @@
 
         // Custom callback: populate complex fields from JSON
         onPopulate: (record, uuid) => {
+            setMetierDuplicateMessage('');
             populateFiness(record);
             restorePrestationsOrp(record);
             restorePrestationsDetails(record);
@@ -3782,15 +3852,7 @@
                 try {
                     const metiers = JSON.parse(record.metiers_json);
                     metiers.forEach(m => {
-                        const tbody = document.getElementById('body-metiers');
-                        const tr = document.createElement('tr');
-                        tr.innerHTML = `
-                            <td style="text-align:left">${m.metier}</td>
-                            <td><select class="metier-mode"><option ${m.mode==='Interne'?'selected':''}>Interne</option><option ${m.mode==='Externe'?'selected':''}>Externe</option></select></td>
-                            <td><input type="number" step="0.1" class="metier-val" oninput="checkCoherence()" value="${m.etp}"></td>
-                            <td><button type="button" class="btn-del" onclick="this.closest('tr').remove(); checkCoherence()">×</button></td>
-                        `;
-                        tbody.appendChild(tr);
+                        appendMetierRow(m.metier, m.mode, m.etp);
                     });
                     calcGlobalETP();
                 } catch(e) { console.error('metiers parse error', e); }
