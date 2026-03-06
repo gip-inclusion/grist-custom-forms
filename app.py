@@ -258,6 +258,18 @@ def fetch_all_records(config: dict, headers: dict):
     return payload.get('records', [])
 
 
+def _parse_response_json_safe(resp):
+    """Return JSON payload when possible, otherwise a readable fallback dict."""
+    try:
+        return resp.json()
+    except Exception:
+        body = (resp.text or '').strip()
+        return {
+            'error': f'Upstream response is not valid JSON (HTTP {resp.status_code}).',
+            'raw': body[:500],
+        }
+
+
 def normalize_finess(value) -> str:
     """Normalize FINESS value for duplicate checks."""
     return str(value or '').strip().upper()
@@ -374,9 +386,11 @@ def save_record(form_id: str):
     try:
         check_resp = requests.get(f"{base_url}/records", params={'filter': filter_param}, headers=headers)
         if check_resp.status_code != 200:
-            return jsonify(check_resp.json()), check_resp.status_code
+            return jsonify(_parse_response_json_safe(check_resp)), check_resp.status_code
 
-        existing = check_resp.json()
+        existing = _parse_response_json_safe(check_resp)
+        if not isinstance(existing, dict) or 'records' not in existing:
+            return jsonify({'error': 'Failed to decode existing record check response.'}), 502
         record_id = existing['records'][0]['id'] if existing.get('records') else None
     except Exception as e:
         return jsonify({'error': f'Failed to check existing record: {e}'}), 500
@@ -594,6 +608,12 @@ def index():
 def serve_form(form_id: str):
     """Serve form HTML."""
     return send_from_directory(FORMS_DIR / form_id, 'index.html')
+
+
+@app.route('/forms/<form_id>/<path:filename>')
+def serve_form_file(form_id: str, filename: str):
+    """Serve extra files from a form folder (e.g. UI prototypes)."""
+    return send_from_directory(FORMS_DIR / form_id, filename)
 
 
 @app.route('/admin/<form_id>/')

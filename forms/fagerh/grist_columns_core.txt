@@ -28,7 +28,10 @@ orp_remise_niveau
 pec
 prestations_details_json
 prestations_json
+prestations_indirectes_json
 prestations_orp_json
+emploi_indicateurs_json
+catalogue_formations_json
 q32_implantation
 q33_alternatif
 q33_pmr

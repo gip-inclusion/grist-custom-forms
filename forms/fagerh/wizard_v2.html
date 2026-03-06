@@ -1,0 +1,862 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FAGERH Parcours guidé v2 (Maquette)</title>
+  <style>
+    :root {
+      --bg: #f6f8fb;
+      --card: #ffffff;
+      --text: #1d2a39;
+      --muted: #5a6b7d;
+      --line: #d9e1eb;
+      --accent: #1f6fb2;
+      --ok: #1f7a45;
+      --warn: #a05a00;
+      --err: #a32222;
+      --focus: #1f6fb2;
+      --radius: 12px;
+      --space-1: 8px;
+      --space-2: 12px;
+      --space-3: 16px;
+      --space-4: 20px;
+      --space-5: 28px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+    }
+    .app {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 20px;
+      display: grid;
+      grid-template-columns: 1fr 320px;
+      gap: 18px;
+    }
+    .main, .side {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+    }
+    .main { padding: var(--space-4); }
+    .side { padding: 14px; position: sticky; top: 12px; height: fit-content; }
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+    .title { margin: 0; font-size: 1.3rem; letter-spacing: -0.01em; }
+    .progress {
+      height: 10px;
+      width: 100%;
+      border-radius: 999px;
+      background: #e8eef6;
+      overflow: hidden;
+      margin-bottom: var(--space-4);
+    }
+    .progress > div {
+      height: 100%;
+      width: 0;
+      background: linear-gradient(90deg, #1f6fb2, #28a4d8);
+      transition: width .2s ease;
+    }
+    .step { display: none; }
+    .step.active { display: block; }
+    .step h2 { margin: 0 0 var(--space-2) 0; font-size: 1.2rem; letter-spacing: -0.01em; }
+    .hint { color: var(--muted); margin: 0 0 var(--space-3) 0; font-size: .97rem; }
+    .field {
+      border-top: 1px solid #edf2f7;
+      padding: 14px 0;
+      display: grid;
+      grid-template-columns: 1fr 320px;
+      gap: 12px;
+      align-items: start;
+    }
+    .field:first-of-type { border-top: none; }
+    label { font-weight: 650; }
+    .sub { color: var(--muted); font-size: .92rem; margin-top: 4px; display: none; }
+    .sub.visible { display: block; }
+    .sub.err { color: var(--err); }
+    .sub.ok { color: var(--ok); }
+    input, select, textarea {
+      width: 100%;
+      border: 1px solid #bdc9d8;
+      border-radius: 10px;
+      padding: 11px 12px;
+      font: inherit;
+      background: #fff;
+      transition: border-color .15s ease, box-shadow .15s ease, background-color .15s ease;
+    }
+    .field-input-pending {
+      border-color: #d6a85a !important;
+      background: #fffaf1 !important;
+    }
+    .field-input-valid {
+      border-color: #3c9a63 !important;
+      background: #f4fbf7 !important;
+    }
+    .field-input-invalid {
+      border-color: #c43c3c !important;
+      background: #fff4f4 !important;
+    }
+    input[readonly] { background: #f0f4f8; color: #506070; }
+    .row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+    .finess-row {
+      flex-wrap: nowrap;
+      align-items: stretch;
+      gap: 8px;
+    }
+    .finess-row .finess-input {
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+    .chip {
+      border: 1px solid #c9d5e4;
+      border-radius: 999px;
+      padding: 7px 11px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: #fff;
+    }
+    .dispo-list {
+      display: grid;
+      gap: 8px;
+      margin-top: 4px;
+    }
+    .dispo-line {
+      display: grid;
+      grid-template-columns: 1fr 180px;
+      gap: 10px;
+      align-items: center;
+    }
+    .dispo-line .chip {
+      width: fit-content;
+    }
+    .dispo-line input[type="number"] {
+      width: 100%;
+      text-align: center;
+    }
+    .box {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 12px;
+      margin-top: 10px;
+      background: #fbfdff;
+    }
+    .child { margin-left: 26px; margin-top: 6px; }
+    .status {
+      margin-top: 10px;
+      font-size: .92rem;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid #d6e1ec;
+      background: #f7fbff;
+    }
+    .status.ok { border-color: #9bcaaa; color: var(--ok); background: #f1faf4; }
+    .status.err { border-color: #e6b0b0; color: var(--err); background: #fff4f4; }
+    .status.kpi {
+      font-weight: 700;
+      border-color: #9ec0df;
+      background: #eef5fd;
+      color: #234b73;
+    }
+    .kpi-diff {
+      display: inline-block;
+      margin-left: 8px;
+      padding: 2px 9px;
+      border-radius: 999px;
+      border: 1px solid #d6e1ec;
+      background: #fff;
+      font-weight: 800;
+    }
+    .kpi-diff.ok {
+      color: #1f7a45;
+      border-color: #9bcaaa;
+      background: #f1faf4;
+    }
+    .kpi-diff.err {
+      color: #a32222;
+      border-color: #e6b0b0;
+      background: #fff4f4;
+    }
+    .actions {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      margin-top: var(--space-4);
+      border-top: 1px solid #edf2f7;
+      padding-top: var(--space-3);
+    }
+    button {
+      border: 1px solid #9fb4cb;
+      background: #f7fbff;
+      color: #294866;
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    button.primary {
+      border-color: #1f6fb2;
+      background: #1f6fb2;
+      color: #fff;
+    }
+    button:disabled { opacity: .5; cursor: not-allowed; }
+    .btn-remove-x {
+      width: 46px;
+      min-width: 46px;
+      height: 46px;
+      padding: 0;
+      border: 1px solid #d48a8a;
+      background: #fff4f4;
+      color: #b02020;
+      border-radius: 10px;
+      font-size: 1.2rem;
+      line-height: 1;
+      font-weight: 800;
+    }
+    .btn-remove-x:hover {
+      background: #ffe9e9;
+    }
+    .btn-remove-x.is-idle {
+      opacity: 0;
+      pointer-events: none;
+    }
+    .checklist { margin: 0; padding-left: 18px; }
+    .checklist li { margin: 8px 0; }
+    .pill {
+      display: inline-block;
+      font-size: .8rem;
+      border: 1px solid #c7d5e5;
+      padding: 2px 8px;
+      border-radius: 999px;
+      color: #37567a;
+      background: #eef5fc;
+    }
+    :focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+    @media (min-width: 981px) {
+      .main { min-height: 82vh; }
+    }
+    @media (max-width: 980px) {
+      .app { grid-template-columns: 1fr; }
+      .side { position: static; }
+      .field { grid-template-columns: 1fr; }
+      .finess-row { align-items: center; }
+      .dispo-line { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <section class="main" aria-live="polite">
+      <div class="topbar">
+        <h1 class="title">FAGERH Parcours guidé v2 <span class="pill">maquette</span></h1>
+        <div id="step-label">Étape 1 / 5</div>
+      </div>
+      <div class="progress" aria-hidden="true"><div id="bar"></div></div>
+
+      <section class="step active" data-step="1">
+        <h2>Avant de commencer</h2>
+        <p class="hint">Parcours guidé : une décision à la fois. Les sections non pertinentes resteront cachées.</p>
+        <div class="box">
+          <strong>Objectif</strong>
+          <p class="hint" style="margin-top:6px">Simplifier la lecture, réduire les erreurs, afficher uniquement ce qui est utile.</p>
+          <ul class="checklist">
+            <li>Feedback immédiat de cohérence</li>
+            <li>Saisie d'abord, agrégation ensuite</li>
+            <li>Résumé dynamique à droite</li>
+          </ul>
+        </div>
+        <div class="actions">
+          <span></span>
+          <button class="primary" data-next>Commencer</button>
+        </div>
+      </section>
+
+      <section class="step" data-step="2">
+        <h2>Identification</h2>
+        <p class="hint">Les 6 champs sont requis avant de continuer.</p>
+        <div class="box">
+          <strong>Votre établissement et service</strong>
+          <div class="field"><div><label>Raison sociale</label></div><input id="es_nom"></div>
+          <div class="field">
+            <div><label>Département</label></div>
+            <div>
+              <input id="dept" inputmode="text" placeholder="75">
+              <div id="dept-msg" class="sub"></div>
+            </div>
+          </div>
+          <div class="field">
+            <div><label>Numéro FINESS</label></div>
+            <div>
+              <div class="row finess-row">
+                <input id="finess" class="finess-input" placeholder="123456789" inputmode="numeric">
+                <button type="button" id="clear-main-finess" class="btn-remove-x is-idle" aria-label="Effacer ce FINESS" title="Effacer ce FINESS">×</button>
+              </div>
+              <div id="finess-msg" class="sub"></div>
+              <div id="extra-finess"></div>
+              <div style="margin-top:8px;">
+                <button type="button" id="add-finess-btn">Ajouter un FINESS</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="box">
+          <strong>Contact de la personne validant le questionnaire</strong>
+          <div class="field"><div><label>Nom</label></div><input id="v_nom"></div>
+          <div class="field"><div><label>Prénom</label></div><input id="v_prenom"></div>
+          <div class="field"><div><label>Email</label></div><input id="v_email" type="email" placeholder="email@exemple.fr"></div>
+        </div>
+        <div class="actions">
+          <button data-prev>Retour</button>
+          <button class="primary" data-next disabled id="ident-next">Continuer</button>
+        </div>
+      </section>
+
+      <section class="step" data-step="3">
+        <h2>Dispositifs & ETP</h2>
+        <p class="hint">Règle : si un dispositif est coché, son ETP doit être strictement supérieur à 0.</p>
+        <div class="box">
+          <div class="dispo-list">
+            <div class="dispo-line"><label class="chip"><input type="checkbox" data-dispo="esrp"> ESRP</label><input type="number" min="0" step="0.1" data-etp="esrp" placeholder="ETP ESRP"></div>
+            <div class="dispo-line"><label class="chip"><input type="checkbox" data-dispo="espo"> ESPO</label><input type="number" min="0" step="0.1" data-etp="espo" placeholder="ETP ESPO"></div>
+            <div class="dispo-line"><label class="chip"><input type="checkbox" data-dispo="ueros"> UEROS</label><input type="number" min="0" step="0.1" data-etp="ueros" placeholder="ETP UEROS"></div>
+            <div class="dispo-line"><label class="chip"><input type="checkbox" data-dispo="deac"> DEAc</label><input type="number" min="0" step="0.1" data-etp="deac" placeholder="ETP DEAc"></div>
+          </div>
+        </div>
+        <div id="etp-status" class="status">Sélectionne les dispositifs puis renseigne les ETP.</div>
+        <div class="actions">
+          <button data-prev>Retour</button>
+          <button class="primary" data-next disabled id="etp-next">Continuer</button>
+        </div>
+      </section>
+
+      <section class="step" data-step="4">
+        <h2>Répartition des métiers</h2>
+        <p class="hint">Choisissez un métier, puis saisissez le nombre d'ETP. La somme doit correspondre à la cible (hors DEAc).</p>
+        <div class="status kpi" id="metier-target-msg">Vous devez répartir les ETP sélectionnés par dispositif.</div>
+        <div class="box">
+          <div class="row">
+            <select id="metier-picker" style="min-width:260px;">
+              <option value="">Choisir un métier…</option>
+              <optgroup label="MÉDICAL">
+                <option>Médecin</option>
+                <option>Psychiatre</option>
+              </optgroup>
+              <optgroup label="PARAMÉDICAL">
+                <option>Infirmier (IDE)</option>
+                <option>Ergothérapeute</option>
+                <option>Kinésithérapeute</option>
+                <option>Orthoptiste</option>
+                <option>Orthophoniste</option>
+              </optgroup>
+              <optgroup label="SOCIO-EDUCATIF">
+                <option>Animateur</option>
+                <option>Professionnel d'activité physique adaptée</option>
+                <option>Moniteur éducateur</option>
+                <option>Educateur spécialisé</option>
+                <option>Assistant social</option>
+                <option>CESF</option>
+                <option>Interprète/interface de communication</option>
+                <option>Instructeur en locomotion</option>
+              </optgroup>
+              <optgroup label="PSYCHOLOGUE">
+                <option>Psychologue clinicien (dont TCC)</option>
+                <option>Neuropsychologue</option>
+                <option>Psychologue du travail</option>
+              </optgroup>
+              <optgroup label="PEDAGOGIE">
+                <option>Formateur/Formatrice</option>
+                <option>Référent formation accompagnée</option>
+                <option>Jobcoach</option>
+                <option>CIP</option>
+              </optgroup>
+              <optgroup label="SUPPORT & ADMINISTRATIF">
+                <option>Assistant administratif</option>
+                <option>Service hébergement</option>
+                <option>Service logistique</option>
+                <option>Service restauration</option>
+              </optgroup>
+            </select>
+          </div>
+          <div style="margin-top:10px; overflow:auto;">
+            <table style="width:100%; border-collapse: collapse;">
+              <thead>
+                <tr>
+                  <th style="text-align:left; padding:8px; border-bottom:1px solid #e3eaf3;">Métier</th>
+                  <th style="text-align:left; padding:8px; border-bottom:1px solid #e3eaf3;">Mode</th>
+                  <th style="text-align:center; padding:8px; border-bottom:1px solid #e3eaf3; width:130px;">ETP</th>
+                  <th style="padding:8px; border-bottom:1px solid #e3eaf3; width:70px;">Suppr.</th>
+                </tr>
+              </thead>
+              <tbody id="metier-body"></tbody>
+            </table>
+          </div>
+        </div>
+        <div id="metier-status" class="status">Ajoutez au moins un métier puis saisissez le nombre d'ETP.</div>
+        <div class="status kpi" id="metier-coherence">Cible : 0.0 ETP | Saisi : 0.0 ETP | Écart : 0.0 ETP</div>
+        <div class="actions">
+          <button data-prev>Retour</button>
+          <button type="button" id="metier-skip-btn">Passer cette étape</button>
+          <button class="primary" data-next id="metier-next">Continuer</button>
+        </div>
+      </section>
+
+      <section class="step" data-step="5">
+        <h2>Validation finale</h2>
+        <p class="hint">Dernier contrôle avant envoi.</p>
+        <div id="final-status" class="status"></div>
+        <div class="actions">
+          <button data-prev>Retour</button>
+          <button class="primary" id="fake-submit">Valider le questionnaire</button>
+        </div>
+      </section>
+    </section>
+
+    <aside class="side" aria-label="Résumé dynamique">
+      <h3 style="margin-top:0">Résumé</h3>
+      <div id="resume" class="status">Aucune donnée saisie pour le moment.</div>
+      <div id="checklist-wrap">
+        <h4>Points de contrôle</h4>
+        <ul class="checklist" id="checklist">
+          <li>Identification : <strong>à faire</strong></li>
+          <li>Dispositifs/ETP : <strong>à faire</strong></li>
+          <li>Répartition métiers : <strong>à faire</strong></li>
+        </ul>
+      </div>
+    </aside>
+  </div>
+
+  <script>
+    const steps = Array.from(document.querySelectorAll('.step'));
+    const bar = document.getElementById('bar');
+    const stepLabel = document.getElementById('step-label');
+    const fakeSubmitBtn = document.getElementById('fake-submit');
+    let deacOnlyFlow = false;
+    let metierStepSkipped = false;
+    let step = 1;
+
+    function showStep(n) {
+      step = Math.max(1, Math.min(steps.length, n));
+      steps.forEach(s => s.classList.toggle('active', Number(s.dataset.step) === step));
+      const pct = ((step - 1) / (steps.length - 1)) * 100;
+      bar.style.width = pct + '%';
+      stepLabel.textContent = `Étape ${step} / ${steps.length}`;
+      const checklistWrap = document.getElementById('checklist-wrap');
+      if (checklistWrap) checklistWrap.hidden = step === 1;
+      refreshSummary();
+      if (step === 5) refreshFinal();
+    }
+
+    document.querySelectorAll('[data-next]').forEach(btn => btn.addEventListener('click', () => {
+      if (step === 3 && isOnlyDeacScenario()) {
+        deacOnlyFlow = true;
+        showStep(5);
+        return;
+      }
+      deacOnlyFlow = false;
+      showStep(step + 1);
+    }));
+    document.querySelectorAll('[data-prev]').forEach(btn => btn.addEventListener('click', () => {
+      if (step === 5 && deacOnlyFlow) {
+        showStep(3);
+        return;
+      }
+      showStep(step - 1);
+    }));
+
+    const identInputs = ['es_nom', 'v_nom', 'v_prenom', 'v_email', 'dept'].map(id => document.getElementById(id));
+    const deptInput = document.getElementById('dept');
+    const deptMsg = document.getElementById('dept-msg');
+    const finessMsg = document.getElementById('finess-msg');
+    const extraFiness = document.getElementById('extra-finess');
+    const addFinessBtn = document.getElementById('add-finess-btn');
+    const clearMainFinessBtn = document.getElementById('clear-main-finess');
+
+    function isValidDept(value) {
+      const v = String(value || '').trim().toUpperCase();
+      if (!v) return false;
+      if (/^(2A|2B)$/.test(v)) return true;
+      if (/^(97[1-4]|976)$/.test(v)) return true;
+      if (/^(0[1-9]|[1-8][0-9]|9[0-5])$/.test(v)) return true;
+      return false;
+    }
+
+    function isValidFiness(value) {
+      return /^\d{9}$/.test(String(value || '').trim());
+    }
+
+    function collectFinessInputs() {
+      return Array.from(document.querySelectorAll('.finess-input'));
+    }
+
+    function addFinessInput() {
+      const row = document.createElement('div');
+      row.className = 'row finess-row';
+      row.style.marginTop = '8px';
+      row.innerHTML = `
+        <input class=\"finess-input\" placeholder=\"123456789\" inputmode=\"numeric\">
+        <button type=\"button\" class=\"remove-finess btn-remove-x is-idle\" aria-label=\"Supprimer ce FINESS\" title=\"Supprimer ce FINESS\">×</button>
+      `;
+      extraFiness.appendChild(row);
+      const input = row.querySelector('.finess-input');
+      const remove = row.querySelector('.remove-finess');
+      input?.addEventListener('input', () => {
+        input.value = String(input.value || '').replace(/\D+/g, '').slice(0, 9);
+        validateIdent();
+      });
+      input?.addEventListener('blur', validateIdent);
+      remove?.addEventListener('click', () => {
+        row.remove();
+        validateIdent();
+      });
+      validateIdent();
+    }
+
+    addFinessBtn?.addEventListener('click', addFinessInput);
+    clearMainFinessBtn?.addEventListener('click', () => {
+      const main = document.getElementById('finess');
+      if (main) main.value = '';
+      validateIdent();
+    });
+
+    function validateIdent() {
+      const ok = identInputs.every(i => String(i.value || '').trim() !== '');
+      const email = document.getElementById('v_email').value.trim();
+      const emailOk = !email || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+      const deptValue = String(deptInput?.value || '').trim();
+      const deptOk = isValidDept(deptValue);
+      const allFiness = collectFinessInputs();
+      allFiness.forEach((input) => {
+        const cleaned = String(input.value || '').replace(/\D+/g, '').slice(0, 9);
+        if (input.value !== cleaned) input.value = cleaned;
+      });
+      const finessValues = allFiness.map(i => String(i.value || '').trim());
+      const finessFilled = finessValues.every(v => v !== '');
+      const finessOk = allFiness.length > 0 && finessValues.every(v => isValidFiness(v));
+      const anyFinessInvalid = finessValues.some(v => v !== '' && !isValidFiness(v));
+      const next = document.getElementById('ident-next');
+      const setFieldState = (input, state) => {
+        if (!input) return;
+        input.classList.remove('field-input-pending', 'field-input-valid', 'field-input-invalid');
+        if (state === 'pending') input.classList.add('field-input-pending');
+        if (state === 'valid') input.classList.add('field-input-valid');
+        if (state === 'invalid') input.classList.add('field-input-invalid');
+      };
+
+      setFieldState(document.getElementById('es_nom'), document.getElementById('es_nom').value.trim() ? 'valid' : 'pending');
+      setFieldState(document.getElementById('v_nom'), document.getElementById('v_nom').value.trim() ? 'valid' : 'pending');
+      setFieldState(document.getElementById('v_prenom'), document.getElementById('v_prenom').value.trim() ? 'valid' : 'pending');
+      setFieldState(document.getElementById('v_email'), !email ? 'pending' : (emailOk ? 'valid' : 'invalid'));
+      setFieldState(deptInput, !deptValue ? 'pending' : (deptOk ? 'valid' : 'invalid'));
+      collectFinessInputs().forEach((input) => {
+        const v = String(input.value || '').trim();
+        setFieldState(input, !v ? 'pending' : (isValidFiness(v) ? 'valid' : 'invalid'));
+        const row = input.closest('.finess-row');
+        const clearBtn = row?.querySelector('.btn-remove-x');
+        if (clearBtn) {
+          clearBtn.classList.toggle('is-idle', v === '');
+        }
+      });
+
+      if (deptMsg) {
+        if (!deptValue) {
+          deptMsg.className = 'sub';
+          deptMsg.textContent = '';
+        } else if (!deptOk) {
+          deptMsg.className = 'sub visible err';
+          deptMsg.textContent = 'Département invalide. Formats acceptés : 01 à 95, 2A, 2B, 971, 972, 973, 974, 976.';
+        } else {
+          deptMsg.className = 'sub';
+          deptMsg.textContent = '';
+        }
+      }
+      if (finessMsg) {
+        if (!finessValues.some(v => v !== '')) {
+          finessMsg.className = 'sub';
+          finessMsg.textContent = '';
+        } else if (anyFinessInvalid) {
+          finessMsg.className = 'sub visible err';
+          finessMsg.textContent = 'Chaque FINESS doit contenir exactement 9 chiffres.';
+        } else {
+          finessMsg.className = 'sub';
+          finessMsg.textContent = '';
+        }
+      }
+      next.disabled = !(ok && emailOk && deptOk && finessFilled && finessOk);
+      refreshSummary();
+    }
+    identInputs.forEach(i => {
+      i.addEventListener('input', validateIdent);
+      i.addEventListener('blur', validateIdent);
+    });
+    collectFinessInputs().forEach(i => {
+      i.addEventListener('input', () => {
+        i.value = String(i.value || '').replace(/\D+/g, '').slice(0, 9);
+        validateIdent();
+      });
+      i.addEventListener('blur', validateIdent);
+    });
+
+    const dispoChecks = Array.from(document.querySelectorAll('[data-dispo]'));
+    const etpInputs = Array.from(document.querySelectorAll('[data-etp]'));
+    function validateEtp() {
+      const missing = [];
+      const selected = [];
+      dispoChecks.forEach(ch => {
+        const key = ch.dataset.dispo;
+        const etp = document.querySelector(`[data-etp="${key}"]`);
+        const n = Number(etp.value || 0);
+        etp.classList.remove('field-input-pending', 'field-input-valid', 'field-input-invalid');
+        if (ch.checked) {
+          selected.push(key.toUpperCase());
+          if (String(etp.value || '').trim() === '') {
+            etp.classList.add('field-input-pending');
+            missing.push(key.toUpperCase());
+          } else if (n > 0) {
+            etp.classList.add('field-input-valid');
+          } else {
+            etp.classList.add('field-input-invalid');
+            missing.push(key.toUpperCase());
+          }
+        } else {
+          etp.value = '';
+        }
+      });
+      const status = document.getElementById('etp-status');
+      const next = document.getElementById('etp-next');
+      if (selected.length === 0) {
+        status.textContent = "Coche au moins un dispositif pour continuer.";
+        status.className = 'status err';
+      } else if (missing.length === 0) {
+        status.textContent = 'Règle ETP respectée.';
+        status.className = 'status ok';
+      } else {
+        status.textContent = `Merci de compléter l'ETP (> 0) pour : ${missing.join(', ')}`;
+        status.className = 'status err';
+      }
+      next.disabled = !(selected.length > 0 && missing.length === 0);
+      if (document.getElementById('metier-next')) validateMetiers();
+      refreshSummary();
+    }
+    dispoChecks.forEach(i => i.addEventListener('change', validateEtp));
+    etpInputs.forEach(i => i.addEventListener('input', validateEtp));
+
+    const metierPicker = document.getElementById('metier-picker');
+    const metierBody = document.getElementById('metier-body');
+    const metierSkipBtn = document.getElementById('metier-skip-btn');
+
+    function computeTargetEtpHorsDeac() {
+      const keys = ['esrp', 'espo', 'ueros'];
+      return keys.reduce((sum, key) => {
+        const checked = document.querySelector(`[data-dispo="${key}"]`)?.checked;
+        const value = Number(document.querySelector(`[data-etp="${key}"]`)?.value || 0);
+        return checked && value > 0 ? sum + value : sum;
+      }, 0);
+    }
+
+    function addMetierRow(label, mode) {
+      const tr = document.createElement('tr');
+      tr.dataset.metier = label;
+      tr.dataset.mode = mode;
+      tr.innerHTML = `
+        <td style="padding:8px; border-bottom:1px solid #edf2f7;">${label}</td>
+        <td style="padding:8px; border-bottom:1px solid #edf2f7;">${mode}</td>
+        <td style="padding:8px; border-bottom:1px solid #edf2f7; text-align:center;">
+          <input type="number" min="0" step="0.1" class="metier-etp" style="max-width:100px; text-align:center;">
+        </td>
+        <td style="padding:8px; border-bottom:1px solid #edf2f7; text-align:center;">
+          <button type="button" class="btn-remove-x remove-metier" aria-label="Supprimer la ligne métier">×</button>
+        </td>
+      `;
+      metierBody.appendChild(tr);
+      tr.querySelector('.metier-etp')?.addEventListener('input', validateMetiers);
+      tr.querySelector('.remove-metier')?.addEventListener('click', () => {
+        tr.remove();
+        validateMetiers();
+      });
+      validateMetiers();
+    }
+
+    function getModesForMetier(label) {
+      return Array.from(metierBody.querySelectorAll('tr'))
+        .filter((tr) => tr.dataset.metier === label)
+        .map((tr) => tr.dataset.mode);
+    }
+
+    metierPicker?.addEventListener('change', () => {
+      const label = String(metierPicker?.value || '').trim();
+      if (!label) return;
+      const modes = getModesForMetier(label);
+      if (!modes.includes('Interne')) {
+        addMetierRow(label, 'Interne');
+      } else if (!modes.includes('Externe')) {
+        addMetierRow(label, 'Externe');
+      } else {
+        const status = document.getElementById('metier-status');
+        if (status) {
+          status.className = 'status';
+          status.textContent = `${label} est déjà saisi en Interne et Externe.`;
+        }
+      }
+      metierStepSkipped = false;
+      if (metierPicker) metierPicker.value = '';
+    });
+
+    metierSkipBtn?.addEventListener('click', () => {
+      metierStepSkipped = true;
+      showStep(step + 1);
+    });
+
+    function validateMetiers() {
+      const target = computeTargetEtpHorsDeac();
+      const etpInputs = Array.from(document.querySelectorAll('.metier-etp'));
+      const values = etpInputs.map((i) => Number(i.value || 0));
+      const sum = values.reduce((a, b) => a + (Number.isFinite(b) ? b : 0), 0);
+      etpInputs.forEach((input) => {
+        const raw = String(input.value || '').trim();
+        const n = Number(raw || 0);
+        input.classList.remove('field-input-pending', 'field-input-valid', 'field-input-invalid');
+        if (!raw) input.classList.add('field-input-pending');
+        else if (n > 0) input.classList.add('field-input-valid');
+        else input.classList.add('field-input-invalid');
+      });
+      const hasRows = etpInputs.length > 0;
+      const coherent = target > 0 ? Math.abs(sum - target) < 0.0001 : true;
+      const valid = target > 0 ? (hasRows && coherent) : false;
+      const diff = sum - target;
+
+      const status = document.getElementById('metier-status');
+      const coherence = document.getElementById('metier-coherence');
+      const targetMsg = document.getElementById('metier-target-msg');
+      const next = document.getElementById('metier-next');
+      const esrpVal = (document.querySelector('[data-dispo="esrp"]')?.checked ? Number(document.querySelector('[data-etp="esrp"]')?.value || 0) : 0);
+      const uerosVal = (document.querySelector('[data-dispo="ueros"]')?.checked ? Number(document.querySelector('[data-etp="ueros"]')?.value || 0) : 0);
+      const espoVal = (document.querySelector('[data-dispo="espo"]')?.checked ? Number(document.querySelector('[data-etp="espo"]')?.value || 0) : 0);
+      if (targetMsg) {
+        targetMsg.textContent = `Vous avez sélectionné ${esrpVal.toFixed(1)} ETP pour ESRP, ${uerosVal.toFixed(1)} pour UEROS et ${espoVal.toFixed(1)} pour ESPO ; vous devez donc répartir ${target.toFixed(1)} ETP par métier.`;
+      }
+      if (coherence) {
+        const diffClass = Math.abs(diff) < 0.0001 ? 'ok' : 'err';
+        coherence.innerHTML = `Cible : ${target.toFixed(1)} ETP | Saisi : ${sum.toFixed(1)} ETP | Écart : <span class="kpi-diff ${diffClass}">${diff.toFixed(1)} ETP</span>`;
+        coherence.className = coherent ? 'status kpi ok' : 'status kpi err';
+      }
+      if (target <= 0) {
+        status.textContent = "Aucune cible hors DEAc détectée.";
+        status.className = 'status err';
+      } else if (!hasRows) {
+        status.textContent = 'Ajoutez au moins une ligne métier.';
+        status.className = 'status err';
+      } else if (!coherent) {
+        status.textContent = "La somme des ETP métiers doit être égale à la cible.";
+        status.className = 'status err';
+      } else {
+        status.textContent = 'Répartition des métiers cohérente.';
+        status.className = 'status ok';
+      }
+      if (hasRows) metierStepSkipped = false;
+      if (next) next.disabled = false;
+      refreshSummary();
+    }
+
+    function refreshSummary() {
+      const doneIdent = !document.getElementById('ident-next').disabled;
+      const doneEtp = !document.getElementById('etp-next').disabled;
+      const targetMetiers = computeTargetEtpHorsDeac();
+      const metierEtpInputs = Array.from(document.querySelectorAll('.metier-etp'));
+      const metierRows = metierEtpInputs.length;
+      const metierSum = metierEtpInputs.reduce((s, i) => s + (Number(i.value || 0) || 0), 0);
+      const doneMetiers = targetMetiers > 0 && metierRows > 0 && Math.abs(metierSum - targetMetiers) < 0.0001;
+      const hasIdentPartial = (
+        String(document.getElementById('es_nom')?.value || '').trim() !== '' ||
+        String(document.getElementById('v_nom')?.value || '').trim() !== '' ||
+        String(document.getElementById('v_prenom')?.value || '').trim() !== '' ||
+        String(document.getElementById('v_email')?.value || '').trim() !== '' ||
+        String(document.getElementById('dept')?.value || '').trim() !== '' ||
+        collectFinessInputs().some((i) => String(i.value || '').trim() !== '')
+      );
+      const identLabel = doneIdent ? 'OK' : (hasIdentPartial ? 'en cours' : 'à faire');
+
+      const selectedDispos = dispoChecks.filter(c => c.checked).map(c => c.dataset.dispo.toUpperCase());
+      const etpInProgress = selectedDispos.length > 0 && !doneEtp;
+      const etpLabel = doneEtp ? 'OK' : (etpInProgress ? 'en cours' : 'à faire');
+      const metierLabel = doneMetiers ? 'OK' : (metierStepSkipped ? 'reportée' : (metierRows > 0 ? 'en cours' : 'à faire'));
+
+      const resume = document.getElementById('resume');
+      resume.innerHTML = `
+        <strong>État courant</strong><br>
+        Identification : ${identLabel}<br>
+        Dispositifs : ${selectedDispos.length ? selectedDispos.join(', ') : 'aucun'} (${etpLabel})<br>
+        Répartition métiers : ${metierLabel}
+      `;
+      resume.className = (doneIdent && doneEtp && doneMetiers) ? 'status ok' : 'status';
+
+      const list = document.getElementById('checklist');
+      list.innerHTML = `
+        <li>Identification : <strong>${identLabel}</strong></li>
+        <li>Dispositifs/ETP : <strong>${etpLabel}</strong></li>
+        <li>Répartition métiers : <strong>${metierLabel}</strong></li>
+      `;
+    }
+
+    function refreshFinal() {
+      const doneIdent = !document.getElementById('ident-next').disabled;
+      const doneEtp = !document.getElementById('etp-next').disabled;
+      const targetMetiers = computeTargetEtpHorsDeac();
+      const metierEtpInputs = Array.from(document.querySelectorAll('.metier-etp'));
+      const metierRows = metierEtpInputs.length;
+      const metierSum = metierEtpInputs.reduce((s, i) => s + (Number(i.value || 0) || 0), 0);
+      const doneMetiers = targetMetiers > 0 && metierRows > 0 && Math.abs(metierSum - targetMetiers) < 0.0001;
+      const final = document.getElementById('final-status');
+      if (deacOnlyFlow && doneIdent && doneEtp) {
+        final.className = 'status ok';
+        final.innerHTML = 'Vous avez terminé votre saisie. Voulez-vous envoyer votre formulaire ?<br><small>Cas spécifique : pour les DEAc seules les ETP sont demandées.</small>';
+        if (fakeSubmitBtn) fakeSubmitBtn.textContent = 'Envoyer le formulaire';
+        return;
+      }
+      if (fakeSubmitBtn) fakeSubmitBtn.textContent = 'Valider le questionnaire';
+      if (doneIdent && doneEtp && (doneMetiers || metierStepSkipped)) {
+        final.className = 'status ok';
+        final.textContent = doneMetiers
+          ? 'Tout est cohérent. Voulez-vous envoyer votre formulaire ?'
+          : "Saisie partielle : l'étape Répartition métiers a été reportée. Voulez-vous envoyer votre formulaire ?";
+      } else {
+        final.className = 'status err';
+        final.textContent = 'Certaines étapes ne sont pas complètes. Revenez corriger avant validation.';
+      }
+    }
+
+    function isOnlyDeacScenario() {
+      const checked = dispoChecks.filter(c => c.checked).map(c => c.dataset.dispo);
+      if (checked.length !== 1 || checked[0] !== 'deac') return false;
+      const deacEtp = document.querySelector('[data-etp="deac"]');
+      const n = Number(deacEtp?.value || 0);
+      return n > 0;
+    }
+
+    document.getElementById('fake-submit').addEventListener('click', () => {
+      refreshFinal();
+      alert('Maquette : validation UI réussie. Aucun enregistrement effectué.');
+    });
+
+    validateIdent();
+    validateEtp();
+    validateMetiers();
+    showStep(1);
+  </script>
+</body>
+</html>
