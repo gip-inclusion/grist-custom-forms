@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="card">
+  <form method="get" class="row">
+    <div>
+      <label>Année</label>
+      <input type="number" name="year" min="2020" max="2100" value="{{ stats.year }}">
+    </div>
+    <div style="flex:0 0 auto"><button type="submit">Actualiser</button></div>
+    <div style="flex:0 0 auto"><a href="{{ url_for('annual', year=stats.year) }}"><button type="button">Ouvrir saisie annuelle</button></a></div>
+  </form>
+</div>
+
+<div class="grid grid-2">
+  <div class="card"><strong>Entrées {{ stats.year }}</strong><div class="kpi">{{ stats.nb_entrees }}</div></div>
+  <div class="card"><strong>Sorties {{ stats.year }}</strong><div class="kpi">{{ stats.nb_sorties }}</div></div>
+  <div class="card"><strong>Actifs au 31/12</strong><div class="kpi">{{ stats.actifs_3112 }}</div></div>
+  <div class="card"><strong>Durée moyenne (jours)</strong><div class="kpi">{{ stats.duree_moyenne_jours }}</div><div class="muted">sur {{ stats.sorties_calculees }} sorties calculables</div></div>
+</div>
+
+<div class="card">
+  <strong>Exports annuels</strong>
+  <p class="muted">CSV ouvrables dans Excel + export complet de la saisie annuelle.</p>
+  <div class="row">
+    <a href="{{ url_for('export_summary', year=stats.year) }}"><button type="button">Résumé CSV</button></a>
+    <a href="{{ url_for('export_events', year=stats.year) }}"><button type="button">Évènements CSV</button></a>
+    <a href="{{ url_for('export_annual_full', year=stats.year) }}"><button type="button">Annuel complet CSV</button></a>
+  </div>
+</div>
+
+<div class="card">
+  <strong>Derniers évènements</strong>
+  <table>
+    <thead><tr><th>Date</th><th>Type</th><th>Dispositif</th><th>Personne</th></tr></thead>
+    <tbody>
+      {% for e in recent %}
+      <tr>
+        <td>{{ e.date_event }}</td>
+        <td>{{ e.type_event }}</td>
+        <td>{{ e.dispositif }}</td>
+        <td><a href="{{ url_for('person_detail', person_id=e.person_id) }}">{{ e.nom }} {{ e.prenom }}</a></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

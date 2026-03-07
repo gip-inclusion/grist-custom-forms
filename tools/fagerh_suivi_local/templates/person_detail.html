@@ -1,0 +1,298 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="card">
+  <h3>{{ person.nom }} {{ person.prenom }}</h3>
+  <p class="muted">Né(e) le: {{ person.date_naissance or '-' }} | ID local: {{ person.identifiant_local or '-' }}</p>
+  <form method="post" action="{{ url_for('person_update', person_id=person.id) }}" class="grid grid-3">
+    <div>
+      <label>Statut BOETH</label>
+      <select name="boeth_statut">
+        <option value="inconnu" {% if person.boeth_statut=='inconnu' %}selected{% endif %}>Je ne sais pas</option>
+        <option value="boeth" {% if person.boeth_statut=='boeth' %}selected{% endif %}>BOETH</option>
+        <option value="non_boeth" {% if person.boeth_statut=='non_boeth' %}selected{% endif %}>Non BOETH</option>
+      </select>
+    </div>
+    <div>
+      <label>Handicap principal</label>
+      <select name="handicap_principal">
+        <option value="">--</option>
+        {% for h in handicap_types %}<option value="{{ h }}" {% if person.handicap_principal == h %}selected{% endif %}>{{ h }}</option>{% endfor %}
+      </select>
+    </div>
+    <div>
+      <label>Handicap associé</label>
+      <select name="handicap_associe">
+        <option value="">--</option>
+        {% for h in handicap_types %}<option value="{{ h }}" {% if person.handicap_associe == h %}selected{% endif %}>{{ h }}</option>{% endfor %}
+      </select>
+    </div>
+    <div><button type="submit">Mettre à jour profil</button></div>
+  </form>
+</div>
+
+<div class="card">
+  <h3>Journal de saisie d'événements</h3>
+  <p class="muted">Parcours actif: <strong>{{ active_pathway.parcours_type if active_pathway else "Aucun parcours actif" }}</strong></p>
+  <div class="grid grid-2">
+    <div>
+      <label>Quel événement voulez-vous saisir ?</label>
+      <select id="event_type_selector">
+        <option value="entree">Entrée en prestation</option>
+        <option value="situation_entree">Situation à l'entrée</option>
+        <option value="parcours">Changement de parcours</option>
+        <option value="suspension">Suspension de parcours</option>
+        <option value="sortie">Sortie de prestation</option>
+        <option value="preconisation">Préconisation à la sortie</option>
+        <option value="fin_parcours">Fin de parcours</option>
+        <option value="suivi_12m">Suivi à 12 mois</option>
+      </select>
+    </div>
+  </div>
+
+  <div id="panel_entree" class="event-panel">
+    <h4>Entrée en prestation</h4>
+    <form method="post" action="{{ url_for('person_add_event', person_id=person.id) }}" class="grid">
+      <input type="hidden" name="type_event" value="entree">
+      <div class="grid grid-3">
+        <div><label>Date d'entrée</label><input type="date" name="date_event" required></div>
+        <div>
+          <label>Type de prestation</label>
+          <select name="type_prestation" required>
+            <option value="">--</option>
+            {% for t in prestation_types %}<option value="{{ t }}">{{ t }}</option>{% endfor %}
+          </select>
+        </div>
+        <div>
+          <label>Dispositif</label>
+          <select name="dispositif" required>
+            {% for d in dispositifs %}<option value="{{ d }}">{{ d }}</option>{% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="grid grid-3">
+        <div id="entree_parcours_wrap">
+          <label>Type de parcours</label>
+          <select name="parcours_type_entree" id="entree_parcours_type">
+            <option value="">--</option>
+            {% for p in parcours_types %}<option value="{{ p }}">{{ p }}</option>{% endfor %}
+          </select>
+        </div>
+        <div>
+          <label>Modalité</label>
+          <select name="modalite">
+            <option value="">--</option>
+            {% for m in modalites %}<option value="{{ m }}">{{ m }}</option>{% endfor %}
+          </select>
+        </div>
+        <div><label>Notes</label><input name="notes"></div>
+      </div>
+      <div><button type="submit">Enregistrer l'entrée</button></div>
+    </form>
+  </div>
+
+  <div id="panel_situation_entree" class="event-panel" style="display:none;">
+    <h4>Situation à l'entrée</h4>
+    <form method="post" action="{{ url_for('person_parcours_update', person_id=person.id) }}" class="grid grid-3">
+      <div>
+        <label>Situation à l'arrivée</label>
+        <select name="situation_arrivee">
+          <option value="">--</option>
+          {% for s in situation_arrivee_options %}
+            <option value="{{ s }}" {% if followup and followup.situation_arrivee == s %}selected{% endif %}>{{ s }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div><button type="submit">Enregistrer la situation d'entrée</button></div>
+    </form>
+  </div>
+
+  <div id="panel_parcours" class="event-panel" style="display:none;">
+    <h4>Changement de parcours</h4>
+    <form method="post" action="{{ url_for('person_pathway_start', person_id=person.id) }}" class="grid">
+      <div class="grid grid-3">
+        <div>
+          <label>Nouveau parcours</label>
+          <select name="parcours_type" required>
+            <option value="">--</option>
+            {% for p in parcours_types %}<option value="{{ p }}">{{ p }}</option>{% endfor %}
+          </select>
+        </div>
+        <div><label>Date de début du nouveau parcours</label><input type="date" name="date_debut" required></div>
+        <div>
+          <label>Date de fin du parcours précédent (si actif)</label>
+          <input type="date" name="date_fin_precedent">
+        </div>
+      </div>
+      <div><button type="submit">Enregistrer le changement de parcours</button></div>
+    </form>
+  </div>
+
+  <div id="panel_suspension" class="event-panel" style="display:none;">
+    <h4>Suspension de parcours</h4>
+    {% if active_pathway %}
+    <form method="post" action="{{ url_for('pathway_add_suspension', pathway_id=active_pathway.id) }}" class="grid">
+      <div class="grid grid-3">
+        <div><label>Parcours actif</label><input value="{{ active_pathway.parcours_type }}" readonly></div>
+        <div><label>Date début suspension</label><input type="date" name="susp_date_debut" required></div>
+        <div><label>Date fin suspension</label><input type="date" name="susp_date_fin"></div>
+      </div>
+      <div class="grid grid-2">
+        <div>
+          <label>Motif de suspension</label>
+          <select name="susp_motif">
+            <option value="">--</option>
+            {% for m in suspension_motifs %}<option value="{{ m }}">{{ m }}</option>{% endfor %}
+          </select>
+        </div>
+        <div><label>Notes</label><input name="susp_notes"></div>
+      </div>
+      <div><button type="submit">Ajouter suspension</button></div>
+    </form>
+    {% else %}
+      <p class="muted">Impossible de saisir une suspension tant qu'aucun parcours n'est actif.</p>
+    {% endif %}
+  </div>
+
+  <div id="panel_sortie" class="event-panel" style="display:none;">
+    <h4>Sortie de prestation</h4>
+    <form method="post" action="{{ url_for('person_add_event', person_id=person.id) }}" class="grid">
+      <input type="hidden" name="type_event" value="sortie">
+      <div class="grid grid-3">
+        <div><label>Date de sortie</label><input type="date" name="date_event" required></div>
+        <div>
+          <label>Type de prestation</label>
+          <select name="type_prestation" required>
+            <option value="">--</option>
+            {% for t in prestation_types %}<option value="{{ t }}">{{ t }}</option>{% endfor %}
+          </select>
+        </div>
+        <div>
+          <label>Dispositif</label>
+          <select name="dispositif" required>
+            {% for d in dispositifs %}<option value="{{ d }}">{{ d }}</option>{% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="grid grid-3">
+        <div>
+          <label>Motif de sortie</label>
+          <select name="motif_sortie">
+            <option value="">--</option>
+            {% for m in motifs_sortie %}<option value="{{ m }}">{{ m }}</option>{% endfor %}
+          </select>
+        </div>
+        <div><label>Notes</label><input name="notes"></div>
+      </div>
+      <div><button type="submit">Enregistrer la sortie</button></div>
+    </form>
+  </div>
+
+  <div id="panel_preconisation" class="event-panel" style="display:none;">
+    <h4>Préconisation à la sortie</h4>
+    <form method="post" action="{{ url_for('person_preconisation_update', person_id=person.id) }}" class="grid grid-3">
+      <div>
+        <label>Préconisation principale</label>
+        <select name="preconisation_sortie">
+          <option value="">--</option>
+          {% for p in preconisations %}
+            <option value="{{ p }}" {% if followup and followup.preconisation_sortie == p %}selected{% endif %}>{{ p }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div><button type="submit">Enregistrer la préconisation</button></div>
+    </form>
+  </div>
+
+  <div id="panel_fin_parcours" class="event-panel" style="display:none;">
+    <h4>Fin de parcours</h4>
+    {% if active_pathway %}
+    <form method="post" action="{{ url_for('pathway_close', pathway_id=active_pathway.id) }}" class="grid">
+      <div class="grid grid-3">
+        <div><label>Parcours actif</label><input value="{{ active_pathway.parcours_type }}" readonly></div>
+        <div><label>Date de fin</label><input type="date" name="date_fin" required></div>
+        <div>
+          <label>Type de fin</label>
+          <select name="fin_type">
+            <option value="">--</option>
+            {% for t in fin_parcours_types %}<option value="{{ t }}">{{ t }}</option>{% endfor %}
+          </select>
+        </div>
+      </div>
+      <div><label>Motif de fin</label><input name="fin_motif"></div>
+      <div><button type="submit">Clôturer le parcours</button></div>
+    </form>
+    {% else %}
+      <p class="muted">Impossible de clôturer: aucun parcours actif.</p>
+    {% endif %}
+  </div>
+
+  <div id="panel_suivi_12m" class="event-panel" style="display:none;">
+    <h4>Suivi à 12 mois</h4>
+    {% if pathways and pathways|length > 0 %}
+    <form method="post" action="{{ url_for('pathway_followup12', pathway_id=pathways[0].id) }}" class="grid">
+      <div class="grid grid-3">
+        <div><label>Parcours ciblé (dernier parcours)</label><input value="{{ pathways[0].parcours_type }}" readonly></div>
+        <div><label>Date de suivi</label><input type="date" name="date_suivi" value="{{ pathways[0].date_suivi or '' }}"></div>
+        <div>
+          <label>Situation à 12 mois</label>
+          <select name="statut_12m">
+            <option value="">--</option>
+            {% for d in devenir_12m_options %}<option value="{{ d }}" {% if pathways[0].statut_12m == d %}selected{% endif %}>{{ d }}</option>{% endfor %}
+          </select>
+        </div>
+      </div>
+      <div><label>Détail</label><input name="detail" value="{{ pathways[0].followup_detail or '' }}"></div>
+      <div><button type="submit">Enregistrer suivi 12 mois</button></div>
+    </form>
+    {% else %}
+      <p class="muted">Impossible de saisir un suivi 12 mois tant qu'aucun parcours n'a été créé.</p>
+    {% endif %}
+  </div>
+</div>
+
+<div class="card">
+  <h3>Consultation du parcours</h3>
+  <table>
+    <thead><tr><th>Date</th><th>Événement</th><th>Détails</th></tr></thead>
+    <tbody>
+      {% for t in timeline %}
+      <tr>
+        <td>{{ t.date }}</td>
+        <td>{{ t.type }}</td>
+        <td>{{ t.details }}</td>
+      </tr>
+      {% endfor %}
+      {% if not timeline %}
+      <tr><td colspan="3" class="muted">Aucun événement saisi pour le moment.</td></tr>
+      {% endif %}
+    </tbody>
+  </table>
+</div>
+
+<script>
+  (function() {
+    const selector = document.getElementById("event_type_selector");
+    const panels = document.querySelectorAll(".event-panel");
+    const entreeDispositif = document.querySelector('#panel_entree select[name="dispositif"]');
+    const entreeParcoursWrap = document.getElementById("entree_parcours_wrap");
+    const entreeParcoursSelect = document.getElementById("entree_parcours_type");
+    const showPanel = (name) => {
+      panels.forEach((p) => {
+        p.style.display = (p.id === "panel_" + name) ? "block" : "none";
+      });
+    };
+    const syncEntreeParcours = () => {
+      if (!entreeDispositif || !entreeParcoursWrap || !entreeParcoursSelect) return;
+      const isEsrp = entreeDispositif.value === "ESRP";
+      entreeParcoursWrap.style.display = isEsrp ? "block" : "none";
+      entreeParcoursSelect.disabled = !isEsrp;
+      entreeParcoursSelect.required = isEsrp;
+      if (!isEsrp) entreeParcoursSelect.value = "";
+    };
+    selector.addEventListener("change", (e) => showPanel(e.target.value));
+    if (entreeDispositif) entreeDispositif.addEventListener("change", syncEntreeParcours);
+    showPanel(selector.value);
+    syncEntreeParcours();
+  })();
+</script>
+{% endblock %}

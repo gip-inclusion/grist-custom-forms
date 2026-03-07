@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="card">
+  <form method="get" class="row">
+    <div><label>Recherche</label><input name="q" value="{{ q }}" placeholder="Nom, prénom, identifiant local"></div>
+    <div style="flex:0 0 auto"><button type="submit">Rechercher</button></div>
+  </form>
+</div>
+
+<div class="card">
+  <table>
+    <thead><tr><th>Nom</th><th>Prénom</th><th>Date naissance</th><th>BOETH</th><th>Handicap principal</th><th>Évènements</th></tr></thead>
+    <tbody>
+      {% for p in people %}
+      <tr>
+        <td><a href="{{ url_for('person_detail', person_id=p.id) }}">{{ p.nom }}</a></td>
+        <td>{{ p.prenom }}</td>
+        <td>{{ p.date_naissance or '' }}</td>
+        <td>{{ p.boeth_statut }}</td>
+        <td>{{ p.handicap_principal or '' }}</td>
+        <td>{{ p.nb_events }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="card">
+  <form method="get" class="row">
+    <div><label>Année</label><input type="number" name="year" value="{{ year }}" min="2020" max="2100"></div>
+    <div style="flex:0 0 auto"><button type="submit" formaction="{{ url_for('annual', year=year) }}">Rafraîchir</button></div>
+    <div style="flex:0 0 auto"><a href="{{ url_for('export_annual_full', year=year) }}"><button type="button">Export annuel complet CSV</button></a></div>
+  </form>
+</div>
+
+<div class="card">
+  <h3>Taux calculés automatiquement</h3>
+  <p class="muted">Taux d'accès à l'emploi = (Nombre ayant accédé à l'emploi / Nombre de sorties année N) × 100</p>
+  <p class="muted">Taux de présence en emploi = (Nombre encore en emploi à 12 mois / Nombre ayant accédé à l'emploi) × 100</p>
+  <div class="grid grid-2">
+    <div><strong>Taux d'accès à l'emploi:</strong> <span class="kpi">{{ rates.taux_acces }}%</span></div>
+    <div><strong>Taux de présence en emploi:</strong> <span class="kpi">{{ rates.taux_presence }}%</span></div>
+  </div>
+</div>
+
+<form method="post" class="grid">
+  <div class="card">
+    <h3>Contrôle cohérence sorties</h3>
+    <p class="{{ 'ok' if coherence_ok else 'ko' }}">
+      Sorties déclarées: {{ coh_nb_sorties }} | Somme des motifs: {{ coh_sum_motifs }}
+      {% if coherence_ok %} (OK){% else %} (à corriger){% endif %}
+    </p>
+  </div>
+
+  <div class="card">
+    <h3>Préconisations lors de la sortie définitive</h3>
+    <div class="grid grid-3">
+      {% for p in preconisations %}
+        {% set key = 'preconisation_' + (p|lower|replace("'", "")|replace(' ', '_')|replace('é', 'e')|replace('è', 'e')|replace('à', 'a')|replace('ç', 'c')|replace('-', '_')) %}
+        <div>
+          <label>{{ p }}</label>
+          <input name="{{ key }}" type="number" min="0" step="1" value="{{ values.get(key, '0') }}">
+        </div>
+      {% endfor %}
+    </div>
+    <div style="margin-top:10px;">
+      <label>Préconisation autres (préciser)</label>
+      <input name="preconisation_autres_precision" value="{{ values.get('preconisation_autres_precision', '') }}">
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Saisie annuelle complète</h3>
+    <div class="grid grid-3">
+      {% for key, label in annual_fields %}
+      <div>
+        <label>{{ label }}</label>
+        <input name="{{ key }}" type="number" min="0" step="0.01" value="{{ values.get(key, '0') }}">
+      </div>
+      {% endfor %}
+    </div>
+
+    <div class="grid grid-2" style="margin-top:10px;">
+      {% for key, label in text_fields %}
+      <div>
+        <label>{{ label }}</label>
+        <input name="{{ key }}" value="{{ values.get(key, '') }}">
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div><button type="submit">Enregistrer la saisie annuelle</button></div>
+</form>
+{% endblock %}

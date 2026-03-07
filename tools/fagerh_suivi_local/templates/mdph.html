@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="card">
+  <h3>Réunions MDPH (saisie au fil de l'eau)</h3>
+  <form method="post" class="grid">
+    <div class="grid grid-3">
+      <div><label>Date</label><input type="date" name="date_log" required></div>
+      <div>
+        <label>Type de prestation</label>
+        <select name="type_prestation" required>
+          <option value="">--</option>
+          {% for t in prestation_types %}<option value="{{ t }}">{{ t }}</option>{% endfor %}
+        </select>
+      </div>
+      <div>
+        <label>Dispositif</label>
+        <select name="dispositif" required>
+          {% for d in dispositifs %}<option value="{{ d }}">{{ d }}</option>{% endfor %}
+        </select>
+      </div>
+    </div>
+    <div class="grid grid-3">
+      <div>
+        <label>Instance MDPH</label>
+        <select name="instance" required>
+          {% for i in mdph_instances %}<option value="{{ i }}">{{ i }}</option>{% endfor %}
+        </select>
+      </div>
+      <div>
+        <label>Zone</label>
+        <select name="zone" required>
+          {% for z in mdph_zones %}<option value="{{ z }}">{{ z }}</option>{% endfor %}
+        </select>
+      </div>
+      <div><label>Nombre de participations</label><input type="number" min="0" name="nb_participations" value="1"></div>
+    </div>
+    <div><label>Notes</label><input name="notes"></div>
+    <div><button type="submit">Ajouter participation MDPH</button></div>
+  </form>
+</div>
+
+<div class="card">
+  <h3>Historique des réunions MDPH</h3>
+  <table>
+    <thead><tr><th>Date</th><th>Type prestation</th><th>Dispositif</th><th>Instance</th><th>Zone</th><th>Nb</th><th>Notes</th><th></th></tr></thead>
+    <tbody>
+      {% for l in logs %}
+      <tr>
+        <td>{{ l.date_log }}</td>
+        <td>{{ l.type_prestation or '' }}</td>
+        <td>{{ l.dispositif }}</td>
+        <td>{{ l.instance }}</td>
+        <td>{{ l.zone }}</td>
+        <td>{{ l.nb_participations }}</td>
+        <td>{{ l.notes or '' }}</td>
+        <td>
+          <form method="post" action="{{ url_for('mdph_delete', log_id=l.id) }}" onsubmit="return confirm('Supprimer cette ligne ?')">
+            <button type="submit" class="btn-danger">Suppr.</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
