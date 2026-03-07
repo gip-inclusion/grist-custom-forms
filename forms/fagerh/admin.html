@@ -57,7 +57,7 @@
 
     .toolbar {
       display: grid;
-      grid-template-columns: 220px minmax(0, 1fr) auto auto;
+      grid-template-columns: 220px minmax(0, 1fr) auto auto auto;
       gap: 10px;
       align-items: center;
     }
@@ -90,7 +90,7 @@
     table {
       width: 100%;
       border-collapse: collapse;
-      min-width: 980px;
+      min-width: 1260px;
     }
     th, td {
       border-bottom: 1px solid #e5edf5;
@@ -126,10 +126,79 @@
       border-color: #8ecb9f;
     }
     .mono { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 0.84rem; }
+    .detail-toggle {
+      height: 30px;
+      min-width: 92px;
+      padding: 0 12px;
+      font-size: 0.8rem;
+      border-radius: 999px;
+      border: 1px solid #d6deea;
+      background: #f5f8fc;
+      font-weight: 700;
+      color: #3f5268;
+      white-space: nowrap;
+      line-height: 1;
+    }
+    .detail-toggle:hover { background: #ebf1f8; }
+    th.col-detail, td.col-detail {
+      width: 120px;
+      text-align: center;
+    }
+    .detail-row td {
+      background: #f8fbff !important;
+      border-bottom: 1px solid #dfe8f2;
+      padding: 12px 10px;
+    }
+    .detail-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .detail-box {
+      border: 1px solid #d9e4ef;
+      border-radius: 10px;
+      padding: 10px;
+      background: #ffffff;
+    }
+    .detail-box h4 {
+      margin: 0 0 8px 0;
+      font-size: 0.86rem;
+      color: #38526b;
+    }
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .chip {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      border: 1px solid transparent;
+      white-space: nowrap;
+    }
+    .chip.done {
+      color: #1f6d34;
+      background: #effaf2;
+      border-color: #8ecb9f;
+    }
+    .chip.remaining {
+      color: #8a5100;
+      background: #fff2de;
+      border-color: #efc089;
+    }
+    .chip.empty {
+      color: #4a5e74;
+      background: #f1f5f9;
+      border-color: #d2dbe5;
+    }
     @media (max-width: 980px) {
       body { padding: 12px; }
       .kpis { grid-template-columns: 1fr; }
       .toolbar { grid-template-columns: 1fr; }
+      .detail-grid { grid-template-columns: 1fr; }
       table { min-width: 760px; }
     }
   </style>
@@ -168,6 +237,7 @@
         <input type="text" id="search-input" placeholder="Rechercher (ES, FINESS, email, département, UUID)">
         <button id="refresh-btn" type="button">Actualiser</button>
         <button id="clear-btn" type="button" class="muted-btn">Réinitialiser</button>
+        <button id="toggle-all-details-btn" type="button" class="muted-btn">Voir tout</button>
       </div>
       <div class="status" id="status">Chargement...</div>
     </div>
@@ -177,12 +247,16 @@
         <table>
           <thead>
             <tr>
+              <th>ID</th>
               <th>Statut</th>
               <th>ES</th>
               <th>Département</th>
               <th>FINESS</th>
               <th>Référent validation</th>
               <th>Email</th>
+              <th>Étapes principales</th>
+              <th>Étapes conditionnelles</th>
+              <th class="col-detail">Détail des étapes</th>
               <th>UUID</th>
               <th>ID Grist</th>
             </tr>
@@ -194,6 +268,9 @@
   </div>
 
   <script>
+    const expandedRows = new Set();
+    let lastLoadedRowKeys = [];
+
     function currentFormId() {
       const parts = window.location.pathname.split('/').filter(Boolean);
       return parts[1] || 'fagerh';
@@ -232,31 +309,91 @@
 
         const tbody = document.getElementById('rows');
         if (!Array.isArray(data.rows) || data.rows.length === 0) {
-          tbody.innerHTML = `<tr><td colspan="8">Aucun questionnaire trouvé.</td></tr>`;
+          lastLoadedRowKeys = [];
+          tbody.innerHTML = `<tr><td colspan="12">Aucun questionnaire trouvé.</td></tr>`;
         } else {
+          lastLoadedRowKeys = data.rows
+            .map((r) => String(r.uuid || r.record_id || ''))
+            .filter((k) => k !== '');
           tbody.innerHTML = data.rows.map((r) => {
+            const shortId = String(r.uuid || '').trim();
+            const displayId = shortId ? shortId.slice(0, 8) : String(r.record_id || '');
+            const rowKey = String(r.uuid || r.record_id || '');
+            const isExpanded = expandedRows.has(rowKey);
             const statut = r.saisie_terminee
               ? '<span class="pill done">Terminé</span>'
               : '<span class="pill pending">En cours</span>';
             const referent = `${esc(r.validateur_prenom || '')} ${esc(r.validateur_nom || '')}`.trim();
+            const qp = r.quick_progress || {
+              main: { done: 0, total: 0, done_labels: [], remaining_labels: [] },
+              conditional: { done: 0, total: 0, done_labels: [], remaining_labels: [] },
+            };
+            const mainTxt = `${qp.main.done}/${qp.main.total}`;
+            const condTxt = `${qp.conditional.done}/${qp.conditional.total}`;
+            const doneMain = (qp.main.done_labels || []).map((x) => `Principal: ${x}`);
+            const doneCond = (qp.conditional.done_labels || []).map((x) => `Conditionnel: ${x}`);
+            const doneAll = [...doneMain, ...doneCond];
+            const remaining = [
+              ...(qp.main.remaining_labels || []),
+              ...(qp.conditional.remaining_labels || []),
+            ];
+            const doneHtml = doneAll.length
+              ? `<div class="chips">${doneAll.map((label) => `<span class="chip done">${esc(label)}</span>`).join('')}</div>`
+              : `<div class="chips"><span class="chip empty">Aucune étape complétée</span></div>`;
+            const remainingHtml = remaining.length
+              ? `<div class="chips">${remaining.map((label) => `<span class="chip remaining">${esc(label)}</span>`).join('')}</div>`
+              : `<div class="chips"><span class="chip empty">Aucune étape restante</span></div>`;
+            const toggleLabel = isExpanded ? 'Masquer' : 'Voir';
+            const detailRow = isExpanded ? `
+              <tr class="detail-row">
+                <td colspan="12">
+                  <div class="detail-grid">
+                    <div class="detail-box">
+                      <h4>Étapes complétées</h4>
+                      ${doneHtml}
+                    </div>
+                    <div class="detail-box">
+                      <h4>Reste à faire</h4>
+                      ${remainingHtml}
+                    </div>
+                  </div>
+                </td>
+              </tr>
+            ` : '';
             return `
               <tr>
+                <td class="mono">${esc(displayId)}</td>
                 <td>${statut}</td>
                 <td>${esc(r.es_nom)}</td>
                 <td>${esc(r.departement)}</td>
                 <td class="mono">${esc(r.finess_main)}</td>
                 <td>${referent || '-'}</td>
                 <td>${esc(r.validateur_email)}</td>
+                <td><strong>${esc(mainTxt)}</strong></td>
+                <td><strong>${esc(condTxt)}</strong></td>
+                <td class="col-detail">
+                  <button type="button" class="detail-toggle" data-toggle-progress-row="${esc(rowKey)}">${toggleLabel}</button>
+                </td>
                 <td class="mono">${esc(r.uuid)}</td>
                 <td>${esc(r.record_id)}</td>
               </tr>
+              ${detailRow}
             `;
           }).join('');
         }
 
+        const allVisibleExpanded = (
+          lastLoadedRowKeys.length > 0
+          && lastLoadedRowKeys.every((k) => expandedRows.has(k))
+        );
+        const toggleAllBtn = document.getElementById('toggle-all-details-btn');
+        if (toggleAllBtn) {
+          toggleAllBtn.textContent = allVisibleExpanded ? 'Masquer tout' : 'Voir tout';
+        }
+
         statusEl.textContent = `${data.rows.length} résultat(s) affiché(s).`;
       } catch (e) {
-        document.getElementById('rows').innerHTML = `<tr><td colspan="8">${esc(e.message)}</td></tr>`;
+        document.getElementById('rows').innerHTML = `<tr><td colspan="12">${esc(e.message)}</td></tr>`;
         statusEl.textContent = 'Erreur';
       }
     }
@@ -267,9 +404,31 @@
       document.getElementById('search-input').value = '';
       loadOverview();
     });
+    document.getElementById('toggle-all-details-btn').addEventListener('click', () => {
+      if (lastLoadedRowKeys.length === 0) return;
+      const allVisibleExpanded = lastLoadedRowKeys.every((k) => expandedRows.has(k));
+      if (allVisibleExpanded) {
+        lastLoadedRowKeys.forEach((k) => expandedRows.delete(k));
+      } else {
+        lastLoadedRowKeys.forEach((k) => expandedRows.add(k));
+      }
+      loadOverview();
+    });
     document.getElementById('filter-status').addEventListener('change', loadOverview);
     document.getElementById('search-input').addEventListener('keydown', (e) => {
       if (e.key === 'Enter') loadOverview();
+    });
+    document.getElementById('rows').addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-toggle-progress-row]');
+      if (!btn) return;
+      const key = String(btn.dataset.toggleProgressRow || '');
+      if (!key) return;
+      if (expandedRows.has(key)) {
+        expandedRows.delete(key);
+      } else {
+        expandedRows.add(key);
+      }
+      loadOverview();
     });
 
     loadOverview();
