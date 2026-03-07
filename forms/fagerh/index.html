@@ -76,6 +76,22 @@
     .quick-actions-row .spacer {
       flex: 1 1 auto;
     }
+    .quick-actions-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+      border: 1px solid #9fb4cb;
+      background: #f7fbff;
+      color: #294866;
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-weight: 700;
+      line-height: 1;
+    }
+    .quick-actions-link:hover {
+      background: #eef6ff;
+    }
     .top-status {
       margin-top: 8px;
       font-size: .92rem;
@@ -1700,6 +1716,12 @@
         <button type="button" id="quick-copy-btn">Copier lien de reprise</button>
         <button type="button" id="quick-export-csv-btn">Exporter en CSV</button>
         <button type="button" id="quick-export-pdf-btn">Exporter en PDF</button>
+        <a
+          href="/forms/fagerh/saisie-quotidienne/"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="quick-actions-link"
+        >Tester l'outil de saisie quotidienne</a>
         <span class="spacer"></span>
         <button type="button" id="quick-finish-btn">J'ai terminé ma saisie</button>
       </div>

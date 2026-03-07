@@ -30,6 +30,36 @@ app = Flask(__name__)
 GRIST_BASE_URL = os.environ.get('GRIST_BASE_URL', 'https://grist.numerique.gouv.fr')
 
 
+def _resolve_form_path(form_id: str, raw_path: str) -> str | None:
+    """
+    Resolve friendly form URLs.
+    Supports:
+    - explicit file path (existing)
+    - "<name>" -> "<name>.html"
+    - "<name>/" -> "<name>/index.html" then "<name>.html"
+    """
+    safe_form_dir = FORMS_DIR / form_id
+    candidate = (raw_path or '').strip().lstrip('/')
+    if not candidate:
+        return None
+
+    candidates: list[str] = []
+    candidates.append(candidate)
+    if candidate.endswith('/'):
+        base = candidate.rstrip('/')
+        candidates.append(f"{base}/index.html")
+        candidates.append(f"{base}.html")
+    else:
+        if '.' not in Path(candidate).name:
+            candidates.append(f"{candidate}.html")
+            candidates.append(f"{candidate}/index.html")
+
+    for c in candidates:
+        if (safe_form_dir / c).is_file():
+            return c
+    return None
+
+
 def _require_admin_auth():
     """HTTP Basic auth guard for admin endpoints."""
     username = os.environ.get('ADMIN_USERNAME')
@@ -613,7 +643,10 @@ def serve_form(form_id: str):
 @app.route('/forms/<form_id>/<path:filename>')
 def serve_form_file(form_id: str, filename: str):
     """Serve extra files from a form folder (e.g. UI prototypes)."""
-    return send_from_directory(FORMS_DIR / form_id, filename)
+    resolved = _resolve_form_path(form_id, filename)
+    if not resolved:
+        return jsonify({'error': 'File not found'}), 404
+    return send_from_directory(FORMS_DIR / form_id, resolved)
 
 
 @app.route('/admin/<form_id>/')

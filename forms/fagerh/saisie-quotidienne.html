@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FAGERH - Saisie quotidienne</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Inter, "Segoe UI", system-ui, -apple-system, sans-serif;
+      background: #f6f8fb;
+      color: #1f344b;
+    }
+    .wrap {
+      max-width: 860px;
+      margin: 36px auto;
+      padding: 0 20px;
+    }
+    .card {
+      background: #fff;
+      border: 1px solid #d9e1eb;
+      border-radius: 12px;
+      padding: 22px;
+    }
+    h1 { margin: 0 0 10px 0; font-size: 1.6rem; }
+    p { margin: 0 0 14px 0; line-height: 1.5; color: #4c6075; }
+    .cta {
+      display: inline-block;
+      text-decoration: none;
+      border: 1px solid #1f6fb2;
+      background: #1f6fb2;
+      color: #fff;
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-weight: 700;
+    }
+    code {
+      background: #f2f6fb;
+      border: 1px solid #d7e2ee;
+      border-radius: 6px;
+      padding: 2px 6px;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>Outil FAGERH de saisie quotidienne</h1>
+      <p>
+        Cette URL est prête pour le module de saisie fil de l'eau (personnes, parcours, suspensions, sorties, suivi 12 mois, réunions collectives et MDPH).
+      </p>
+      <p>
+        En attendant l'ouverture de l'hébergement dédié, vous pouvez tester en local avec:
+        <code>uv run flask --app tools/fagerh_suivi_local/app.py run -p 5010</code>
+      </p>
+      <a class="cta" href="http://127.0.0.1:5010" target="_blank" rel="noopener noreferrer">Ouvrir le test local</a>
+    </div>
+  </div>
+</body>
+</html>
