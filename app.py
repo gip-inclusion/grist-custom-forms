@@ -18,6 +18,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 import requests
 from flask import Flask, request, jsonify, redirect, send_from_directory, Response
+from werkzeug.middleware.dispatcher import DispatcherMiddleware
 
 load_dotenv()
 
@@ -28,6 +29,12 @@ ASSETS_DIR = BASE_DIR / 'assets'
 app = Flask(__name__)
 
 GRIST_BASE_URL = os.environ.get('GRIST_BASE_URL', 'https://grist.numerique.gouv.fr')
+
+# Public mount for the daily capture tool.
+try:
+    from tools.fagerh_suivi_local.app import app as fagerh_suivi_app
+except Exception:
+    fagerh_suivi_app = None
 
 
 def _resolve_form_path(form_id: str, raw_path: str) -> str | None:
@@ -661,6 +668,14 @@ def serve_admin(form_id: str):
 def serve_assets(filename: str):
     """Serve static assets (JS, CSS)."""
     return send_from_directory(ASSETS_DIR, filename)
+
+if fagerh_suivi_app is not None:
+    app.wsgi_app = DispatcherMiddleware(
+        app.wsgi_app,
+        {
+            '/forms/fagerh/saisie-quotidienne': fagerh_suivi_app,
+        },
+    )
 
 
 if __name__ == '__main__':
