@@ -3677,12 +3677,12 @@
       rows.push({ key: 'handicap_matrix', label: 'Type de handicap principal et associé', done: handicapBlock.done });
       const precoBlock = evaluatePreconisationsBlock(state, currentConditionalId);
       if (precoBlock.visible) {
-        rows.push({ key: 'preconisations_sortie', label: 'Préconisations à la sortie', done: precoBlock.done });
+        rows.push({ key: 'preconisations_sortie', label: 'Préconisations lors de la sortie définitive', done: precoBlock.done });
       }
       const sortiesBlock = evaluateSortiesBlock(state);
       const suspensionsBlock = evaluateSuspensionsBlock(state);
-      rows.push({ key: 'sorties_suspensions', label: 'Sortie avant le terme de la prestation', done: sortiesBlock.done });
       rows.push({ key: 'suspensions', label: 'Suspensions', done: suspensionsBlock.done });
+      rows.push({ key: 'sorties_suspensions', label: 'Sortie avant le terme de la prestation', done: sortiesBlock.done });
       return rows;
     }
 
@@ -4388,42 +4388,6 @@
             </table>
           </div>
         </div>
-        ${false && showPrecoBloc ? `
-        <div class="box cond-block cond-block-anchor" data-block-key="preconisations_sortie" id="cond-block-preconisations_sortie">
-          <strong>Préconisations à la sortie</strong>
-          <div class="dispo-list" style="margin-top:6px;">
-            <div class="cond-subgroup-title">Préconisations d'orientation emploi</div>
-            <div class="ds-simple-participants-block">
-              <div class="field field-radio-inline q35-sub-inline q35-places-inline"><div><label>Emploi en milieu ordinaire</label></div><div><input class="cond-preco-input" data-preco-key="emploi_milieu_ordinaire" type="number" min="0" step="1" value="${precoValue('emploi_milieu_ordinaire')}"></div></div>
-              <div class="field field-radio-inline q35-sub-inline q35-places-inline"><div><label>Entreprise adaptée</label></div><div><input class="cond-preco-input" data-preco-key="entreprise_adaptee" type="number" min="0" step="1" value="${precoValue('entreprise_adaptee')}"></div></div>
-              <div class="field field-radio-inline q35-sub-inline q35-places-inline"><div><label>ESAT</label></div><div><input class="cond-preco-input" data-preco-key="esat" type="number" min="0" step="1" value="${precoValue('esat')}"></div></div>
-              <div class="field field-radio-inline q35-sub-inline q35-places-inline"><div><label>Création d'entreprise</label></div><div><input class="cond-preco-input" data-preco-key="creation_entreprise" type="number" min="0" step="1" value="${precoValue('creation_entreprise')}"></div></div>
-              <div class="field field-radio-inline q35-sub-inline q35-places-inline"><div><label>Maintien dans l'emploi</label></div><div><input class="cond-preco-input" data-preco-key="maintien_emploi" type="number" min="0" step="1" value="${precoValue('maintien_emploi')}"></div></div>
-              <div class="field field-radio-inline q35-sub-inline q35-places-inline"><div><label>Emploi accompagné</label></div><div><input class="cond-preco-input" data-preco-key="emploi_accompagne" type="number" min="0" step="1" value="${precoValue('emploi_accompagne')}"></div></div>
-            </div>
-
-            <div class="cond-subgroup-title">Parcours formatif</div>
-            <div class="ds-simple-participants-block">
-              <div class="field field-radio-inline q35-sub-inline q35-places-inline"><div><label>Formation droit commun</label></div><div><input class="cond-preco-input" data-preco-key="formation_droit_commun" type="number" min="0" step="1" value="${precoValue('formation_droit_commun')}"></div></div>
-              <div class="field field-radio-inline q35-sub-inline q35-places-inline"><div><label>Formation en alternance</label></div><div><input class="cond-preco-input" data-preco-key="formation_alternance" type="number" min="0" step="1" value="${precoValue('formation_alternance')}"></div></div>
-              ${isEsrpConditionalStep(currentConditionalId) ? '' : `<div class="field field-radio-inline q35-sub-inline q35-places-inline"><div><label>Formation en ESRP dont DFA</label></div><div><input class="cond-preco-input" data-preco-key="formation_esrp_dfa" type="number" min="0" step="1" value="${precoValue('formation_esrp_dfa')}"></div></div>`}
-              <div class="field field-radio-inline q35-sub-inline q35-places-inline"><div><label>${precoAltLabel}</label></div><div><input class="cond-preco-input" data-preco-key="espo_specialisee_ueros" type="number" min="0" step="1" value="${precoValue('espo_specialisee_ueros')}"></div></div>
-            </div>
-
-            <div class="cond-subgroup-title">Santé / social</div>
-            <div class="ds-simple-participants-block">
-              <div class="field field-radio-inline q35-sub-inline q35-places-inline"><div><label>Service d'accompagnement social</label></div><div><input class="cond-preco-input" data-preco-key="service_accompagnement_social" type="number" min="0" step="1" value="${precoValue('service_accompagnement_social')}"></div></div>
-              <div class="field field-radio-inline q35-sub-inline q35-places-inline"><div><label>Vie sociale : bénévolat, association</label></div><div><input class="cond-preco-input" data-preco-key="vie_sociale" type="number" min="0" step="1" value="${precoValue('vie_sociale')}"></div></div>
-              <div class="field field-radio-inline q35-sub-inline q35-places-inline"><div><label>Préconisations relatives aux soins</label></div><div><input class="cond-preco-input" data-preco-key="soins" type="number" min="0" step="1" value="${precoValue('soins')}"></div></div>
-            </div>
-
-            <div class="cond-subgroup-title">Autres</div>
-            <div class="ds-simple-participants-block">
-              <div class="field field-radio-inline q35-sub-inline q35-places-inline"><div><label>Précisez</label></div><div><input class="cond-preco-input" data-preco-key="autres_precision" type="text" value="${String(precoBloc.autres_precision || '').replace(/\"/g, '&quot;')}"></div></div>
-              <div class="field field-radio-inline q35-sub-inline q35-places-inline"><div><label>Effectif</label></div><div><input class="cond-preco-input" data-preco-key="autres" type="number" min="0" step="1" value="${precoValue('autres')}"></div></div>
-            </div>
-          </div>
-        </div>` : ''}
         <div class="box cond-block cond-block-anchor" data-block-key="suspensions" id="cond-block-suspensions">
           <strong>Suspensions</strong>
           <div class="field field-radio-inline q35-sub-inline q35-places-inline" style="margin-top:8px;">
