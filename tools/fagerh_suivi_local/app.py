@@ -40,6 +40,55 @@ HANDICAP_TYPES = [
     "Autres types de déficiences",
     "Je ne sais pas",
 ]
+GENRE_OPTIONS = [
+    "Femme",
+    "Homme",
+    "Autre",
+    "Je ne sais pas",
+]
+TRANCHE_AGE_OPTIONS = [
+    "Moins de 20 ans",
+    "20 à 24 ans",
+    "25 à 29 ans",
+    "30 à 39 ans",
+    "40 à 49 ans",
+    "50 ans et plus",
+    "Je ne sais pas",
+]
+NIVEAU_FORMATION_OPTIONS = [
+    "Infra niveau 3 (sans qualification)",
+    "Niveau 3 (CAP/BEP)",
+    "Niveau 4 (Bac)",
+    "Niveau 5 (Bac+2)",
+    "Niveau 6 (Licence/Bachelor)",
+    "Niveau 7 ou plus (Master/Doctorat)",
+    "Je ne sais pas",
+]
+RESSOURCES_ENTREE_OPTIONS = [
+    "Salaire",
+    "ARE / allocation chômage",
+    "RSA",
+    "AAH",
+    "Indemnités journalières",
+    "Aucune ressource",
+    "Autres ressources",
+    "Je ne sais pas",
+]
+ZONE_GEOGRAPHIQUE_OPTIONS = [
+    "Département d'implantation",
+    "Département limitrophe",
+    "Autre département",
+    "Hors région",
+    "Je ne sais pas",
+]
+ORIGINE_HANDICAP_OPTIONS = [
+    "De naissance",
+    "Accident de la vie",
+    "Accident du travail / maladie professionnelle",
+    "Maladie évolutive",
+    "Autre",
+    "Je ne sais pas",
+]
 BLOCS_COLLECTIFS = [
     ("info_personnes_collectives", "Informations aux personnes (collectives)"),
     ("info_partenaires_collectives", "Informations à destination des partenaires (collectives)"),
@@ -190,6 +239,16 @@ def init_db() -> None:
             date_naissance TEXT,
             identifiant_local TEXT,
             boeth_statut TEXT DEFAULT 'inconnu',
+            genre TEXT,
+            tranche_age_entree TEXT,
+            niveau_formation_entree TEXT,
+            ressources_entree TEXT,
+            code_postal TEXT,
+            ville TEXT,
+            departement TEXT,
+            zone_geographique TEXT,
+            nb_pathologies INTEGER DEFAULT 0,
+            origine_handicap TEXT,
             handicap_principal TEXT,
             handicap_associe TEXT,
             created_at TEXT NOT NULL DEFAULT (datetime('now'))
@@ -299,6 +358,28 @@ def init_db() -> None:
 
 def ensure_schema_updates() -> None:
     db = get_db()
+    cols_people = {r["name"] for r in db.execute("PRAGMA table_info(people)").fetchall()}
+    if "genre" not in cols_people:
+        db.execute("ALTER TABLE people ADD COLUMN genre TEXT")
+    if "tranche_age_entree" not in cols_people:
+        db.execute("ALTER TABLE people ADD COLUMN tranche_age_entree TEXT")
+    if "niveau_formation_entree" not in cols_people:
+        db.execute("ALTER TABLE people ADD COLUMN niveau_formation_entree TEXT")
+    if "ressources_entree" not in cols_people:
+        db.execute("ALTER TABLE people ADD COLUMN ressources_entree TEXT")
+    if "code_postal" not in cols_people:
+        db.execute("ALTER TABLE people ADD COLUMN code_postal TEXT")
+    if "ville" not in cols_people:
+        db.execute("ALTER TABLE people ADD COLUMN ville TEXT")
+    if "departement" not in cols_people:
+        db.execute("ALTER TABLE people ADD COLUMN departement TEXT")
+    if "zone_geographique" not in cols_people:
+        db.execute("ALTER TABLE people ADD COLUMN zone_geographique TEXT")
+    if "nb_pathologies" not in cols_people:
+        db.execute("ALTER TABLE people ADD COLUMN nb_pathologies INTEGER DEFAULT 0")
+    if "origine_handicap" not in cols_people:
+        db.execute("ALTER TABLE people ADD COLUMN origine_handicap TEXT")
+
     cols_events = {r["name"] for r in db.execute("PRAGMA table_info(events)").fetchall()}
     if "type_prestation" not in cols_events:
         db.execute("ALTER TABLE events ADD COLUMN type_prestation TEXT")
@@ -315,6 +396,19 @@ def parse_iso(d: str) -> date | None:
         return datetime.strptime(d, "%Y-%m-%d").date()
     except Exception:
         return None
+
+
+def compute_age(date_naissance: str | None, ref: date | None = None) -> int | None:
+    if not date_naissance:
+        return None
+    dob = parse_iso(date_naissance)
+    if not dob:
+        return None
+    today = ref or date.today()
+    years = today.year - dob.year
+    if (today.month, today.day) < (dob.month, dob.day):
+        years -= 1
+    return years
 
 
 def normalize_txt(v: str) -> str:
@@ -650,19 +744,60 @@ def people_new() -> str | Response:
         date_naissance = normalize_txt(request.form.get("date_naissance", ""))
         identifiant_local = normalize_txt(request.form.get("identifiant_local", ""))
         boeth_statut = normalize_txt(request.form.get("boeth_statut", "inconnu"))
+        genre = normalize_txt(request.form.get("genre", ""))
+        tranche_age_entree = normalize_txt(request.form.get("tranche_age_entree", ""))
+        niveau_formation_entree = normalize_txt(request.form.get("niveau_formation_entree", ""))
+        ressources_entree = normalize_txt(request.form.get("ressources_entree", ""))
+        code_postal = normalize_txt(request.form.get("code_postal", ""))
+        ville = normalize_txt(request.form.get("ville", ""))
+        departement = normalize_txt(request.form.get("departement", ""))
+        nb_pathologies = int(nval(request.form.get("nb_pathologies", "0")))
+        origine_handicap = normalize_txt(request.form.get("origine_handicap", ""))
         handicap_principal = normalize_txt(request.form.get("handicap_principal", ""))
         handicap_associe = normalize_txt(request.form.get("handicap_associe", ""))
 
         if not nom or not prenom:
             flash("Nom et prénom sont requis.", "error")
-            return render_template("people_new.html", dispositifs=DISPOSITIFS, handicap_types=HANDICAP_TYPES, current_year=date.today().year)
+            return render_template(
+                "people_new.html",
+                dispositifs=DISPOSITIFS,
+                handicap_types=HANDICAP_TYPES,
+                genre_options=GENRE_OPTIONS,
+                tranche_age_options=TRANCHE_AGE_OPTIONS,
+                niveau_formation_options=NIVEAU_FORMATION_OPTIONS,
+                ressources_entree_options=RESSOURCES_ENTREE_OPTIONS,
+                origine_handicap_options=ORIGINE_HANDICAP_OPTIONS,
+                current_year=date.today().year,
+            )
 
         if date_naissance and not parse_iso(date_naissance):
             flash("Date de naissance invalide (format AAAA-MM-JJ).", "error")
-            return render_template("people_new.html", dispositifs=DISPOSITIFS, handicap_types=HANDICAP_TYPES, current_year=date.today().year)
+            return render_template(
+                "people_new.html",
+                dispositifs=DISPOSITIFS,
+                handicap_types=HANDICAP_TYPES,
+                genre_options=GENRE_OPTIONS,
+                tranche_age_options=TRANCHE_AGE_OPTIONS,
+                niveau_formation_options=NIVEAU_FORMATION_OPTIONS,
+                ressources_entree_options=RESSOURCES_ENTREE_OPTIONS,
+                origine_handicap_options=ORIGINE_HANDICAP_OPTIONS,
+                current_year=date.today().year,
+            )
 
         if boeth_statut not in {"boeth", "non_boeth", "inconnu"}:
             boeth_statut = "inconnu"
+        if genre and genre not in GENRE_OPTIONS:
+            genre = ""
+        if tranche_age_entree and tranche_age_entree not in TRANCHE_AGE_OPTIONS:
+            tranche_age_entree = ""
+        if niveau_formation_entree and niveau_formation_entree not in NIVEAU_FORMATION_OPTIONS:
+            niveau_formation_entree = ""
+        if ressources_entree and ressources_entree not in RESSOURCES_ENTREE_OPTIONS:
+            ressources_entree = ""
+        if nb_pathologies < 0:
+            nb_pathologies = 0
+        if origine_handicap and origine_handicap not in ORIGINE_HANDICAP_OPTIONS:
+            origine_handicap = ""
         if handicap_principal and handicap_principal not in HANDICAP_TYPES:
             handicap_principal = ""
         if handicap_associe and handicap_associe not in HANDICAP_TYPES:
@@ -671,16 +806,48 @@ def people_new() -> str | Response:
         db = get_db()
         cur = db.execute(
             """
-            INSERT INTO people(nom, prenom, date_naissance, identifiant_local, boeth_statut, handicap_principal, handicap_associe)
-            VALUES(?,?,?,?,?,?,?)
+            INSERT INTO people(
+              nom, prenom, date_naissance, identifiant_local, boeth_statut,
+              genre, tranche_age_entree, niveau_formation_entree, ressources_entree,
+              code_postal, ville, departement, nb_pathologies, origine_handicap,
+              handicap_principal, handicap_associe
+            )
+            VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
             """,
-            (nom, prenom, date_naissance or None, identifiant_local or None, boeth_statut, handicap_principal or None, handicap_associe or None),
+            (
+                nom,
+                prenom,
+                date_naissance or None,
+                identifiant_local or None,
+                boeth_statut,
+                genre or None,
+                tranche_age_entree or None,
+                niveau_formation_entree or None,
+                ressources_entree or None,
+                code_postal or None,
+                ville or None,
+                departement or None,
+                nb_pathologies,
+                origine_handicap or None,
+                handicap_principal or None,
+                handicap_associe or None,
+            ),
         )
         db.commit()
         flash("Personne créée.", "success")
         return redirect(url_for("person_detail", person_id=cur.lastrowid))
 
-    return render_template("people_new.html", dispositifs=DISPOSITIFS, handicap_types=HANDICAP_TYPES, current_year=date.today().year)
+    return render_template(
+        "people_new.html",
+        dispositifs=DISPOSITIFS,
+        handicap_types=HANDICAP_TYPES,
+        genre_options=GENRE_OPTIONS,
+        tranche_age_options=TRANCHE_AGE_OPTIONS,
+        niveau_formation_options=NIVEAU_FORMATION_OPTIONS,
+        ressources_entree_options=RESSOURCES_ENTREE_OPTIONS,
+        origine_handicap_options=ORIGINE_HANDICAP_OPTIONS,
+        current_year=date.today().year,
+    )
 
 
 @app.route("/people/<int:person_id>")
@@ -718,9 +885,11 @@ def person_detail(person_id: int) -> str:
     ).fetchall()
     active_pathway = next((row for row in pathways if not row["date_fin"]), None)
     timeline = build_person_timeline(person_id)
+    age = compute_age(person["date_naissance"])
     return render_template(
         "person_detail.html",
         person=person,
+        age=age,
         followup=followup,
         pathways=pathways,
         active_pathway=active_pathway,
@@ -732,6 +901,11 @@ def person_detail(person_id: int) -> str:
         modalites=MODALITES,
         motifs_sortie=MOTIFS_SORTIE,
         handicap_types=HANDICAP_TYPES,
+        genre_options=GENRE_OPTIONS,
+        tranche_age_options=TRANCHE_AGE_OPTIONS,
+        niveau_formation_options=NIVEAU_FORMATION_OPTIONS,
+        ressources_entree_options=RESSOURCES_ENTREE_OPTIONS,
+        origine_handicap_options=ORIGINE_HANDICAP_OPTIONS,
         situation_arrivee_options=SITUATION_ARRIVEE_OPTIONS,
         preconisations=PRECONISATIONS,
         devenir_12m_options=DEVENIR_12M_OPTIONS,
@@ -751,18 +925,59 @@ def person_update(person_id: int) -> Response:
         return redirect(url_for("people_list"))
 
     boeth_statut = normalize_txt(request.form.get("boeth_statut", "inconnu"))
+    genre = normalize_txt(request.form.get("genre", ""))
+    tranche_age_entree = normalize_txt(request.form.get("tranche_age_entree", ""))
+    niveau_formation_entree = normalize_txt(request.form.get("niveau_formation_entree", ""))
+    ressources_entree = normalize_txt(request.form.get("ressources_entree", ""))
+    code_postal = normalize_txt(request.form.get("code_postal", ""))
+    ville = normalize_txt(request.form.get("ville", ""))
+    departement = normalize_txt(request.form.get("departement", ""))
+    nb_pathologies = int(nval(request.form.get("nb_pathologies", "0")))
+    origine_handicap = normalize_txt(request.form.get("origine_handicap", ""))
     handicap_principal = normalize_txt(request.form.get("handicap_principal", ""))
     handicap_associe = normalize_txt(request.form.get("handicap_associe", ""))
     if boeth_statut not in {"boeth", "non_boeth", "inconnu"}:
         boeth_statut = "inconnu"
+    if genre and genre not in GENRE_OPTIONS:
+        genre = ""
+    if tranche_age_entree and tranche_age_entree not in TRANCHE_AGE_OPTIONS:
+        tranche_age_entree = ""
+    if niveau_formation_entree and niveau_formation_entree not in NIVEAU_FORMATION_OPTIONS:
+        niveau_formation_entree = ""
+    if ressources_entree and ressources_entree not in RESSOURCES_ENTREE_OPTIONS:
+        ressources_entree = ""
+    if nb_pathologies < 0:
+        nb_pathologies = 0
+    if origine_handicap and origine_handicap not in ORIGINE_HANDICAP_OPTIONS:
+        origine_handicap = ""
     if handicap_principal and handicap_principal not in HANDICAP_TYPES:
         handicap_principal = ""
     if handicap_associe and handicap_associe not in HANDICAP_TYPES:
         handicap_associe = ""
 
     db.execute(
-        "UPDATE people SET boeth_statut=?, handicap_principal=?, handicap_associe=? WHERE id=?",
-        (boeth_statut, handicap_principal or None, handicap_associe or None, person_id),
+        """
+        UPDATE people
+        SET boeth_statut=?, genre=?, tranche_age_entree=?, niveau_formation_entree=?, ressources_entree=?,
+            code_postal=?, ville=?, departement=?, nb_pathologies=?, origine_handicap=?,
+            handicap_principal=?, handicap_associe=?
+        WHERE id=?
+        """,
+        (
+            boeth_statut,
+            genre or None,
+            tranche_age_entree or None,
+            niveau_formation_entree or None,
+            ressources_entree or None,
+            code_postal or None,
+            ville or None,
+            departement or None,
+            nb_pathologies,
+            origine_handicap or None,
+            handicap_principal or None,
+            handicap_associe or None,
+            person_id,
+        ),
     )
     db.commit()
     flash("Profil personne mis à jour.", "success")

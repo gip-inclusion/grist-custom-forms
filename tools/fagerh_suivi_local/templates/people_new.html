@@ -11,6 +11,54 @@
       <div><label>Date de naissance</label><input type="date" name="date_naissance"></div>
       <div><label>Identifiant local</label><input name="identifiant_local" placeholder="Ex: dossier interne"></div>
       <div>
+        <label>Genre / Sexe</label>
+        <select name="genre">
+          <option value="">--</option>
+          {% for g in genre_options %}<option value="{{ g }}">{{ g }}</option>{% endfor %}
+        </select>
+      </div>
+    </div>
+    <div class="grid grid-3">
+      <div>
+        <label>Tranche d'âge à l'entrée</label>
+        <select name="tranche_age_entree">
+          <option value="">--</option>
+          {% for a in tranche_age_options %}<option value="{{ a }}">{{ a }}</option>{% endfor %}
+        </select>
+      </div>
+      <div>
+        <label>Niveau de formation / diplôme à l'entrée</label>
+        <select name="niveau_formation_entree">
+          <option value="">--</option>
+          {% for n in niveau_formation_options %}<option value="{{ n }}">{{ n }}</option>{% endfor %}
+        </select>
+      </div>
+      <div>
+        <label>Ressources à l'entrée</label>
+        <select name="ressources_entree">
+          <option value="">--</option>
+          {% for r in ressources_entree_options %}<option value="{{ r }}">{{ r }}</option>{% endfor %}
+        </select>
+      </div>
+    </div>
+    <div class="grid grid-3">
+      <div><label>Code postal</label><input name="code_postal"></div>
+      <div><label>Ville</label><input name="ville"></div>
+      <div><label>Département</label><input name="departement" placeholder="Ex: 75"></div>
+    </div>
+    <div class="grid grid-3">
+      <div>
+        <label>Nombre de pathologies</label>
+        <input type="number" min="0" step="1" name="nb_pathologies" value="0">
+      </div>
+      <div>
+        <label>Origine du handicap</label>
+        <select name="origine_handicap">
+          <option value="">--</option>
+          {% for o in origine_handicap_options %}<option value="{{ o }}">{{ o }}</option>{% endfor %}
+        </select>
+      </div>
+      <div>
         <label>Statut BOETH</label>
         <select name="boeth_statut">
           <option value="inconnu">Je ne sais pas</option>

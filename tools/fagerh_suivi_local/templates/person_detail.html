@@ -2,8 +2,61 @@
 {% block content %}
 <div class="card">
   <h3>{{ person.nom }} {{ person.prenom }}</h3>
-  <p class="muted">Né(e) le: {{ person.date_naissance or '-' }} | ID local: {{ person.identifiant_local or '-' }}</p>
-  <form method="post" action="{{ url_for('person_update', person_id=person.id) }}" class="grid grid-3">
+  <p class="muted">
+    Né(e) le: {{ person.date_naissance or '-' }}
+    {% if age is not none %} | Âge: {{ age }} ans{% endif %}
+    | ID local: {{ person.identifiant_local or '-' }}
+  </p>
+  <form method="post" action="{{ url_for('person_update', person_id=person.id) }}" class="grid">
+    <div class="grid grid-3">
+      <div>
+        <label>Genre / Sexe</label>
+        <select name="genre">
+          <option value="">--</option>
+          {% for g in genre_options %}<option value="{{ g }}" {% if person.genre == g %}selected{% endif %}>{{ g }}</option>{% endfor %}
+        </select>
+      </div>
+      <div>
+        <label>Tranche d'âge à l'entrée</label>
+        <select name="tranche_age_entree">
+          <option value="">--</option>
+          {% for a in tranche_age_options %}<option value="{{ a }}" {% if person.tranche_age_entree == a %}selected{% endif %}>{{ a }}</option>{% endfor %}
+        </select>
+      </div>
+      <div>
+        <label>Niveau de formation / diplôme à l'entrée</label>
+        <select name="niveau_formation_entree">
+          <option value="">--</option>
+          {% for n in niveau_formation_options %}<option value="{{ n }}" {% if person.niveau_formation_entree == n %}selected{% endif %}>{{ n }}</option>{% endfor %}
+        </select>
+      </div>
+    </div>
+    <div class="grid grid-3">
+      <div>
+        <label>Ressources à l'entrée</label>
+        <select name="ressources_entree">
+          <option value="">--</option>
+          {% for r in ressources_entree_options %}<option value="{{ r }}" {% if person.ressources_entree == r %}selected{% endif %}>{{ r }}</option>{% endfor %}
+        </select>
+      </div>
+      <div><label>Code postal</label><input name="code_postal" value="{{ person.code_postal or '' }}"></div>
+      <div><label>Ville</label><input name="ville" value="{{ person.ville or '' }}"></div>
+    </div>
+    <div class="grid grid-3">
+      <div><label>Département</label><input name="departement" value="{{ person.departement or '' }}"></div>
+      <div>
+        <label>Nombre de pathologies</label>
+        <input type="number" min="0" step="1" name="nb_pathologies" value="{{ person.nb_pathologies if person.nb_pathologies is not none else 0 }}">
+      </div>
+      <div>
+        <label>Origine du handicap</label>
+        <select name="origine_handicap">
+          <option value="">--</option>
+          {% for o in origine_handicap_options %}<option value="{{ o }}" {% if person.origine_handicap == o %}selected{% endif %}>{{ o }}</option>{% endfor %}
+        </select>
+      </div>
+    </div>
+    <div class="grid grid-3">
     <div>
       <label>Statut BOETH</label>
       <select name="boeth_statut">
@@ -25,6 +78,7 @@
         <option value="">--</option>
         {% for h in handicap_types %}<option value="{{ h }}" {% if person.handicap_associe == h %}selected{% endif %}>{{ h }}</option>{% endfor %}
       </select>
+    </div>
     </div>
     <div><button type="submit">Mettre à jour profil</button></div>
   </form>
