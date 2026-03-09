@@ -3916,11 +3916,31 @@
       const sortiesEval = evaluateSortiesBlock(state);
       const suspEval = evaluateSuspensionsBlock(state);
       const showSortiesReasons = true;
-      const sortiesCoherenceHtml = showSortiesReasons && sortiesEval.sum !== sortiesEval.nb
-        ? '<div class="status err">La somme des motifs doit être exactement égale au nombre de sorties anticipées.</div>'
-        : (showSortiesReasons && toNum(sortiesBloc.raisons?.autres_nb) > 0 && String(sortiesBloc.raisons?.autres_precision || sortiesBloc.raisons?.autres || '').trim() === ''
-          ? '<div class="status err">Précisez le motif si la ligne « Autres » comporte un effectif.</div>'
-          : '');
+      const sortiesDiff = sortiesEval.sum - sortiesEval.nb;
+      const sortiesDiffClass = Math.abs(sortiesDiff) < 0.0001 ? 'diff-ok' : 'diff-err';
+      const sortiesCoherenceHtml = showSortiesReasons
+        ? `
+          <div class="status kpi ${Math.abs(sortiesDiff) < 0.0001 ? 'ok' : 'err'}">
+            <div class="kpi-line">
+              <div class="kpi-cell">
+                <span class="kpi-cell-label">Cible</span>
+                <span class="kpi-cell-value">${sortiesEval.nb.toFixed(0)}</span>
+              </div>
+              <div class="kpi-cell">
+                <span class="kpi-cell-label">Saisie</span>
+                <span class="kpi-cell-value">${sortiesEval.sum.toFixed(0)}</span>
+              </div>
+              <div class="kpi-cell ${sortiesDiffClass}">
+                <span class="kpi-cell-label">Écart</span>
+                <span class="kpi-cell-value">${sortiesDiff.toFixed(0)}</span>
+              </div>
+            </div>
+          </div>
+        `
+        : '';
+      const sortiesPrecisionHtml = showSortiesReasons && toNum(sortiesBloc.raisons?.autres_nb) > 0 && String(sortiesBloc.raisons?.autres_precision || sortiesBloc.raisons?.autres || '').trim() === ''
+        ? '<div class="status err">Précisez le motif si la ligne « Autres » comporte un effectif.</div>'
+        : '';
       const suspensionsTotal = toNum(suspBloc.raisons?.sante_non_liee)
         + toNum(suspBloc.raisons?.evolution_handicap)
         + toNum(suspBloc.raisons?.evolution_sociale)
@@ -4469,6 +4489,7 @@
             </div>
           </div>
           ${sortiesCoherenceHtml}
+          ${sortiesPrecisionHtml}
         </div>
         ${showPrecoBloc ? `
         <div class="box cond-block cond-block-anchor" data-block-key="preconisations_sortie" id="cond-block-preconisations_sortie">
