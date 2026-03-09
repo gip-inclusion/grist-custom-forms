@@ -4969,9 +4969,11 @@
       const presentielTotalEl = conditionalCoherenceSections?.querySelector('[data-da-total="presentiel"]');
       const hybrideTotalEl = conditionalCoherenceSections?.querySelector('[data-da-total="hybride"]');
       const distancielTotalEl = conditionalCoherenceSections?.querySelector('[data-da-total="distanciel"]');
+      const suspensionsTotalInput = conditionalCoherenceSections?.querySelector('.cond-susp-total');
       if (presentielTotalEl) presentielTotalEl.textContent = String(toNum(state.directAvecOrp?.row?.presentiel_total));
       if (hybrideTotalEl) hybrideTotalEl.textContent = String(toNum(state.directAvecOrp?.row?.hybride_total));
       if (distancielTotalEl) distancielTotalEl.textContent = String(toNum(state.directAvecOrp?.row?.distanciel_total));
+      if (suspensionsTotalInput) suspensionsTotalInput.value = String(toNum(state.suspensionsBloc?.nb));
       syncNumericZeroDisplay(conditionalCoherenceSections || document);
       const emploiRow = state.directAvecOrp?.row || {};
       const emploiNbRepondants = toNum(emploiRow.emploi_nb_repondants);
