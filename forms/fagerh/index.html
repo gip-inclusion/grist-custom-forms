@@ -239,7 +239,7 @@
     }
     .toc-list .ok .toc-state { color: #1f7a45; }
     .toc-list .todo .toc-state { color: #7a8b9f; }
-    .toc-list .progress .toc-state { color: #a05a00; }
+    .toc-list .in-progress .toc-state { color: #a05a00; }
     .toc-count {
       font-size: .82rem;
       color: #5f7286;
@@ -1795,10 +1795,12 @@
           <strong>Votre établissement et service</strong>
           <p id="finess-intro-1" class="ident-intro">La recherche de votre établissement s'effectue par son numéro FINESS.</p>
           <p id="finess-intro-2" class="ident-intro">La recherche démarre automatiquement dès que les 9 chiffres sont saisis.</p>
-          <label class="ps-checkline" style="margin:6px 0 10px 0; display:inline-flex;">
-            <input type="checkbox" id="finess-no-number">
-            Mon établissement et service n'a pas de FINESS
-          </label>
+          <div id="finess-no-number-wrap">
+            <label class="ps-checkline" style="margin:8px 0 10px 0; display:flex; align-items:center; gap:8px;">
+              <input type="checkbox" id="finess-no-number">
+              Mon établissement et service n'a pas de FINESS
+            </label>
+          </div>
           <div class="field field-vertical">
             <div id="finess-label-wrap"><label>Numéro FINESS</label></div>
             <div>
@@ -2550,6 +2552,7 @@
         key: 'ressources_entree',
         title: "Ressources à l'entrée",
         fields: [
+          'Salaire',
           'AAH',
           'Allocations chômage',
           'RSA',
@@ -2645,6 +2648,15 @@
         .replace(/[\u0300-\u036f]/g, '')
         .toLowerCase();
       return normalized.includes('parcours accompagnement a visee qualifiante - formation certifiante ou diplomante');
+    }
+
+    function isParcoursFormationConditionalStep(id) {
+      const def = getConditionalDefById(id);
+      const normalized = String(def?.name || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase();
+      return normalized.startsWith('directes orp cdaph - parcours accompagnement a visee qualifiante - formation');
     }
 
     function hasEmploiAccesBlockConditionalStep(id) {
@@ -2775,9 +2787,7 @@
       const isCollectifRow = String(rowKey || '').includes('collectives');
       if (isCollectifRow) {
         return [
-          { key: 'heures', label: "Combien d'heures de professionnels avez-vous mobilisés ?" },
-          { key: 'reunions', label: 'Combien avez vous animé de réunion ?' },
-          { key: 'partenaires', label: 'Combien de partenaires concernés ?' },
+          { key: 'journees', label: 'Nombre de journées' },
         ];
       }
       return getSpecialIndirectFieldDefs(conditionalId);
@@ -2898,7 +2908,7 @@
         enabled: '',
         rows: {
           pec: { beneficiaires: '', professionnels: '', heures: '' },
-          info_personnes_collectives: { heures: '', reunions: '', boeth: '', non_boeth: '', sans_statut: '' },
+          info_personnes_collectives: { journees: '', boeth: '', non_boeth: '', sans_statut: '' },
           info_personnes_individuelles: { heures: '', boeth: '', non_boeth: '', sans_statut: '' },
         },
       };
@@ -2910,14 +2920,14 @@
         rows: {
           destin_partenaires: { heures: '', partenaires: '' },
           destin_organismes: { heures: '', partenaires: '' },
-          collectives: { heures: '', reunions: '', partenaires: '' },
+          collectives: { journees: '' },
           individuelles: { heures: '', partenaires: '' },
           epe: { origine: '', limitrophes: '' },
           cdaph: { origine: '', limitrophes: '' },
           groupes_travail: { origine: '', limitrophes: '' },
-          part_collectives: { heures: '', reunions: '', partenaires: '' },
+          part_collectives: { journees: '' },
           part_individuelles: { heures: '', partenaires: '' },
-          of_collectives: { heures: '', reunions: '', partenaires: '' },
+          of_collectives: { journees: '' },
           of_individuelles: { heures: '', partenaires: '' },
         },
       };
@@ -3362,10 +3372,8 @@
       const touched = isFilledNumberString(nbRaw) || hasAnyReasonValue || String(bloc.raisons?.autres_precision || bloc.raisons?.autres || '').trim() !== '';
       if (!isFilledNumberString(nbRaw)) return { done: false, touched, sum, nb };
       if (nb <= 0) return { done: true, touched: true, sum, nb };
-      const allReasonsFilled = values.every((v) => isFilledNumberString(v));
       const needPrecision = toNum(bloc.raisons?.autres_nb) > 0;
-      const done = allReasonsFilled
-        && sum === nb
+      const done = sum === nb
         && (!needPrecision || String(bloc.raisons?.autres_precision || bloc.raisons?.autres || '').trim() !== '');
       return { done, touched: true, sum, nb };
     }
@@ -3384,8 +3392,15 @@
 
     function evaluateHandicapMatrixBlock(state) {
       const rows = Array.isArray(state?.handicapMatrix) ? state.handicapMatrix : [];
+      const target = getConditionalTarget(state);
+      const principalSum = rows.reduce((acc, row) => acc + toNum(row?.principal), 0);
+      const associeSum = rows.reduce((acc, row) => acc + toNum(row?.associe), 0);
+      const principalDiff = principalSum - target;
+      const associeDiff = associeSum - target;
+      const principalOk = Math.abs(principalDiff) < 0.0001;
+      const associeOk = associeDiff <= 0.0001;
       const touched = rows.some((row) => isFilledNumberString(row?.principal) || isFilledNumberString(row?.associe));
-      return { done: touched, touched };
+      return { done: principalOk && associeOk, touched, target, principalSum, associeSum, principalDiff, associeDiff, principalOk, associeOk };
     }
 
     function evaluatePreconisationsBlock(state, conditionalId = currentConditionalId) {
@@ -3461,17 +3476,19 @@
 
     function evaluateParcoursBlock(state, conditionalId = currentConditionalId) {
       const row = state?.directAvecOrp?.row || {};
+      const includeSuiteParcours = !isParcoursFormationConditionalStep(conditionalId);
       const requiredKeys = [
         'beneficiaires',
         'presentiel_total', 'presentiel_complet', 'presentiel_partiel',
         'hybride_total', 'hybride_complet', 'hybride_partiel',
         'distanciel_total', 'distanciel_complet', 'distanciel_partiel',
         'hors_murs_personnes', 'hors_murs_journees',
-        'activites_intermediaires_site', 'activites_intermediaires_ambulatoire',
-        'activites_sortie_parcours_site', 'activites_sortie_parcours_ambulatoire',
         'hebergees_personnes', 'hebergees_journees',
         ...getEmploiRequiredFieldKeys(conditionalId),
       ];
+      if (includeSuiteParcours) {
+        requiredKeys.push('activites_sortie_parcours_site', 'activites_sortie_parcours_ambulatoire');
+      }
       const touched = requiredKeys.some((k) => isFilledNumberString(row[k]));
       const allFilled = requiredKeys.every((k) => isFilledNumberString(row[k]));
 
@@ -3496,17 +3513,19 @@
 
     function getParcoursFieldProgress(state, conditionalId = currentConditionalId) {
       const row = state?.directAvecOrp?.row || {};
+      const includeSuiteParcours = !isParcoursFormationConditionalStep(conditionalId);
       const keys = [
         'beneficiaires',
         'presentiel_total', 'presentiel_complet', 'presentiel_partiel',
         'hybride_total', 'hybride_complet', 'hybride_partiel',
         'distanciel_total', 'distanciel_complet', 'distanciel_partiel',
         'hors_murs_personnes', 'hors_murs_journees',
-        'activites_intermediaires_site', 'activites_intermediaires_ambulatoire',
-        'activites_sortie_parcours_site', 'activites_sortie_parcours_ambulatoire',
         'hebergees_personnes', 'hebergees_journees',
         ...getEmploiRequiredFieldKeys(conditionalId),
       ];
+      if (includeSuiteParcours) {
+        keys.push('activites_sortie_parcours_site', 'activites_sortie_parcours_ambulatoire');
+      }
       const done = keys.reduce((acc, key) => acc + (isFilledNumberString(row[key]) ? 1 : 0), 0);
       const touched = done > 0;
       return { done, total: keys.length, touched };
@@ -3579,7 +3598,7 @@
       const done = rowKeys.every((k) => {
         const row = rows[k] || {};
         const requiredKeys = k === 'info_personnes_collectives'
-          ? ['heures', 'reunions', 'boeth', 'non_boeth', 'sans_statut']
+          ? ['journees', 'boeth', 'non_boeth', 'sans_statut']
           : ['heures', 'boeth', 'non_boeth', 'sans_statut'];
         return requiredKeys.every((fieldKey) => isFilledNumberString(row[fieldKey]));
       });
@@ -3612,11 +3631,11 @@
       const rows = state?.directSansOrp?.rows || {};
       const rowKeys = getSelectedDirectSansOrpInfoPersonnesRows();
       let done = 0;
-      const total = rowKeys.reduce((acc, rowKey) => acc + (rowKey === 'info_personnes_collectives' ? 5 : 4), 0);
+      const total = rowKeys.reduce((acc, rowKey) => acc + (rowKey === 'info_personnes_collectives' ? 4 : 4), 0);
       rowKeys.forEach((rowKey) => {
         const row = rows[rowKey] || {};
         const fieldKeys = rowKey === 'info_personnes_collectives'
-          ? ['heures', 'reunions', 'boeth', 'non_boeth', 'sans_statut']
+          ? ['journees', 'boeth', 'non_boeth', 'sans_statut']
           : ['heures', 'boeth', 'non_boeth', 'sans_statut'];
         fieldKeys.forEach((fieldKey) => {
           if (isFilledNumberString(row[fieldKey])) done += 1;
@@ -3625,7 +3644,7 @@
       const touched = rowKeys.some((rowKey) => {
         const row = rows[rowKey] || {};
         const fieldKeys = rowKey === 'info_personnes_collectives'
-          ? ['heures', 'reunions', 'boeth', 'non_boeth', 'sans_statut']
+          ? ['journees', 'boeth', 'non_boeth', 'sans_statut']
           : ['heures', 'boeth', 'non_boeth', 'sans_statut'];
         return fieldKeys.some((fieldKey) => isFilledNumberString(row[fieldKey]));
       });
@@ -3798,7 +3817,6 @@
     function renderConditionalBlockNav(state) {
       if (!conditionalBlockNavList) return;
       const blocks = getConditionalBlocksDetails(state);
-      const doneByKey = new Map(blocks.map((block) => [block.key, !!block.done]));
       const flatBlocks = blocks.filter((block) => !['direct_avec_orp', 'direct_sans_orp', 'indirect'].includes(block.key));
 
       const directDispos = getSelectedDisposFromStep2()
@@ -3810,12 +3828,6 @@
         });
       }
 
-      const socioChildren = document.getElementById('ps-parcours-socio-root')?.checked
-        ? getCheckedInputLabels('input[name="ps-parcours-socio-child"]:checked')
-        : [];
-      const qualifChildren = document.getElementById('ps-parcours-qualif-root')?.checked
-        ? getCheckedInputLabels('input[name="ps-parcours-qualif-child"]:checked')
-        : [];
       const directSansOrpChildren = [];
       if (document.querySelector('input[name="ps-direct-hors-orp"][value="Évaluations professionnelles"]:checked')) {
         directSansOrpChildren.push('Évaluations professionnelles');
@@ -3841,25 +3853,7 @@
           <span class="cond-nav-badge ${block.done ? 'ok' : ''}">${block.done ? 'OK' : 'à compléter'}</span>
         </li>
       `).join('');
-
-      const groupedHtml = [
-        renderCondNavGroup({
-          title: 'Parcours à visée socio-professionnelle',
-          jumpKey: 'direct_avec_orp',
-          done: doneByKey.get('direct_avec_orp'),
-          items: socioChildren,
-          hideWhenEmpty: true,
-        }),
-        renderCondNavGroup({
-          title: 'Parcours accompagnement à visée qualifiante',
-          jumpKey: 'direct_avec_orp',
-          done: doneByKey.get('direct_avec_orp'),
-          items: qualifChildren,
-          hideWhenEmpty: true,
-        }),
-      ].filter(Boolean).join('');
-
-      conditionalBlockNavList.innerHTML = `${flatHtml}${groupedHtml}`;
+      conditionalBlockNavList.innerHTML = flatHtml;
     }
 
     function renderConditionalCoherenceSections(state) {
@@ -3910,6 +3904,7 @@
       const isFormationSelectionStep = isFormationSelectionConditionalStep(currentConditionalId);
       const isParcoursStep = isParcoursConditionalStep(currentConditionalId);
       const isParcoursCertifStep = isParcoursCertifConditionalStep(currentConditionalId);
+      const isParcoursFormationStep = isParcoursFormationConditionalStep(currentConditionalId);
       const isDirectSansOrpInfoStep = isDirectSansOrpInfoPersonnesConditionalStep(currentConditionalId);
       const isDirectSansOrpCadrageStep = isDirectSansOrpCadrageConditionalStep(currentConditionalId);
       const isSpecialIndirectStep = isSpecialIndirectConditionalStep(currentConditionalId);
@@ -3921,8 +3916,6 @@
       const pecRow = directSansOrp.rows?.pec || {};
       const pecHeures = toNum(pecRow.heures);
       const pecHeuresCoeff = pecHeures * 1.5;
-      const infoCollectiveHeures = toNum(directSansOrp.rows?.info_personnes_collectives?.heures);
-      const infoCollectiveHeuresCoeff = infoCollectiveHeures * 1.5;
       const handicapRows = Array.isArray(state?.handicapMatrix) && state.handicapMatrix.length
         ? state.handicapMatrix
         : makeEmptyHandicapMatrix();
@@ -3969,6 +3962,7 @@
         + toNum(suspBloc.raisons?.autres_nb);
       const showDirectSansCollectives = getSelectedDirectSansOrpInfoPersonnesRows().includes('info_personnes_collectives');
       const showDirectSansIndividuelles = getSelectedDirectSansOrpInfoPersonnesRows().includes('info_personnes_individuelles');
+      const handicapEval = evaluateHandicapMatrixBlock(state);
       const preconisationsNumericKeys = [
         'emploi_milieu_ordinaire',
         'entreprise_adaptee',
@@ -4089,7 +4083,7 @@
           </div>
         </div>
       `;
-      const topEnableQuestionsHtml = (!isParcoursStep && !isFormationSelectionStep && !isUerosStep && !isSpecialIndirectStep && !isDirectSansOrpInfoStep && !isDirectSansOrpCadrageStep) ? `
+      const topEnableQuestionsHtml = (!isParcoursStep && !isFormationSelectionStep && !isUerosStep && !isEspoOrUerosConditionalStep(currentConditionalId) && !isEsrpConditionalStep(currentConditionalId) && !isSpecialIndirectStep && !isDirectSansOrpInfoStep && !isDirectSansOrpCadrageStep) ? `
         <div class="box cond-block" style="margin-bottom:14px;">
           <div class="field field-vertical" style="padding-top:4px;">
             <div><label>Vous délivrez cette prestation :</label></div>
@@ -4225,6 +4219,10 @@
               <div><label>Combien de bénéficiaires ?</label></div>
               <div><input class="cond-direct-avec-input cond-direct-avec-auto-benef" data-da-key="beneficiaires" type="number" min="0" step="1" readonly value="${String(beneficiairesAutoTotal)}"></div>
             </div>
+            <div class="field field-radio-inline q35-sub-inline q35-places-inline">
+              <div><label>Pour un nombre de journées totales de ?</label></div>
+              <div><input class="cond-direct-avec-input" data-da-key="hors_murs_journees" type="number" min="0" step="1" value="${String(parcoursRow.hors_murs_journees || '')}"></div>
+            </div>
 
             <div class="parcours-section">
               <div class="cond-subgroup-title"><span>Dont en présentiel</span><span class="cond-auto-total" data-da-total="presentiel">${presentielAutoTotal}</span></div>
@@ -4275,28 +4273,10 @@
                   <div><label>Combien de personnes accompagnées hors les murs ?</label></div>
                   <div><input class="cond-direct-avec-input" data-da-key="hors_murs_personnes" type="number" min="0" step="1" value="${String(parcoursRow.hors_murs_personnes || '')}"></div>
                 </div>
-                <div class="field field-radio-inline q35-sub-inline q35-places-inline cond-subline">
-                  <div><label>Pour un nombre de journées totales de ?</label></div>
-                  <div><input class="cond-direct-avec-input" data-da-key="hors_murs_journees" type="number" min="0" step="1" value="${String(parcoursRow.hors_murs_journees || '')}"></div>
-                </div>
               </div>
             </div>
 
-            <div class="parcours-section">
-              <div class="cond-subgroup-title"><span>Activités intermodules</span></div>
-              <p class="parcours-parent-q">Combien ont bénéficié d'activité intermodules ?</p>
-              <div class="parcours-nested">
-                <div class="field field-radio-inline q35-sub-inline q35-places-inline cond-subline">
-                  <div><label>Sur site</label></div>
-                  <div><input class="cond-direct-avec-input" data-da-key="activites_intermediaires_site" type="number" min="0" step="1" value="${String(parcoursRow.activites_intermediaires_site || '')}"></div>
-                </div>
-                <div class="field field-radio-inline q35-sub-inline q35-places-inline cond-subline">
-                  <div><label>En ambulatoire</label></div>
-                  <div><input class="cond-direct-avec-input" data-da-key="activites_intermediaires_ambulatoire" type="number" min="0" step="1" value="${String(parcoursRow.activites_intermediaires_ambulatoire || '')}"></div>
-                </div>
-              </div>
-            </div>
-
+            ${isParcoursFormationStep ? '' : `
             <div class="parcours-section">
               <div class="cond-subgroup-title"><span>Suite de parcours</span></div>
               <p class="parcours-parent-q">Combien ont bénéficié d'activités de suite de parcours ?</p>
@@ -4311,6 +4291,7 @@
                 </div>
               </div>
             </div>
+            `}
 
             <div class="parcours-section">
               <div class="cond-subgroup-title"><span>Hébergement</span></div>
@@ -4320,7 +4301,7 @@
                   <div><input class="cond-direct-avec-input" data-da-key="hebergees_personnes" type="number" min="0" step="1" value="${String(parcoursRow.hebergees_personnes || '')}"></div>
                 </div>
                 <div class="field field-radio-inline q35-sub-inline q35-places-inline cond-subline">
-                  <div><label>Pour un total de combien de journées ?</label></div>
+                  <div><label>Pour un total de combien de nuitées ?</label></div>
                   <div><input class="cond-direct-avec-input" data-da-key="hebergees_journees" type="number" min="0" step="1" value="${String(parcoursRow.hebergees_journees || '')}"></div>
                 </div>
               </div>
@@ -4387,12 +4368,8 @@
             ${showDirectSansCollectives ? `
             <div class="ds-simple-section">
               <p class="ds-simple-subtitle">Informations collectives</p>
-              <div class="field field-radio-inline q35-sub-inline q35-places-inline" style="padding:8px 0;"><div><label>Combien d'heures de professionnels avez-vous mobilisées ?</label></div><div><input class="cond-direct-sans-input" data-ds-row="info_personnes_collectives" data-ds-key="heures" type="number" min="0" step="0.1" placeholder="Heures" value="${String(directSansOrp.rows?.info_personnes_collectives?.heures || '')}"></div></div>
-              <div class="field field-radio-inline q35-sub-inline q35-places-inline" style="padding:8px 0;"><div><label>Combien avez vous animé de réunion ?</label></div><div><input class="cond-direct-sans-input" data-ds-row="info_personnes_collectives" data-ds-key="reunions" type="number" min="0" step="1" placeholder="Réunions" value="${String(directSansOrp.rows?.info_personnes_collectives?.reunions || '')}"></div></div>
-              <div class="ds-coef-tip">
-                <span>Heures pondérées (coef 1,5) : <strong class="cond-info-collectif-coef-value">${infoCollectiveHeuresCoeff.toFixed(1)}</strong></span>
-                <small>Calcul automatique: heures saisies × 1,5</small>
-              </div>
+              <div class="field field-radio-inline q35-sub-inline q35-places-inline" style="padding:8px 0;"><div><label>Nombre de journées</label></div><div><input class="cond-direct-sans-input" data-ds-row="info_personnes_collectives" data-ds-key="journees" type="number" min="0" step="1" placeholder="Journées" value="${String(directSansOrp.rows?.info_personnes_collectives?.journees || '')}"></div></div>
+              <p class="hint" style="margin:6px 0 0 0;">Le nombre de journées correspond à : nombre de professionnels mobilisés × nombre d'heures de réunion.</p>
               <p class="ds-simple-participants">Parmi les participants :</p>
               <div class="ds-simple-participants-block">
                 <div class="field field-radio-inline q35-sub-inline q35-places-inline" style="padding:8px 0;"><div><label>Combien de personnes BOETH ?</label></div><div><input class="cond-direct-sans-input" data-ds-row="info_personnes_collectives" data-ds-key="boeth" type="number" min="0" step="1" placeholder="BOETH" value="${String(directSansOrp.rows?.info_personnes_collectives?.boeth || '')}"></div></div>
@@ -4431,10 +4408,7 @@
                       </div>
                     `).join('')}
                     ${String(rowKey || '').includes('collectives') ? `
-                      <div class="ds-coef-tip">
-                        <span>Heures pondérées (coef 1,5) : <strong class="cond-indirect-coef-value" data-indirect-coef-row="${rowKey}">${(toNum(indirect.rows?.[rowKey]?.heures) * 1.5).toFixed(1)}</strong></span>
-                        <small>Calcul automatique: heures saisies × 1,5</small>
-                      </div>
+                      <p class="hint" style="margin:6px 0 0 0;">Le nombre de journées correspond à : nombre de professionnels mobilisés × nombre d'heures de réunion.</p>
                     ` : ''}
                   </div>
                 </div>
@@ -4444,6 +4418,36 @@
           ` : ''}
         <div class="box cond-block cond-block-anchor" data-block-key="handicap_matrix" id="cond-block-handicap_matrix">
           <strong>Type de handicap principal et associé</strong>
+          <div class="status kpi ${handicapEval.done ? 'ok' : 'err'}" style="margin-top:10px;" data-handicap-kpi>
+            <div class="kpi-line">
+              <div class="kpi-cell">
+                <span class="kpi-cell-label">Principal · Cible</span>
+                <span class="kpi-cell-value" data-handicap-val="principal-cible">${handicapEval.target.toFixed(0)}</span>
+              </div>
+              <div class="kpi-cell">
+                <span class="kpi-cell-label">Principal · Saisie</span>
+                <span class="kpi-cell-value" data-handicap-val="principal-saisie">${handicapEval.principalSum.toFixed(0)}</span>
+              </div>
+              <div class="kpi-cell ${handicapEval.principalOk ? 'diff-ok' : 'diff-err'}" data-handicap-diff="principal">
+                <span class="kpi-cell-label">Principal · Écart</span>
+                <span class="kpi-cell-value" data-handicap-val="principal-ecart">${handicapEval.principalDiff.toFixed(0)}</span>
+              </div>
+            </div>
+            <div class="kpi-line" style="margin-top:8px;">
+              <div class="kpi-cell">
+                <span class="kpi-cell-label">Associé · Cible max</span>
+                <span class="kpi-cell-value" data-handicap-val="associe-cible">${handicapEval.target.toFixed(0)}</span>
+              </div>
+              <div class="kpi-cell">
+                <span class="kpi-cell-label">Associé · Saisie</span>
+                <span class="kpi-cell-value" data-handicap-val="associe-saisie">${handicapEval.associeSum.toFixed(0)}</span>
+              </div>
+              <div class="kpi-cell ${handicapEval.associeOk ? 'diff-ok' : 'diff-err'}" data-handicap-diff="associe">
+                <span class="kpi-cell-label">Associé · Écart</span>
+                <span class="kpi-cell-value" data-handicap-val="associe-ecart">${handicapEval.associeDiff.toFixed(0)}</span>
+              </div>
+            </div>
+          </div>
           <div style="margin-top:10px; overflow:auto;">
             <table style="width:100%; border-collapse:collapse;">
               <thead>
@@ -4827,17 +4831,14 @@
     function syncNumericZeroDisplay(root = document) {
       const numberInputs = root.querySelectorAll('input[type="number"]');
       numberInputs.forEach((input) => {
-        if (!input.placeholder || input.placeholder.trim() === '') input.placeholder = '0';
-        const applyMutedState = () => {
-          const value = String(input.value || '').trim();
-          input.classList.toggle('num-zero-muted', value === '0');
-        };
-        applyMutedState();
-        if (input.dataset.zeroDisplayBound === '1') return;
-        input.dataset.zeroDisplayBound = '1';
-        input.addEventListener('input', applyMutedState);
-        input.addEventListener('change', applyMutedState);
-        input.addEventListener('blur', applyMutedState);
+        if (input.readOnly || input.disabled) {
+          input.classList.remove('num-zero-muted');
+          return;
+        }
+        if (String(input.value || '').trim() === '') {
+          input.value = '0';
+        }
+        input.classList.remove('num-zero-muted');
       });
     }
 
@@ -5050,6 +5051,27 @@
         const el = conditionalCoherenceSections?.querySelector(selector);
         if (el) el.textContent = String(value);
       };
+      const handicapEval = evaluateHandicapMatrixBlock(state);
+      const handicapKpi = conditionalCoherenceSections?.querySelector('[data-handicap-kpi]');
+      if (handicapKpi) {
+        handicapKpi.className = handicapEval.done ? 'status kpi ok' : 'status kpi err';
+      }
+      setText('[data-handicap-val="principal-cible"]', handicapEval.target.toFixed(0));
+      setText('[data-handicap-val="principal-saisie"]', handicapEval.principalSum.toFixed(0));
+      setText('[data-handicap-val="principal-ecart"]', handicapEval.principalDiff.toFixed(0));
+      setText('[data-handicap-val="associe-cible"]', handicapEval.target.toFixed(0));
+      setText('[data-handicap-val="associe-saisie"]', handicapEval.associeSum.toFixed(0));
+      setText('[data-handicap-val="associe-ecart"]', handicapEval.associeDiff.toFixed(0));
+      const principalDiffCell = conditionalCoherenceSections?.querySelector('[data-handicap-diff="principal"]');
+      if (principalDiffCell) {
+        principalDiffCell.classList.remove('diff-ok', 'diff-err', 'diff-warn');
+        principalDiffCell.classList.add(handicapEval.principalOk ? 'diff-ok' : 'diff-err');
+      }
+      const associeDiffCell = conditionalCoherenceSections?.querySelector('[data-handicap-diff="associe"]');
+      if (associeDiffCell) {
+        associeDiffCell.classList.remove('diff-ok', 'diff-err', 'diff-warn');
+        associeDiffCell.classList.add(handicapEval.associeOk ? 'diff-ok' : 'diff-err');
+      }
       setText('[data-emploi-val="taux-acces-detail"]', `${emploiAccesNb}/${emploiNbRepondants}`);
       setText('[data-emploi-val="repondants-nb"]', emploiNbRepondants);
       setText('[data-emploi-val="sorties-n1"]', emploiSortiesN1);
@@ -5079,16 +5101,6 @@
         const heures = toNum(state.directSansOrp?.rows?.pec?.heures);
         pecCoeffEl.textContent = (heures * 1.5).toFixed(1);
       }
-      const infoCollectifCoefEl = conditionalCoherenceSections?.querySelector('.cond-info-collectif-coef-value');
-      if (infoCollectifCoefEl) {
-        const heuresCollectif = toNum(state.directSansOrp?.rows?.info_personnes_collectives?.heures);
-        infoCollectifCoefEl.textContent = (heuresCollectif * 1.5).toFixed(1);
-      }
-      conditionalCoherenceSections?.querySelectorAll('.cond-indirect-coef-value').forEach((el) => {
-        const rowKey = String(el.getAttribute('data-indirect-coef-row') || '').trim();
-        const heuresCollectifIndirect = toNum(state.indirect?.rows?.[rowKey]?.heures);
-        el.textContent = (heuresCollectifIndirect * 1.5).toFixed(1);
-      });
       const dureeEl = document.getElementById('cond-duree');
       if (dureeEl) dureeEl.value = computeConditionalDuree(state);
       refreshConditionalCohUi(state);
@@ -5122,6 +5134,7 @@
     const finessIntro1 = document.getElementById('finess-intro-1');
     const finessIntro2 = document.getElementById('finess-intro-2');
     const finessLabelWrap = document.getElementById('finess-label-wrap');
+    const finessNoNumberWrap = document.getElementById('finess-no-number-wrap');
     const finessNoNumberCheckbox = document.getElementById('finess-no-number');
     const noFinessDeacWrap = document.getElementById('no-finess-deac-wrap');
     const identDeacYes = document.getElementById('ident-deac-yes');
@@ -6273,6 +6286,7 @@
         if (finessIntro1) finessIntro1.style.display = 'none';
         if (finessIntro2) finessIntro2.style.display = 'none';
         if (finessLabelWrap) finessLabelWrap.style.display = 'none';
+        if (finessNoNumberWrap) finessNoNumberWrap.style.display = '';
         return;
       }
       const hasAnyFiness = collectFinessInputs().some((input) => String(input.value || '').trim() !== '');
@@ -6280,6 +6294,7 @@
       if (finessIntro1) finessIntro1.style.display = showIntro ? '' : 'none';
       if (finessIntro2) finessIntro2.style.display = showIntro ? '' : 'none';
       if (finessLabelWrap) finessLabelWrap.style.display = showIntro ? '' : 'none';
+      if (finessNoNumberWrap) finessNoNumberWrap.style.display = showIntro ? '' : 'none';
     }
 
     function addFinessInput(initialValue = '') {
@@ -7225,7 +7240,7 @@
       document.getElementById('primary-completion-fill').style.width = `${primaryPct}%`;
       document.getElementById('primary-completion-stats').textContent = `${primaryDone} / ${primaryTotal} étapes terminées`;
       primaryTocList.innerHTML = primaryRows.map((row) => {
-        const cls = row.state === 'OK' ? 'ok' : (row.state === 'en cours' ? 'progress' : 'todo');
+        const cls = row.state === 'OK' ? 'ok' : (row.state === 'en cours' ? 'in-progress' : 'todo');
         const label = row.jump
           ? `<button type="button" class="toc-link" data-jump-step="${row.jump}">${row.name}</button>`
           : `<span class="toc-name">${row.name}</span>`;
@@ -7333,6 +7348,36 @@
       document.getElementById('secondary-completion-stats').textContent = `${secondaryDone} / ${secondaryTotal} sections terminées`;
       const groupedSecondary = [];
       const groupedSecondaryIndex = new Map();
+      const abbreviateSecondaryGroupTitle = (title) => {
+        const raw = String(title || '').trim();
+        if (!raw) return 'Autres';
+        const map = new Map([
+          ['Prestations directes sans ORP CDAPH', 'Directes sans ORP'],
+          ['Prestations directes', 'Directes'],
+          ['Prestations indirectes', 'Indirectes'],
+          ['Parcours à visée socio-professionnelle', 'Parcours socio-pro'],
+          ['Parcours accompagnement à visée qualifiante', 'Parcours qualifiant'],
+        ]);
+        return map.get(raw) || raw;
+      };
+      const abbreviateSecondaryChildLabel = (label) => {
+        let out = String(label || '').trim();
+        if (!out) return 'Étape';
+        const replacements = [
+          ["Prestation d'évaluation et de compensation (PEC)", 'PEC'],
+          ['Préparation à accéder à l\'emploi (remobilisation, etc.)', 'Prépa accès emploi'],
+          ['Préparation d\'un projet professionnel (orientation hors ESPO)', 'Projet pro (hors ESPO)'],
+          ['Formation professionnalisante (ne débouchant pas sur un diplôme)', 'Formation professionnalisante'],
+          ['Formation accompagnée professionnalisante (ne débouchant pas sur un diplôme)', 'Formation accompagnée professionnalisante'],
+          ['Formation accompagnée certifiante (avec titre pro ou diplôme)', 'Formation accompagnée certifiante'],
+          ['Info organisme de formation', 'Info organismes formation'],
+        ];
+        replacements.forEach(([from, to]) => {
+          if (out === from) out = to;
+        });
+        if (out.length > 48) out = `${out.slice(0, 45).trimEnd()}…`;
+        return out;
+      };
       const ensureSecondaryGroup = (title) => {
         if (!groupedSecondaryIndex.has(title)) {
           groupedSecondaryIndex.set(title, groupedSecondary.length);
@@ -7382,19 +7427,20 @@
         const group = toGroupedLabel(row);
         ensureSecondaryGroup(group.title).items.push({
           ...row,
-          childLabel: group.child || row.displayName,
+          childLabel: String(group.child || row.displayName || '').trim() || 'Étape',
         });
       });
 
       secondaryTocList.innerHTML = secondaryRows.length
         ? groupedSecondary.map((group) => `
           <li class="toc-group">
-            <div class="toc-group-title">${escapeHtmlText(group.title)}</div>
+            <div class="toc-group-title" title="${escapeHtmlText(group.title)}">${escapeHtmlText(abbreviateSecondaryGroupTitle(group.title))}</div>
             <ul class="toc-sublist">
               ${group.items.map((row) => {
-                const cls = row.state === 'OK' ? 'ok' : (row.state === 'en cours' ? 'progress' : 'todo');
+                const cls = row.state === 'OK' ? 'ok' : (row.state === 'en cours' ? 'in-progress' : 'todo');
                 const rightLabel = `<span class="toc-count ${row.state === 'OK' ? 'is-ok' : ''}">${row.counter}</span>`;
-                return `<li class="toc-subitem ${cls}"><button type="button" class="toc-link" data-jump-step="${row.jump}" title="${escapeHtmlText(row.name)}">${escapeHtmlText(row.childLabel)}</button>${rightLabel}</li>`;
+                const shortChild = abbreviateSecondaryChildLabel(row.childLabel);
+                return `<li class="toc-subitem ${cls}"><button type="button" class="toc-link" data-jump-step="${row.jump}" title="${escapeHtmlText(row.name)}">${escapeHtmlText(shortChild)}</button>${rightLabel}</li>`;
               }).join('')}
             </ul>
           </li>
