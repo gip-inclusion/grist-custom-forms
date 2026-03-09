@@ -7094,7 +7094,10 @@
         });
       }
 
-      const nextDefs = secondaryRowsRaw.map((name, index) => ({ id: makeCondId(name, index), name }));
+      const nextDefs = secondaryRowsRaw
+        .map((name) => String(name || '').trim())
+        .filter(Boolean)
+        .map((name, index) => ({ id: makeCondId(name, index), name }));
       syncConditionalDefinitions(nextDefs);
 
       const secondaryRows = conditionalDefs.map((def, index) => {
@@ -7131,10 +7134,15 @@
         return groupedSecondary[groupedSecondaryIndex.get(title)];
       };
       const toGroupedLabel = (row) => {
-        const parts = String(row.name || '').split(' - ').map((p) => p.trim()).filter(Boolean);
+        const rawName = String(row.name || '').trim();
+        const parts = rawName.split(' - ').map((p) => p.trim()).filter(Boolean);
         if (!parts.length) return { title: 'Autres', child: row.displayName };
         if (parts[0] === 'Directes ORP CDAPH') {
           const second = parts[1] || '';
+          if (second === "Prestation d'évaluation et de compensation (PEC)") {
+            const mode = parts[2] || '';
+            return { title: 'Prestations directes', child: mode ? `PEC › ${mode}` : 'PEC' };
+          }
           if (second === 'Parcours à visée socio-professionnelle') {
             return { title: 'Parcours à visée socio-professionnelle', child: parts.slice(2).join(' › ') || second };
           }
@@ -7150,7 +7158,10 @@
             }
             return { title: 'Parcours accompagnement à visée qualifiante', child: parts.slice(2).join(' › ') || second };
           }
-          return { title: 'Prestations directes', child: parts.slice(1).join(' › ') };
+          const child = parts.slice(1).join(' › ');
+          if (child) return { title: 'Prestations directes', child };
+          const fromRaw = rawName.replace(/^Directes ORP CDAPH\s*-\s*/i, '').trim();
+          return { title: 'Prestations directes', child: fromRaw || row.displayName || 'Étape' };
         }
         if (parts[0] === 'Directes hors ORP CDAPH') {
           return { title: 'Prestations directes sans ORP CDAPH', child: parts.slice(1).join(' › ') };
