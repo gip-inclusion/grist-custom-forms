@@ -1840,6 +1840,13 @@
                     <div id="dept-msg" class="sub"></div>
                   </div>
                 </div>
+                <div id="no-finess-deac-wrap" class="field" style="display:none;">
+                  <div><label>Délivrez-vous des DEAc ?</label></div>
+                  <div class="row">
+                    <label class="chip"><input type="radio" name="ident-deac-question" id="ident-deac-yes" value="yes"> Oui</label>
+                    <label class="chip"><input type="radio" name="ident-deac-question" id="ident-deac-no" value="no" checked> Non</label>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -1866,7 +1873,7 @@
         <div id="rh-prev-step-msg" class="status err" style="display:none; margin-top:0;">
           S'il manque un dispositif, vous devez le sélectionner à l'étape précédente (en cliquant sur le bouton « Retour »).
         </div>
-        <div class="box">
+        <div class="box" id="rh-deac-question-box">
           <strong>Dispositif sans FINESS</strong>
           <div class="field field-radio-inline">
             <div><label>Délivrez-vous des DEAc ?</label></div>
@@ -5116,6 +5123,9 @@
     const finessIntro2 = document.getElementById('finess-intro-2');
     const finessLabelWrap = document.getElementById('finess-label-wrap');
     const finessNoNumberCheckbox = document.getElementById('finess-no-number');
+    const noFinessDeacWrap = document.getElementById('no-finess-deac-wrap');
+    const identDeacYes = document.getElementById('ident-deac-yes');
+    const identDeacNo = document.getElementById('ident-deac-no');
     const manualAttachWrap = document.getElementById('manual-attach-wrap');
     const manualAttachExisting = document.getElementById('manual-attach-existing');
     const ctxEsatInput = document.getElementById('ctx-esat');
@@ -5780,14 +5790,40 @@
         finessDispoBySource.clear();
         finessRecordBySource.clear();
         pendingManualAssocRows = [];
-        manualResolvedRecord = null;
         manualAttachEnabled = false;
-        setManualIdentVisible(true);
         manualEntryRequested = true;
-        if (foundList) foundList.innerHTML = '';
-        finessFoundPanel?.classList.remove('visible');
+        const manualState = getManualIdentState();
+        if (manualState.complete) {
+          upsertManualResolvedRecord();
+          manualIdentResolved = true;
+          setManualIdentVisible(false);
+        } else {
+          manualIdentResolved = false;
+          manualResolvedRecord = null;
+          setManualIdentVisible(true);
+        }
+        if (manualResolvedRecord) {
+          const rs = String(manualResolvedRecord.record?.raisonSociale || '-').trim();
+          const cpVille = String(manualResolvedRecord.record?.ligneAcheminement || '-').trim();
+          const dept = String(manualResolvedRecord.record?.departement || '-').trim();
+          if (foundList) {
+            foundList.innerHTML = `
+              <div class="finess-found-card">
+                <div class="finess-found-main">
+                  <p class="finess-found-main-line">${escapeHtmlText(rs)} ${escapeHtmlText(cpVille)} • ${escapeHtmlText(dept)}</p>
+                  <div class="finess-found-source">Source : Saisie manuelle (sans FINESS)</div>
+                </div>
+              </div>
+            `;
+          }
+          finessFoundPanel?.classList.add('visible');
+        } else {
+          if (foundList) foundList.innerHTML = '';
+          finessFoundPanel?.classList.remove('visible');
+        }
         syncFinessIntroVisibility();
         syncFinessTopEntryVisibility();
+        applyRhDeacQuestionState();
         setRhDisposFromIdent();
         validateIdent();
         return;
@@ -6156,8 +6192,25 @@
       return !!finessNoNumberCheckbox?.checked;
     }
 
+    function isDeacDeclared() {
+      if (isNoFinessMode()) return !!identDeacYes?.checked;
+      return !!rhDeacYes?.checked;
+    }
+
+    function syncRhDeacFromIdent() {
+      const noFiness = isNoFinessMode();
+      if (rhDeacQuestionBox) rhDeacQuestionBox.style.display = noFiness ? 'none' : '';
+      if (rhDeacYes) rhDeacYes.disabled = noFiness;
+      if (rhDeacNo) rhDeacNo.disabled = noFiness;
+      if (noFiness) {
+        if (rhDeacYes) rhDeacYes.checked = !!identDeacYes?.checked;
+        if (rhDeacNo) rhDeacNo.checked = !identDeacYes?.checked;
+      }
+    }
+
     function applyRhDeacQuestionState() {
-      const enabled = !!rhDeacYes?.checked;
+      syncRhDeacFromIdent();
+      const enabled = isDeacDeclared();
       if (rhDeacLine) rhDeacLine.style.display = enabled ? '' : 'none';
       if (rhDeacDispo) rhDeacDispo.checked = enabled;
       const deacEtp = document.querySelector('[data-etp="deac"]');
@@ -6470,6 +6523,7 @@
       const mainFinessInput = document.getElementById('finess');
       if (mainFinessInput) mainFinessInput.disabled = enabled;
       if (clearMainFinessBtn) clearMainFinessBtn.disabled = enabled;
+      if (noFinessDeacWrap) noFinessDeacWrap.style.display = enabled ? '' : 'none';
       if (enabled) {
         collectFinessInputs().forEach((input) => {
           input.value = '';
@@ -6492,7 +6546,10 @@
         manualIdentResolved = false;
         manualResolvedRecord = null;
         setManualIdentVisible(false);
+        if (identDeacNo) identDeacNo.checked = true;
+        if (identDeacYes) identDeacYes.checked = false;
       }
+      applyRhDeacQuestionState();
       refreshIdentificationFromFiness();
       validateIdent();
     });
@@ -6536,6 +6593,7 @@
     const etpInputs = Array.from(document.querySelectorAll('[data-etp]'));
     const rhDeacYes = document.getElementById('rh-deac-yes');
     const rhDeacNo = document.getElementById('rh-deac-no');
+    const rhDeacQuestionBox = document.getElementById('rh-deac-question-box');
     const rhDeacLine = document.getElementById('rh-deac-line');
     const rhDeacDispo = document.getElementById('rh-deac-dispo');
     const rhNextBtn = document.getElementById('rh-next');
@@ -6550,7 +6608,7 @@
         const fromRh = document.querySelector(`[data-dispo="${key}"]`);
         return !!fromRh?.checked;
       });
-      if (rhDeacYes?.checked) selected.push('deac');
+      if (isDeacDeclared()) selected.push('deac');
       return selected;
     }
 
@@ -6638,6 +6696,11 @@
     [rhDeacYes, rhDeacNo].forEach((radio) => radio?.addEventListener('change', () => {
       applyRhDeacQuestionState();
       validateEtp();
+    }));
+    [identDeacYes, identDeacNo].forEach((radio) => radio?.addEventListener('change', () => {
+      applyRhDeacQuestionState();
+      validateEtp();
+      validateIdent();
     }));
     etpInputs.forEach(i => i.addEventListener('input', validateEtp));
     rhBackStep2Btn?.addEventListener('click', () => showStep(2));
