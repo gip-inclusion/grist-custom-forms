@@ -1795,6 +1795,10 @@
           <strong>Votre établissement et service</strong>
           <p id="finess-intro-1" class="ident-intro">La recherche de votre établissement s'effectue par son numéro FINESS.</p>
           <p id="finess-intro-2" class="ident-intro">La recherche démarre automatiquement dès que les 9 chiffres sont saisis.</p>
+          <label class="ps-checkline" style="margin:6px 0 10px 0; display:inline-flex;">
+            <input type="checkbox" id="finess-no-number">
+            Mon établissement et service n'a pas de FINESS
+          </label>
           <div class="field field-vertical">
             <div id="finess-label-wrap"><label>Numéro FINESS</label></div>
             <div>
@@ -1863,12 +1867,22 @@
           S'il manque un dispositif, vous devez le sélectionner à l'étape précédente (en cliquant sur le bouton « Retour »).
         </div>
         <div class="box">
+          <strong>Dispositif sans FINESS</strong>
+          <div class="field field-radio-inline">
+            <div><label>Délivrez-vous des DEAc ?</label></div>
+            <div class="row">
+              <label class="chip"><input type="radio" name="rh-deac-question" id="rh-deac-yes" value="yes"> Oui</label>
+              <label class="chip"><input type="radio" name="rh-deac-question" id="rh-deac-no" value="no" checked> Non</label>
+            </div>
+          </div>
+        </div>
+        <div class="box">
           <strong>Effectifs globaux par dispositif</strong>
           <div class="dispo-list">
             <div class="dispo-line"><label class="chip"><input type="checkbox" data-dispo="esrp"> ESRP</label><input type="number" min="0" step="0.1" data-etp="esrp" placeholder="ETP ESRP"></div>
             <div class="dispo-line"><label class="chip"><input type="checkbox" data-dispo="espo"> ESPO</label><input type="number" min="0" step="0.1" data-etp="espo" placeholder="ETP ESPO"></div>
             <div class="dispo-line"><label class="chip"><input type="checkbox" data-dispo="ueros"> UEROS</label><input type="number" min="0" step="0.1" data-etp="ueros" placeholder="ETP UEROS"></div>
-            <div class="dispo-line"><label class="chip"><input type="checkbox" data-dispo="deac"> DEAc</label><input type="number" min="0" step="0.1" data-etp="deac" placeholder="ETP DEAc"></div>
+            <div class="dispo-line" id="rh-deac-line" style="display:none;"><label class="chip">DEAc</label><label style="display:none;"><input type="checkbox" data-dispo="deac" id="rh-deac-dispo"></label><input type="number" min="0" step="0.1" data-etp="deac" placeholder="ETP DEAc"></div>
           </div>
         </div>
         <div id="metier-section">
@@ -5101,6 +5115,7 @@
     const finessIntro1 = document.getElementById('finess-intro-1');
     const finessIntro2 = document.getElementById('finess-intro-2');
     const finessLabelWrap = document.getElementById('finess-label-wrap');
+    const finessNoNumberCheckbox = document.getElementById('finess-no-number');
     const manualAttachWrap = document.getElementById('manual-attach-wrap');
     const manualAttachExisting = document.getElementById('manual-attach-existing');
     const ctxEsatInput = document.getElementById('ctx-esat');
@@ -5503,7 +5518,7 @@
         autoGroups.get(groupKey).sourceEntries.push({ sourceFiness: entry.sourceFiness, record: entry.record });
       });
       const dispoLabels = { esrp: 'ESRP', espo: 'ESPO', ueros: 'UEROS', deac: 'DEAc' };
-      const dispoKeys = ['esrp', 'espo', 'ueros', 'deac'];
+      const dispoKeys = getAssignableDispoKeys();
       const allAutoSources = Array.from(autoGroups.values()).flatMap((group) => group.sourceEntries.map((entry) => entry.sourceFiness));
 
       const buildConfirmHtml = (group) => {
@@ -5589,7 +5604,7 @@
           const dispoOriginBadge = selected
             ? `<span class="finess-dispo-origin-badge ${isAutoAssigned ? 'is-auto' : 'is-manual'}">${isAutoAssigned ? 'Auto' : 'Manuel'}</span>`
             : '';
-          const allowed = ['esrp', 'espo', 'ueros', 'deac'].filter((key) => !usedByOthers.has(key) || key === selected);
+          const allowed = getAssignableDispoKeys().filter((key) => !usedByOthers.has(key) || key === selected);
           return `
             <div class="finess-assoc-row ${selected ? 'is-assigned-dispo' : 'is-missing-dispo'}">
               <div>
@@ -5759,6 +5774,24 @@
 
     async function refreshIdentificationFromFiness() {
       await loadFinessReferenceFromCsv();
+      if (isNoFinessMode()) {
+        currentAutoFoundSources = [];
+        finessConfirmState.clear();
+        finessDispoBySource.clear();
+        finessRecordBySource.clear();
+        pendingManualAssocRows = [];
+        manualResolvedRecord = null;
+        manualAttachEnabled = false;
+        setManualIdentVisible(true);
+        manualEntryRequested = true;
+        if (foundList) foundList.innerHTML = '';
+        finessFoundPanel?.classList.remove('visible');
+        syncFinessIntroVisibility();
+        syncFinessTopEntryVisibility();
+        setRhDisposFromIdent();
+        validateIdent();
+        return;
+      }
       const inputs = collectFinessInputs();
       const mainInput = document.getElementById('finess');
       let foundAny = false;
@@ -5912,11 +5945,12 @@
         }
       }
       const selected = new Set(getAssignedDisposFromFiness());
-      ['esrp', 'espo', 'ueros', 'deac'].forEach((key) => {
+      getAssignableDispoKeys().forEach((key) => {
         const rh = document.querySelector(`[data-dispo="${key}"]`);
         if (!rh) return;
         rh.checked = selected.has(key);
       });
+      applyRhDeacQuestionState();
       validateEtp();
       validateIdent();
     }
@@ -6114,6 +6148,25 @@
       };
     }
 
+    function getAssignableDispoKeys() {
+      return ['esrp', 'espo', 'ueros'];
+    }
+
+    function isNoFinessMode() {
+      return !!finessNoNumberCheckbox?.checked;
+    }
+
+    function applyRhDeacQuestionState() {
+      const enabled = !!rhDeacYes?.checked;
+      if (rhDeacLine) rhDeacLine.style.display = enabled ? '' : 'none';
+      if (rhDeacDispo) rhDeacDispo.checked = enabled;
+      const deacEtp = document.querySelector('[data-etp="deac"]');
+      if (deacEtp) {
+        deacEtp.disabled = !enabled;
+        if (!enabled) deacEtp.value = '';
+      }
+    }
+
     function collectFinessInputs() {
       return Array.from(document.querySelectorAll('.finess-input'));
     }
@@ -6146,6 +6199,13 @@
 
     function syncFinessTopEntryVisibility() {
       const mainRow = document.getElementById('finess')?.closest('.finess-row');
+      if (isNoFinessMode()) {
+        if (mainRow) mainRow.style.display = 'none';
+        if (extraFiness) extraFiness.style.display = 'none';
+        if (finessMainInline) finessMainInline.style.display = 'none';
+        if (finessMsg) finessMsg.style.display = 'none';
+        return;
+      }
       const panelVisible = !!finessFoundPanel?.classList.contains('visible');
       const hasConfirmedYes = currentAutoFoundSources.some((src) => finessConfirmState.get(src) === 'yes');
       const showTop = forceTopFinessEntryVisible || !panelVisible || !hasConfirmedYes;
@@ -6156,6 +6216,12 @@
     }
 
     function syncFinessIntroVisibility() {
+      if (isNoFinessMode()) {
+        if (finessIntro1) finessIntro1.style.display = 'none';
+        if (finessIntro2) finessIntro2.style.display = 'none';
+        if (finessLabelWrap) finessLabelWrap.style.display = 'none';
+        return;
+      }
       const hasAnyFiness = collectFinessInputs().some((input) => String(input.value || '').trim() !== '');
       const showIntro = !hasAnyFiness;
       if (finessIntro1) finessIntro1.style.display = showIntro ? '' : 'none';
@@ -6227,6 +6293,7 @@
       const emailOk = !email || /^[^\s@]+@(?:[^\s@.]+\.)+[^\s@.]{2,}$/.test(email);
       const deptValue = String(deptInput?.value || '').trim();
       const deptOk = isValidDept(deptValue);
+      const noFinessMode = isNoFinessMode();
       const allFiness = collectFinessInputs();
       const isRenderedInput = (input) => {
         if (!input) return false;
@@ -6256,10 +6323,10 @@
         return duplicateState.isDuplicate;
       });
       const manualDuplicatesConfirmed = manualDuplicatePending.every((row) => !!row.confirmDuplicate);
-      const finessFilled = regularFinessFilled && manualPendingFilled;
-      const finessOk = regularFinessOk && manualPendingOk;
+      const finessFilled = noFinessMode ? true : (regularFinessFilled && manualPendingFilled);
+      const finessOk = noFinessMode ? true : (regularFinessOk && manualPendingOk);
       const anyFinessInvalid = renderedFinessValues.some((v) => v !== '' && !isValidFiness(v));
-      const confirmOk = hasManualResolved || currentAutoFoundSources.every((src) => finessConfirmState.get(src) === 'yes');
+      const confirmOk = noFinessMode ? true : (hasManualResolved || currentAutoFoundSources.every((src) => finessConfirmState.get(src) === 'yes'));
       const autoAssignedValues = currentAutoFoundSources
         .filter((src) => finessConfirmState.get(src) === 'yes')
         .map((src) => String(finessDispoBySource.get(src) || '').trim())
@@ -6275,12 +6342,12 @@
         .filter((row) => row.dispo && isValidFiness(row.value))
         .map((row) => row.dispo);
       const assignedValues = [...autoAssignedValues, ...(manualResolvedValue ? [manualResolvedValue] : []), ...manualAssignedValues];
-      const assignRequired = hasManualResolved || currentAutoFoundSources.some((src) => finessConfirmState.get(src) === 'yes');
-      const assignComplete = (!hasManualResolved || manualResolvedValue !== '')
+      const assignRequired = noFinessMode ? false : (hasManualResolved || currentAutoFoundSources.some((src) => finessConfirmState.get(src) === 'yes'));
+      const assignComplete = noFinessMode ? true : ((!hasManualResolved || manualResolvedValue !== '')
         && currentAutoFoundSources
           .filter((src) => finessConfirmState.get(src) === 'yes')
-          .every((src) => String(finessDispoBySource.get(src) || '').trim() !== '');
-      const assignUnique = new Set(assignedValues).size === assignedValues.length;
+          .every((src) => String(finessDispoBySource.get(src) || '').trim() !== ''));
+      const assignUnique = noFinessMode ? true : (new Set(assignedValues).size === assignedValues.length);
       const next = document.getElementById('ident-next');
       const setFieldState = (input, state) => {
         if (!input) return;
@@ -6323,7 +6390,10 @@
         const mainLookupFound = mainInput?.dataset.lookupFound === '1';
         const mainLookupTouched = mainInput?.dataset.lookupTouched === '1';
         const mainLookupMiss = !!mainValue && isValidFiness(mainValue) && !mainLookupFound && mainLookupTouched && !manualIdentResolved;
-        if (!renderedFinessValues.some((v) => v !== '') && !hasResolvedFiness) {
+        if (noFinessMode) {
+          finessMsg.className = 'sub';
+          finessMsg.textContent = '';
+        } else if (!renderedFinessValues.some((v) => v !== '') && !hasResolvedFiness) {
           finessMsg.className = 'sub';
           finessMsg.textContent = '';
         } else if (anyFinessInvalid) {
@@ -6337,7 +6407,7 @@
           finessMsg.textContent = "Confirmez qu'il s'agit bien de votre établissement (Oui/Non).";
         } else if (!assignComplete) {
           finessMsg.className = 'sub visible err';
-          finessMsg.textContent = "Associez chaque FINESS confirmé à un dispositif (ESRP/ESPO/UEROS/DEAc).";
+          finessMsg.textContent = "Associez chaque FINESS confirmé à un dispositif (ESRP/ESPO/UEROS).";
         } else if (!assignUnique) {
           finessMsg.className = 'sub visible err';
           finessMsg.textContent = "Un dispositif ne peut être associé qu'une seule fois dans ce questionnaire. Ouvrez un nouveau questionnaire si besoin.";
@@ -6395,8 +6465,45 @@
       refreshIdentificationFromFiness();
       validateIdent();
     }));
+    finessNoNumberCheckbox?.addEventListener('change', () => {
+      const enabled = !!finessNoNumberCheckbox.checked;
+      const mainFinessInput = document.getElementById('finess');
+      if (mainFinessInput) mainFinessInput.disabled = enabled;
+      if (clearMainFinessBtn) clearMainFinessBtn.disabled = enabled;
+      if (enabled) {
+        collectFinessInputs().forEach((input) => {
+          input.value = '';
+          input.dataset.lookupTouched = '0';
+          input.dataset.lookupFound = '0';
+        });
+        extraFiness.innerHTML = '';
+        finessConfirmState.clear();
+        finessDispoBySource.clear();
+        finessRecordBySource.clear();
+        pendingManualAssocRows = [];
+        currentAutoFoundSources = [];
+        forceTopFinessEntryVisible = false;
+        manualEntryRequested = true;
+        manualIdentResolved = false;
+        manualResolvedRecord = null;
+        setManualIdentVisible(true);
+      } else {
+        manualEntryRequested = false;
+        manualIdentResolved = false;
+        manualResolvedRecord = null;
+        setManualIdentVisible(false);
+      }
+      refreshIdentificationFromFiness();
+      validateIdent();
+    });
     collectFinessInputs().forEach(i => {
       i.addEventListener('input', () => {
+        if (isNoFinessMode()) {
+          i.value = '';
+          i.dataset.lookupTouched = '0';
+          validateIdent();
+          return;
+        }
         i.value = String(i.value || '').replace(/\D+/g, '').slice(0, 9);
         i.dataset.lookupTouched = i.value.length === 9 ? '1' : '0';
         if (i.id === 'finess') {
@@ -6410,6 +6517,10 @@
         validateIdent();
       });
       i.addEventListener('blur', () => {
+        if (isNoFinessMode()) {
+          validateIdent();
+          return;
+        }
         i.dataset.lookupTouched = '1';
         setTimeout(() => {
           if (blurShouldSkipFinessRefresh()) {
@@ -6423,19 +6534,24 @@
 
     const dispoChecks = Array.from(document.querySelectorAll('[data-dispo]'));
     const etpInputs = Array.from(document.querySelectorAll('[data-etp]'));
+    const rhDeacYes = document.getElementById('rh-deac-yes');
+    const rhDeacNo = document.getElementById('rh-deac-no');
+    const rhDeacLine = document.getElementById('rh-deac-line');
+    const rhDeacDispo = document.getElementById('rh-deac-dispo');
     const rhNextBtn = document.getElementById('rh-next');
     const rhPrevStepMsg = document.getElementById('rh-prev-step-msg');
     const rhBackStep2Btn = document.getElementById('rh-back-step2-btn');
     const psBackStep2Btn = document.getElementById('ps-back-step2-btn');
 
     function getSelectedDisposFromStep2() {
-      const keys = ['esrp', 'espo', 'ueros', 'deac'];
+      const keys = ['esrp', 'espo', 'ueros'];
       const assigned = new Set(getAssignedDisposFromFiness());
-      if (assigned.size) return keys.filter((key) => assigned.has(key));
-      return keys.filter((key) => {
+      const selected = assigned.size ? keys.filter((key) => assigned.has(key)) : keys.filter((key) => {
         const fromRh = document.querySelector(`[data-dispo="${key}"]`);
         return !!fromRh?.checked;
       });
+      if (rhDeacYes?.checked) selected.push('deac');
+      return selected;
     }
 
     function syncRhDispoVisibilityFromStep2() {
@@ -6445,7 +6561,7 @@
         const key = check.dataset.dispo;
         const row = check.closest('.dispo-line');
         const etp = document.querySelector(`[data-etp="${key}"]`);
-        const isVisible = selectedSet.has(key);
+        const isVisible = key === 'deac' ? !!rhDeacYes?.checked : selectedSet.has(key);
         if (row) row.style.display = isVisible ? '' : 'none';
         check.checked = isVisible;
         check.disabled = true;
@@ -6454,6 +6570,7 @@
           if (!isVisible) etp.value = '';
         }
       });
+      applyRhDeacQuestionState();
       if (rhPrevStepMsg) rhPrevStepMsg.style.display = selected.length === 0 ? '' : 'none';
     }
 
@@ -6518,6 +6635,10 @@
     }
     dispoChecks.forEach(i => i.addEventListener('change', validateEtp));
     dispoChecks.forEach(i => i.addEventListener('change', setIdentDisposFromRh));
+    [rhDeacYes, rhDeacNo].forEach((radio) => radio?.addEventListener('change', () => {
+      applyRhDeacQuestionState();
+      validateEtp();
+    }));
     etpInputs.forEach(i => i.addEventListener('input', validateEtp));
     rhBackStep2Btn?.addEventListener('click', () => showStep(2));
     psBackStep2Btn?.addEventListener('click', () => showStep(2));
@@ -7320,6 +7441,7 @@
     });
 
     validateIdent();
+    applyRhDeacQuestionState();
     validateEtp();
     setIdentDisposFromRh();
     validateMetiers();
