@@ -4311,6 +4311,7 @@
       const currentTitleLower = String(conditionalCurrentTitle?.textContent || '').toLowerCase();
       const isFileActive = normalizedKey === 'fileactive' || currentTitleLower.includes('file active');
       const isHandicapMatrix = normalizedKey === 'handicap_matrix';
+      const isSortiesSuspensions = normalizedKey === 'sorties_suspensions';
       if (isHandicapMatrix) {
         const handicapEval = evaluateHandicapMatrixBlock(state);
         const handicapOk = handicapEval.principalOk;
@@ -4331,6 +4332,34 @@
             <span class="kpi-mini kpi-slot-diff ${handicapEval.principalOk ? 'diff-ok' : 'diff-warn'}">
               <span class="kpi-mini-label">Écart P.</span>
               <span class="kpi-mini-value">${handicapEval.principalDiff.toFixed(1)}</span>
+            </span>
+          </div>
+        `;
+        const headerHeight = conditionalCurrentHeader?.offsetHeight || 0;
+        conditionalStepEl?.style?.setProperty('--cond-header-height', `${headerHeight}px`);
+        return;
+      }
+      if (isSortiesSuspensions) {
+        const sortiesEval = evaluateSortiesBlock(state);
+        const diff = sortiesEval.sum - sortiesEval.nb;
+        const isOk = Math.abs(diff) < 0.0001;
+        conditionalCurrentKpi.hidden = false;
+        conditionalCurrentKpi.style.display = 'inline-flex';
+        conditionalCurrentHeader?.classList.remove('is-no-kpi');
+        conditionalCurrentKpi.className = isOk ? 'status kpi cond-current-kpi ok' : 'status kpi cond-current-kpi err';
+        conditionalCurrentKpi.innerHTML = `
+          <div class="current-kpi-single">
+            <span class="kpi-mini">
+              <span class="kpi-mini-label">Cible</span>
+              <span class="kpi-mini-value">${sortiesEval.nb.toFixed(0)}</span>
+            </span>
+            <span class="kpi-mini">
+              <span class="kpi-mini-label">Saisie</span>
+              <span class="kpi-mini-value">${sortiesEval.sum.toFixed(0)}</span>
+            </span>
+            <span class="kpi-mini kpi-slot-diff ${isOk ? 'diff-ok' : 'diff-warn'}">
+              <span class="kpi-mini-label">Écart</span>
+              <span class="kpi-mini-value">${diff.toFixed(0)}</span>
             </span>
           </div>
         `;
@@ -4528,31 +4557,8 @@
       ).trim();
       const declaredSortiesNb = toNum(declaredSortiesValue);
       sortiesBloc.nb = declaredSortiesValue;
-      const sortiesEval = evaluateSortiesBlock(state);
       const suspEval = evaluateSuspensionsBlock(state);
       const showSortiesReasons = true;
-      const sortiesDiff = sortiesEval.sum - sortiesEval.nb;
-      const sortiesDiffClass = Math.abs(sortiesDiff) < 0.0001 ? 'diff-ok' : 'diff-err';
-      const sortiesCoherenceHtml = showSortiesReasons
-        ? `
-          <div class="status kpi ${Math.abs(sortiesDiff) < 0.0001 ? 'ok' : 'err'}">
-            <div class="kpi-line">
-              <div class="kpi-cell">
-                <span class="kpi-cell-label">Cible</span>
-                <span class="kpi-cell-value">${sortiesEval.nb.toFixed(0)}</span>
-              </div>
-              <div class="kpi-cell">
-                <span class="kpi-cell-label">Saisie</span>
-                <span class="kpi-cell-value">${sortiesEval.sum.toFixed(0)}</span>
-              </div>
-              <div class="kpi-cell ${sortiesDiffClass}">
-                <span class="kpi-cell-label">Écart</span>
-                <span class="kpi-cell-value">${sortiesDiff.toFixed(0)}</span>
-              </div>
-            </div>
-          </div>
-        `
-        : '';
       const sortiesPrecisionHtml = showSortiesReasons && toNum(sortiesBloc.raisons?.autres_nb) > 0 && String(sortiesBloc.raisons?.autres_precision || sortiesBloc.raisons?.autres || '').trim() === ''
         ? '<div class="status err">Précisez le motif si la ligne « Autres » comporte un effectif.</div>'
         : '';
@@ -5072,7 +5078,6 @@
         <div class="box cond-block cond-block-anchor" data-block-key="sorties_suspensions" id="cond-block-sorties_suspensions">
           <div class="cond-block-head">
             <strong>Sortie avant le terme de la prestation</strong>
-            ${sortiesCoherenceHtml ? `<div class="cond-kpi-row-right">${sortiesCoherenceHtml}</div>` : ''}
           </div>
           <p class="hint" style="margin:6px 0 0 0;">Vous avez déclaré la sortie définitive de <strong><span data-sorties-declarees>${declaredSortiesNb}</span></strong> personnes durant l'année.<br>Comment se répartissent ces départs ?</p>
           <div>
