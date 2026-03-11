@@ -17,6 +17,7 @@
       --err: #a32222;
       --focus: #1f6fb2;
       --radius: 12px;
+      --field-col-width: 320px;
       --space-1: 8px;
       --space-2: 12px;
       --space-3: 16px;
@@ -137,6 +138,36 @@
     .progress-card h3 {
       margin: 0 0 8px 0;
       font-size: 1.05rem;
+    }
+    .progress-card-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+    .progress-card-head h3 {
+      margin: 0;
+      font-size: 1.05rem;
+    }
+    .progress-card-toggle {
+      border: 1px solid #c7d6e6;
+      background: #f6faff;
+      color: #355474;
+      border-radius: 8px;
+      padding: 5px 9px;
+      font-size: .78rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .progress-card-toggle:hover {
+      background: #edf5ff;
+    }
+    .progress-card.is-collapsed .progress-card-body {
+      display: none;
+    }
+    #conditional-blocks-card {
+      display: none;
     }
     .progress-head {
       display: flex;
@@ -363,8 +394,127 @@
       color: #1f7a45;
       background: #f1faf4;
     }
+    .cond-focus-toolbar {
+      position: sticky;
+      top: 8px;
+      z-index: 4;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 12px;
+      margin-bottom: 12px;
+      border: 1px solid #d7e3ef;
+      border-radius: 12px;
+      background: #f6faff;
+    }
+    .cond-current-header {
+      position: sticky;
+      top: calc(12px + var(--cond-toolbar-height, 0px));
+      z-index: 3;
+      margin: 0 0 12px 0;
+      padding: 8px 10px;
+      border: 1px solid #d7e3ef;
+      border-radius: 10px;
+      background: #f7fbff;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .cond-current-title {
+      margin: 0;
+      font-size: 1.05rem;
+      font-weight: 800;
+      color: #223b57;
+      line-height: 1.2;
+      min-width: 0;
+      flex: 1 1 auto;
+    }
+    .cond-current-kpi {
+      margin-top: 0 !important;
+      padding: 6px 8px !important;
+      border-radius: 9px !important;
+      border-width: 1px !important;
+      display: inline-flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      white-space: nowrap;
+      font-size: .8rem;
+      width: var(--field-col-width);
+      margin-left: auto;
+      flex: 0 0 var(--field-col-width);
+    }
+    .current-kpi-single {
+      display: inline-flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      width: 100%;
+      white-space: nowrap;
+    }
+    .current-kpi-handicap {
+      display: grid;
+      gap: 6px;
+      width: 100%;
+    }
+    .current-kpi-handicap-line {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+      flex-wrap: wrap;
+    }
+    .cond-focus-toolbar .mini {
+      font-size: .84rem;
+      padding: 6px 10px;
+      border-radius: 9px;
+    }
+    .cond-focus-current {
+      font-weight: 700;
+      color: #2b4765;
+      margin-left: 4px;
+      margin-right: auto;
+      min-width: 220px;
+    }
+    .cond-focus-meta {
+      font-size: .86rem;
+      color: #4d6783;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .cond-focus-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      width: 100%;
+      margin-top: 2px;
+    }
+    .cond-focus-tab {
+      border: 1px solid #c7d8ea;
+      background: #fff;
+      color: #2d4660;
+      border-radius: 999px;
+      padding: 5px 10px;
+      font-size: .82rem;
+      font-weight: 700;
+      cursor: pointer;
+      line-height: 1.2;
+    }
+    .cond-focus-tab.is-active {
+      border-color: #8fb2d5;
+      background: #eaf4ff;
+      color: #1f466f;
+    }
+    .cond-focus-tab.is-done {
+      border-color: #9bcaaa;
+      background: #f1faf4;
+      color: #1f7a45;
+    }
+    .cond-block.is-focus-active {
+      box-shadow: 0 0 0 2px #d5e6f7 inset;
+    }
     .cond-block-anchor {
-      scroll-margin-top: 90px;
+      scroll-margin-top: 180px;
     }
     .section-break {
       border-color: #9ec0df;
@@ -412,7 +562,7 @@
       border-top: 1px solid #edf2f7;
       padding: 14px 0;
       display: grid;
-      grid-template-columns: 1fr 320px;
+      grid-template-columns: 1fr var(--field-col-width);
       gap: 12px;
       align-items: start;
     }
@@ -460,6 +610,11 @@
     .field-input-invalid {
       border-color: #c43c3c !important;
       background: #fff4f4 !important;
+    }
+    .field-input-warn {
+      border-color: #d48a1d !important;
+      background: #fff8ee !important;
+      box-shadow: 0 0 0 2px rgba(212, 138, 29, 0.18);
     }
     .auto-filled {
       border-color: #76a9d7 !important;
@@ -1301,6 +1456,10 @@
       font-size: 1.02rem;
       color: #243c56;
     }
+    #cond-block-sorties_suspensions > .cond-block-head > strong {
+      font-size: 1.02rem;
+      color: #243c56;
+    }
     .ds-simple-participants-block.ds-simple-nested {
       margin-top: 0;
       margin-left: 18px;
@@ -1532,6 +1691,114 @@
       background: #eef5fd;
       color: #234b73;
     }
+    .cond-block-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 6px;
+      position: relative;
+    }
+    .cond-block-head.no-title {
+      justify-content: flex-end;
+      margin-bottom: 10px;
+    }
+    .step[data-step="conditional"] .cond-block.is-focus-active > strong {
+      display: none;
+    }
+    .step[data-step="conditional"] .cond-block.is-focus-active > .cond-block-head > strong {
+      display: none;
+    }
+    .step[data-step="conditional"] .cond-block.is-focus-active > .cond-block-head {
+      justify-content: flex-end;
+    }
+    .step[data-step="conditional"] .cond-block.is-focus-active {
+      position: sticky;
+      top: calc(16px + var(--cond-toolbar-height, 0px) + var(--cond-header-height, 0px));
+      max-height: calc(100vh - (30px + var(--cond-toolbar-height, 0px) + var(--cond-header-height, 0px)));
+      overflow: auto;
+      margin-top: 0;
+      z-index: 2;
+    }
+    .cond-kpi-inline {
+      margin-top: 0 !important;
+      padding: 6px 8px !important;
+      border-radius: 9px !important;
+      border-width: 1px !important;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: .8rem;
+      font-weight: 700;
+      white-space: nowrap;
+      background: #f4f8fd;
+      position: sticky;
+      top: 86px;
+      z-index: 3;
+      margin-left: auto;
+      align-self: flex-start;
+    }
+    .cond-dual-kpi-row {
+      display: grid;
+      gap: 6px;
+      margin: 8px 0 10px 0;
+    }
+    .cond-dual-kpi-line {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .cond-kpi-row-right {
+      display: flex;
+      justify-content: flex-end;
+      margin: 8px 0 10px 0;
+    }
+    .cond-block-head .cond-kpi-row-right {
+      margin: 0;
+    }
+    .cond-kpi-row-right .status.kpi {
+      margin-top: 0;
+      width: var(--field-col-width);
+    }
+    .kpi-mini {
+      display: inline-flex;
+      align-items: baseline;
+      gap: 5px;
+      padding: 2px 6px;
+      border: 1px solid #c9d9ea;
+      border-radius: 999px;
+      background: #fff;
+      color: #355474;
+    }
+    .kpi-mini-label {
+      font-size: .72rem;
+      letter-spacing: .03em;
+      text-transform: uppercase;
+      color: #5b7088;
+      font-weight: 700;
+    }
+    .kpi-mini-value {
+      font-size: .9rem;
+      font-weight: 800;
+      color: #234b73;
+    }
+    .kpi-mini.kpi-slot-diff.diff-ok {
+      border-color: #9bcaaa;
+      background: #f1faf4;
+    }
+    .kpi-mini.kpi-slot-diff.diff-ok .kpi-mini-value {
+      color: #1f7a45;
+    }
+    .kpi-mini.kpi-slot-diff.diff-err,
+    .kpi-mini.kpi-slot-diff.diff-warn {
+      border-color: #e6b0b0;
+      background: #fff4f4;
+    }
+    .kpi-mini.kpi-slot-diff.diff-err .kpi-mini-value,
+    .kpi-mini.kpi-slot-diff.diff-warn .kpi-mini-value {
+      color: #a32222;
+    }
     .kpi-line {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1577,6 +1844,19 @@
     }
     .kpi-cell.diff-warn .kpi-cell-value {
       color: #a32222;
+    }
+    .cond-sticky-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 320px;
+      gap: 14px;
+      align-items: start;
+    }
+    .cond-sticky-side {
+      position: sticky;
+      top: 14px;
+    }
+    .cond-sticky-side .status.kpi {
+      margin-top: 0;
     }
     .kpi-diff {
       display: inline-block;
@@ -1660,6 +1940,18 @@
       .progress-panel { position: static; }
       .field { grid-template-columns: 1fr; }
       .kpi-line { grid-template-columns: 1fr; }
+      .cond-block-head {
+        position: static;
+        flex-wrap: wrap;
+      }
+      .cond-kpi-inline {
+        position: static;
+        width: 100%;
+        white-space: normal;
+        justify-content: flex-start;
+      }
+      .cond-sticky-layout { grid-template-columns: 1fr; }
+      .cond-sticky-side { position: static; }
       .finess-row { align-items: center; }
       .dispo-line { grid-template-columns: 1fr; }
       .finess-found-layout { grid-template-columns: 1fr; }
@@ -1701,6 +1993,28 @@
       .step[data-step="4"] .field-radio-inline.ctx-inline-preferred {
         display: flex;
       }
+      .cond-focus-toolbar {
+        position: static;
+      }
+      .cond-current-header {
+        position: static;
+        flex-wrap: wrap;
+      }
+      .cond-current-kpi { width: 100%; white-space: normal; }
+      .cond-dual-kpi-row .status.kpi,
+      .cond-kpi-row-right .status.kpi {
+        width: 100%;
+        min-width: 0;
+      }
+      .step[data-step="conditional"] .cond-block.is-focus-active {
+        position: static;
+        max-height: none;
+        overflow: visible;
+      }
+      .cond-focus-current {
+        width: 100%;
+        margin: 2px 0 0 0;
+      }
     }
   </style>
 </head>
@@ -1732,16 +2046,21 @@
   <div class="app">
     <aside class="progress-panel" aria-label="Progression du formulaire">
       <div class="progress-card" id="primary-progress-card">
-        <h3>Étapes Principales</h3>
-        <div class="progress-head">
-          <span>Progression globale</span>
-          <strong id="primary-completion-percent">0%</strong>
+        <div class="progress-card-head">
+          <h3>Étapes Principales</h3>
+          <button type="button" id="primary-progress-toggle" class="progress-card-toggle" aria-expanded="true">Replier</button>
         </div>
-        <div class="progress-track" aria-hidden="true">
-          <div id="primary-completion-fill" class="progress-fill"></div>
+        <div class="progress-card-body" id="primary-progress-body">
+          <div class="progress-head">
+            <span>Progression globale</span>
+            <strong id="primary-completion-percent">0%</strong>
+          </div>
+          <div class="progress-track" aria-hidden="true">
+            <div id="primary-completion-fill" class="progress-fill"></div>
+          </div>
+          <div id="primary-completion-stats" class="progress-stats">0 / 4 étapes terminées</div>
+          <ul id="primary-toc-list" class="toc-list"></ul>
         </div>
-        <div id="primary-completion-stats" class="progress-stats">0 / 4 étapes terminées</div>
-        <ul id="primary-toc-list" class="toc-list"></ul>
       </div>
       <div class="progress-card" id="secondary-progress-card">
         <h3>Étapes Conditionnelles</h3>
@@ -1754,6 +2073,10 @@
         </div>
         <div id="secondary-completion-stats" class="progress-stats">0 / 0 sections terminées</div>
         <ul id="secondary-toc-list" class="toc-list"></ul>
+      </div>
+      <div class="progress-card" id="conditional-blocks-card">
+        <h3>Blocs de cette étape</h3>
+        <ul id="conditional-block-nav-list" class="cond-nav-list"></ul>
       </div>
     </aside>
 
@@ -2412,22 +2735,36 @@
         <div id="ps-status" class="status"></div>
         <div class="actions">
           <button data-prev>Retour</button>
-          <button class="primary" id="prestations-next">Continuer</button>
+          <button class="primary" id="prestations-next">Valider vos prestations</button>
         </div>
       </section>
 
       <section class="step" id="step-conditional" data-step="conditional">
         <h2 id="conditional-step-title">Étape conditionnelle</h2>
         <p class="hint" id="conditional-step-hint">Complétez cette étape conditionnelle.</p>
-
-        <div class="cond-nav">
-          <div class="cond-nav-head">
-            <span class="cond-nav-title">Blocs de cette étape</span>
-          </div>
-          <ul id="conditional-block-nav-list" class="cond-nav-list"></ul>
-        </div>
-
         <div id="cond-prestation-mode-block"></div>
+        <div id="conditional-focus-toolbar" class="cond-focus-toolbar" aria-label="Navigation des blocs">
+          <button type="button" id="cond-focus-prev-btn" class="mini">Précédent</button>
+          <button type="button" id="cond-focus-next-btn" class="mini">Suivant</button>
+          <div id="cond-focus-tabs" class="cond-focus-tabs"></div>
+        </div>
+        <div id="conditional-current-header" class="cond-current-header" aria-live="polite">
+          <h3 id="conditional-current-title" class="cond-current-title">Bloc en cours</h3>
+          <div id="conditional-current-kpi" class="status kpi cond-current-kpi" hidden>
+            <span class="kpi-mini">
+              <span class="kpi-mini-label">Cible*</span>
+              <span class="kpi-mini-value" id="current-kpi-target">0.0</span>
+            </span>
+            <span class="kpi-mini">
+              <span class="kpi-mini-label">Saisie</span>
+              <span class="kpi-mini-value" id="current-kpi-sum">0.0</span>
+            </span>
+            <span class="kpi-mini kpi-slot-diff" id="current-kpi-diff-pill">
+              <span class="kpi-mini-label">Écart</span>
+              <span class="kpi-mini-value" id="current-kpi-diff">0.0</span>
+            </span>
+          </div>
+        </div>
 
         <div class="box cond-block cond-block-anchor" data-block-key="fileactive" id="cond-block-fileactive">
           <strong>File active & journées</strong>
@@ -2447,17 +2784,14 @@
             <div><label>Durée moyenne de séjour (auto)</label></div>
             <div><input id="cond-duree" type="number" min="0" step="0.01" readonly></div>
           </div>
-          <p class="hint" id="cond-duree-help" style="margin-top:4px; margin-bottom:0;">
-            Durée moyenne = Nombre de journées réalisées / (Nombre de personnes accompagnées au 31/12 + Nombre de sorties définitives dans l'année).
-          </p>
+          <p class="hint" id="cond-duree-help" style="display:none; margin-top:4px; margin-bottom:0;"></p>
           <p class="hint" id="cond-cible-help" style="margin-top:6px; margin-bottom:0; font-weight:700;"></p>
         </div>
 
         <div id="conditional-coherence-sections"></div>
-        <div id="conditional-status" class="status"></div>
         <div class="actions">
-          <button type="button" id="conditional-prev-btn">Retour</button>
-          <button type="button" class="primary" id="conditional-next-btn">Continuer</button>
+          <button type="button" id="conditional-prev-btn">Précédent</button>
+          <button type="button" class="primary" id="conditional-next-btn">Suivant</button>
         </div>
       </section>
 
@@ -2484,6 +2818,9 @@
     const fakeSubmitBtn = document.getElementById('fake-submit');
     const primaryTocList = document.getElementById('primary-toc-list');
     const secondaryTocList = document.getElementById('secondary-toc-list');
+    const primaryProgressCard = document.getElementById('primary-progress-card');
+    const primaryProgressToggle = document.getElementById('primary-progress-toggle');
+    const conditionalBlocksCard = document.getElementById('conditional-blocks-card');
     const conditionalPrevBtn = document.getElementById('conditional-prev-btn');
     const conditionalNextBtn = document.getElementById('conditional-next-btn');
     const condFileActiveInput = document.getElementById('cond-file-active');
@@ -2491,11 +2828,27 @@
     const condJourneesInput = document.getElementById('cond-journees');
     const conditionalCoherenceSections = document.getElementById('conditional-coherence-sections');
     const conditionalBlockNavList = document.getElementById('conditional-block-nav-list');
+    const conditionalFocusToolbar = document.getElementById('conditional-focus-toolbar');
+    const condFocusPrevBtn = document.getElementById('cond-focus-prev-btn');
+    const condFocusNextBtn = document.getElementById('cond-focus-next-btn');
+    const condFocusCurrent = document.getElementById('cond-focus-current');
+    const condFocusMeta = document.getElementById('cond-focus-meta');
+    const condFocusTabs = document.getElementById('cond-focus-tabs');
+    const conditionalCurrentHeader = document.getElementById('conditional-current-header');
+    const conditionalCurrentTitle = document.getElementById('conditional-current-title');
+    const conditionalCurrentKpi = document.getElementById('conditional-current-kpi');
+    const currentKpiTarget = document.getElementById('current-kpi-target');
+    const currentKpiSum = document.getElementById('current-kpi-sum');
+    const currentKpiDiff = document.getElementById('current-kpi-diff');
+    const currentKpiDiffPill = document.getElementById('current-kpi-diff-pill');
     let deacOnlyFlow = false;
     let metierStepSkipped = false;
     let conditionalDefs = [];
     const conditionalState = new Map();
     let currentConditionalId = '';
+    let focusedConditionalStepId = '';
+    let focusedConditionalBlockKey = '';
+    let autoCollapsePrimaryAfterPrestations = false;
     let step = 1;
     const conditionalCohDefs = [
       {
@@ -2657,6 +3010,12 @@
         .replace(/[\u0300-\u036f]/g, '')
         .toLowerCase();
       return normalized.startsWith('directes orp cdaph - parcours accompagnement a visee qualifiante - formation');
+    }
+
+    function shouldHideLegacyDirectBlocks(conditionalId = currentConditionalId) {
+      const def = getConditionalDefById(conditionalId);
+      const name = String(def?.name || '');
+      return /^Directes ORP CDAPH - (UEROS|ESPO|ESRP)\b/i.test(name);
     }
 
     function hasEmploiAccesBlockConditionalStep(id) {
@@ -3088,6 +3447,7 @@
         const prev = conditionalState.get(def.id);
         nextState.set(def.id, prev || {
           done: false,
+          visitedBlocks: [],
           fileActive: '',
           sorties: '',
           journees: '',
@@ -3103,6 +3463,7 @@
           formationsSelection: makeEmptyFormationsSelectionState(),
         });
         const current = nextState.get(def.id);
+        if (!Array.isArray(current.visitedBlocks)) current.visitedBlocks = [];
         if (!current.coh) current.coh = makeEmptyConditionalCohValues();
         conditionalCohDefs.forEach((cohDef) => {
           const defaultValue = ['age', 'niveau_entree', 'situation_entree', 'ressources_entree'].includes(cohDef.key) ? '0' : '';
@@ -3135,6 +3496,7 @@
     function getConditionalStateById(id) {
       return conditionalState.get(id) || {
         done: false,
+        visitedBlocks: [],
         fileActive: '',
         sorties: '',
         journees: '',
@@ -3149,6 +3511,19 @@
         preconisationsBloc: makeEmptyPreconisationsState(),
         formationsSelection: makeEmptyFormationsSelectionState(),
       };
+    }
+
+    function isConditionalBlockVisited(state, blockKey) {
+      const visited = Array.isArray(state?.visitedBlocks) ? state.visitedBlocks : [];
+      return visited.includes(blockKey);
+    }
+
+    function markConditionalBlockVisited(state, blockKey) {
+      if (!state || !blockKey) return;
+      if (!Array.isArray(state.visitedBlocks)) state.visitedBlocks = [];
+      if (!state.visitedBlocks.includes(blockKey)) {
+        state.visitedBlocks.push(blockKey);
+      }
     }
 
     function computeConditionalDuree(state) {
@@ -3170,12 +3545,42 @@
       const target = getConditionalTarget(state);
       return getActiveConditionalCohDefs(conditionalId).map((def) => {
         let sum = 0;
+        let ruleChecks = [];
+        let rulesOk = true;
         if (def.type === 'geo') {
           const rows = Array.isArray(state?.geoRows) ? state.geoRows : [];
           sum = rows.reduce((acc, row) => {
             const n = Number(row?.count || 0);
             return acc + (Number.isFinite(n) ? n : 0);
           }, 0);
+        } else if (def.key === 'situation_entree') {
+          const values = Array.isArray(state?.coh?.[def.key]) ? state.coh[def.key] : [];
+          const n = (idx) => {
+            const v = Number(values[idx] || 0);
+            return Number.isFinite(v) ? v : 0;
+          };
+          const enPrive = n(0);
+          const priveDont = n(1) + n(2);
+          const enPublic = n(3);
+          const fpt = n(4);
+          const fptDont = n(5) + n(6);
+          const fph = n(7);
+          const fphDont = n(8) + n(9);
+          const fpe = n(10);
+          const fpeDont = n(11) + n(12);
+          const autresPrincipaux = n(13) + n(14) + n(15) + n(16) + n(17) + n(18) + n(19) + n(20);
+
+          // Cible = uniquement les lignes principales (pas les "dont").
+          sum = enPrive + enPublic + autresPrincipaux;
+
+          ruleChecks = [
+            { key: 'prive_dont', ok: priveDont <= enPrive },
+            { key: 'public_repartition', ok: (fpt + fph + fpe) <= enPublic },
+            { key: 'fpt_dont', ok: fptDont <= fpt },
+            { key: 'fph_dont', ok: fphDont <= fph },
+            { key: 'fpe_dont', ok: fpeDont <= fpe },
+          ];
+          rulesOk = ruleChecks.every((check) => check.ok);
         } else {
           const values = Array.isArray(state?.coh?.[def.key]) ? state.coh[def.key] : [];
           sum = values.reduce((acc, raw) => {
@@ -3185,8 +3590,8 @@
         }
         const diff = sum - target;
         const calculable = target > 0;
-        const ok = calculable && Math.abs(diff) < 0.0001;
-        return { key: def.key, title: def.title, target, sum, diff, ok, calculable };
+        const ok = calculable && Math.abs(diff) < 0.0001 && rulesOk;
+        return { key: def.key, title: def.title, target, sum, diff, ok, calculable, rulesOk, ruleChecks };
       });
     }
 
@@ -3242,8 +3647,13 @@
       });
       if (geoInvalid) return false;
       const blocks = evaluateConditionalCoh(state, conditionalId);
-      const directAvecOrpBlock = evaluateDirectAvecOrpBlock(state, conditionalId);
-      const directSansOrpBlock = evaluateDirectSansOrpBlock(state, conditionalId);
+      const includeLegacyDirectBlocks = !shouldHideLegacyDirectBlocks(conditionalId);
+      const directAvecOrpBlock = includeLegacyDirectBlocks
+        ? evaluateDirectAvecOrpBlock(state, conditionalId)
+        : { done: true };
+      const directSansOrpBlock = includeLegacyDirectBlocks
+        ? evaluateDirectSansOrpBlock(state, conditionalId)
+        : { done: true };
       const sortiesBlock = evaluateSortiesBlock(state);
       const suspensionsBlock = evaluateSuspensionsBlock(state);
       const handicapBlock = evaluateHandicapMatrixBlock(state);
@@ -3305,17 +3715,22 @@
 
       const cohBlocks = evaluateConditionalCoh(state, conditionalId);
       const doneCohBlocks = cohBlocks.filter((block) => block.ok).length;
-      const directAvecOrpBlock = evaluateDirectAvecOrpBlock(state, conditionalId);
-      const directSansOrpBlock = evaluateDirectSansOrpBlock(state, conditionalId);
+      const includeLegacyDirectBlocks = !shouldHideLegacyDirectBlocks(conditionalId);
+      const directAvecOrpBlock = includeLegacyDirectBlocks
+        ? evaluateDirectAvecOrpBlock(state, conditionalId)
+        : { done: true, touched: false };
+      const directSansOrpBlock = includeLegacyDirectBlocks
+        ? evaluateDirectSansOrpBlock(state, conditionalId)
+        : { done: true, touched: false };
       const sortiesBlock = evaluateSortiesBlock(state);
       const suspensionsBlock = evaluateSuspensionsBlock(state);
       const handicapBlock = evaluateHandicapMatrixBlock(state);
       const precoBlock = evaluatePreconisationsBlock(state, conditionalId);
-      const total = 1 + cohBlocks.length + 5 + (precoBlock.visible ? 1 : 0); // file active + cohérence + (direct avec ORP / direct sans ORP / handicap / sorties / suspensions) + préconisations
+      const total = 1 + cohBlocks.length + (includeLegacyDirectBlocks ? 5 : 3) + (precoBlock.visible ? 1 : 0); // file active + cohérence + (optionnel direct avec/sans ORP) + handicap/sorties/suspensions + préconisations
       const done = (fileBlockDone ? 1 : 0)
         + doneCohBlocks
-        + (directAvecOrpBlock.done ? 1 : 0)
-        + (directSansOrpBlock.done ? 1 : 0)
+        + (includeLegacyDirectBlocks && directAvecOrpBlock.done ? 1 : 0)
+        + (includeLegacyDirectBlocks && directSansOrpBlock.done ? 1 : 0)
         + (handicapBlock.done ? 1 : 0)
         + (sortiesBlock.done ? 1 : 0)
         + (suspensionsBlock.done ? 1 : 0)
@@ -3334,8 +3749,8 @@
         || (String(state.sorties || '').trim() !== '')
         || (String(state.journees || '').trim() !== '')
         || hasCohInput
-        || directAvecOrpBlock.touched
-        || directSansOrpBlock.touched
+        || (includeLegacyDirectBlocks && directAvecOrpBlock.touched)
+        || (includeLegacyDirectBlocks && directSansOrpBlock.touched)
         || handicapBlock.touched
         || sortiesBlock.touched
         || suspensionsBlock.touched
@@ -3400,7 +3815,8 @@
       const principalOk = Math.abs(principalDiff) < 0.0001;
       const associeOk = associeDiff <= 0.0001;
       const touched = rows.some((row) => isFilledNumberString(row?.principal) || isFilledNumberString(row?.associe));
-      return { done: principalOk && associeOk, touched, target, principalSum, associeSum, principalDiff, associeDiff, principalOk, associeOk };
+      const done = target > 0 && principalOk && associeOk;
+      return { done, touched, target, principalSum, associeSum, principalDiff, associeDiff, principalOk, associeOk };
     }
 
     function evaluatePreconisationsBlock(state, conditionalId = currentConditionalId) {
@@ -3745,10 +4161,12 @@
       evaluateConditionalCoh(state, currentConditionalId).forEach((block) => {
         rows.push({ key: block.key, label: block.title, done: block.ok });
       });
-      const directAvecOrpBlock = evaluateDirectAvecOrpBlock(state, currentConditionalId);
-      const directSansOrpBlock = evaluateDirectSansOrpBlock(state, currentConditionalId);
-      rows.push({ key: 'direct_avec_orp', label: 'Prestations directes avec ORP CDAPH', done: directAvecOrpBlock.done });
-      rows.push({ key: 'direct_sans_orp', label: 'Prestations directes sans ORP CDAPH', done: directSansOrpBlock.done });
+      if (!shouldHideLegacyDirectBlocks(currentConditionalId)) {
+        const directAvecOrpBlock = evaluateDirectAvecOrpBlock(state, currentConditionalId);
+        const directSansOrpBlock = evaluateDirectSansOrpBlock(state, currentConditionalId);
+        rows.push({ key: 'direct_avec_orp', label: 'Prestations directes avec ORP CDAPH', done: directAvecOrpBlock.done });
+        rows.push({ key: 'direct_sans_orp', label: 'Prestations directes sans ORP CDAPH', done: directSansOrpBlock.done });
+      }
       const handicapBlock = evaluateHandicapMatrixBlock(state);
       rows.push({ key: 'handicap_matrix', label: 'Type de handicap principal et associé', done: handicapBlock.done });
       const precoBlock = evaluatePreconisationsBlock(state, currentConditionalId);
@@ -3759,7 +4177,36 @@
       const suspensionsBlock = evaluateSuspensionsBlock(state);
       rows.push({ key: 'suspensions', label: 'Suspensions', done: suspensionsBlock.done });
       rows.push({ key: 'sorties_suspensions', label: 'Sortie avant le terme de la prestation', done: sortiesBlock.done });
-      return rows;
+      const emploiKeys = getEmploiRequiredFieldKeys(currentConditionalId);
+      if (emploiKeys.length) {
+        const emploiRow = state?.directAvecOrp?.row || {};
+        const emploiDone = emploiKeys.every((key) => isFilledNumberString(emploiRow[key]));
+        rows.push({ key: 'suivi_emploi', label: "Suivi vers l'emploi", done: emploiDone });
+      }
+      const preferredOrder = [
+        'fileactive',
+        'genre',
+        'age',
+        'niveau_entree',
+        'situation_entree',
+        'ressources_entree',
+        'geographie',
+        'pathologies',
+        'origine_handicap',
+        'handicap_matrix',
+        'lesion_origine',
+        'suspensions',
+        'sorties_suspensions',
+        'preconisations_sortie',
+        'suivi_emploi',
+      ];
+      const orderRank = new Map(preferredOrder.map((key, idx) => [key, idx]));
+      return [...rows].sort((a, b) => {
+        const rankA = orderRank.has(a.key) ? orderRank.get(a.key) : Number.MAX_SAFE_INTEGER;
+        const rankB = orderRank.has(b.key) ? orderRank.get(b.key) : Number.MAX_SAFE_INTEGER;
+        if (rankA !== rankB) return rankA - rankB;
+        return 0;
+      });
     }
 
     function escapeHtmlText(value) {
@@ -3811,7 +4258,170 @@
     function scrollToConditionalBlock(blockKey) {
       const target = document.querySelector(`.cond-block[data-block-key="${blockKey}"]`);
       if (!target) return;
-      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      const toolbarH = conditionalFocusToolbar?.offsetHeight || 0;
+      const headerH = conditionalCurrentHeader?.offsetHeight || 0;
+      const offset = toolbarH + headerH + 28;
+      const targetTop = window.scrollY + target.getBoundingClientRect().top - offset;
+      window.scrollTo({ top: Math.max(0, targetTop), behavior: 'smooth' });
+    }
+
+    function getRenderableConditionalBlocks(state) {
+      const blocks = getConditionalBlocksDetails(state);
+      return blocks.filter((block) => {
+        const el = document.querySelector(`#step-conditional .cond-block[data-block-key="${block.key}"]`);
+        return !!el;
+      });
+    }
+
+    function renderConditionalFocusToolbar(blocks) {
+      if (!conditionalFocusToolbar) return;
+      const state = getConditionalStateById(currentConditionalId);
+      if (!Array.isArray(blocks) || !blocks.length) {
+        conditionalFocusToolbar.style.display = 'none';
+        if (conditionalCurrentHeader) conditionalCurrentHeader.style.display = 'none';
+        if (conditionalCurrentKpi) conditionalCurrentKpi.hidden = true;
+        if (condFocusTabs) condFocusTabs.innerHTML = '';
+        return;
+      }
+      conditionalFocusToolbar.style.display = '';
+      if (conditionalCurrentHeader) conditionalCurrentHeader.style.display = '';
+      const toolbarHeight = conditionalFocusToolbar.offsetHeight || 0;
+      conditionalStepEl?.style?.setProperty('--cond-toolbar-height', `${toolbarHeight}px`);
+      const doneCount = blocks.filter((block) => block.done && isConditionalBlockVisited(state, block.key)).length;
+      const activeIndex = Math.max(0, blocks.findIndex((block) => block.key === focusedConditionalBlockKey));
+      const activeBlock = blocks[activeIndex] || blocks[0];
+      if (conditionalCurrentTitle) conditionalCurrentTitle.textContent = activeBlock?.label || 'Bloc en cours';
+      const headerHeight = conditionalCurrentHeader?.offsetHeight || 0;
+      conditionalStepEl?.style?.setProperty('--cond-header-height', `${headerHeight}px`);
+      if (condFocusPrevBtn) condFocusPrevBtn.disabled = activeIndex <= 0;
+      if (condFocusNextBtn) condFocusNextBtn.disabled = activeIndex >= blocks.length - 1;
+      if (condFocusTabs) {
+        condFocusTabs.innerHTML = blocks.map((block) => {
+          const classes = ['cond-focus-tab'];
+          if (block.done && isConditionalBlockVisited(state, block.key)) classes.push('is-done');
+          if (block.key === focusedConditionalBlockKey) classes.push('is-active');
+          return `<button type="button" class="${classes.join(' ')}" data-cond-focus-key="${block.key}">${escapeHtmlText(block.label)}</button>`;
+        }).join('');
+      }
+    }
+
+    function updateConditionalCurrentHeaderKpi(state, blockKey) {
+      if (!conditionalCurrentKpi) return;
+      const normalizedKey = String(focusedConditionalBlockKey || blockKey || '').trim();
+      const currentTitleLower = String(conditionalCurrentTitle?.textContent || '').toLowerCase();
+      const isFileActive = normalizedKey === 'fileactive' || currentTitleLower.includes('file active');
+      const isHandicapMatrix = normalizedKey === 'handicap_matrix';
+      if (isHandicapMatrix) {
+        const handicapEval = evaluateHandicapMatrixBlock(state);
+        const handicapOk = handicapEval.principalOk;
+        conditionalCurrentKpi.hidden = false;
+        conditionalCurrentKpi.style.display = 'inline-flex';
+        conditionalCurrentHeader?.classList.remove('is-no-kpi');
+        conditionalCurrentKpi.className = handicapOk ? 'status kpi cond-current-kpi ok' : 'status kpi cond-current-kpi err';
+        conditionalCurrentKpi.innerHTML = `
+          <div class="current-kpi-single">
+            <span class="kpi-mini">
+              <span class="kpi-mini-label">Cible P.</span>
+              <span class="kpi-mini-value">${handicapEval.target.toFixed(1)}</span>
+            </span>
+            <span class="kpi-mini">
+              <span class="kpi-mini-label">Saisie P.</span>
+              <span class="kpi-mini-value">${handicapEval.principalSum.toFixed(1)}</span>
+            </span>
+            <span class="kpi-mini kpi-slot-diff ${handicapEval.principalOk ? 'diff-ok' : 'diff-warn'}">
+              <span class="kpi-mini-label">Écart P.</span>
+              <span class="kpi-mini-value">${handicapEval.principalDiff.toFixed(1)}</span>
+            </span>
+          </div>
+        `;
+        const headerHeight = conditionalCurrentHeader?.offsetHeight || 0;
+        conditionalStepEl?.style?.setProperty('--cond-header-height', `${headerHeight}px`);
+        return;
+      }
+      const coh = evaluateConditionalCoh(state, currentConditionalId).find((item) => item.key === normalizedKey);
+      if (!coh || isFileActive) {
+        conditionalCurrentKpi.hidden = true;
+        conditionalCurrentKpi.style.display = 'none';
+        conditionalCurrentHeader?.classList.add('is-no-kpi');
+        const headerHeight = conditionalCurrentHeader?.offsetHeight || 0;
+        conditionalStepEl?.style?.setProperty('--cond-header-height', `${headerHeight}px`);
+        return;
+      }
+      conditionalCurrentKpi.hidden = false;
+      conditionalCurrentKpi.style.display = 'inline-flex';
+      conditionalCurrentHeader?.classList.remove('is-no-kpi');
+      conditionalCurrentKpi.className = coh.ok ? 'status kpi cond-current-kpi ok' : 'status kpi cond-current-kpi err';
+      conditionalCurrentKpi.innerHTML = `
+        <div class="current-kpi-single">
+          <span class="kpi-mini">
+            <span class="kpi-mini-label">Cible*</span>
+            <span class="kpi-mini-value">${coh.target.toFixed(1)}</span>
+          </span>
+          <span class="kpi-mini">
+            <span class="kpi-mini-label">Saisie</span>
+            <span class="kpi-mini-value">${coh.sum.toFixed(1)}</span>
+          </span>
+          <span class="kpi-mini kpi-slot-diff ${coh.ok ? 'diff-ok' : 'diff-warn'}">
+            <span class="kpi-mini-label">Écart</span>
+            <span class="kpi-mini-value">${coh.calculable ? coh.diff.toFixed(1) : 'n/c'}</span>
+          </span>
+        </div>
+      `;
+      const headerHeight = conditionalCurrentHeader?.offsetHeight || 0;
+      conditionalStepEl?.style?.setProperty('--cond-header-height', `${headerHeight}px`);
+    }
+
+    function applyConditionalBlockFocus(state, { scroll = false, preferIncomplete = false } = {}) {
+      const blocks = getRenderableConditionalBlocks(state);
+      if (!blocks.length) {
+        renderConditionalFocusToolbar([]);
+        if (conditionalPrevBtn) conditionalPrevBtn.disabled = true;
+        if (conditionalNextBtn) conditionalNextBtn.disabled = true;
+        return;
+      }
+      const validKeys = new Set(blocks.map((block) => block.key));
+      if (!validKeys.has(focusedConditionalBlockKey)) {
+        focusedConditionalBlockKey = '';
+      }
+      if (preferIncomplete) {
+        const firstIncomplete = blocks.find((block) => !block.done);
+        if (firstIncomplete) focusedConditionalBlockKey = firstIncomplete.key;
+      }
+      if (!focusedConditionalBlockKey) {
+        focusedConditionalBlockKey = blocks[0].key;
+      }
+      markConditionalBlockVisited(state, focusedConditionalBlockKey);
+      blocks.forEach((block) => {
+        const el = document.querySelector(`#step-conditional .cond-block[data-block-key="${block.key}"]`);
+        if (!el) return;
+        const isActive = block.key === focusedConditionalBlockKey;
+        el.style.display = isActive ? '' : 'none';
+        el.classList.toggle('is-focus-active', isActive);
+        if (isActive) {
+          // Ensure the first row is visible when switching block focus.
+          el.scrollTop = 0;
+        }
+      });
+      const activeIndex = Math.max(0, blocks.findIndex((block) => block.key === focusedConditionalBlockKey));
+      if (conditionalPrevBtn) conditionalPrevBtn.disabled = activeIndex <= 0;
+      if (conditionalNextBtn) conditionalNextBtn.disabled = activeIndex >= blocks.length - 1;
+      renderConditionalFocusToolbar(blocks);
+      updateConditionalCurrentHeaderKpi(state, focusedConditionalBlockKey);
+      if (scroll) {
+        scrollToConditionalBlock(focusedConditionalBlockKey);
+      }
+    }
+
+    function moveConditionalFocus(delta) {
+      const state = getConditionalStateById(currentConditionalId);
+      const blocks = getRenderableConditionalBlocks(state);
+      if (!blocks.length) return;
+      const idx = blocks.findIndex((block) => block.key === focusedConditionalBlockKey);
+      const safeIdx = idx >= 0 ? idx : 0;
+      const nextIdx = Math.max(0, Math.min(blocks.length - 1, safeIdx + delta));
+      if (nextIdx === safeIdx) return;
+      focusedConditionalBlockKey = blocks[nextIdx].key;
+      applyConditionalBlockFocus(state, { scroll: true, preferIncomplete: false });
     }
 
     function renderConditionalBlockNav(state) {
@@ -3847,13 +4457,19 @@
         indirectChildren.push(...getCheckedInputLabels('input[name="ps-ind-mdph-child"]:checked'));
       }
 
-      const flatHtml = flatBlocks.map((block) => `
+      const flatHtml = flatBlocks.map((block) => {
+        const showDone = block.done && isConditionalBlockVisited(state, block.key);
+        return `
         <li class="cond-nav-row">
           <button type="button" class="cond-nav-link" data-cond-jump="${block.key}">${block.label}</button>
-          <span class="cond-nav-badge ${block.done ? 'ok' : ''}">${block.done ? 'OK' : 'à compléter'}</span>
+          <span class="cond-nav-badge ${showDone ? 'ok' : ''}">${showDone ? 'OK' : 'à compléter'}</span>
         </li>
-      `).join('');
+        `;
+      }).join('');
       conditionalBlockNavList.innerHTML = flatHtml;
+      // Keep focus stable while typing; navigation must stay explicit (buttons/chips).
+      renderConditionalFocusToolbar(getRenderableConditionalBlocks(state));
+      updateConditionalCurrentHeaderKpi(state, focusedConditionalBlockKey);
     }
 
     function renderConditionalCoherenceSections(state) {
@@ -3864,34 +4480,19 @@
         return `
           <div class="box cond-block cond-block-anchor" data-block-key="${def.key}" id="cond-block-${def.key}">
             <strong>${def.title}</strong>
-            ${def.type === 'geo'
-              ? `
-                <p class="hint" style="margin-top:6px; margin-bottom:0;">Combien de personnes proviennent de chaque département ?</p>
-                ${renderGeoRows(state.geoRows)}
-              `
-              : `
-                <div class="dispo-list" style="margin-top:8px;">
-                  ${def.key === 'situation_entree'
-                    ? renderSituationEntreeRows(values)
-                    : def.fields.map((label, idx) => renderConditionalCohFieldRow(def.key, label, idx, values)).join('')}
-                </div>
-              `}
-            <div class="status kpi cond-kpi" data-cond-kpi="${def.key}">
-              <div class="kpi-line">
-                <div class="kpi-cell">
-                  <span class="kpi-cell-label">Cible*</span>
-                  <span class="kpi-cell-value">${target.toFixed(1)}</span>
-                </div>
-                <div class="kpi-cell">
-                  <span class="kpi-cell-label">Saisie</span>
-                  <span class="kpi-cell-value">0.0</span>
-                </div>
-                <div class="kpi-cell">
-                  <span class="kpi-cell-label">Écart</span>
-                  <span class="kpi-cell-value">0.0</span>
-                </div>
-              </div>
-            </div>
+                ${def.type === 'geo'
+                  ? `
+                    <p class="hint" style="margin-top:6px; margin-bottom:0;">Combien de personnes proviennent de chaque département ?</p>
+                    ${renderGeoRows(state.geoRows)}
+                  `
+                  : `
+                    <div class="dispo-list" style="margin-top:8px;">
+                      ${def.key === 'situation_entree'
+                        ? renderSituationEntreeRows(values)
+                        : def.fields.map((label, idx) => renderConditionalCohFieldRow(def.key, label, idx, values)).join('')}
+                    </div>
+                    ${def.key === 'situation_entree' ? '<div class="status" data-situation-rules-msg style="margin-top:8px;"></div>' : ''}
+                  `}
           </div>
         `;
       }).join('');
@@ -4021,6 +4622,7 @@
       const repondantsOk = nbRepondants <= sortiesN1;
       const showPrecoForStep = isEspoOrUerosConditionalStep(currentConditionalId) || isEsrpConditionalStep(currentConditionalId);
       const showPrecoBloc = showPrecoForStep;
+      const hideLegacyDirectBlocks = shouldHideLegacyDirectBlocks(currentConditionalId);
       const precoAltLabel = isUerosConditionalStep(currentConditionalId)
         ? 'ESPO'
         : (isEspoOrUerosConditionalStep(currentConditionalId) ? 'UEROS' : 'ESPO / UEROS');
@@ -4211,7 +4813,7 @@
               ` : ''}
             </div>
       ` : '';
-      const directAvecOrpHtml = isFormationSelectionStep ? formationSelectionHtml : (isParcoursStep ? `
+      const directAvecOrpHtml = (hideLegacyDirectBlocks && !isFormationSelectionStep && !isParcoursStep) ? '' : (isFormationSelectionStep ? formationSelectionHtml : (isParcoursStep ? `
         <div class="box cond-block cond-block-anchor" data-block-key="direct_avec_orp" id="cond-block-direct_avec_orp">
           <strong>Données du parcours</strong>
           <div class="parcours-stack">
@@ -4335,9 +4937,9 @@
             </div>
           </div>
         </div>
-      `);
-      const extraHtml = `
-        ${directAvecOrpHtml}
+      `));
+      const directSansOrpLegacyHidden = hideLegacyDirectBlocks && !isDirectSansOrpInfoStep && !isDirectSansOrpCadrageStep;
+      const directSansOrpHtml = directSansOrpLegacyHidden ? '' : `
         <div class="${isDirectSansOrpInfoStep || isDirectSansOrpCadrageStep ? '' : 'box '}cond-block cond-block-anchor" data-block-key="direct_sans_orp" id="cond-block-direct_sans_orp">
           ${isDirectSansOrpInfoStep || isDirectSansOrpCadrageStep ? '' : '<strong>Prestations directes sans ORP CDAPH</strong>'}
           <div class="ctx-sub" style="display:${(isDirectSansOrpInfoStep || isDirectSansOrpCadrageStep || directSansOrp.enabled === 'Oui') ? 'block' : 'none'}; margin-top:${isDirectSansOrpInfoStep || isDirectSansOrpCadrageStep ? '0' : '8px'};">
@@ -4394,6 +4996,10 @@
           `}
           </div>
         </div>
+      `;
+      const extraHtml = `
+        ${directAvecOrpHtml}
+        ${directSansOrpHtml}
         ${isSpecialIndirectStep ? `
         <div class="cond-block cond-block-anchor" data-block-key="indirect" id="cond-block-indirect">
             <div class="dispo-list" style="margin-top:8px;">
@@ -4418,37 +5024,7 @@
           ` : ''}
         <div class="box cond-block cond-block-anchor" data-block-key="handicap_matrix" id="cond-block-handicap_matrix">
           <strong>Type de handicap principal et associé</strong>
-          <div class="status kpi ${handicapEval.done ? 'ok' : 'err'}" style="margin-top:10px;" data-handicap-kpi>
-            <div class="kpi-line">
-              <div class="kpi-cell">
-                <span class="kpi-cell-label">Principal · Cible</span>
-                <span class="kpi-cell-value" data-handicap-val="principal-cible">${handicapEval.target.toFixed(0)}</span>
-              </div>
-              <div class="kpi-cell">
-                <span class="kpi-cell-label">Principal · Saisie</span>
-                <span class="kpi-cell-value" data-handicap-val="principal-saisie">${handicapEval.principalSum.toFixed(0)}</span>
-              </div>
-              <div class="kpi-cell ${handicapEval.principalOk ? 'diff-ok' : 'diff-err'}" data-handicap-diff="principal">
-                <span class="kpi-cell-label">Principal · Écart</span>
-                <span class="kpi-cell-value" data-handicap-val="principal-ecart">${handicapEval.principalDiff.toFixed(0)}</span>
-              </div>
-            </div>
-            <div class="kpi-line" style="margin-top:8px;">
-              <div class="kpi-cell">
-                <span class="kpi-cell-label">Associé · Cible max</span>
-                <span class="kpi-cell-value" data-handicap-val="associe-cible">${handicapEval.target.toFixed(0)}</span>
-              </div>
-              <div class="kpi-cell">
-                <span class="kpi-cell-label">Associé · Saisie</span>
-                <span class="kpi-cell-value" data-handicap-val="associe-saisie">${handicapEval.associeSum.toFixed(0)}</span>
-              </div>
-              <div class="kpi-cell ${handicapEval.associeOk ? 'diff-ok' : 'diff-err'}" data-handicap-diff="associe">
-                <span class="kpi-cell-label">Associé · Écart</span>
-                <span class="kpi-cell-value" data-handicap-val="associe-ecart">${handicapEval.associeDiff.toFixed(0)}</span>
-              </div>
-            </div>
-          </div>
-          <div style="margin-top:10px; overflow:auto;">
+          <div style="overflow:auto; margin-top:8px;">
             <table style="width:100%; border-collapse:collapse;">
               <thead>
                 <tr>
@@ -4493,28 +5069,29 @@
             </div>
           </div>
         </div>
-        <div class="box cond-block cond-block-anchor section-break" data-block-key="sortie_intro" id="cond-block-sortie_intro">
-          <strong>Sorties et suites de parcours</strong>
-          <p class="hint" style="margin-bottom:0;">Vous avez déclaré la sortie définitive de <strong><span data-sorties-declarees>${declaredSortiesNb}</span></strong> personnes durant l'année.<br>Comment se répartissent ces départs ?</p>
-        </div>
         <div class="box cond-block cond-block-anchor" data-block-key="sorties_suspensions" id="cond-block-sorties_suspensions">
-          <strong>Sortie avant le terme de la prestation</strong>
-          <div class="ctx-sub" style="display:${showSortiesReasons ? 'block' : 'none'}; margin-top:6px;">
-            <p class="hint" style="margin:0 0 8px 0;"><strong>Quelles en ont été les raisons ?</strong></p>
-            <div class="dispo-list">
-              <div class="field field-radio-inline q35-sub-inline q35-places-inline"><div><label>Départ volontaire (raisons personnelles, familiales, déménagement, ...)</label></div><div><input class="cond-sorties-input" data-sorties-key="depart_volontaire" type="number" min="0" step="1" value="${String(sortiesBloc.raisons?.depart_volontaire || '')}"></div></div>
-              <div class="field field-radio-inline q35-sub-inline q35-places-inline"><div><label>Raison de santé</label></div><div><input class="cond-sorties-input" data-sorties-key="sante" type="number" min="0" step="1" value="${String(sortiesBloc.raisons?.sante || '')}"></div></div>
-              <div class="field field-radio-inline q35-sub-inline q35-places-inline"><div><label>Réorientation</label></div><div><input class="cond-sorties-input" data-sorties-key="reorientation" type="number" min="0" step="1" value="${String(sortiesBloc.raisons?.reorientation || '')}"></div></div>
-              <div class="field field-radio-inline q35-sub-inline q35-places-inline"><div><label>Raison disciplinaire</label></div><div><input class="cond-sorties-input" data-sorties-key="disciplinaire" type="number" min="0" step="1" value="${String(sortiesBloc.raisons?.disciplinaire || '')}"></div></div>
-              <div class="field field-radio-inline q35-sub-inline q35-places-inline"><div><label>Atteinte de l'objectif</label></div><div><input class="cond-sorties-input" data-sorties-key="objectif" type="number" min="0" step="1" value="${String(sortiesBloc.raisons?.objectif || '')}"></div></div>
-              <div class="field field-radio-inline q35-sub-inline q35-places-inline"><div><label>Reprise d'emploi</label></div><div><input class="cond-sorties-input" data-sorties-key="reprise_emploi" type="number" min="0" step="1" value="${String(sortiesBloc.raisons?.reprise_emploi || sortiesBloc.raisons?.emploi || '')}"></div></div>
-              <div class="field field-radio-inline q35-sub-inline q35-places-inline"><div><label>Je ne sais pas</label></div><div><input class="cond-sorties-input" data-sorties-key="je_ne_sais_pas" type="number" min="0" step="1" value="${String(sortiesBloc.raisons?.je_ne_sais_pas || '')}"></div></div>
-              <div class="field field-radio-inline q35-sub-inline q35-places-inline"><div><label>Autres (à préciser) : effectif</label></div><div><input class="cond-sorties-input" data-sorties-key="autres_nb" type="number" min="0" step="1" value="${String(sortiesBloc.raisons?.autres_nb || '')}"></div></div>
-              <div class="field field-radio-inline q35-sub-inline q35-places-inline"><div><label>Autres (à préciser) : précisez</label></div><div><input class="cond-sorties-input" data-sorties-key="autres_precision" type="text" value="${String(sortiesBloc.raisons?.autres_precision || sortiesBloc.raisons?.autres || '').replace(/"/g, '&quot;')}"></div></div>
+          <div class="cond-block-head">
+            <strong>Sortie avant le terme de la prestation</strong>
+            ${sortiesCoherenceHtml ? `<div class="cond-kpi-row-right">${sortiesCoherenceHtml}</div>` : ''}
+          </div>
+          <p class="hint" style="margin:6px 0 0 0;">Vous avez déclaré la sortie définitive de <strong><span data-sorties-declarees>${declaredSortiesNb}</span></strong> personnes durant l'année.<br>Comment se répartissent ces départs ?</p>
+          <div>
+            <div class="ctx-sub" style="display:${showSortiesReasons ? 'block' : 'none'}; margin-top:6px;">
+              <p class="hint" style="margin:0 0 8px 0;"><strong>Quelles en ont été les raisons ?</strong></p>
+              <div class="dispo-list">
+                <div class="field field-radio-inline q35-sub-inline q35-places-inline"><div><label>Départ volontaire (raisons personnelles, familiales, déménagement, ...)</label></div><div><input class="cond-sorties-input" data-sorties-key="depart_volontaire" type="number" min="0" step="1" value="${String(sortiesBloc.raisons?.depart_volontaire || '')}"></div></div>
+                <div class="field field-radio-inline q35-sub-inline q35-places-inline"><div><label>Raison de santé</label></div><div><input class="cond-sorties-input" data-sorties-key="sante" type="number" min="0" step="1" value="${String(sortiesBloc.raisons?.sante || '')}"></div></div>
+                <div class="field field-radio-inline q35-sub-inline q35-places-inline"><div><label>Réorientation</label></div><div><input class="cond-sorties-input" data-sorties-key="reorientation" type="number" min="0" step="1" value="${String(sortiesBloc.raisons?.reorientation || '')}"></div></div>
+                <div class="field field-radio-inline q35-sub-inline q35-places-inline"><div><label>Raison disciplinaire</label></div><div><input class="cond-sorties-input" data-sorties-key="disciplinaire" type="number" min="0" step="1" value="${String(sortiesBloc.raisons?.disciplinaire || '')}"></div></div>
+                <div class="field field-radio-inline q35-sub-inline q35-places-inline"><div><label>Atteinte de l'objectif</label></div><div><input class="cond-sorties-input" data-sorties-key="objectif" type="number" min="0" step="1" value="${String(sortiesBloc.raisons?.objectif || '')}"></div></div>
+                <div class="field field-radio-inline q35-sub-inline q35-places-inline"><div><label>Reprise d'emploi</label></div><div><input class="cond-sorties-input" data-sorties-key="reprise_emploi" type="number" min="0" step="1" value="${String(sortiesBloc.raisons?.reprise_emploi || sortiesBloc.raisons?.emploi || '')}"></div></div>
+                <div class="field field-radio-inline q35-sub-inline q35-places-inline"><div><label>Je ne sais pas</label></div><div><input class="cond-sorties-input" data-sorties-key="je_ne_sais_pas" type="number" min="0" step="1" value="${String(sortiesBloc.raisons?.je_ne_sais_pas || '')}"></div></div>
+                <div class="field field-radio-inline q35-sub-inline q35-places-inline"><div><label>Autres (à préciser) : effectif</label></div><div><input class="cond-sorties-input" data-sorties-key="autres_nb" type="number" min="0" step="1" value="${String(sortiesBloc.raisons?.autres_nb || '')}"></div></div>
+                <div class="field field-radio-inline q35-sub-inline q35-places-inline"><div><label>Autres (à préciser) : précisez</label></div><div><input class="cond-sorties-input" data-sorties-key="autres_precision" type="text" value="${String(sortiesBloc.raisons?.autres_precision || sortiesBloc.raisons?.autres || '').replace(/"/g, '&quot;')}"></div></div>
+              </div>
+              ${sortiesPrecisionHtml}
             </div>
           </div>
-          ${sortiesCoherenceHtml}
-          ${sortiesPrecisionHtml}
         </div>
         ${showPrecoBloc ? `
         <div class="box cond-block cond-block-anchor" data-block-key="preconisations_sortie" id="cond-block-preconisations_sortie">
@@ -4553,7 +5130,7 @@
           </div>
           <div class="status" style="margin-top:10px;">Cas complétés (calcul automatique) : <strong>${preconisationsCasesCount.toFixed(0)}</strong></div>
         </div>` : ''}
-        ${(showEmploiAccesBlock || showEmploiPresenceBlock) ? emploiSuiviHtml : ''}
+        ${(showEmploiAccesBlock || showEmploiPresenceBlock) ? `<div class="box cond-block cond-block-anchor" data-block-key="suivi_emploi" id="cond-block-suivi_emploi">${emploiSuiviHtml}</div>` : ''}
       `;
       const condModeBlockEl = document.getElementById('cond-prestation-mode-block');
       if (condModeBlockEl) condModeBlockEl.innerHTML = topEnableQuestionsHtml;
@@ -4598,6 +5175,16 @@
       conditionalCoherenceSections.querySelectorAll('.cond-preco-input').forEach((input) => {
         input.addEventListener('input', updateCurrentConditionalStateFromInputs);
         input.addEventListener('change', updateCurrentConditionalStateFromInputs);
+      });
+      conditionalCoherenceSections.querySelectorAll('.cond-block input, .cond-block select, .cond-block textarea').forEach((el) => {
+        el.addEventListener('focus', () => {
+          const blockKey = String(el.closest('.cond-block')?.getAttribute('data-block-key') || '').trim();
+          if (!blockKey || blockKey === focusedConditionalBlockKey) return;
+          focusedConditionalBlockKey = blockKey;
+          const stateLocal = getConditionalStateById(currentConditionalId);
+          renderConditionalFocusToolbar(getRenderableConditionalBlocks(stateLocal));
+          updateConditionalCurrentHeaderKpi(stateLocal, focusedConditionalBlockKey);
+        });
       });
       conditionalCoherenceSections.querySelectorAll('.cond-prestation-mode, .cond-direct-avec-enabled, .cond-direct-sans-enabled, .cond-indirect-enabled, .cond-direct-avec-input, .cond-direct-sans-input, .cond-indirect-input').forEach((input) => {
         input.addEventListener('input', updateCurrentConditionalStateFromInputs);
@@ -4707,92 +5294,120 @@
 
     function refreshConditionalCohUi(state) {
       const blocks = evaluateConditionalCoh(state, currentConditionalId);
-      blocks.forEach((block) => {
-        const kpi = conditionalCoherenceSections?.querySelector(`[data-cond-kpi="${block.key}"]`);
-        if (!kpi) return;
-        const cells = kpi.querySelectorAll('.kpi-cell');
-        const valueEls = kpi.querySelectorAll('.kpi-cell-value');
-        if (valueEls[0]) valueEls[0].textContent = `${block.target.toFixed(1)}`;
-        if (valueEls[1]) valueEls[1].textContent = `${block.sum.toFixed(1)}`;
-        if (valueEls[2]) valueEls[2].textContent = block.calculable ? `${block.diff.toFixed(1)}` : 'n/c';
-        if (cells[2]) {
-          cells[2].classList.remove('diff-ok', 'diff-err', 'diff-warn');
-          cells[2].classList.add(block.ok ? 'diff-ok' : 'diff-warn');
+      const situationBlock = blocks.find((block) => block.key === 'situation_entree');
+      const situationRulesMsg = conditionalCoherenceSections?.querySelector('[data-situation-rules-msg]');
+      const situationInputs = Array.from(conditionalCoherenceSections?.querySelectorAll('.cond-coh-input[data-cond-block="situation_entree"]') || []);
+      situationInputs.forEach((input) => input.classList.remove('field-input-warn'));
+      if (situationRulesMsg && situationBlock) {
+        const failing = Array.isArray(situationBlock.ruleChecks)
+          ? situationBlock.ruleChecks.filter((check) => !check.ok).map((check) => check.key)
+          : [];
+        const situationValues = Array.isArray(state?.coh?.situation_entree) ? state.coh.situation_entree : [];
+        const n = (idx) => {
+          const raw = Number(situationValues[idx] || 0);
+          return Number.isFinite(raw) ? raw : 0;
+        };
+        const warnIdx = new Set();
+        failing.forEach((key) => {
+          if (key === 'prive_dont') {
+            warnIdx.add(0);
+            if (n(1) > 0) warnIdx.add(1);
+            if (n(2) > 0) warnIdx.add(2);
+            return;
+          }
+          if (key === 'public_repartition') {
+            warnIdx.add(3);
+            if (n(4) > 0) warnIdx.add(4);
+            if (n(7) > 0) warnIdx.add(7);
+            if (n(10) > 0) warnIdx.add(10);
+            return;
+          }
+          if (key === 'fpt_dont') {
+            warnIdx.add(4);
+            if (n(5) > 0) warnIdx.add(5);
+            if (n(6) > 0) warnIdx.add(6);
+            return;
+          }
+          if (key === 'fph_dont') {
+            warnIdx.add(7);
+            if (n(8) > 0) warnIdx.add(8);
+            if (n(9) > 0) warnIdx.add(9);
+            return;
+          }
+          if (key === 'fpe_dont') {
+            warnIdx.add(10);
+            if (n(11) > 0) warnIdx.add(11);
+            if (n(12) > 0) warnIdx.add(12);
+          }
+        });
+        warnIdx.forEach((idx) => {
+          const input = conditionalCoherenceSections?.querySelector(`.cond-coh-input[data-cond-block="situation_entree"][data-cond-idx="${idx}"]`);
+          if (input) input.classList.add('field-input-warn');
+        });
+        if (!failing.length) {
+          situationRulesMsg.className = 'status ok';
+          situationRulesMsg.textContent = "Contrôles OK : chaque ligne « dont » reste inférieure ou égale à sa ligne principale.";
+        } else {
+          situationRulesMsg.className = 'status err';
+          const mapLabel = {
+            prive_dont: 'Secteur privé: somme des « dont » > ligne principale',
+            public_repartition: 'Secteur public: FPT + FPH + FPE > ligne principale',
+            fpt_dont: 'FPT: contractuels + alternance > FPT',
+            fph_dont: 'FPH: contractuels + alternance > FPH',
+            fpe_dont: 'FPE: contractuels + alternance > FPE',
+          };
+          const txt = failing.map((k) => mapLabel[k] || k).join(' | ');
+          situationRulesMsg.textContent = `Contrôles à corriger : ${txt}.`;
         }
-        kpi.className = block.ok ? 'status kpi cond-kpi ok' : 'status kpi cond-kpi err';
-        if (block.key === 'geographie') {
-          const rows = Array.isArray(state?.geoRows) ? state.geoRows : [];
-          rows.forEach((row, idx) => {
-            const deptInput = conditionalCoherenceSections?.querySelector(`.cond-geo-dept[data-geo-idx="${idx}"]`);
-            const deptName = conditionalCoherenceSections?.querySelector(`.cond-geo-name[data-geo-idx="${idx}"]`);
-            if (!deptInput) return;
-            const dept = String(row?.dept || '').trim().toUpperCase();
-            const count = Number(row?.count || 0);
-            deptInput.classList.remove('field-input-pending', 'field-input-valid', 'field-input-invalid');
-            if (!dept && count <= 0) {
-              deptInput.classList.add('field-input-pending');
-            } else if (count > 0 && !isValidDept(dept)) {
-              deptInput.classList.add('field-input-invalid');
-            } else {
-              deptInput.classList.add('field-input-valid');
-            }
-            if (deptName) {
-              const byCode = deptStatsByCode[normalizeDeptCode(dept)];
-              deptName.textContent = byCode?.name ? `${dept} - ${byCode.name}` : '';
-            }
-          });
-        }
-      });
+      }
+      const geoBlock = blocks.find((block) => block.key === 'geographie');
+      if (geoBlock) {
+        const rows = Array.isArray(state?.geoRows) ? state.geoRows : [];
+        rows.forEach((row, idx) => {
+          const deptInput = conditionalCoherenceSections?.querySelector(`.cond-geo-dept[data-geo-idx="${idx}"]`);
+          const deptName = conditionalCoherenceSections?.querySelector(`.cond-geo-name[data-geo-idx="${idx}"]`);
+          if (!deptInput) return;
+          const dept = String(row?.dept || '').trim().toUpperCase();
+          const count = Number(row?.count || 0);
+          deptInput.classList.remove('field-input-pending', 'field-input-valid', 'field-input-invalid');
+          if (!dept && count <= 0) {
+            deptInput.classList.add('field-input-pending');
+          } else if (count > 0 && !isValidDept(dept)) {
+            deptInput.classList.add('field-input-invalid');
+          } else {
+            deptInput.classList.add('field-input-valid');
+          }
+          if (deptName) {
+            const byCode = deptStatsByCode[normalizeDeptCode(dept)];
+            deptName.textContent = byCode?.name ? `${dept} - ${byCode.name}` : '';
+          }
+        });
+      }
       const cibleHelp = document.getElementById('cond-cible-help');
       if (cibleHelp) {
         const target = getConditionalTarget(state);
-        cibleHelp.textContent = `Cible de cohérence (pour tous les blocs ci-dessous) : ${target.toFixed(1)} = Nombre de personnes accompagnées au 31/12 + Nombre de sorties définitives dans l'année.`;
+        cibleHelp.textContent = `Cible de référence pour les écrans suivants : ${target.toFixed(1)} personnes (accompagnées au 31/12 + sorties définitives). Cette cible sert à vérifier automatiquement la cohérence de vos répartitions.`;
       }
+      updateConditionalCurrentHeaderKpi(state, focusedConditionalBlockKey);
       renderConditionalBlockNav(state);
     }
 
     function refreshConditionalStatusUi(state) {
       const statusEl = document.getElementById('conditional-status');
-      const valid = validateConditionalState(state, currentConditionalId);
-      const isFormationSelectionStep = isFormationSelectionConditionalStep(currentConditionalId);
-      const isParcoursStep = isParcoursConditionalStep(currentConditionalId);
-      const isDirectSansOrpCadrageStep = isDirectSansOrpCadrageConditionalStep(currentConditionalId);
-      const isDirectSansOrpInfoStep = isDirectSansOrpInfoPersonnesConditionalStep(currentConditionalId);
-      const isSpecialIndirectStep = isSpecialIndirectConditionalStep(currentConditionalId);
       if (statusEl) {
-        if (state.done && valid) {
-          statusEl.className = 'status ok';
-          statusEl.textContent = 'Étape conditionnelle complétée.';
-        } else if (isFormationSelectionStep) {
-          statusEl.className = 'status';
-          statusEl.textContent = 'Sélectionnez une ou plusieurs formations et renseignez le nombre de personnes par formation.';
-        } else if (isParcoursStep) {
-          statusEl.className = 'status';
-          statusEl.textContent = 'Renseignez tous les champs du parcours.';
-        } else if (isDirectSansOrpCadrageStep) {
-          statusEl.className = 'status';
-          statusEl.textContent = "Renseignez les professionnels, les heures, puis vérifiez le total pondéré (coef 1,5).";
-        } else if (isDirectSansOrpInfoStep) {
-          statusEl.className = 'status';
-          statusEl.textContent = 'Renseignez les informations aux personnes (collectif et individuel).';
-        } else if (isSpecialIndirectStep) {
-          statusEl.className = 'status';
-          statusEl.textContent = `Renseignez ${getSpecialIndirectTitle(currentConditionalId)} pour chaque case cochée.`;
-        } else if (state.fileActive !== '' || state.sorties !== '' || state.journees !== '') {
-          statusEl.className = 'status';
-          statusEl.textContent = "Complétez File active & journées, les blocs de cohérence (Écart = 0), puis les prestations directes/indirectes.";
-        } else {
-          statusEl.className = 'status';
-          statusEl.textContent = 'Renseignez les champs de File active & journées.';
-        }
+        statusEl.className = 'status';
+        statusEl.textContent = '';
+        statusEl.style.display = 'none';
       }
-      if (conditionalNextBtn) conditionalNextBtn.disabled = !valid;
     }
 
     function renderConditionalStepByNumber(stepNumber) {
       const index = getConditionalIndexFromStep(stepNumber);
       const def = conditionalDefs[index];
       if (!def) return;
+      if (focusedConditionalStepId !== def.id) {
+        focusedConditionalStepId = def.id;
+      }
       currentConditionalId = def.id;
       const state = getConditionalStateById(def.id);
       const blocksProgress = getConditionalBlocksProgress(state, def.id);
@@ -4805,7 +5420,7 @@
       const dureeEl = document.getElementById('cond-duree');
       const statusEl = document.getElementById('conditional-status');
       const fileactiveBlock = document.getElementById('cond-block-fileactive');
-      const condNavEl = document.querySelector('.cond-nav');
+      const dureeHelpEl = document.getElementById('cond-duree-help');
       const isFormationSelectionStep = isFormationSelectionConditionalStep(def.id);
       const isParcoursStep = isParcoursConditionalStep(def.id);
       const isDirectSansOrpCadrageStep = isDirectSansOrpCadrageConditionalStep(def.id);
@@ -4818,13 +5433,14 @@
         hintEl.textContent = '';
         hintEl.style.display = 'none';
       }
+      if (dureeHelpEl) dureeHelpEl.style.display = 'none';
       if (fileactiveBlock) fileactiveBlock.style.display = isFieldsBasedStep ? 'none' : '';
-      if (condNavEl) condNavEl.style.display = isFieldsBasedStep ? 'none' : '';
       if (fileActiveEl) fileActiveEl.value = state.fileActive;
       if (sortiesEl) sortiesEl.value = state.sorties;
       if (journeesEl) journeesEl.value = state.journees;
       if (dureeEl) dureeEl.value = computeConditionalDuree(state);
       renderConditionalCoherenceSections(state);
+      applyConditionalBlockFocus(state, { scroll: false, preferIncomplete: true });
       refreshConditionalStatusUi(state);
     }
 
@@ -4842,16 +5458,31 @@
       });
     }
 
+    function setPrimaryProgressCollapsed(collapsed) {
+      if (!primaryProgressCard || !primaryProgressToggle) return;
+      primaryProgressCard.classList.toggle('is-collapsed', !!collapsed);
+      primaryProgressToggle.textContent = collapsed ? 'Déplier' : 'Replier';
+      primaryProgressToggle.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+    }
+
     function showStep(n) {
       step = Math.max(1, Math.min(getTotalSteps(), n));
       allStepEls.forEach((el) => el?.classList.remove('active'));
       if (step <= 5) {
         staticStepEls[step - 1]?.classList.add('active');
+        if (conditionalBlocksCard) conditionalBlocksCard.style.display = 'none';
+        setPrimaryProgressCollapsed(false);
       } else if (isConditionalStepNumber(step)) {
         conditionalStepEl?.classList.add('active');
+        if (conditionalBlocksCard) conditionalBlocksCard.style.display = '';
+        if (autoCollapsePrimaryAfterPrestations) {
+          setPrimaryProgressCollapsed(true);
+          autoCollapsePrimaryAfterPrestations = false;
+        }
         renderConditionalStepByNumber(step);
       } else {
         finalStepEl?.classList.add('active');
+        if (conditionalBlocksCard) conditionalBlocksCard.style.display = 'none';
       }
       const totalSteps = getTotalSteps();
       const pct = totalSteps > 1 ? ((step - 1) / (totalSteps - 1)) * 100 : 100;
@@ -5051,27 +5682,6 @@
         const el = conditionalCoherenceSections?.querySelector(selector);
         if (el) el.textContent = String(value);
       };
-      const handicapEval = evaluateHandicapMatrixBlock(state);
-      const handicapKpi = conditionalCoherenceSections?.querySelector('[data-handicap-kpi]');
-      if (handicapKpi) {
-        handicapKpi.className = handicapEval.done ? 'status kpi ok' : 'status kpi err';
-      }
-      setText('[data-handicap-val="principal-cible"]', handicapEval.target.toFixed(0));
-      setText('[data-handicap-val="principal-saisie"]', handicapEval.principalSum.toFixed(0));
-      setText('[data-handicap-val="principal-ecart"]', handicapEval.principalDiff.toFixed(0));
-      setText('[data-handicap-val="associe-cible"]', handicapEval.target.toFixed(0));
-      setText('[data-handicap-val="associe-saisie"]', handicapEval.associeSum.toFixed(0));
-      setText('[data-handicap-val="associe-ecart"]', handicapEval.associeDiff.toFixed(0));
-      const principalDiffCell = conditionalCoherenceSections?.querySelector('[data-handicap-diff="principal"]');
-      if (principalDiffCell) {
-        principalDiffCell.classList.remove('diff-ok', 'diff-err', 'diff-warn');
-        principalDiffCell.classList.add(handicapEval.principalOk ? 'diff-ok' : 'diff-err');
-      }
-      const associeDiffCell = conditionalCoherenceSections?.querySelector('[data-handicap-diff="associe"]');
-      if (associeDiffCell) {
-        associeDiffCell.classList.remove('diff-ok', 'diff-err', 'diff-warn');
-        associeDiffCell.classList.add(handicapEval.associeOk ? 'diff-ok' : 'diff-err');
-      }
       setText('[data-emploi-val="taux-acces-detail"]', `${emploiAccesNb}/${emploiNbRepondants}`);
       setText('[data-emploi-val="repondants-nb"]', emploiNbRepondants);
       setText('[data-emploi-val="sorties-n1"]', emploiSortiesN1);
@@ -5120,6 +5730,11 @@
       }
       showStep(step - 1);
     }));
+
+    primaryProgressToggle?.addEventListener('click', () => {
+      const isCollapsed = !!primaryProgressCard?.classList.contains('is-collapsed');
+      setPrimaryProgressCollapsed(!isCollapsed);
+    });
 
     const identInputs = ['es_nom', 'v_nom', 'v_prenom', 'v_email', 'dept'].map(id => document.getElementById(id));
     const deptInput = document.getElementById('dept');
@@ -7072,6 +7687,7 @@
     prestationsNextBtn?.addEventListener('click', () => {
       validatePrestations();
       if (prestationsNextBtn.disabled) return;
+      autoCollapsePrimaryAfterPrestations = true;
       showStep(6);
     });
 
@@ -7533,7 +8149,22 @@
       const btn = event.target.closest('[data-cond-jump]');
       if (!btn) return;
       const blockKey = btn.dataset.condJump || '';
-      if (blockKey) scrollToConditionalBlock(blockKey);
+      if (!blockKey) return;
+      focusedConditionalBlockKey = blockKey;
+      applyConditionalBlockFocus(getConditionalStateById(currentConditionalId), { scroll: true, preferIncomplete: false });
+    });
+
+    condFocusPrevBtn?.addEventListener('click', () => moveConditionalFocus(-1));
+
+    condFocusNextBtn?.addEventListener('click', () => moveConditionalFocus(1));
+
+    condFocusTabs?.addEventListener('click', (event) => {
+      const btn = event.target.closest('[data-cond-focus-key]');
+      if (!btn) return;
+      const blockKey = btn.dataset.condFocusKey || '';
+      if (!blockKey) return;
+      focusedConditionalBlockKey = blockKey;
+      applyConditionalBlockFocus(getConditionalStateById(currentConditionalId), { scroll: true, preferIncomplete: false });
     });
 
     [condFileActiveInput, condSortiesInput, condJourneesInput].forEach((input) => {
@@ -7541,13 +8172,9 @@
       input?.addEventListener('change', updateCurrentConditionalStateFromInputs);
     });
 
-    conditionalPrevBtn?.addEventListener('click', () => {
-      showStep(step - 1);
-    });
+    conditionalPrevBtn?.addEventListener('click', () => moveConditionalFocus(-1));
 
-    conditionalNextBtn?.addEventListener('click', () => {
-      showStep(step + 1);
-    });
+    conditionalNextBtn?.addEventListener('click', () => moveConditionalFocus(1));
 
     validateIdent();
     applyRhDeacQuestionState();
