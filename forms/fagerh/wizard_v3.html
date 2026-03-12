@@ -2068,7 +2068,7 @@
         <span class="spacer"></span>
         <button type="button" id="quick-finish-btn">J'ai terminé ma saisie</button>
       </div>
-      <div id="top-status" class="top-status">Mode maquette V3 : aucun enregistrement distant n'est effectué.</div>
+      <div id="top-status" class="top-status">Aucune sauvegarde en cours.</div>
     </div>
   </header>
 
@@ -2220,7 +2220,7 @@
       <section class="step" id="step-3" data-step="3">
         <h2>Volet RH</h2>
         <p class="hint">Règle : si un dispositif est coché, son ETP doit être strictement supérieur à 0.</p>
-        <div class="status" style="margin-top:0;">
+        <div class="status" id="rh-missing-hint" style="margin-top:0;">
           Si un dispositif manque, revenez à l'étape précédente pour le sélectionner.
           <button type="button" id="rh-back-step2-btn" style="margin-left:8px;">Corriger les dispositifs (étape 2)</button>
         </div>
@@ -3077,6 +3077,7 @@
       const def = getConditionalDefById(conditionalId);
       const name = String(def?.name || '');
       return /^Directes ORP CDAPH - (UEROS|ESPO|ESRP)\b/i.test(name)
+        || isPecOrpConditionalStep(conditionalId)
         || isParcoursConditionalStep(conditionalId);
     }
 
@@ -4644,6 +4645,7 @@
     }
 
     function applyConditionalBlockFocus(state, { scroll = false, preferIncomplete = false } = {}) {
+      const previousFocusedBlockKey = focusedConditionalBlockKey;
       const blocks = getRenderableConditionalBlocks(state);
       if (!blocks.length) {
         renderConditionalFocusToolbar([]);
@@ -4669,7 +4671,7 @@
         const isActive = block.key === focusedConditionalBlockKey;
         el.style.display = isActive ? '' : 'none';
         el.classList.toggle('is-focus-active', isActive);
-        if (isActive) {
+        if (isActive && previousFocusedBlockKey !== focusedConditionalBlockKey) {
           // Ensure the first row is visible when switching block focus.
           el.scrollTop = 0;
         }
@@ -7528,6 +7530,8 @@
       if (clearMainFinessBtn) clearMainFinessBtn.disabled = enabled;
       if (noFinessDeacWrap) noFinessDeacWrap.style.display = enabled ? '' : 'none';
       if (enabled) {
+        if (identDeacYes) identDeacYes.checked = true;
+        if (identDeacNo) identDeacNo.checked = false;
         collectFinessInputs().forEach((input) => {
           input.value = '';
           input.dataset.lookupTouched = '0';
@@ -7599,6 +7603,7 @@
     const rhDeacQuestionBox = document.getElementById('rh-deac-question-box');
     const rhDeacLine = document.getElementById('rh-deac-line');
     const rhDeacDispo = document.getElementById('rh-deac-dispo');
+    const rhMissingHint = document.getElementById('rh-missing-hint');
     const rhNextBtn = document.getElementById('rh-next');
     const rhPrevStepMsg = document.getElementById('rh-prev-step-msg');
     const rhBackStep2Btn = document.getElementById('rh-back-step2-btn');
@@ -7618,6 +7623,8 @@
     function syncRhDispoVisibilityFromStep2() {
       const selected = getSelectedDisposFromStep2();
       const selectedSet = new Set(selected);
+      const noFiness = isNoFinessMode();
+      if (rhMissingHint) rhMissingHint.style.display = noFiness ? 'none' : '';
       dispoChecks.forEach((check) => {
         const key = check.dataset.dispo;
         const row = check.closest('.dispo-line');
@@ -7632,7 +7639,7 @@
         }
       });
       applyRhDeacQuestionState();
-      if (rhPrevStepMsg) rhPrevStepMsg.style.display = selected.length === 0 ? '' : 'none';
+      if (rhPrevStepMsg) rhPrevStepMsg.style.display = noFiness ? 'none' : (selected.length === 0 ? '' : 'none');
     }
 
     function getEtpValidationState() {
@@ -7882,6 +7889,7 @@
       });
       syncMetierRowInternals(tr);
       validateMetiers();
+      return tr;
     }
 
     function getModesForMetier(label) {
@@ -8486,17 +8494,434 @@
       return n > 0;
     }
 
-    document.getElementById('fake-submit').addEventListener('click', () => {
+    const FORM_ID = 'fagerh';
+    const WIZARD_STATE_KEY = '__wizard_v3_state';
+    let resumeUuid = '';
+    let isHydratingFromSnapshot = false;
+
+    function setTopStatusMessage(message) {
+      const topStatus = document.getElementById('top-status');
+      if (topStatus) topStatus.textContent = message || '';
+    }
+
+    function generateResumeUuid() {
+      if (window.crypto?.randomUUID) return window.crypto.randomUUID();
+      const rand = Math.random().toString(36).slice(2, 10);
+      return `fagerh-${Date.now()}-${rand}`;
+    }
+
+    function getResumeUuidFromUrl() {
+      const params = new URLSearchParams(window.location.search);
+      return String(params.get('uuid') || '').trim();
+    }
+
+    function setResumeUuidInUrl(uuid) {
+      if (!uuid) return;
+      const url = new URL(window.location.href);
+      url.searchParams.set('uuid', uuid);
+      window.history.replaceState({}, '', url.toString());
+    }
+
+    function ensureResumeUuid() {
+      if (!resumeUuid) {
+        resumeUuid = getResumeUuidFromUrl() || generateResumeUuid();
+        setResumeUuidInUrl(resumeUuid);
+      }
+      return resumeUuid;
+    }
+
+    function getCheckedRadioValue(name) {
+      return document.querySelector(`input[name="${name}"]:checked`)?.value || '';
+    }
+
+    function getCheckedCheckboxValues(name) {
+      return Array.from(document.querySelectorAll(`input[type="checkbox"][name="${name}"]:checked`)).map((input) => String(input.value || ''));
+    }
+
+    function serializeControlsSnapshot() {
+      const byId = {};
+      document.querySelectorAll('input[id], select[id], textarea[id]').forEach((el) => {
+        if (!el.id) return;
+        const tag = el.tagName.toLowerCase();
+        const type = String(el.type || '').toLowerCase();
+        if (type === 'radio' || type === 'checkbox') {
+          byId[el.id] = { tag, type, checked: !!el.checked, value: String(el.value || '') };
+        } else if (tag === 'select' && el.multiple) {
+          byId[el.id] = { tag, type, value: Array.from(el.selectedOptions || []).map((opt) => String(opt.value || '')) };
+        } else {
+          byId[el.id] = { tag, type, value: String(el.value || '') };
+        }
+      });
+
+      const byName = {};
+      const names = Array.from(new Set(
+        Array.from(document.querySelectorAll('input[name], select[name], textarea[name]'))
+          .map((el) => String(el.name || '').trim())
+          .filter(Boolean)
+      ));
+      names.forEach((name) => {
+        const nodes = Array.from(document.querySelectorAll(`[name="${CSS.escape(name)}"]`));
+        if (!nodes.length) return;
+        const first = nodes[0];
+        const type = String(first.type || '').toLowerCase();
+        const tag = first.tagName.toLowerCase();
+        if (type === 'radio') {
+          byName[name] = { type: 'radio', value: getCheckedRadioValue(name) };
+          return;
+        }
+        if (type === 'checkbox') {
+          byName[name] = { type: 'checkbox', values: getCheckedCheckboxValues(name) };
+          return;
+        }
+        if (tag === 'select' && first.multiple) {
+          byName[name] = { type: 'select-multiple', values: Array.from(first.selectedOptions || []).map((opt) => String(opt.value || '')) };
+          return;
+        }
+        byName[name] = { type: 'value', value: String(first.value || '') };
+      });
+
+      return { byId, byName };
+    }
+
+    function applyControlsSnapshot(snapshot) {
+      if (!snapshot || typeof snapshot !== 'object') return;
+      const byId = snapshot.byId || {};
+      Object.entries(byId).forEach(([id, payload]) => {
+        const el = document.getElementById(id);
+        if (!el || !payload || typeof payload !== 'object') return;
+        const type = String(payload.type || '').toLowerCase();
+        if (type === 'radio' || type === 'checkbox') {
+          el.checked = !!payload.checked;
+          return;
+        }
+        if (Array.isArray(payload.value) && el.tagName.toLowerCase() === 'select' && el.multiple) {
+          const values = new Set(payload.value.map((v) => String(v)));
+          Array.from(el.options || []).forEach((opt) => { opt.selected = values.has(String(opt.value || '')); });
+          return;
+        }
+        el.value = payload.value == null ? '' : String(payload.value);
+      });
+
+      const byName = snapshot.byName || {};
+      Object.entries(byName).forEach(([name, payload]) => {
+        if (!payload || typeof payload !== 'object') return;
+        const escaped = CSS.escape(name);
+        if (payload.type === 'radio') {
+          const target = document.querySelector(`input[type="radio"][name="${escaped}"][value="${CSS.escape(String(payload.value || ''))}"]`);
+          if (target) target.checked = true;
+          return;
+        }
+        if (payload.type === 'checkbox') {
+          const selected = new Set(Array.isArray(payload.values) ? payload.values.map((v) => String(v)) : []);
+          document.querySelectorAll(`input[type="checkbox"][name="${escaped}"]`).forEach((input) => {
+            input.checked = selected.has(String(input.value || ''));
+          });
+        }
+      });
+    }
+
+    function collectMetiersRows() {
+      return Array.from(document.querySelectorAll('#metier-body tr')).map((tr) => ({
+        metier: String(tr.dataset.metier || '').trim(),
+        mode: String(tr.querySelector('.metier-mode')?.value || '').trim(),
+        etp: String(tr.querySelector('.metier-etp')?.value || '').trim(),
+        etpCdi: String(tr.querySelector('.metier-etp-cdi')?.value || '').trim(),
+        etpCdd: String(tr.querySelector('.metier-etp-cdd')?.value || '').trim(),
+      })).filter((row) => row.metier);
+    }
+
+    function restoreMetiersRows(rows) {
+      if (!metierBody) return;
+      metierBody.innerHTML = '';
+      (Array.isArray(rows) ? rows : []).forEach((row) => {
+        const tr = addMetierRow(String(row.metier || ''), String(row.mode || 'Interne') || 'Interne');
+        tr.querySelector('.metier-etp')?.setAttribute('value', '');
+        const etpInput = tr.querySelector('.metier-etp');
+        const etpCdiInput = tr.querySelector('.metier-etp-cdi');
+        const etpCddInput = tr.querySelector('.metier-etp-cdd');
+        if (etpInput) etpInput.value = String(row.etp || '');
+        if (etpCdiInput) etpCdiInput.value = String(row.etpCdi || '');
+        if (etpCddInput) etpCddInput.value = String(row.etpCdd || '');
+        syncMetierRowInternals(tr);
+      });
+      validateMetiers();
+    }
+
+    function serializeWizardSnapshot() {
+      const runtime = {
+        step,
+        deacOnlyFlow,
+        metierStepSkipped,
+        conditionalDefs,
+        conditionalState: Object.fromEntries(Array.from(conditionalState.entries())),
+        currentConditionalId,
+        focusedConditionalStepId,
+        focusedConditionalBlockKey,
+        autoCollapsePrimaryAfterPrestations,
+        manualIdentResolved,
+        manualResolvedRecord,
+        manualEntryRequested,
+        manualAttachEnabled,
+        lastConfirmedFoundRecord,
+        currentAutoFoundSources,
+        forceTopFinessEntryVisible,
+        pendingManualAssocSeq,
+        pendingManualAssocRows,
+        identMultiEtabConflict,
+        ignoredSiretSuggestions: Array.from(ignoredSiretSuggestions),
+        handledSiretSuggestions: Array.from(handledSiretSuggestions),
+        finessDispoBySource: Array.from(finessDispoBySource.entries()),
+        finessRecordBySource: Array.from(finessRecordBySource.entries()),
+        finessConfirmState: Array.from(finessConfirmState.entries()),
+      };
+      return {
+        version: 1,
+        savedAt: new Date().toISOString(),
+        controls: serializeControlsSnapshot(),
+        runtime,
+        metiersRows: collectMetiersRows(),
+      };
+    }
+
+    function restoreWizardRuntime(runtime) {
+      if (!runtime || typeof runtime !== 'object') return;
+      if (typeof runtime.step === 'number' && Number.isFinite(runtime.step)) step = runtime.step;
+      deacOnlyFlow = !!runtime.deacOnlyFlow;
+      metierStepSkipped = !!runtime.metierStepSkipped;
+      conditionalDefs = Array.isArray(runtime.conditionalDefs) ? runtime.conditionalDefs : [];
+      conditionalState.clear();
+      if (runtime.conditionalState && typeof runtime.conditionalState === 'object') {
+        Object.entries(runtime.conditionalState).forEach(([key, value]) => conditionalState.set(key, value));
+      }
+      currentConditionalId = String(runtime.currentConditionalId || '');
+      focusedConditionalStepId = String(runtime.focusedConditionalStepId || '');
+      focusedConditionalBlockKey = String(runtime.focusedConditionalBlockKey || '');
+      autoCollapsePrimaryAfterPrestations = !!runtime.autoCollapsePrimaryAfterPrestations;
+      manualIdentResolved = !!runtime.manualIdentResolved;
+      manualResolvedRecord = runtime.manualResolvedRecord || null;
+      manualEntryRequested = !!runtime.manualEntryRequested;
+      manualAttachEnabled = !!runtime.manualAttachEnabled;
+      lastConfirmedFoundRecord = runtime.lastConfirmedFoundRecord || null;
+      currentAutoFoundSources = Array.isArray(runtime.currentAutoFoundSources) ? runtime.currentAutoFoundSources : [];
+      forceTopFinessEntryVisible = !!runtime.forceTopFinessEntryVisible;
+      pendingManualAssocSeq = Number(runtime.pendingManualAssocSeq || 1) || 1;
+      pendingManualAssocRows = Array.isArray(runtime.pendingManualAssocRows) ? runtime.pendingManualAssocRows : [];
+      identMultiEtabConflict = !!runtime.identMultiEtabConflict;
+      ignoredSiretSuggestions.clear();
+      (Array.isArray(runtime.ignoredSiretSuggestions) ? runtime.ignoredSiretSuggestions : []).forEach((item) => ignoredSiretSuggestions.add(String(item || '')));
+      handledSiretSuggestions.clear();
+      (Array.isArray(runtime.handledSiretSuggestions) ? runtime.handledSiretSuggestions : []).forEach((item) => handledSiretSuggestions.add(String(item || '')));
+      finessDispoBySource.clear();
+      (Array.isArray(runtime.finessDispoBySource) ? runtime.finessDispoBySource : []).forEach(([k, v]) => finessDispoBySource.set(k, v));
+      finessRecordBySource.clear();
+      (Array.isArray(runtime.finessRecordBySource) ? runtime.finessRecordBySource : []).forEach(([k, v]) => finessRecordBySource.set(k, v));
+      finessConfirmState.clear();
+      (Array.isArray(runtime.finessConfirmState) ? runtime.finessConfirmState : []).forEach(([k, v]) => finessConfirmState.set(k, v));
+    }
+
+    function collectFinessForSave() {
+      const values = [];
+      const pushIfValid = (raw) => {
+        const value = normalizeFinessLookupValue(raw);
+        if (isValidFiness(value)) values.push(value);
+      };
+      collectFinessInputs().forEach((input) => pushIfValid(input?.value));
+      (Array.isArray(pendingManualAssocRows) ? pendingManualAssocRows : []).forEach((row) => pushIfValid(row?.value));
+      if (manualResolvedRecord?.sourceFiness) pushIfValid(manualResolvedRecord.sourceFiness);
+      return Array.from(new Set(values));
+    }
+
+    function collectPrestationsOrpForSave() {
+      return {
+        orp_pec: !!document.getElementById('ps-direct-pec-root')?.checked,
+        orp_parcours_sociopro: !!document.getElementById('ps-parcours-socio-root')?.checked,
+        orp_parcours_qualif: !!document.getElementById('ps-parcours-qualif-root')?.checked,
+        orp_orientation_espo: getCheckedValuesByName('ps-parcours-socio-child').includes("Préparation d'un projet professionnel (orientation hors ESPO)"),
+        orp_autre_parcours: getCheckedValuesByName('ps-parcours-socio-child').includes('Préparation à accéder à l\'emploi (remobilisation, etc.)') || getCheckedValuesByName('ps-parcours-socio-child').includes('Réentrainement au travail'),
+        orp_remise_niveau: getCheckedValuesByName('ps-parcours-qualif-child').includes('Préparer à accéder à une formation / remise à niveau savoirs de base'),
+        orp_formation_pro: getCheckedValuesByName('ps-parcours-qualif-child').includes('Formation professionnalisante (ne débouchant pas sur un diplôme)'),
+        orp_formation_certif: getCheckedValuesByName('ps-parcours-qualif-child').includes('Formation certifiante ou diplômante'),
+        orp_formation_accomp_pro: getCheckedValuesByName('ps-parcours-qualif-child').includes('Formation accompagnée professionnalisante (ne débouchant pas sur un diplôme)'),
+        orp_formation_accomp_certif: getCheckedValuesByName('ps-parcours-qualif-child').includes('Formation accompagnée certifiante (avec titre pro ou diplôme)'),
+        orp_autre_eval: getCheckedValuesByName('ps-direct-hors-orp').includes('Évaluations professionnelles'),
+      };
+    }
+
+    function buildFieldsForSave(uuid, snapshot) {
+      const dispoChecked = (key) => !!document.querySelector(`[data-dispo="${key}"]`)?.checked;
+      const etpValue = (key) => String(document.querySelector(`[data-etp="${key}"]`)?.value || '').trim();
+      const metiersJson = collectMetiersRows();
+      const finessValues = collectFinessForSave();
+      const prestationsOrp = collectPrestationsOrpForSave();
+      const prestationsIndirectes = {
+        info_partenaires: !!document.getElementById('ps-ind-partenaires')?.checked,
+        info_organismes_formation: !!document.getElementById('ps-ind-of')?.checked,
+        participations_mdph: !!document.getElementById('ps-ind-mdph')?.checked,
+        info_partenaires_types: getCheckedValuesByName('ps-ind-partenaires-child'),
+        info_organismes_formation_types: getCheckedValuesByName('ps-ind-of-child'),
+        participations_mdph_types: getCheckedValuesByName('ps-ind-mdph-child'),
+      };
+      const prestationsJson = {};
+      conditionalState.forEach((value, key) => {
+        prestationsJson[key] = value;
+      });
+      const formationsRows = [];
+      conditionalState.forEach((stateItem) => {
+        const rows = stateItem?.formationsSelection?.rows;
+        if (Array.isArray(rows)) {
+          rows.forEach((row) => formationsRows.push(row));
+        }
+      });
+
+      return {
+        uuid,
+        es_nom: String(document.getElementById('es_nom')?.value || '').trim(),
+        es_departement: String(document.getElementById('dept')?.value || '').trim(),
+        validateur_nom: String(document.getElementById('v_nom')?.value || '').trim(),
+        validateur_prenom: String(document.getElementById('v_prenom')?.value || '').trim(),
+        validateur_email: String(document.getElementById('v_email')?.value || '').trim(),
+        finess_main: String(document.getElementById('finess')?.value || '').trim(),
+        finess_json: JSON.stringify(finessValues),
+        check_esrp: dispoChecked('esrp'),
+        check_espo: dispoChecked('espo'),
+        check_ueros: dispoChecked('ueros'),
+        check_deac: dispoChecked('deac'),
+        etp_esrp: etpValue('esrp'),
+        etp_espo: etpValue('espo'),
+        etp_ueros: etpValue('ueros'),
+        etp_deac: etpValue('deac'),
+        metiers_json: JSON.stringify(metiersJson),
+        pec: document.getElementById('ps-direct-pec-root')?.checked ? 'Oui' : '',
+        prestations_orp_json: JSON.stringify(prestationsOrp),
+        prestations_indirectes_json: JSON.stringify(prestationsIndirectes),
+        prestations_json: JSON.stringify(prestationsJson),
+        catalogue_formations_json: JSON.stringify(formationsRows),
+        emploi_indicateurs_json: JSON.stringify({}),
+        prestations_details_json: JSON.stringify({
+          [WIZARD_STATE_KEY]: snapshot,
+        }),
+        q32_implantation: getCheckedRadioValue('ctx-q32'),
+        q33_transports: getCheckedRadioValue('ctx-q33'),
+        q33_pmr: getCheckedRadioValue('ctx-q33-pmr'),
+        q33_alternatif: getCheckedRadioValue('ctx-q33-alt'),
+        q34_prefecture: getCheckedRadioValue('ctx-q34'),
+        q35_hebergement: getCheckedRadioValue('ctx-q35'),
+        q35_places: String(document.getElementById('ctx-q35-places')?.value || '').trim(),
+        q35_weekend: getCheckedRadioValue('ctx-q35-weekend'),
+        q35_comptabilite_we: getCheckedRadioValue('ctx-q35-compta'),
+        q35_fermetures: getCheckedRadioValue('ctx-q35-fermetures'),
+        q35_fermetures_semaines: String(document.getElementById('ctx-q35-fermetures-semaines')?.value || '').trim(),
+        q35_alternatives: getCheckedRadioValue('ctx-q35-alternatives'),
+        q36_restaurant: getCheckedRadioValue('ctx-q36'),
+        q36_weekend: getCheckedRadioValue('ctx-q36-weekend'),
+        q36_externe: getCheckedRadioValue('ctx-q36-externe'),
+        q36_participation: getCheckedRadioValue('ctx-q36-participation'),
+        q37_cuisine: getCheckedRadioValue('ctx-q37'),
+        q37_weekend: getCheckedRadioValue('ctx-q37-weekend'),
+        q40_remuneration: getCheckedRadioValue('ctx-q40'),
+        q40_operateur: String(document.getElementById('ctx-q40-operateur')?.value || '').trim(),
+        q42_ea: String(document.getElementById('ctx-ea')?.value || '').trim(),
+        q43_ei: String(document.getElementById('ctx-ei')?.value || '').trim(),
+        q41_esat: String(document.getElementById('ctx-esat')?.value || '').trim(),
+        q53_afpa: getCheckedRadioValue('ctx-q53'),
+        saisie_terminee: step === getFinalStepNumber() && !document.getElementById('fake-submit')?.disabled,
+      };
+    }
+
+    async function saveWizardToServer() {
+      const uuid = ensureResumeUuid();
+      const snapshot = serializeWizardSnapshot();
+      const fields = buildFieldsForSave(uuid, snapshot);
+      const response = await fetch(`/api/forms/${FORM_ID}/record`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fields }),
+      });
+      let payload = {};
+      try {
+        payload = await response.json();
+      } catch {}
+      if (!response.ok) {
+        const msg = String(payload?.error || `Échec sauvegarde (HTTP ${response.status})`);
+        throw new Error(msg);
+      }
+      return { uuid, payload };
+    }
+
+    async function loadWizardFromServer(uuid) {
+      if (!uuid) return false;
+      const response = await fetch(`/api/forms/${FORM_ID}/record?uuid=${encodeURIComponent(uuid)}`, {
+        headers: { Accept: 'application/json' },
+      });
+      let payload = {};
+      try {
+        payload = await response.json();
+      } catch {}
+      if (!response.ok) return false;
+      const record = Array.isArray(payload?.records) ? payload.records[0] : null;
+      const fields = record?.fields || {};
+      const rawDetails = fields?.prestations_details_json;
+      let parsedDetails = {};
+      if (typeof rawDetails === 'string' && rawDetails.trim()) {
+        try { parsedDetails = JSON.parse(rawDetails); } catch {}
+      } else if (rawDetails && typeof rawDetails === 'object') {
+        parsedDetails = rawDetails;
+      }
+      const snapshot = parsedDetails?.[WIZARD_STATE_KEY];
+      if (!snapshot || typeof snapshot !== 'object') return false;
+
+      isHydratingFromSnapshot = true;
+      applyControlsSnapshot(snapshot.controls || {});
+      restoreMetiersRows(snapshot.metiersRows || []);
+      restoreWizardRuntime(snapshot.runtime || {});
+      applyRhDeacQuestionState();
+      bindContexteEcologiqueToggles();
+      syncPrestationsVisibility();
+      validateIdent();
+      validateEtp();
+      setIdentDisposFromRh();
+      validateMetiers();
+      validatePrestations();
+      refreshIdentificationFromFiness();
+      refreshSummary();
+      showStep(Number(snapshot?.runtime?.step || 1) || 1);
+      isHydratingFromSnapshot = false;
+      return true;
+    }
+
+    document.getElementById('fake-submit').addEventListener('click', async () => {
       refreshFinal();
-      alert('Maquette : validation UI réussie. Aucun enregistrement effectué.');
+      try {
+        await saveWizardToServer();
+        setTopStatusMessage('Questionnaire enregistré et prêt pour la validation.');
+        alert('Validation réussie et sauvegardée.');
+      } catch (err) {
+        setTopStatusMessage(`Erreur de sauvegarde: ${err.message}`);
+        alert(`Erreur de sauvegarde: ${err.message}`);
+      }
     });
 
-    const topStatus = document.getElementById('top-status');
-    document.getElementById('quick-save-btn')?.addEventListener('click', () => {
-      if (topStatus) topStatus.textContent = "Maquette : enregistrement simulé.";
+    document.getElementById('quick-save-btn')?.addEventListener('click', async () => {
+      try {
+        await saveWizardToServer();
+        setTopStatusMessage('Enregistré dans Grist.');
+      } catch (err) {
+        setTopStatusMessage(`Erreur de sauvegarde: ${err.message}`);
+      }
     });
-    document.getElementById('quick-copy-btn')?.addEventListener('click', () => {
-      if (topStatus) topStatus.textContent = "Maquette : lien de reprise simulé.";
+    document.getElementById('quick-copy-btn')?.addEventListener('click', async () => {
+      try {
+        const uuid = ensureResumeUuid();
+        const url = new URL(window.location.href);
+        url.searchParams.set('uuid', uuid);
+        const resumeUrl = url.toString();
+        if (navigator.clipboard?.writeText) {
+          await navigator.clipboard.writeText(resumeUrl);
+        }
+        setTopStatusMessage('Lien de reprise copié.');
+      } catch {
+        setTopStatusMessage('Impossible de copier automatiquement. Copiez l’URL de la barre d’adresse.');
+      }
     });
     document.getElementById('quick-export-csv-btn')?.addEventListener('click', () => {
       if (topStatus) topStatus.textContent = "Maquette : export CSV simulé.";
@@ -8576,18 +9001,34 @@
       moveConditionalFocus(1);
     });
 
-    validateIdent();
-    applyRhDeacQuestionState();
-    validateEtp();
-    setIdentDisposFromRh();
-    validateMetiers();
-    validatePrestations();
-    loadDeptStatsFromCsv();
-    loadFinessReferenceFromCsv().then(() => refreshIdentificationFromFiness());
-    loadFormationsReferenceFromCsv();
-    syncFinessIntroVisibility();
-    syncFinessTopEntryVisibility();
-    showStep(1);
+    async function initializeWizard() {
+      validateIdent();
+      applyRhDeacQuestionState();
+      validateEtp();
+      setIdentDisposFromRh();
+      validateMetiers();
+      validatePrestations();
+      loadDeptStatsFromCsv();
+      await loadFinessReferenceFromCsv();
+      refreshIdentificationFromFiness();
+      await loadFormationsReferenceFromCsv();
+      syncFinessIntroVisibility();
+      syncFinessTopEntryVisibility();
+
+      const uuidInUrl = getResumeUuidFromUrl();
+      if (uuidInUrl) {
+        resumeUuid = uuidInUrl;
+        const loaded = await loadWizardFromServer(uuidInUrl);
+        if (loaded) {
+          setTopStatusMessage('Questionnaire rechargé depuis Grist.');
+          return;
+        }
+        setTopStatusMessage('Aucune reprise trouvée pour ce lien. Nouveau questionnaire chargé.');
+      }
+      showStep(1);
+    }
+
+    initializeWizard();
   </script>
 </body>
 </html>

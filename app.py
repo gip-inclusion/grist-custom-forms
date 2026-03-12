@@ -29,6 +29,7 @@ ASSETS_DIR = BASE_DIR / 'assets'
 app = Flask(__name__)
 
 GRIST_BASE_URL = os.environ.get('GRIST_BASE_URL', 'https://grist.numerique.gouv.fr')
+_TABLE_COLUMNS_CACHE: dict[tuple[str, str], set[str]] = {}
 
 # Public mount for the daily capture tool.
 try:
@@ -112,6 +113,26 @@ def get_form_config(form_id: str) -> dict:
         'table_id': os.environ.get(f'GRIST_TABLE_{form_id_upper}', 'Reponses'),
         'api_key': os.environ.get(f'GRIST_API_KEY_{form_id_upper}') or os.environ.get('GRIST_API_KEY'),
     }
+
+
+def get_table_columns(config: dict, headers: dict) -> set[str]:
+    """Fetch and cache table column ids to avoid sending unknown fields to Grist."""
+    cache_key = (str(config.get('doc_id') or ''), str(config.get('table_id') or ''))
+    if cache_key in _TABLE_COLUMNS_CACHE:
+        return _TABLE_COLUMNS_CACHE[cache_key]
+
+    url = f"{GRIST_BASE_URL}/api/docs/{config['doc_id']}/tables/{config['table_id']}/columns"
+    resp = requests.get(url, headers=headers)
+    if resp.status_code != 200:
+        raise RuntimeError(f'Failed to read table columns: HTTP {resp.status_code} - {resp.text}')
+    payload = resp.json()
+    columns = set()
+    for col in payload.get('columns', []):
+        col_id = (col or {}).get('id')
+        if col_id:
+            columns.add(str(col_id))
+    _TABLE_COLUMNS_CACHE[cache_key] = columns
+    return columns
 
 
 def _as_bool(value) -> bool:
@@ -407,6 +428,8 @@ def save_record(form_id: str):
         return jsonify({'error': 'Invalid request body'}), 400
 
     fields = data['fields']
+    if not isinstance(fields, dict):
+        return jsonify({'error': 'Invalid fields payload'}), 400
     uuid = fields.get('uuid')
     if not uuid:
         return jsonify({'error': 'UUID required in fields'}), 400
@@ -417,6 +440,16 @@ def save_record(form_id: str):
         'Content-Type': 'application/json',
         'Accept': 'application/json',
     }
+
+    # Keep only fields that exist in target table (prod/local may differ).
+    try:
+        allowed_columns = get_table_columns(config, headers)
+        filtered_fields = {k: v for k, v in fields.items() if str(k) in allowed_columns}
+    except Exception as e:
+        return jsonify({'error': f'Failed to fetch Grist table columns: {e}'}), 500
+
+    if 'uuid' not in filtered_fields:
+        return jsonify({'error': "Table is missing required 'uuid' column"}), 500
 
     # Check if record exists
     filter_param = f'{{"uuid":["{uuid}"]}}'
@@ -434,7 +467,7 @@ def save_record(form_id: str):
 
     # Enforce uniqueness of FINESS across records (excluding current UUID)
     try:
-        incoming_finess = extract_finess_values(fields)
+        incoming_finess = extract_finess_values(filtered_fields)
         duplicates = find_duplicate_finess(config, uuid, incoming_finess, headers)
         if duplicates:
             duplicates_sorted = sorted(duplicates)
@@ -449,11 +482,11 @@ def save_record(form_id: str):
     try:
         if record_id:
             # Update existing
-            payload = {'records': [{'id': record_id, 'fields': fields}]}
+            payload = {'records': [{'id': record_id, 'fields': filtered_fields}]}
             resp = requests.patch(f"{base_url}/records", json=payload, headers=headers)
         else:
             # Create new
-            payload = {'records': [{'fields': fields}]}
+            payload = {'records': [{'fields': filtered_fields}]}
             resp = requests.post(f"{base_url}/records", json=payload, headers=headers)
 
         return jsonify(resp.json()), resp.status_code
