@@ -599,6 +599,34 @@
       -moz-appearance: auto;
       accent-color: #2a78b8;
     }
+    input[name="ctx-q35-modalites"] {
+      appearance: none;
+      -webkit-appearance: none;
+      display: inline-grid;
+      place-content: center;
+      width: 16px;
+      height: 16px;
+      border: 1.5px solid #7c8fa8;
+      border-radius: 999px;
+      background: #fff;
+      cursor: pointer;
+      margin-top: 1px;
+    }
+    input[name="ctx-q35-modalites"]::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: #1f6feb;
+      transform: scale(0);
+      transition: transform .12s ease-in-out;
+    }
+    input[name="ctx-q35-modalites"]:checked {
+      border-color: #1f6feb;
+    }
+    input[name="ctx-q35-modalites"]:checked::before {
+      transform: scale(1);
+    }
     .field-input-pending {
       border-color: #d6a85a !important;
       background: #fffaf1 !important;
@@ -1451,6 +1479,7 @@
       margin-top: 4px;
     }
     #cond-block-suspensions > strong,
+    #cond-block-activites_parcours > strong,
     #cond-block-sorties_suspensions > strong,
     #cond-block-preconisations_sortie > strong {
       font-size: 1.02rem;
@@ -2256,6 +2285,8 @@
                   <option>CIP</option>
                 </optgroup>
                 <optgroup label="SUPPORT & ADMINISTRATIF">
+                  <option>Équipe de direction</option>
+                  <option>Équipe support (RH, compta, ...)</option>
                   <option>Assistant administratif</option>
                   <option>Service hébergement</option>
                   <option>Service logistique</option>
@@ -2351,6 +2382,26 @@
 
         <div class="box">
           <strong>Vos équipements et services</strong>
+          <div class="field field-radio-inline ctx-inline-preferred">
+            <div><label>Quelles modalités d'accueil proposez vous ?</label></div>
+            <div>
+              <div class="radio-group" role="group" aria-label="Modalités d'accueil">
+                <label class="radio-option"><input type="checkbox" name="ctx-q35-modalites" value="Présentiel"> Présentiel</label>
+                <label class="radio-option"><input type="checkbox" name="ctx-q35-modalites" value="Distanciel"> Distanciel</label>
+                <label class="radio-option"><input type="checkbox" name="ctx-q35-modalites" value="Hybride"> Hybride</label>
+              </div>
+            </div>
+          </div>
+          <div class="field field-radio-inline ctx-inline-preferred">
+            <div><label>Votre établissement accompagne t'il des personnes hors les murs ?</label></div>
+            <div>
+              <div class="radio-group">
+                <label class="radio-option"><input type="radio" name="ctx-q35-hors-murs" value="Oui"> Oui</label>
+                <label class="radio-option"><input type="radio" name="ctx-q35-hors-murs" value="Non"> Non</label>
+              </div>
+            </div>
+          </div>
+
           <div class="field field-radio-inline ctx-inline-preferred">
             <div><label>Votre établissement porte-t-il un hébergement ?</label></div>
             <div>
@@ -2773,8 +2824,16 @@
             <div><input id="cond-file-active" type="number" min="0" step="1"></div>
           </div>
           <div class="field field-radio-inline q35-sub-inline q35-places-inline">
-            <div><label>Nombre de sorties définitives dans l'année</label></div>
-            <div><input id="cond-sorties" type="number" min="0" step="1"></div>
+            <div><label>Nombre de sorties avant le terme de la prestation</label></div>
+            <div><input id="cond-sorties-avant-terme" type="number" min="0" step="1"></div>
+          </div>
+          <div class="field field-radio-inline q35-sub-inline q35-places-inline">
+            <div><label>Nombre de sorties au terme de la prestation</label></div>
+            <div><input id="cond-sorties-terme" type="number" min="0" step="1"></div>
+          </div>
+          <div class="field field-radio-inline q35-sub-inline q35-places-inline">
+            <div><label>Nombre total de sorties définitives (auto)</label></div>
+            <div><input id="cond-sorties-total" type="number" min="0" step="1" readonly></div>
           </div>
           <div class="field field-radio-inline q35-sub-inline q35-places-inline">
             <div><label>Nombre de journées réalisées</label></div>
@@ -2824,7 +2883,9 @@
     const conditionalPrevBtn = document.getElementById('conditional-prev-btn');
     const conditionalNextBtn = document.getElementById('conditional-next-btn');
     const condFileActiveInput = document.getElementById('cond-file-active');
-    const condSortiesInput = document.getElementById('cond-sorties');
+    const condSortiesAvantTermeInput = document.getElementById('cond-sorties-avant-terme');
+    const condSortiesTermeInput = document.getElementById('cond-sorties-terme');
+    const condSortiesTotalInput = document.getElementById('cond-sorties-total');
     const condJourneesInput = document.getElementById('cond-journees');
     const conditionalCoherenceSections = document.getElementById('conditional-coherence-sections');
     const conditionalBlockNavList = document.getElementById('conditional-block-nav-list');
@@ -3015,7 +3076,8 @@
     function shouldHideLegacyDirectBlocks(conditionalId = currentConditionalId) {
       const def = getConditionalDefById(conditionalId);
       const name = String(def?.name || '');
-      return /^Directes ORP CDAPH - (UEROS|ESPO|ESRP)\b/i.test(name);
+      return /^Directes ORP CDAPH - (UEROS|ESPO|ESRP)\b/i.test(name)
+        || isParcoursConditionalStep(conditionalId);
     }
 
     function hasEmploiAccesBlockConditionalStep(id) {
@@ -3160,10 +3222,10 @@
     }
 
     function getActiveConditionalCohDefs(conditionalId = currentConditionalId) {
-      const isEsrp = isEsrpConditionalStep(conditionalId);
+      const isEsrpLike = isEsrpConditionalStep(conditionalId) || isParcoursConditionalStep(conditionalId);
       const isUeros = isUerosConditionalStep(conditionalId);
       return conditionalCohDefs.filter((def) => {
-        if (def.onlyEsrp && !isEsrp) return false;
+        if (def.onlyEsrp && !isEsrpLike) return false;
         if (def.onlyUeros && !isUeros) return false;
         return true;
       });
@@ -3344,6 +3406,9 @@
           ${row(2)}
         </div>
         ${row(3)}
+        <p class="hint" style="margin:4px 0 8px 0;">
+          Contrôle secteur public : <strong>FPT + FPH + FPE</strong> doit être inférieur ou égal à <strong>En emploi secteur public</strong>.
+        </p>
         <div class="ds-simple-participants-block">
           ${row(4)}
           <div class="ds-simple-participants-block ds-simple-nested">
@@ -3449,6 +3514,8 @@
           done: false,
           visitedBlocks: [],
           fileActive: '',
+          sortiesAvantTerme: '',
+          sortiesTerme: '',
           sorties: '',
           journees: '',
           coh: makeEmptyConditionalCohValues(),
@@ -3464,6 +3531,12 @@
         });
         const current = nextState.get(def.id);
         if (!Array.isArray(current.visitedBlocks)) current.visitedBlocks = [];
+        if (typeof current.sortiesAvantTerme === 'undefined') current.sortiesAvantTerme = '';
+        if (typeof current.sortiesTerme === 'undefined') current.sortiesTerme = '';
+        if (!current.sortiesAvantTerme && !current.sortiesTerme && String(current.sorties || '').trim() !== '') {
+          current.sortiesTerme = String(current.sorties || '').trim();
+        }
+        current.sorties = String(toNum(current.sortiesAvantTerme) + toNum(current.sortiesTerme));
         if (!current.coh) current.coh = makeEmptyConditionalCohValues();
         conditionalCohDefs.forEach((cohDef) => {
           const defaultValue = ['age', 'niveau_entree', 'situation_entree', 'ressources_entree'].includes(cohDef.key) ? '0' : '';
@@ -3498,6 +3571,8 @@
         done: false,
         visitedBlocks: [],
         fileActive: '',
+        sortiesAvantTerme: '',
+        sortiesTerme: '',
         sorties: '',
         journees: '',
         coh: makeEmptyConditionalCohValues(),
@@ -3526,9 +3601,15 @@
       }
     }
 
+    function getConditionalSortiesTotal(state) {
+      const hasSplit = String(state?.sortiesAvantTerme || '').trim() !== '' || String(state?.sortiesTerme || '').trim() !== '';
+      if (hasSplit) return toNum(state?.sortiesAvantTerme) + toNum(state?.sortiesTerme);
+      return toNum(state?.sorties);
+    }
+
     function computeConditionalDuree(state) {
       const fileActive = Number(state.fileActive || 0);
-      const sorties = Number(state.sorties || 0);
+      const sorties = getConditionalSortiesTotal(state);
       const journees = Number(state.journees || 0);
       const totalPersonnes = fileActive + sorties;
       if (journees <= 0 || totalPersonnes <= 0) return '';
@@ -3537,7 +3618,7 @@
 
     function getConditionalTarget(state) {
       const fileActive = Number(state.fileActive || 0);
-      const sorties = Number(state.sorties || 0);
+      const sorties = getConditionalSortiesTotal(state);
       return fileActive + sorties;
     }
 
@@ -3620,8 +3701,7 @@
         return formationSelectionBlock.done;
       }
       if (isParcoursConditionalStep(conditionalId)) {
-        const parcoursBlock = evaluateParcoursBlock(state, conditionalId);
-        return parcoursBlock.done;
+        // Parcours mobilisés: même logique de validation que les étapes ESRP.
       }
       if (isDirectSansOrpCadrageConditionalStep(conditionalId)) {
         const directSansOrpPecBlock = evaluateDirectSansOrpPecBlock(state, conditionalId);
@@ -3636,9 +3716,11 @@
         return indirectBlock.done;
       }
       const fileActive = Number(state.fileActive || 0);
-      const sorties = Number(state.sorties || 0);
+      const sortiesAvantTermeFilled = isFilledNumberString(state.sortiesAvantTerme);
+      const sortiesTermeFilled = isFilledNumberString(state.sortiesTerme);
+      const sorties = getConditionalSortiesTotal(state);
       const journees = Number(state.journees || 0);
-      if (fileActive < 0 || sorties < 0 || journees <= 0) return false;
+      if (fileActive < 0 || !sortiesAvantTermeFilled || !sortiesTermeFilled || sorties < 0 || journees <= 0) return false;
       const geoRows = Array.isArray(state?.geoRows) ? state.geoRows : [];
       const geoInvalid = geoRows.some((row) => {
         const count = Number(row?.count || 0);
@@ -3656,14 +3738,20 @@
         : { done: true };
       const sortiesBlock = evaluateSortiesBlock(state);
       const suspensionsBlock = evaluateSuspensionsBlock(state);
+      const activitesParcoursBlock = evaluateActivitesParcoursBlock(state, conditionalId);
       const handicapBlock = evaluateHandicapMatrixBlock(state);
       const precoBlock = evaluatePreconisationsBlock(state, conditionalId);
+      const modalitesBlock = hasModalitesAccueilBlockConditionalStep(conditionalId)
+        ? evaluateModalitesAccueilBlock(state)
+        : { done: true };
       return blocks.every((block) => block.ok)
         && directAvecOrpBlock.done
         && directSansOrpBlock.done
         && sortiesBlock.done
         && suspensionsBlock.done
+        && activitesParcoursBlock.done
         && handicapBlock.done
+        && modalitesBlock.done
         && precoBlock.done;
     }
 
@@ -3677,12 +3765,7 @@
         };
       }
       if (isParcoursConditionalStep(conditionalId)) {
-        const progress = getParcoursFieldProgress(state, conditionalId);
-        return {
-          done: progress.done,
-          total: progress.total,
-          touched: !!progress.touched,
-        };
+        // Parcours mobilisés: progression calculée bloc par bloc (comme ESRP).
       }
       if (isDirectSansOrpCadrageConditionalStep(conditionalId)) {
         const progress = getDirectSansOrpPecFieldProgress(state, conditionalId);
@@ -3709,9 +3792,11 @@
         };
       }
       const fileActive = Number(state.fileActive || 0);
-      const sorties = Number(state.sorties || 0);
+      const sortiesAvantTermeFilled = isFilledNumberString(state.sortiesAvantTerme);
+      const sortiesTermeFilled = isFilledNumberString(state.sortiesTerme);
+      const sorties = getConditionalSortiesTotal(state);
       const journees = Number(state.journees || 0);
-      const fileBlockDone = fileActive >= 0 && sorties >= 0 && journees > 0;
+      const fileBlockDone = fileActive >= 0 && sortiesAvantTermeFilled && sortiesTermeFilled && sorties >= 0 && journees > 0;
 
       const cohBlocks = evaluateConditionalCoh(state, conditionalId);
       const doneCohBlocks = cohBlocks.filter((block) => block.ok).length;
@@ -3724,9 +3809,14 @@
         : { done: true, touched: false };
       const sortiesBlock = evaluateSortiesBlock(state);
       const suspensionsBlock = evaluateSuspensionsBlock(state);
+      const activitesParcoursBlock = evaluateActivitesParcoursBlock(state, conditionalId);
       const handicapBlock = evaluateHandicapMatrixBlock(state);
       const precoBlock = evaluatePreconisationsBlock(state, conditionalId);
-      const total = 1 + cohBlocks.length + (includeLegacyDirectBlocks ? 5 : 3) + (precoBlock.visible ? 1 : 0); // file active + cohérence + (optionnel direct avec/sans ORP) + handicap/sorties/suspensions + préconisations
+      const modalitesVisible = hasModalitesAccueilBlockConditionalStep(conditionalId);
+      const modalitesBlock = modalitesVisible
+        ? evaluateModalitesAccueilBlock(state)
+        : { done: true, touched: false };
+      const total = 1 + cohBlocks.length + (includeLegacyDirectBlocks ? 5 : 3) + (precoBlock.visible ? 1 : 0) + (modalitesVisible ? 1 : 0) + (activitesParcoursBlock.visible ? 1 : 0); // file active + cohérence + (optionnel direct avec/sans ORP) + handicap/sorties/suspensions + préconisations + modalités d'accueil + activités de parcours
       const done = (fileBlockDone ? 1 : 0)
         + doneCohBlocks
         + (includeLegacyDirectBlocks && directAvecOrpBlock.done ? 1 : 0)
@@ -3734,6 +3824,8 @@
         + (handicapBlock.done ? 1 : 0)
         + (sortiesBlock.done ? 1 : 0)
         + (suspensionsBlock.done ? 1 : 0)
+        + (activitesParcoursBlock.visible && activitesParcoursBlock.done ? 1 : 0)
+        + (modalitesVisible && modalitesBlock.done ? 1 : 0)
         + (precoBlock.visible && precoBlock.done ? 1 : 0);
 
       const hasCohInput = getActiveConditionalCohDefs(conditionalId).some((def) => {
@@ -3746,7 +3838,8 @@
       });
 
       const touched = (String(state.fileActive || '').trim() !== '')
-        || (String(state.sorties || '').trim() !== '')
+        || (String(state.sortiesAvantTerme || '').trim() !== '')
+        || (String(state.sortiesTerme || '').trim() !== '')
         || (String(state.journees || '').trim() !== '')
         || hasCohInput
         || (includeLegacyDirectBlocks && directAvecOrpBlock.touched)
@@ -3754,6 +3847,8 @@
         || handicapBlock.touched
         || sortiesBlock.touched
         || suspensionsBlock.touched
+        || (activitesParcoursBlock.visible && activitesParcoursBlock.touched)
+        || (modalitesVisible && modalitesBlock.touched)
         || precoBlock.touched;
 
       return { done, total, touched };
@@ -3805,6 +3900,34 @@
       return { done, touched, sum, nb: sum };
     }
 
+    function hasActivitesParcoursBlockConditionalStep(conditionalId = currentConditionalId) {
+      return isEspoOrUerosConditionalStep(conditionalId)
+        || isEsrpConditionalStep(conditionalId)
+        || isParcoursConditionalStep(conditionalId);
+    }
+
+    function hasModalitesAccueilBlockConditionalStep(conditionalId = currentConditionalId) {
+      return isEspoOrUerosConditionalStep(conditionalId)
+        || isEsrpConditionalStep(conditionalId)
+        || isParcoursConditionalStep(conditionalId);
+    }
+
+    function evaluateActivitesParcoursBlock(state, conditionalId = currentConditionalId) {
+      if (!hasActivitesParcoursBlockConditionalStep(conditionalId)) {
+        return { visible: false, done: true, touched: false };
+      }
+      const row = state?.directAvecOrp?.row || {};
+      const keys = [
+        'activites_intermediaires_site',
+        'activites_intermediaires_ambulatoire',
+        'activites_sortie_parcours_site',
+        'activites_sortie_parcours_ambulatoire',
+      ];
+      const touched = keys.some((k) => isFilledNumberString(row[k]));
+      const done = keys.every((k) => isFilledNumberString(row[k]));
+      return { visible: true, done, touched };
+    }
+
     function evaluateHandicapMatrixBlock(state) {
       const rows = Array.isArray(state?.handicapMatrix) ? state.handicapMatrix : [];
       const target = getConditionalTarget(state);
@@ -3820,7 +3943,9 @@
     }
 
     function evaluatePreconisationsBlock(state, conditionalId = currentConditionalId) {
-      const visible = isEspoOrUerosConditionalStep(conditionalId) || isEsrpConditionalStep(conditionalId);
+      const visible = isEspoOrUerosConditionalStep(conditionalId)
+        || isEsrpConditionalStep(conditionalId)
+        || isParcoursConditionalStep(conditionalId);
       if (!visible) return { visible: false, done: true, touched: false };
       const bloc = state?.preconisationsBloc || makeEmptyPreconisationsState();
       const numericKeys = [
@@ -3848,11 +3973,39 @@
       return { visible: true, done, touched };
     }
 
+    function evaluateModalitesAccueilBlock(state) {
+      const row = state?.directAvecOrp?.row || {};
+      const selectedModalites = getSelectedContextModalites();
+      const hasHebergement = getContextHasHebergement();
+      const hasHorsMurs = getContextHasHorsMurs();
+      const keys = [];
+      if (selectedModalites.has('presentiel')) keys.push('presentiel_complet', 'presentiel_partiel');
+      if (selectedModalites.has('hybride')) keys.push('hybride_complet', 'hybride_partiel');
+      if (selectedModalites.has('distanciel')) keys.push('distanciel_complet', 'distanciel_partiel');
+      if (hasHorsMurs) keys.push('hors_murs_personnes');
+      if (hasHebergement) keys.push('hebergees_personnes', 'hebergees_nuitees');
+      const target = getConditionalTarget(state);
+      const presentielTotal = selectedModalites.has('presentiel')
+        ? toNum(row.presentiel_complet) + toNum(row.presentiel_partiel)
+        : 0;
+      const hybrideTotal = selectedModalites.has('hybride')
+        ? toNum(row.hybride_complet) + toNum(row.hybride_partiel)
+        : 0;
+      const distancielTotal = selectedModalites.has('distanciel')
+        ? toNum(row.distanciel_complet) + toNum(row.distanciel_partiel)
+        : 0;
+      const sum = presentielTotal + hybrideTotal + distancielTotal;
+      const diff = sum - target;
+      const calculable = target > 0;
+      const touched = keys.some((k) => isFilledNumberString(row[k]));
+      const done = keys.length > 0 && keys.every((k) => isFilledNumberString(row[k]));
+      return { done, touched, target, sum, diff, calculable, ok: calculable && Math.abs(diff) < 0.0001 };
+    }
+
     function getEmploiRequiredFieldKeys(conditionalId = currentConditionalId) {
       const keys = [];
       if (hasEmploiAccesBlockConditionalStep(conditionalId)) {
         keys.push(
-          'emploi_sorties_n',
           'emploi_sorties_n_1',
           'emploi_nb_repondants',
           'emploi_acces_nb',
@@ -3893,15 +4046,17 @@
     function evaluateParcoursBlock(state, conditionalId = currentConditionalId) {
       const row = state?.directAvecOrp?.row || {};
       const includeSuiteParcours = !isParcoursFormationConditionalStep(conditionalId);
+      const hasHorsMurs = getContextHasHorsMurs();
       const requiredKeys = [
         'beneficiaires',
         'presentiel_total', 'presentiel_complet', 'presentiel_partiel',
         'hybride_total', 'hybride_complet', 'hybride_partiel',
         'distanciel_total', 'distanciel_complet', 'distanciel_partiel',
-        'hors_murs_personnes', 'hors_murs_journees',
+        'hors_murs_journees',
         'hebergees_personnes', 'hebergees_journees',
         ...getEmploiRequiredFieldKeys(conditionalId),
       ];
+      if (hasHorsMurs) requiredKeys.push('hors_murs_personnes');
       if (includeSuiteParcours) {
         requiredKeys.push('activites_sortie_parcours_site', 'activites_sortie_parcours_ambulatoire');
       }
@@ -3930,15 +4085,17 @@
     function getParcoursFieldProgress(state, conditionalId = currentConditionalId) {
       const row = state?.directAvecOrp?.row || {};
       const includeSuiteParcours = !isParcoursFormationConditionalStep(conditionalId);
+      const hasHorsMurs = getContextHasHorsMurs();
       const keys = [
         'beneficiaires',
         'presentiel_total', 'presentiel_complet', 'presentiel_partiel',
         'hybride_total', 'hybride_complet', 'hybride_partiel',
         'distanciel_total', 'distanciel_complet', 'distanciel_partiel',
-        'hors_murs_personnes', 'hors_murs_journees',
+        'hors_murs_journees',
         'hebergees_personnes', 'hebergees_journees',
         ...getEmploiRequiredFieldKeys(conditionalId),
       ];
+      if (hasHorsMurs) keys.push('hors_murs_personnes');
       if (includeSuiteParcours) {
         keys.push('activites_sortie_parcours_site', 'activites_sortie_parcours_ambulatoire');
       }
@@ -3967,6 +4124,7 @@
       const enabled = String(bloc.enabled || '').trim();
       const row = bloc.row || {};
       const isUerosStep = isUerosConditionalStep(conditionalId);
+      const hasHorsMurs = getContextHasHorsMurs();
       const keys = [
         'beneficiaires',
         'presentiel_complet',
@@ -3975,7 +4133,6 @@
         'hybride_partiel',
         'distanciel_complet',
         'distanciel_partiel',
-        'hors_murs_personnes',
         'hors_murs_journees',
         'activites_intermediaires',
         'activites_sortie_parcours',
@@ -3983,6 +4140,7 @@
         'hebergees_nuitees',
         ...getEmploiRequiredFieldKeys(conditionalId),
       ];
+      if (hasHorsMurs) keys.push('hors_murs_personnes');
       const touched = !!enabled || keys.some((k) => isFilledNumberString(row[k]));
       const emploiRules = evaluateEmploiBlockRules(row, conditionalId);
       if (isUerosStep) {
@@ -4134,12 +4292,7 @@
         }];
       }
       if (isParcoursConditionalStep(currentConditionalId)) {
-        const parcoursBlock = evaluateParcoursBlock(state, currentConditionalId);
-        return [{
-          key: 'direct_avec_orp',
-          label: formatConditionalDisplayName(getConditionalDefById(currentConditionalId)?.name || ''),
-          done: parcoursBlock.done,
-        }];
+        // Parcours mobilisés: détail des blocs aligné sur le modèle ESRP (pas de bloc unique dédié).
       }
       if (isDirectSansOrpCadrageConditionalStep(currentConditionalId)) {
         const directSansOrpPecBlock = evaluateDirectSansOrpPecBlock(state, currentConditionalId);
@@ -4154,9 +4307,11 @@
         return [{ key: 'indirect', label: getSpecialIndirectTitle(currentConditionalId), done: indirectBlock.done }];
       }
       const fileActive = Number(state.fileActive || 0);
-      const sorties = Number(state.sorties || 0);
+      const sortiesAvantTermeFilled = isFilledNumberString(state.sortiesAvantTerme);
+      const sortiesTermeFilled = isFilledNumberString(state.sortiesTerme);
+      const sorties = getConditionalSortiesTotal(state);
       const journees = Number(state.journees || 0);
-      const fileBlockDone = fileActive >= 0 && sorties >= 0 && journees > 0;
+      const fileBlockDone = fileActive >= 0 && sortiesAvantTermeFilled && sortiesTermeFilled && sorties >= 0 && journees > 0;
       const rows = [{ key: 'fileactive', label: 'File active & journées', done: fileBlockDone }];
       evaluateConditionalCoh(state, currentConditionalId).forEach((block) => {
         rows.push({ key: block.key, label: block.title, done: block.ok });
@@ -4173,9 +4328,17 @@
       if (precoBlock.visible) {
         rows.push({ key: 'preconisations_sortie', label: 'Préconisations lors de la sortie définitive', done: precoBlock.done });
       }
+      if (hasModalitesAccueilBlockConditionalStep(currentConditionalId)) {
+        const modalitesBlock = evaluateModalitesAccueilBlock(state);
+        rows.push({ key: 'modalites_accueil', label: "Modalité d'accueil", done: modalitesBlock.done });
+      }
       const sortiesBlock = evaluateSortiesBlock(state);
       const suspensionsBlock = evaluateSuspensionsBlock(state);
+      const activitesParcoursBlock = evaluateActivitesParcoursBlock(state, currentConditionalId);
       rows.push({ key: 'suspensions', label: 'Suspensions', done: suspensionsBlock.done });
+      if (activitesParcoursBlock.visible) {
+        rows.push({ key: 'activites_parcours', label: 'Activités de parcours', done: activitesParcoursBlock.done });
+      }
       rows.push({ key: 'sorties_suspensions', label: 'Sortie avant le terme de la prestation', done: sortiesBlock.done });
       const emploiKeys = getEmploiRequiredFieldKeys(currentConditionalId);
       if (emploiKeys.length) {
@@ -4195,7 +4358,9 @@
         'origine_handicap',
         'handicap_matrix',
         'lesion_origine',
+        'modalites_accueil',
         'suspensions',
+        'activites_parcours',
         'sorties_suspensions',
         'preconisations_sortie',
         'suivi_emploi',
@@ -4220,6 +4385,26 @@
       return Array.from(document.querySelectorAll(selector))
         .map((input) => String(input.value || '').trim())
         .filter(Boolean);
+    }
+
+    function getSelectedContextModalites() {
+      const checked = Array.from(document.querySelectorAll('input[name="ctx-q35-modalites"]:checked'));
+      const selected = new Set();
+      checked.forEach((input) => {
+        const v = String(input.value || '').toLowerCase();
+        if (v.includes('présentiel') || v.includes('presentiel')) selected.add('presentiel');
+        if (v.includes('hybride')) selected.add('hybride');
+        if (v.includes('distanciel')) selected.add('distanciel');
+      });
+      return selected;
+    }
+
+    function getContextHasHebergement() {
+      return getRadioValue('ctx-q35') === 'Oui';
+    }
+
+    function getContextHasHorsMurs() {
+      return getRadioValue('ctx-q35-hors-murs') === 'Oui';
     }
 
     function isDirectSansOrpInfoPersonnesSelected() {
@@ -4269,7 +4454,8 @@
       const blocks = getConditionalBlocksDetails(state);
       return blocks.filter((block) => {
         const el = document.querySelector(`#step-conditional .cond-block[data-block-key="${block.key}"]`);
-        return !!el;
+        if (!el) return false;
+        return el.dataset.renderable !== '0';
       });
     }
 
@@ -4284,7 +4470,11 @@
         return;
       }
       conditionalFocusToolbar.style.display = '';
-      if (conditionalCurrentHeader) conditionalCurrentHeader.style.display = '';
+      const singleBlock = blocks.length === 1;
+      if (conditionalCurrentHeader) conditionalCurrentHeader.style.display = singleBlock ? 'none' : '';
+      if (condFocusTabs) condFocusTabs.style.display = singleBlock ? 'none' : '';
+      if (condFocusPrevBtn) condFocusPrevBtn.style.display = singleBlock ? 'none' : '';
+      if (condFocusNextBtn) condFocusNextBtn.style.display = singleBlock ? 'none' : '';
       const toolbarHeight = conditionalFocusToolbar.offsetHeight || 0;
       conditionalStepEl?.style?.setProperty('--cond-toolbar-height', `${toolbarHeight}px`);
       const doneCount = blocks.filter((block) => block.done && isConditionalBlockVisited(state, block.key)).length;
@@ -4312,6 +4502,8 @@
       const isFileActive = normalizedKey === 'fileactive' || currentTitleLower.includes('file active');
       const isHandicapMatrix = normalizedKey === 'handicap_matrix';
       const isSortiesSuspensions = normalizedKey === 'sorties_suspensions';
+      const isModalitesAccueil = normalizedKey === 'modalites_accueil';
+      const isActivitesParcours = normalizedKey === 'activites_parcours';
       if (isHandicapMatrix) {
         const handicapEval = evaluateHandicapMatrixBlock(state);
         const handicapOk = handicapEval.principalOk;
@@ -4360,6 +4552,54 @@
             <span class="kpi-mini kpi-slot-diff ${isOk ? 'diff-ok' : 'diff-warn'}">
               <span class="kpi-mini-label">Écart</span>
               <span class="kpi-mini-value">${diff.toFixed(0)}</span>
+            </span>
+          </div>
+        `;
+        const headerHeight = conditionalCurrentHeader?.offsetHeight || 0;
+        conditionalStepEl?.style?.setProperty('--cond-header-height', `${headerHeight}px`);
+        return;
+      }
+      if (isModalitesAccueil) {
+        const modalitesEval = evaluateModalitesAccueilBlock(state);
+        conditionalCurrentKpi.hidden = false;
+        conditionalCurrentKpi.style.display = 'inline-flex';
+        conditionalCurrentHeader?.classList.remove('is-no-kpi');
+        conditionalCurrentKpi.className = modalitesEval.ok ? 'status kpi cond-current-kpi ok' : 'status kpi cond-current-kpi err';
+        conditionalCurrentKpi.innerHTML = `
+          <div class="current-kpi-single">
+            <span class="kpi-mini">
+              <span class="kpi-mini-label">Cible*</span>
+              <span class="kpi-mini-value">${modalitesEval.target.toFixed(1)}</span>
+            </span>
+            <span class="kpi-mini">
+              <span class="kpi-mini-label">Saisie</span>
+              <span class="kpi-mini-value">${modalitesEval.sum.toFixed(1)}</span>
+            </span>
+            <span class="kpi-mini kpi-slot-diff ${modalitesEval.ok ? 'diff-ok' : 'diff-warn'}">
+              <span class="kpi-mini-label">Écart</span>
+              <span class="kpi-mini-value">${modalitesEval.calculable ? modalitesEval.diff.toFixed(1) : 'n/c'}</span>
+            </span>
+          </div>
+        `;
+        const headerHeight = conditionalCurrentHeader?.offsetHeight || 0;
+        conditionalStepEl?.style?.setProperty('--cond-header-height', `${headerHeight}px`);
+        return;
+      }
+      if (isActivitesParcours) {
+        const row = state?.directAvecOrp?.row || {};
+        const saisie = toNum(row.activites_intermediaires_site)
+          + toNum(row.activites_intermediaires_ambulatoire)
+          + toNum(row.activites_sortie_parcours_site)
+          + toNum(row.activites_sortie_parcours_ambulatoire);
+        conditionalCurrentKpi.hidden = false;
+        conditionalCurrentKpi.style.display = 'inline-flex';
+        conditionalCurrentHeader?.classList.remove('is-no-kpi');
+        conditionalCurrentKpi.className = 'status kpi cond-current-kpi ok';
+        conditionalCurrentKpi.innerHTML = `
+          <div class="current-kpi-single">
+            <span class="kpi-mini">
+              <span class="kpi-mini-label">Saisie</span>
+              <span class="kpi-mini-value">${saisie.toFixed(0)}</span>
             </span>
           </div>
         `;
@@ -4432,8 +4672,24 @@
         }
       });
       const activeIndex = Math.max(0, blocks.findIndex((block) => block.key === focusedConditionalBlockKey));
-      if (conditionalPrevBtn) conditionalPrevBtn.disabled = activeIndex <= 0;
-      if (conditionalNextBtn) conditionalNextBtn.disabled = activeIndex >= blocks.length - 1;
+      const singleBlock = blocks.length <= 1;
+      if (conditionalPrevBtn) {
+        conditionalPrevBtn.disabled = singleBlock ? step <= 6 : activeIndex <= 0;
+      }
+      if (conditionalNextBtn) {
+        if (singleBlock) {
+          conditionalNextBtn.disabled = !validateConditionalState(state, currentConditionalId);
+        } else {
+          const isLastBlock = activeIndex >= blocks.length - 1;
+          conditionalNextBtn.disabled = isLastBlock ? !validateConditionalState(state, currentConditionalId) : false;
+        }
+      }
+      if (conditionalPrevBtn) conditionalPrevBtn.textContent = singleBlock ? 'Précédent étape' : 'Précédent';
+      if (conditionalNextBtn) {
+        conditionalNextBtn.textContent = (singleBlock && isFormationSelectionConditionalStep(currentConditionalId))
+          ? "J'ai terminé la sélection"
+          : (singleBlock ? 'Étape suivante' : (activeIndex >= blocks.length - 1 ? 'Étape suivante' : 'Suivant'));
+      }
       renderConditionalFocusToolbar(blocks);
       updateConditionalCurrentHeaderKpi(state, focusedConditionalBlockKey);
       if (scroll) {
@@ -4539,6 +4795,11 @@
       const isDirectSansOrpCadrageStep = isDirectSansOrpCadrageConditionalStep(currentConditionalId);
       const isSpecialIndirectStep = isSpecialIndirectConditionalStep(currentConditionalId);
       const isUerosStep = isUerosConditionalStep(currentConditionalId);
+      const isEspoOrUerosStep = isEspoOrUerosConditionalStep(currentConditionalId);
+      const showModalitesAccueilBlock = hasModalitesAccueilBlockConditionalStep(currentConditionalId);
+      const selectedModalites = getSelectedContextModalites();
+      const hasHebergement = getContextHasHebergement();
+      const hasHorsMurs = getContextHasHorsMurs();
       const showEmploiAccesBlock = hasEmploiAccesBlockConditionalStep(currentConditionalId);
       const showEmploiPresenceBlock = hasEmploiPresenceBlockConditionalStep(currentConditionalId);
       const specialRowKeys = getSpecialIndirectRowsForConditional(currentConditionalId);
@@ -4551,9 +4812,9 @@
         : makeEmptyHandicapMatrix();
       const handicapTypes = getHandicapTypes();
       const declaredSortiesValue = String(
-        (String(state?.sorties || '').trim() !== '')
-          ? state.sorties
-          : (condSortiesInput?.value || '')
+        (String(state?.sortiesAvantTerme || '').trim() !== '')
+          ? state.sortiesAvantTerme
+          : (condSortiesAvantTermeInput?.value || '')
       ).trim();
       const declaredSortiesNb = toNum(declaredSortiesValue);
       sortiesBloc.nb = declaredSortiesValue;
@@ -4626,7 +4887,9 @@
       const tauxAcces = nbRepondants > 0 ? ((accesNb / nbRepondants) * 100) : 0;
       const tauxPresence = nbRepondants > 0 ? ((presenceNb / nbRepondants) * 100) : 0;
       const repondantsOk = nbRepondants <= sortiesN1;
-      const showPrecoForStep = isEspoOrUerosConditionalStep(currentConditionalId) || isEsrpConditionalStep(currentConditionalId);
+      const showPrecoForStep = isEspoOrUerosConditionalStep(currentConditionalId)
+        || isEsrpConditionalStep(currentConditionalId)
+        || isParcoursConditionalStep(currentConditionalId);
       const showPrecoBloc = showPrecoForStep;
       const hideLegacyDirectBlocks = shouldHideLegacyDirectBlocks(currentConditionalId);
       const precoAltLabel = isUerosConditionalStep(currentConditionalId)
@@ -4726,10 +4989,6 @@
               </div>
               <div class="ds-simple-participants-block" style="margin-top:8px;">
                 <div class="field field-radio-inline q35-sub-inline q35-places-inline">
-                  <div><label>Nombre de personnes sorties année N</label></div>
-                  <div><input class="cond-direct-avec-input" data-da-key="emploi_sorties_n" type="number" min="0" step="1" value="${String(parcoursRow.emploi_sorties_n || '')}"></div>
-                </div>
-                <div class="field field-radio-inline q35-sub-inline q35-places-inline">
                   <div><label>Nombre de personnes sorties année N-1</label></div>
                   <div><input class="cond-direct-avec-input" data-da-key="emploi_sorties_n_1" type="number" min="0" step="1" value="${String(parcoursRow.emploi_sorties_n_1 || '')}"></div>
                 </div>
@@ -4819,7 +5078,8 @@
               ` : ''}
             </div>
       ` : '';
-      const directAvecOrpHtml = (hideLegacyDirectBlocks && !isFormationSelectionStep && !isParcoursStep) ? '' : (isFormationSelectionStep ? formationSelectionHtml : (isParcoursStep ? `
+      const useParcoursSpecificDirectBlock = false;
+      const directAvecOrpHtml = (hideLegacyDirectBlocks && !isFormationSelectionStep) ? '' : (isFormationSelectionStep ? formationSelectionHtml : (useParcoursSpecificDirectBlock ? `
         <div class="box cond-block cond-block-anchor" data-block-key="direct_avec_orp" id="cond-block-direct_avec_orp">
           <strong>Données du parcours</strong>
           <div class="parcours-stack">
@@ -4874,6 +5134,7 @@
               </div>
             </div>
 
+            ${hasHorsMurs ? `
             <div class="parcours-section">
               <div class="cond-subgroup-title"><span>Hors les murs</span></div>
               <div class="parcours-nested">
@@ -4883,6 +5144,7 @@
                 </div>
               </div>
             </div>
+            ` : ''}
 
             ${isParcoursFormationStep ? '' : `
             <div class="parcours-section">
@@ -4931,9 +5193,11 @@
               <div class="cond-subgroup-title">Distanciel</div>
               <div class="field field-radio-inline q35-sub-inline q35-places-inline cond-subline"><div><label>Temps complet</label></div><div><input class="cond-direct-avec-input" data-da-key="distanciel_complet" type="number" min="0" step="1" value="${String(directAvecOrp.row?.distanciel_complet || '')}"></div></div>
               <div class="field field-radio-inline q35-sub-inline q35-places-inline cond-subline"><div><label>Temps partiel</label></div><div><input class="cond-direct-avec-input" data-da-key="distanciel_partiel" type="number" min="0" step="1" value="${String(directAvecOrp.row?.distanciel_partiel || '')}"></div></div>
+              ${hasHorsMurs ? `
               <div class="cond-subgroup-title">Hors les murs</div>
               <div class="field field-radio-inline q35-sub-inline q35-places-inline cond-subline"><div><label>Nombre de personnes accompagnées</label></div><div><input class="cond-direct-avec-input" data-da-key="hors_murs_personnes" type="number" min="0" step="1" value="${String(directAvecOrp.row?.hors_murs_personnes || '')}"></div></div>
               <div class="field field-radio-inline q35-sub-inline q35-places-inline cond-subline"><div><label>Nombre de journées totales</label></div><div><input class="cond-direct-avec-input" data-da-key="hors_murs_journees" type="number" min="0" step="1" value="${String(directAvecOrp.row?.hors_murs_journees || '')}"></div></div>
+              ` : ''}
               <div class="cond-subgroup-title">Activités</div>
               <div class="field field-radio-inline q35-sub-inline q35-places-inline cond-subline"><div><label>Activité intermédiaire</label></div><div><input class="cond-direct-avec-input" data-da-key="activites_intermediaires" type="number" min="0" step="1" value="${String(directAvecOrp.row?.activites_intermediaires || '')}"></div></div>
               <div class="field field-radio-inline q35-sub-inline q35-places-inline cond-subline"><div><label>Suite de parcours</label></div><div><input class="cond-direct-avec-input" data-da-key="activites_sortie_parcours" type="number" min="0" step="1" value="${String(directAvecOrp.row?.activites_sortie_parcours || '')}"></div></div>
@@ -5007,27 +5271,28 @@
         ${directAvecOrpHtml}
         ${directSansOrpHtml}
         ${isSpecialIndirectStep ? `
-        <div class="cond-block cond-block-anchor" data-block-key="indirect" id="cond-block-indirect">
-            <div class="dispo-list" style="margin-top:8px;">
-              ${specialRowKeys.map((rowKey) => `
-                <div class="field field-vertical q35-sub-inline q35-places-inline">
-                  <label><strong>${specialRowLabels[rowKey] || rowKey}</strong></label>
-                  <div class="ctx-sub" style="display:block; margin-top:6px;">
-                    ${getSpecialIndirectFieldDefsForRow(rowKey, currentConditionalId).map((field) => `
-                      <div class="field field-radio-inline q35-sub-inline q35-places-inline">
-                        <div><label>${field.label}</label></div>
-                        <div><input class="cond-indirect-input" data-in-row="${rowKey}" data-in-key="${field.key}" type="number" min="0" step="${field.key === 'heures' ? '0.1' : '1'}" value="${String(indirect.rows?.[rowKey]?.[field.key] || '')}"></div>
-                      </div>
-                    `).join('')}
-                    ${String(rowKey || '').includes('collectives') ? `
-                      <p class="hint" style="margin:6px 0 0 0;">Le nombre de journées correspond à : nombre de professionnels mobilisés × nombre d'heures de réunion.</p>
-                    ` : ''}
-                  </div>
+        <div class="box cond-block cond-block-anchor" data-block-key="indirect" id="cond-block-indirect">
+          <strong>Prestations indirectes</strong>
+          <div style="margin-top:8px;">
+            ${specialRowKeys.map((rowKey) => `
+              <div class="ds-simple-section">
+                <p class="ds-simple-subtitle">${specialRowLabels[rowKey] || rowKey}</p>
+                <div class="ds-simple-participants-block">
+                  ${getSpecialIndirectFieldDefsForRow(rowKey, currentConditionalId).map((field) => `
+                    <div class="field field-radio-inline q35-sub-inline q35-places-inline">
+                      <div><label>${field.label}</label></div>
+                      <div><input class="cond-indirect-input" data-in-row="${rowKey}" data-in-key="${field.key}" type="number" min="0" step="${field.key === 'heures' ? '0.1' : '1'}" value="${String(indirect.rows?.[rowKey]?.[field.key] || '')}"></div>
+                    </div>
+                  `).join('')}
                 </div>
-              `).join('')}
-            </div>
+                ${String(rowKey || '').includes('collectives') ? `
+                  <p class="hint" style="margin:6px 0 0 0;">Le nombre de journées correspond à : nombre de professionnels mobilisés × nombre d'heures de réunion.</p>
+                ` : ''}
+              </div>
+            `).join('')}
+          </div>
         </div>
-          ` : ''}
+        ` : ''}
         <div class="box cond-block cond-block-anchor" data-block-key="handicap_matrix" id="cond-block-handicap_matrix">
           <strong>Type de handicap principal et associé</strong>
           <div style="overflow:auto; margin-top:8px;">
@@ -5051,6 +5316,56 @@
             </table>
           </div>
         </div>
+        ${showModalitesAccueilBlock ? `
+        <div class="box cond-block cond-block-anchor" data-block-key="modalites_accueil" id="cond-block-modalites_accueil">
+          <strong>Modalité d'accueil</strong>
+          <div class="parcours-stack" style="margin-top:8px;">
+            ${selectedModalites.has('presentiel') ? `
+            <div class="parcours-section">
+              <div class="cond-subgroup-title"><span>Dont en présentiel</span><span class="cond-auto-total" data-da-total="presentiel">${presentielAutoTotal}</span></div>
+              <div class="parcours-nested">
+                <div class="field field-radio-inline q35-sub-inline q35-places-inline cond-subline"><div><label>À temps complet</label></div><div><input class="cond-direct-avec-input" data-da-key="presentiel_complet" type="number" min="0" step="1" value="${String(directAvecOrp.row?.presentiel_complet || '')}"></div></div>
+                <div class="field field-radio-inline q35-sub-inline q35-places-inline cond-subline"><div><label>À temps partiel</label></div><div><input class="cond-direct-avec-input" data-da-key="presentiel_partiel" type="number" min="0" step="1" value="${String(directAvecOrp.row?.presentiel_partiel || '')}"></div></div>
+              </div>
+            </div>
+            ` : ''}
+            ${selectedModalites.has('hybride') ? `
+            <div class="parcours-section">
+              <div class="cond-subgroup-title"><span>Dont en hybride</span><span class="cond-auto-total" data-da-total="hybride">${hybrideAutoTotal}</span></div>
+              <div class="parcours-nested">
+                <div class="field field-radio-inline q35-sub-inline q35-places-inline cond-subline"><div><label>À temps complet</label></div><div><input class="cond-direct-avec-input" data-da-key="hybride_complet" type="number" min="0" step="1" value="${String(directAvecOrp.row?.hybride_complet || '')}"></div></div>
+                <div class="field field-radio-inline q35-sub-inline q35-places-inline cond-subline"><div><label>À temps partiel</label></div><div><input class="cond-direct-avec-input" data-da-key="hybride_partiel" type="number" min="0" step="1" value="${String(directAvecOrp.row?.hybride_partiel || '')}"></div></div>
+              </div>
+            </div>
+            ` : ''}
+            ${selectedModalites.has('distanciel') ? `
+            <div class="parcours-section">
+              <div class="cond-subgroup-title"><span>Dont en distanciel</span><span class="cond-auto-total" data-da-total="distanciel">${distancielAutoTotal}</span></div>
+              <div class="parcours-nested">
+                <div class="field field-radio-inline q35-sub-inline q35-places-inline cond-subline"><div><label>À temps complet</label></div><div><input class="cond-direct-avec-input" data-da-key="distanciel_complet" type="number" min="0" step="1" value="${String(directAvecOrp.row?.distanciel_complet || '')}"></div></div>
+                <div class="field field-radio-inline q35-sub-inline q35-places-inline cond-subline"><div><label>À temps partiel</label></div><div><input class="cond-direct-avec-input" data-da-key="distanciel_partiel" type="number" min="0" step="1" value="${String(directAvecOrp.row?.distanciel_partiel || '')}"></div></div>
+              </div>
+            </div>
+            ` : ''}
+            ${hasHorsMurs ? `
+            <div class="parcours-section">
+              <div class="parcours-nested">
+                <div class="field field-radio-inline q35-sub-inline q35-places-inline cond-subline"><div><label>Combien de personnes sont accompagnées hors les murs ?</label></div><div><input class="cond-direct-avec-input" data-da-key="hors_murs_personnes" type="number" min="0" step="1" value="${String(directAvecOrp.row?.hors_murs_personnes || '')}"></div></div>
+              </div>
+            </div>
+            ` : ''}
+            ${hasHebergement ? `
+            <div class="parcours-section">
+              <div class="cond-subgroup-title"><span>Hébergement</span></div>
+              <div class="parcours-nested">
+                <div class="field field-radio-inline q35-sub-inline q35-places-inline cond-subline"><div><label>Combien de personnes ont été hébergées ?</label></div><div><input class="cond-direct-avec-input" data-da-key="hebergees_personnes" type="number" min="0" step="1" value="${String(directAvecOrp.row?.hebergees_personnes || '')}"></div></div>
+                <div class="field field-radio-inline q35-sub-inline q35-places-inline cond-subline"><div><label>Pour un total de combien de nuitées ?</label></div><div><input class="cond-direct-avec-input" data-da-key="hebergees_nuitees" type="number" min="0" step="1" value="${String(directAvecOrp.row?.hebergees_nuitees || directAvecOrp.row?.hebergees_journees || '')}"></div></div>
+              </div>
+            </div>
+            ` : ''}
+          </div>
+        </div>
+        ` : ''}
         <div class="box cond-block cond-block-anchor" data-block-key="suspensions" id="cond-block-suspensions">
           <strong>Suspensions</strong>
           <div class="field field-radio-inline q35-sub-inline q35-places-inline" style="margin-top:8px;">
@@ -5075,11 +5390,29 @@
             </div>
           </div>
         </div>
+        ${hasActivitesParcoursBlockConditionalStep(currentConditionalId) ? `
+        <div class="box cond-block cond-block-anchor" data-block-key="activites_parcours" id="cond-block-activites_parcours">
+          <strong>Activités de parcours</strong>
+          <div class="dispo-list" style="margin-top:6px;">
+            <div class="cond-subgroup-title">Combien ont bénéficié d'activité intermodules ?</div>
+            <div class="parcours-nested">
+              <div class="field field-radio-inline q35-sub-inline q35-places-inline cond-subline"><div><label>Sur site</label></div><div><input class="cond-direct-avec-input" data-da-key="activites_intermediaires_site" type="number" min="0" step="1" value="${String(directAvecOrp.row?.activites_intermediaires_site || '')}"></div></div>
+              <div class="field field-radio-inline q35-sub-inline q35-places-inline cond-subline"><div><label>En ambulatoire</label></div><div><input class="cond-direct-avec-input" data-da-key="activites_intermediaires_ambulatoire" type="number" min="0" step="1" value="${String(directAvecOrp.row?.activites_intermediaires_ambulatoire || '')}"></div></div>
+            </div>
+
+            <div class="cond-subgroup-title">Combien ont bénéficié d'activités de suite de parcours ?</div>
+            <div class="parcours-nested">
+              <div class="field field-radio-inline q35-sub-inline q35-places-inline cond-subline"><div><label>Sur site</label></div><div><input class="cond-direct-avec-input" data-da-key="activites_sortie_parcours_site" type="number" min="0" step="1" value="${String(directAvecOrp.row?.activites_sortie_parcours_site || '')}"></div></div>
+              <div class="field field-radio-inline q35-sub-inline q35-places-inline cond-subline"><div><label>En ambulatoire</label></div><div><input class="cond-direct-avec-input" data-da-key="activites_sortie_parcours_ambulatoire" type="number" min="0" step="1" value="${String(directAvecOrp.row?.activites_sortie_parcours_ambulatoire || '')}"></div></div>
+            </div>
+          </div>
+        </div>
+        ` : ''}
         <div class="box cond-block cond-block-anchor" data-block-key="sorties_suspensions" id="cond-block-sorties_suspensions">
           <div class="cond-block-head">
             <strong>Sortie avant le terme de la prestation</strong>
           </div>
-          <p class="hint" style="margin:6px 0 0 0;">Vous avez déclaré la sortie définitive de <strong><span data-sorties-declarees>${declaredSortiesNb}</span></strong> personnes durant l'année.<br>Comment se répartissent ces départs ?</p>
+          <p class="hint" style="margin:6px 0 0 0;">Vous avez déclaré <strong><span data-sorties-declarees>${declaredSortiesNb}</span></strong> sortie(s) avant le terme de la prestation.<br>Comment se répartissent ces départs ?</p>
           <div>
             <div class="ctx-sub" style="display:${showSortiesReasons ? 'block' : 'none'}; margin-top:6px;">
               <p class="hint" style="margin:0 0 8px 0;"><strong>Quelles en ont été les raisons ?</strong></p>
@@ -5140,25 +5473,35 @@
       const condModeBlockEl = document.getElementById('cond-prestation-mode-block');
       if (condModeBlockEl) condModeBlockEl.innerHTML = topEnableQuestionsHtml;
       conditionalCoherenceSections.innerHTML = `${coherenceHtml}${extraHtml}`;
-      if (isFormationSelectionStep || isParcoursStep) {
+      if (isFormationSelectionStep) {
         conditionalCoherenceSections.querySelectorAll('.cond-block').forEach((block) => {
-          block.style.display = block.getAttribute('data-block-key') === 'direct_avec_orp' ? '' : 'none';
+          const isShown = block.getAttribute('data-block-key') === 'direct_avec_orp';
+          block.style.display = isShown ? '' : 'none';
+          block.dataset.renderable = isShown ? '1' : '0';
         });
       } else if (isSpecialIndirectStep) {
         conditionalCoherenceSections.querySelectorAll('.cond-block').forEach((block) => {
-          block.style.display = block.getAttribute('data-block-key') === 'indirect' ? '' : 'none';
+          const isShown = block.getAttribute('data-block-key') === 'indirect';
+          block.style.display = isShown ? '' : 'none';
+          block.dataset.renderable = isShown ? '1' : '0';
         });
       } else if (isDirectSansOrpInfoStep || isDirectSansOrpCadrageStep) {
         conditionalCoherenceSections.querySelectorAll('.cond-block').forEach((block) => {
-          block.style.display = block.getAttribute('data-block-key') === 'direct_sans_orp' ? '' : 'none';
+          const isShown = block.getAttribute('data-block-key') === 'direct_sans_orp';
+          block.style.display = isShown ? '' : 'none';
+          block.dataset.renderable = isShown ? '1' : '0';
         });
       } else {
         conditionalCoherenceSections.querySelectorAll('.cond-block').forEach((block) => {
           block.style.display = '';
+          block.dataset.renderable = '1';
         });
         if (!isDirectSansOrpInfoPersonnesSelected()) {
           const directSansOrpBlockEl = conditionalCoherenceSections.querySelector('#cond-block-direct_sans_orp');
-          if (directSansOrpBlockEl) directSansOrpBlockEl.style.display = 'none';
+          if (directSansOrpBlockEl) {
+            directSansOrpBlockEl.style.display = 'none';
+            directSansOrpBlockEl.dataset.renderable = '0';
+          }
         }
       }
       conditionalCoherenceSections.querySelectorAll('.cond-coh-input').forEach((input) => {
@@ -5420,18 +5763,19 @@
       const titleEl = document.getElementById('conditional-step-title');
       const hintEl = document.getElementById('conditional-step-hint');
       const fileActiveEl = document.getElementById('cond-file-active');
-      const sortiesEl = document.getElementById('cond-sorties');
+      const sortiesAvantTermeEl = document.getElementById('cond-sorties-avant-terme');
+      const sortiesTermeEl = document.getElementById('cond-sorties-terme');
+      const sortiesTotalEl = document.getElementById('cond-sorties-total');
       const journeesEl = document.getElementById('cond-journees');
       const dureeEl = document.getElementById('cond-duree');
       const statusEl = document.getElementById('conditional-status');
       const fileactiveBlock = document.getElementById('cond-block-fileactive');
       const dureeHelpEl = document.getElementById('cond-duree-help');
       const isFormationSelectionStep = isFormationSelectionConditionalStep(def.id);
-      const isParcoursStep = isParcoursConditionalStep(def.id);
       const isDirectSansOrpCadrageStep = isDirectSansOrpCadrageConditionalStep(def.id);
       const isDirectSansOrpInfoStep = isDirectSansOrpInfoPersonnesConditionalStep(def.id);
       const isSpecialIndirectStep = isSpecialIndirectConditionalStep(def.id);
-      const isFieldsBasedStep = isFormationSelectionStep || isParcoursStep || isDirectSansOrpCadrageStep || isDirectSansOrpInfoStep || isSpecialIndirectStep;
+      const isFieldsBasedStep = isFormationSelectionStep || isDirectSansOrpCadrageStep || isDirectSansOrpInfoStep || isSpecialIndirectStep;
 
       if (titleEl) titleEl.textContent = formatConditionalDisplayName(def.name);
       if (hintEl) {
@@ -5441,7 +5785,9 @@
       if (dureeHelpEl) dureeHelpEl.style.display = 'none';
       if (fileactiveBlock) fileactiveBlock.style.display = isFieldsBasedStep ? 'none' : '';
       if (fileActiveEl) fileActiveEl.value = state.fileActive;
-      if (sortiesEl) sortiesEl.value = state.sorties;
+      if (sortiesAvantTermeEl) sortiesAvantTermeEl.value = state.sortiesAvantTerme;
+      if (sortiesTermeEl) sortiesTermeEl.value = state.sortiesTerme;
+      if (sortiesTotalEl) sortiesTotalEl.value = String(getConditionalSortiesTotal(state));
       if (journeesEl) journeesEl.value = state.journees;
       if (dureeEl) dureeEl.value = computeConditionalDuree(state);
       renderConditionalCoherenceSections(state);
@@ -5504,9 +5850,11 @@
       if (!currentConditionalId) return;
       const state = getConditionalStateById(currentConditionalId);
       state.fileActive = String(condFileActiveInput?.value || '').trim();
-      state.sorties = String(condSortiesInput?.value || '').trim();
+      state.sortiesAvantTerme = String(condSortiesAvantTermeInput?.value || '').trim();
+      state.sortiesTerme = String(condSortiesTermeInput?.value || '').trim();
+      state.sorties = String(getConditionalSortiesTotal(state));
       state.journees = String(condJourneesInput?.value || '').trim();
-      const declaredSortiesDisplay = String(state.sorties || '').trim() === '' ? '0' : String(toNum(state.sorties));
+      const declaredSortiesDisplay = String(state.sortiesAvantTerme || '').trim() === '' ? '0' : String(toNum(state.sortiesAvantTerme));
       conditionalCoherenceSections?.querySelectorAll('[data-sorties-declarees]').forEach((el) => {
         el.textContent = declaredSortiesDisplay;
       });
@@ -5568,7 +5916,7 @@
         indirect.rows[row][key] = String(input.value || '').trim();
       });
       const sortiesBloc = {
-        nb: String(state.sorties || '').trim(),
+        nb: String(state.sortiesAvantTerme || '').trim(),
         raisons: {
           depart_volontaire: String(conditionalCoherenceSections?.querySelector('.cond-sorties-input[data-sorties-key="depart_volontaire"]')?.value || '').trim(),
           sante: String(conditionalCoherenceSections?.querySelector('.cond-sorties-input[data-sorties-key="sante"]')?.value || '').trim(),
@@ -5653,6 +6001,7 @@
       if (hybrideTotalEl) hybrideTotalEl.textContent = String(toNum(state.directAvecOrp?.row?.hybride_total));
       if (distancielTotalEl) distancielTotalEl.textContent = String(toNum(state.directAvecOrp?.row?.distanciel_total));
       if (suspensionsTotalInput) suspensionsTotalInput.value = String(toNum(state.suspensionsBloc?.nb));
+      if (condSortiesTotalInput) condSortiesTotalInput.value = String(getConditionalSortiesTotal(state));
       syncNumericZeroDisplay(conditionalCoherenceSections || document);
       const emploiRow = state.directAvecOrp?.row || {};
       const emploiNbRepondants = toNum(emploiRow.emploi_nb_repondants);
@@ -5720,6 +6069,7 @@
       if (dureeEl) dureeEl.value = computeConditionalDuree(state);
       refreshConditionalCohUi(state);
       refreshConditionalStatusUi(state);
+      applyConditionalBlockFocus(state, { scroll: false, preferIncomplete: false });
       renderConditionalBlockNav(state);
       refreshSummary();
     }
@@ -6172,11 +6522,19 @@
         const sourceAttr = sources.join(',');
         const siret = normalizeSiretValue(group.record?.siret);
         const inputValues = new Set(collectFinessInputs().map((input) => normalizeFinessLookupValue(input.value)).filter(Boolean));
+        const groupSourceValues = new Set(
+          (group.sourceEntries || [])
+            .map((entry) => normalizeFinessLookupValue(entry?.sourceFiness))
+            .filter(Boolean),
+        );
+        // Exclut aussi les FINESS déjà portés par l'enregistrement courant (ET/EJ).
+        groupSourceValues.add(normalizeFinessLookupValue(group.record?.finessEt));
+        groupSourceValues.add(normalizeFinessLookupValue(group.record?.finessEj));
         const siblings = (siret && !ignoredSiretSuggestions.has(siret))
           ? (finessReferenceBySiret.get(siret) || [])
               .flatMap((item) => [item.finessEt, item.finessEj])
               .map((v) => normalizeFinessLookupValue(v))
-              .filter((v) => v && !inputValues.has(v))
+              .filter((v) => v && !inputValues.has(v) && !groupSourceValues.has(v))
           : [];
         const uniqueSiblings = Array.from(new Set(siblings));
         const hasSuggestion = confirmValue === 'yes' && uniqueSiblings.length > 0;
@@ -6220,11 +6578,18 @@
           : (group.sourceEntries || []);
         const siret = normalizeSiretValue(group.record?.siret);
         const inputValues = new Set(collectFinessInputs().map((input) => normalizeFinessLookupValue(input.value)).filter(Boolean));
+        const sourceValuesInGroup = new Set(
+          sourceEntries
+            .map((entry) => normalizeFinessLookupValue(entry?.sourceFiness))
+            .filter(Boolean),
+        );
+        sourceValuesInGroup.add(normalizeFinessLookupValue(group.record?.finessEt));
+        sourceValuesInGroup.add(normalizeFinessLookupValue(group.record?.finessEj));
         const siblings = (siret && !ignoredSiretSuggestions.has(siret))
           ? (finessReferenceBySiret.get(siret) || [])
               .flatMap((item) => [item.finessEt, item.finessEj])
               .map((v) => normalizeFinessLookupValue(v))
-              .filter((v) => v && !inputValues.has(v))
+              .filter((v) => v && !inputValues.has(v) && !sourceValuesInGroup.has(v))
           : [];
         const hasSiblingQuestion = confirmValue === 'yes' && siblings.length > 0;
         const siblingChoiceDone = !hasSiblingQuestion || handledSiretSuggestions.has(siret);
@@ -7834,7 +8199,9 @@
       const ctxTransport = getRadioValue('ctx-q33');
       const ctxPref = getRadioValue('ctx-q34');
       const ctxAfpa = getRadioValue('ctx-q53');
-      const doneCtx = !!(ctxZone && ctxTransport && ctxPref && ctxAfpa);
+      const ctxHorsMurs = getRadioValue('ctx-q35-hors-murs');
+      const ctxModalitesCount = document.querySelectorAll('input[name="ctx-q35-modalites"]:checked').length;
+      const doneCtx = !!(ctxZone && ctxTransport && ctxPref && ctxAfpa && ctxModalitesCount > 0 && ctxHorsMurs);
       const ctxStepFields = Array.from(document.querySelector('.step[data-step="4"]')?.querySelectorAll('input, select, textarea') || []);
       const hasCtxPartial = ctxStepFields.some((field) => {
         if (field.type === 'radio') return field.checked;
@@ -7904,7 +8271,7 @@
                       const nom = String(row?.nom || '').trim();
                       const niveau = String(row?.niveau || '').trim();
                       const secteur = String(row?.secteur || '').trim();
-                      if (!nom || toNum(row?.nb) <= 0) return;
+                      if (!nom) return;
                       const label = `${nom}${niveau || secteur ? ` (${niveau}${niveau && secteur ? ' | ' : ''}${secteur})` : ''}`;
                       secondaryRowsRaw.push(`Directes ORP CDAPH - ${root} - Formation certifiante ou diplômante - Formation: ${label}`);
                     });
@@ -8172,14 +8539,39 @@
       applyConditionalBlockFocus(getConditionalStateById(currentConditionalId), { scroll: true, preferIncomplete: false });
     });
 
-    [condFileActiveInput, condSortiesInput, condJourneesInput].forEach((input) => {
+    [condFileActiveInput, condSortiesAvantTermeInput, condSortiesTermeInput, condJourneesInput].forEach((input) => {
       input?.addEventListener('input', updateCurrentConditionalStateFromInputs);
       input?.addEventListener('change', updateCurrentConditionalStateFromInputs);
     });
 
-    conditionalPrevBtn?.addEventListener('click', () => moveConditionalFocus(-1));
+    conditionalPrevBtn?.addEventListener('click', () => {
+      const state = getConditionalStateById(currentConditionalId);
+      const blocks = getRenderableConditionalBlocks(state);
+      if (blocks.length <= 1) {
+        showStep(step - 1);
+        return;
+      }
+      moveConditionalFocus(-1);
+    });
 
-    conditionalNextBtn?.addEventListener('click', () => moveConditionalFocus(1));
+    conditionalNextBtn?.addEventListener('click', () => {
+      const state = getConditionalStateById(currentConditionalId);
+      state.done = validateConditionalState(state, currentConditionalId);
+      conditionalState.set(currentConditionalId, state);
+      const blocks = getRenderableConditionalBlocks(state);
+      if (blocks.length <= 1) {
+        if (!state.done) return;
+        showStep(step + 1);
+        return;
+      }
+      const activeIndex = Math.max(0, blocks.findIndex((block) => block.key === focusedConditionalBlockKey));
+      if (activeIndex >= blocks.length - 1) {
+        if (!state.done) return;
+        showStep(step + 1);
+        return;
+      }
+      moveConditionalFocus(1);
+    });
 
     validateIdent();
     applyRhDeacQuestionState();
