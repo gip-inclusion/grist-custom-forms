@@ -3086,17 +3086,20 @@
       if (isSpecialIndirectConditionalStep(id)) return false;
       if (isDirectSansOrpEvalProConditionalStep(id)) return false;
       if (isDirectSansOrpInfoPersonnesConditionalStep(id)) return false;
-      return true;
+      if (isDirectSansOrpCadrageConditionalStep(id)) return false;
+      return isEspoOrUerosConditionalStep(id)
+        || isEsrpConditionalStep(id)
+        || isParcoursConditionalStep(id);
     }
 
     function hasEmploiPresenceBlockConditionalStep(id) {
+      if (isFormationSelectionConditionalStep(id)) return false;
+      if (!isParcoursFormationConditionalStep(id)) return false;
       const def = getConditionalDefById(id);
       const normalized = String(def?.name || '')
         .normalize('NFD')
         .replace(/[\u0300-\u036f]/g, '')
         .toLowerCase();
-      if (!normalized.startsWith('directes orp cdaph - parcours accompagnement a visee qualifiante - ')) return false;
-      if (isFormationSelectionConditionalStep(id)) return false;
       return !normalized.includes('preparer a acceder a une formation / remise a niveau savoirs de base');
     }
 
