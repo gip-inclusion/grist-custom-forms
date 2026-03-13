@@ -5663,7 +5663,9 @@
         refreshSummary();
       });
       conditionalCoherenceSections.querySelectorAll('.cond-geo-remove').forEach((btn) => {
-        btn.addEventListener('click', () => {
+        btn.addEventListener('click', (event) => {
+          event.preventDefault();
+          event.stopPropagation();
           if (!currentConditionalId) return;
           const idx = Number(btn.dataset.geoRemove || -1);
           const stateLocal = getConditionalStateById(currentConditionalId);
@@ -5672,19 +5674,23 @@
           rows.splice(idx, 1);
           stateLocal.geoRows = rows.length ? rows : makeEmptyGeoRows();
           stateLocal.done = false;
+          focusedConditionalBlockKey = 'geographie';
           conditionalState.set(currentConditionalId, stateLocal);
           renderConditionalStepByNumber(step);
           refreshSummary();
         });
       });
       const geoAddBtn = document.getElementById('cond-geo-add-btn');
-      geoAddBtn?.addEventListener('click', () => {
+      geoAddBtn?.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
         if (!currentConditionalId) return;
         const stateLocal = getConditionalStateById(currentConditionalId);
         const rows = Array.isArray(stateLocal.geoRows) ? [...stateLocal.geoRows] : makeEmptyGeoRows();
         rows.push({ dept: '', count: '' });
         stateLocal.geoRows = rows;
         stateLocal.done = false;
+        focusedConditionalBlockKey = 'geographie';
         conditionalState.set(currentConditionalId, stateLocal);
         renderConditionalStepByNumber(step);
         refreshSummary();
