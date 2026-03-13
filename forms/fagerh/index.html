@@ -7454,6 +7454,10 @@
           refreshIdentificationFromFiness();
         }, 0);
       });
+      input?.addEventListener('keydown', (event) => {
+        if (event.key !== 'Enter') return;
+        event.preventDefault();
+      });
       remove?.addEventListener('click', () => {
         row.remove();
         refreshIdentificationFromFiness();
@@ -7758,6 +7762,10 @@
           }
           refreshIdentificationFromFiness();
         }, 0);
+      });
+      i.addEventListener('keydown', (event) => {
+        if (event.key !== 'Enter') return;
+        event.preventDefault();
       });
     });
 
