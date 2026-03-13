@@ -93,6 +93,21 @@
     .quick-actions-link:hover {
       background: #eef6ff;
     }
+    .quick-actions-input {
+      min-width: 240px;
+      height: 42px;
+      padding: 0 12px;
+      border: 1px solid #9fb4cb;
+      border-radius: 10px;
+      background: #fff;
+      color: #1f344b;
+      font: inherit;
+    }
+    .quick-actions-input:focus {
+      outline: none;
+      border-color: #5a8fbe;
+      box-shadow: 0 0 0 2px rgba(90, 143, 190, 0.15);
+    }
     .top-status {
       margin-top: 8px;
       font-size: .92rem;
@@ -2057,6 +2072,14 @@
       <div class="quick-actions-row">
         <button type="button" id="quick-save-btn" class="primary">Enregistrer</button>
         <button type="button" id="quick-copy-btn">Copier lien de reprise</button>
+        <input
+          type="email"
+          id="quick-recover-email"
+          class="quick-actions-input"
+          placeholder="Email de validation (lien perdu)"
+          autocomplete="email"
+        >
+        <button type="button" id="quick-recover-btn">Récupérer mon lien</button>
         <button type="button" id="quick-export-csv-btn">Exporter en CSV</button>
         <button type="button" id="quick-export-pdf-btn">Exporter en PDF</button>
         <a
@@ -6132,6 +6155,11 @@
     let manualAttachEnabled = false;
     let lastConfirmedFoundRecord = null;
     let finessLookupDebounce = null;
+    let finessDuplicateCheckDebounce = null;
+    let finessDuplicateCheckAbortController = null;
+    let finessDuplicateCheckLoadingKey = '';
+    let finessDuplicateCheckKey = '';
+    let finessDuplicateCheckDuplicates = [];
     let currentAutoFoundSources = [];
     let forceTopFinessEntryVisible = false;
     let pendingManualAssocSeq = 1;
@@ -6478,6 +6506,82 @@
     function scheduleFinessLookup() {
       if (finessLookupDebounce) clearTimeout(finessLookupDebounce);
       finessLookupDebounce = setTimeout(() => refreshIdentificationFromFiness(), 220);
+    }
+
+    function getCurrentRecordUuidForChecks() {
+      return String(resumeUuid || getResumeUuidFromUrl() || '').trim();
+    }
+
+    function getFinessDuplicatePayload() {
+      if (isNoFinessMode()) return { key: '', values: [], uuid: '' };
+      const values = collectFinessForSave().slice().sort();
+      if (!values.length) return { key: '', values: [], uuid: '' };
+      const uuid = getCurrentRecordUuidForChecks();
+      return {
+        key: `${uuid}::${values.join(',')}`,
+        values,
+        uuid,
+      };
+    }
+
+    function resetFinessDuplicateCheckState() {
+      if (finessDuplicateCheckDebounce) clearTimeout(finessDuplicateCheckDebounce);
+      finessDuplicateCheckDebounce = null;
+      if (finessDuplicateCheckAbortController) {
+        finessDuplicateCheckAbortController.abort();
+        finessDuplicateCheckAbortController = null;
+      }
+      finessDuplicateCheckLoadingKey = '';
+      finessDuplicateCheckKey = '';
+      finessDuplicateCheckDuplicates = [];
+    }
+
+    function scheduleFinessDuplicateCheck() {
+      const payload = getFinessDuplicatePayload();
+      if (!payload.key) {
+        resetFinessDuplicateCheckState();
+        return;
+      }
+      if (payload.key === finessDuplicateCheckKey || payload.key === finessDuplicateCheckLoadingKey) return;
+      if (finessDuplicateCheckDebounce) clearTimeout(finessDuplicateCheckDebounce);
+      finessDuplicateCheckDebounce = setTimeout(async () => {
+        if (finessDuplicateCheckAbortController) finessDuplicateCheckAbortController.abort();
+        const controller = new AbortController();
+        finessDuplicateCheckAbortController = controller;
+        finessDuplicateCheckLoadingKey = payload.key;
+        try {
+          const response = await fetch(`/api/forms/${FORM_ID}/check-finess`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+            body: JSON.stringify({
+              uuid: payload.uuid,
+              finess: payload.values,
+            }),
+            signal: controller.signal,
+          });
+          if (!response.ok) throw new Error(`HTTP ${response.status}`);
+          const data = await response.json();
+          if (finessDuplicateCheckLoadingKey !== payload.key) return;
+          finessDuplicateCheckKey = payload.key;
+          finessDuplicateCheckDuplicates = Array.isArray(data?.duplicates)
+            ? data.duplicates.map((v) => String(v || '').trim()).filter(Boolean)
+            : [];
+        } catch (error) {
+          if (error?.name === 'AbortError') return;
+          if (finessDuplicateCheckLoadingKey !== payload.key) return;
+          // On erreur réseau/API, ne bloque pas indéfiniment le parcours.
+          finessDuplicateCheckKey = payload.key;
+          finessDuplicateCheckDuplicates = [];
+        } finally {
+          if (finessDuplicateCheckLoadingKey === payload.key) {
+            finessDuplicateCheckLoadingKey = '';
+          }
+          if (finessDuplicateCheckAbortController === controller) {
+            finessDuplicateCheckAbortController = null;
+          }
+          validateIdent();
+        }
+      }, 260);
     }
 
     function sanitizeSourceKey(value) {
@@ -7384,6 +7488,11 @@
       const finessFilled = noFinessMode ? true : (regularFinessFilled && manualPendingFilled);
       const finessOk = noFinessMode ? true : (regularFinessOk && manualPendingOk);
       const anyFinessInvalid = renderedFinessValues.some((v) => v !== '' && !isValidFiness(v));
+      const duplicatePayload = (!noFinessMode && !anyFinessInvalid) ? getFinessDuplicatePayload() : { key: '', values: [], uuid: '' };
+      const duplicateInfoFresh = !!duplicatePayload.key && duplicatePayload.key === finessDuplicateCheckKey;
+      const duplicateCheckPending = !!duplicatePayload.key && (duplicatePayload.key === finessDuplicateCheckLoadingKey || !duplicateInfoFresh);
+      const duplicateServerValues = duplicateInfoFresh ? finessDuplicateCheckDuplicates : [];
+      const duplicateServerConflict = duplicateServerValues.length > 0;
       const confirmOk = noFinessMode ? true : (hasManualResolved || currentAutoFoundSources.every((src) => finessConfirmState.get(src) === 'yes'));
       const autoAssignedValues = currentAutoFoundSources
         .filter((src) => finessConfirmState.get(src) === 'yes')
@@ -7457,6 +7566,12 @@
         } else if (anyFinessInvalid) {
           finessMsg.className = 'sub visible err';
           finessMsg.textContent = 'Chaque FINESS doit contenir exactement 9 chiffres.';
+        } else if (duplicateCheckPending) {
+          finessMsg.className = 'sub visible';
+          finessMsg.textContent = 'Vérification des doublons FINESS en cours...';
+        } else if (duplicateServerConflict) {
+          finessMsg.className = 'sub visible err';
+          finessMsg.textContent = `FINESS déjà utilisé dans un autre questionnaire : ${duplicateServerValues.join(', ')}.`;
         } else if (mainLookupMiss && !hasManualResolved) {
           finessMsg.className = 'sub visible err';
           finessMsg.textContent = "FINESS introuvable dans le référentiel. Merci de compléter manuellement les informations de l'établissement.";
@@ -7477,7 +7592,23 @@
           finessMsg.textContent = '';
         }
       }
-      next.disabled = !(ok && emailOk && deptOk && finessFilled && finessOk && confirmOk && !identMultiEtabConflict && assignComplete && assignUnique && manualDuplicatesConfirmed);
+      next.disabled = !(ok
+        && emailOk
+        && deptOk
+        && finessFilled
+        && finessOk
+        && !duplicateCheckPending
+        && !duplicateServerConflict
+        && confirmOk
+        && !identMultiEtabConflict
+        && assignComplete
+        && assignUnique
+        && manualDuplicatesConfirmed);
+      if (noFinessMode || anyFinessInvalid) {
+        resetFinessDuplicateCheckState();
+      } else {
+        scheduleFinessDuplicateCheck();
+      }
       refreshSummary();
     }
     identInputs.forEach(i => {
@@ -7557,6 +7688,7 @@
         if (identDeacYes) identDeacYes.checked = false;
       }
       applyRhDeacQuestionState();
+      resetFinessDuplicateCheckState();
       refreshIdentificationFromFiness();
       validateIdent();
     });
@@ -8922,6 +9054,58 @@
       } catch {
         setTopStatusMessage('Impossible de copier automatiquement. Copiez l’URL de la barre d’adresse.');
       }
+    });
+    async function recoverResumeLinkFromEmail() {
+      const emailInput = document.getElementById('quick-recover-email');
+      const rawEmail = String(emailInput?.value || '').trim();
+      if (!rawEmail) {
+        setTopStatusMessage('Saisissez votre email de validation pour récupérer le lien de reprise.');
+        emailInput?.focus();
+        return;
+      }
+      const email = rawEmail.toLowerCase();
+      if (!/^[^\s@]+@(?:[^\s@.]+\.)+[^\s@.]{2,}$/.test(email)) {
+        setTopStatusMessage('Email invalide. Vérifiez le format puis réessayez.');
+        emailInput?.focus();
+        return;
+      }
+      setTopStatusMessage('Recherche du questionnaire en cours...');
+      try {
+        const response = await fetch(`/api/forms/${FORM_ID}/recover-by-email`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+          body: JSON.stringify({ email }),
+        });
+        let payload = {};
+        try { payload = await response.json(); } catch {}
+        if (!response.ok) {
+          const msg = String(payload?.error || `Échec récupération (HTTP ${response.status})`);
+          setTopStatusMessage(msg);
+          return;
+        }
+        const foundUuid = String(payload?.uuid || '').trim();
+        if (!foundUuid) {
+          setTopStatusMessage('Aucun lien de reprise trouvé pour cet email.');
+          return;
+        }
+        setTopStatusMessage('Lien trouvé. Chargement du questionnaire...');
+        resumeUuid = foundUuid;
+        setResumeUuidInUrl(foundUuid);
+        const loaded = await loadWizardFromServer(foundUuid);
+        if (loaded) {
+          setTopStatusMessage('Questionnaire restauré depuis votre email.');
+        } else {
+          setTopStatusMessage('Lien trouvé, mais impossible de restaurer la saisie.');
+        }
+      } catch {
+        setTopStatusMessage('Erreur réseau pendant la récupération du lien.');
+      }
+    }
+    document.getElementById('quick-recover-btn')?.addEventListener('click', recoverResumeLinkFromEmail);
+    document.getElementById('quick-recover-email')?.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter') return;
+      event.preventDefault();
+      recoverResumeLinkFromEmail();
     });
     document.getElementById('quick-export-csv-btn')?.addEventListener('click', () => {
       if (topStatus) topStatus.textContent = "Maquette : export CSV simulé.";
