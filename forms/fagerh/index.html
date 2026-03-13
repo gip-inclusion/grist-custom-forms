@@ -9314,7 +9314,11 @@
         }
         setTopStatusMessage('Aucune reprise trouvée pour ce formulaire. Nouveau questionnaire chargé.');
       }
-      showStep(1);
+      if (step > 1) {
+        showStep(step);
+      } else {
+        showStep(1);
+      }
     }
 
     initializeWizard();
