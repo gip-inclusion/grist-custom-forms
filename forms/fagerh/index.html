@@ -5896,6 +5896,7 @@
       if (step === 5) validatePrestations();
       syncNumericZeroDisplay();
       refreshSummary();
+      updateQuickSaveAvailability();
       if (step === getFinalStepNumber()) refreshFinal();
     }
 
@@ -7635,6 +7636,7 @@
         scheduleFinessDuplicateCheck();
       }
       refreshSummary();
+      updateQuickSaveAvailability();
     }
     identInputs.forEach(i => {
       i.addEventListener('input', validateIdent);
@@ -8986,6 +8988,8 @@
     }
 
     async function saveWizardToServer() {
+      const savePrereq = getSavePrerequisiteStatus();
+      if (!savePrereq.ok) throw new Error(savePrereq.message);
       const uuid = ensureResumeUuid();
       const snapshot = serializeWizardSnapshot();
       const fields = buildFieldsForSave(uuid, snapshot);
@@ -9058,7 +9062,44 @@
       }
     });
 
+    function getSavePrerequisiteStatus() {
+      if (step < 2) {
+        return {
+          ok: false,
+          message: "Enregistrement disponible à partir de l'étape 2 (Identification).",
+        };
+      }
+      const email = String(document.getElementById('v_email')?.value || '').trim();
+      if (!email) {
+        return {
+          ok: false,
+          message: "Renseignez l'email de validation (étape 2) avant d'enregistrer.",
+        };
+      }
+      const emailOk = /^[^\s@]+@(?:[^\s@.]+\.)+[^\s@.]{2,}$/.test(email);
+      if (!emailOk) {
+        return {
+          ok: false,
+          message: "Email de validation invalide. Corrigez-le avant d'enregistrer.",
+        };
+      }
+      return { ok: true, message: '' };
+    }
+
+    function updateQuickSaveAvailability() {
+      const saveBtn = document.getElementById('quick-save-btn');
+      if (!saveBtn) return;
+      const savePrereq = getSavePrerequisiteStatus();
+      saveBtn.disabled = !savePrereq.ok;
+      saveBtn.title = savePrereq.ok ? '' : savePrereq.message;
+    }
+
     document.getElementById('quick-save-btn')?.addEventListener('click', async () => {
+      const savePrereq = getSavePrerequisiteStatus();
+      if (!savePrereq.ok) {
+        setTopStatusMessage(savePrereq.message);
+        return;
+      }
       try {
         await saveWizardToServer();
         setTopStatusMessage('Enregistré dans Grist.');
