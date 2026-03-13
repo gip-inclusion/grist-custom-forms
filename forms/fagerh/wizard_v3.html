@@ -108,6 +108,20 @@
       border-color: #5a8fbe;
       box-shadow: 0 0 0 2px rgba(90, 143, 190, 0.15);
     }
+    .recover-inline {
+      display: none;
+      margin-top: 8px;
+      padding: 10px;
+      border: 1px solid #c7d7e8;
+      border-radius: 10px;
+      background: #f7fbff;
+    }
+    .recover-inline.visible {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
     .top-status {
       margin-top: 8px;
       font-size: .92rem;
@@ -2071,7 +2085,19 @@
       </div>
       <div class="quick-actions-row">
         <button type="button" id="quick-save-btn" class="primary">Enregistrer</button>
-        <button type="button" id="quick-copy-btn">Copier lien de reprise</button>
+        <button type="button" id="quick-recover-btn">Reprendre la saisie</button>
+        <button type="button" id="quick-export-csv-btn">Exporter en CSV</button>
+        <button type="button" id="quick-export-pdf-btn">Exporter en PDF</button>
+        <a
+          href="/forms/fagerh/saisie-quotidienne/"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="quick-actions-link"
+        >Tester l'outil de saisie quotidienne</a>
+        <span class="spacer"></span>
+        <button type="button" id="quick-finish-btn">J'ai terminé ma saisie</button>
+      </div>
+      <div id="recover-inline" class="recover-inline">
         <input
           type="email"
           id="quick-recover-email"
@@ -2087,17 +2113,7 @@
           inputmode="numeric"
           maxlength="9"
         >
-        <button type="button" id="quick-recover-btn">Reprendre la saisie</button>
-        <button type="button" id="quick-export-csv-btn">Exporter en CSV</button>
-        <button type="button" id="quick-export-pdf-btn">Exporter en PDF</button>
-        <a
-          href="/forms/fagerh/saisie-quotidienne/"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="quick-actions-link"
-        >Tester l'outil de saisie quotidienne</a>
-        <span class="spacer"></span>
-        <button type="button" id="quick-finish-btn">J'ai terminé ma saisie</button>
+        <button type="button" id="quick-recover-submit-btn">Ouvrir ma reprise</button>
       </div>
       <div id="top-status" class="top-status">Aucune sauvegarde en cours.</div>
     </div>
@@ -2161,8 +2177,9 @@
             2. Complétez les étapes dans l'ordre, avec les boutons <strong>Retour</strong> et <strong>Continuer</strong>.<br>
             3. Les sections non pertinentes restent masquées automatiquement selon vos choix.<br>
             4. Cliquez sur <strong>Enregistrer</strong> régulièrement pour conserver vos réponses.<br>
-            5. Utilisez <strong>Copier lien de reprise</strong> pour reprendre la saisie plus tard sur le même questionnaire.<br>
-            6. Quand tout est finalisé, cliquez sur <strong>J'ai terminé ma saisie</strong> (vous pourrez revenir en modification si nécessaire).
+            5. Pour reprendre une saisie, cliquez sur <strong>Reprendre la saisie</strong> puis renseignez <strong>email + FINESS</strong>.<br>
+            6. Si un FINESS est déjà utilisé, reprenez la saisie du questionnaire existant avec ce même couple <strong>email + FINESS</strong>.<br>
+            7. Quand tout est finalisé, cliquez sur <strong>J'ai terminé ma saisie</strong> (vous pourrez revenir en modification si nécessaire).
           </div>
         </div>
         <div class="actions">
@@ -7579,7 +7596,7 @@
           finessMsg.textContent = 'Vérification des doublons FINESS en cours...';
         } else if (duplicateServerConflict) {
           finessMsg.className = 'sub visible err';
-          finessMsg.textContent = `FINESS déjà utilisé dans un autre questionnaire : ${duplicateServerValues.join(', ')}.`;
+          finessMsg.textContent = `FINESS déjà utilisé dans un autre questionnaire : ${duplicateServerValues.join(', ')}. Utilisez "Reprendre la saisie" avec email + FINESS.`;
         } else if (mainLookupMiss && !hasManualResolved) {
           finessMsg.className = 'sub visible err';
           finessMsg.textContent = "FINESS introuvable dans le référentiel. Merci de compléter manuellement les informations de l'établissement.";
@@ -9049,40 +9066,40 @@
         setTopStatusMessage(`Erreur de sauvegarde: ${err.message}`);
       }
     });
-    document.getElementById('quick-copy-btn')?.addEventListener('click', async () => {
-      try {
-        const uuid = ensureResumeUuid();
-        const url = new URL(window.location.href);
-        url.searchParams.set('uuid', uuid);
-        const resumeUrl = url.toString();
-        if (navigator.clipboard?.writeText) {
-          await navigator.clipboard.writeText(resumeUrl);
-        }
-        setTopStatusMessage('Lien de reprise copié.');
-      } catch {
-        setTopStatusMessage('Impossible de copier automatiquement. Copiez l’URL de la barre d’adresse.');
+    const recoverInline = document.getElementById('recover-inline');
+    const quickRecoverBtn = document.getElementById('quick-recover-btn');
+    const quickRecoverSubmitBtn = document.getElementById('quick-recover-submit-btn');
+    const quickRecoverEmailInput = document.getElementById('quick-recover-email');
+    const quickRecoverFinessInput = document.getElementById('quick-recover-finess');
+
+    function setRecoverInlineVisible(visible) {
+      if (!recoverInline) return;
+      recoverInline.classList.toggle('visible', !!visible);
+      if (quickRecoverBtn) {
+        quickRecoverBtn.textContent = visible ? 'Fermer la reprise' : 'Reprendre la saisie';
       }
-    });
+      if (visible) {
+        setTopStatusMessage('Renseignez email + FINESS, puis cliquez sur "Ouvrir ma reprise".');
+      }
+    }
     async function recoverResumeLinkFromEmail() {
-      const emailInput = document.getElementById('quick-recover-email');
-      const finessInput = document.getElementById('quick-recover-finess');
-      const rawEmail = String(emailInput?.value || '').trim();
-      const rawFiness = String(finessInput?.value || '').replace(/\D+/g, '').slice(0, 9);
-      if (finessInput) finessInput.value = rawFiness;
+      const rawEmail = String(quickRecoverEmailInput?.value || '').trim();
+      const rawFiness = String(quickRecoverFinessInput?.value || '').replace(/\D+/g, '').slice(0, 9);
+      if (quickRecoverFinessInput) quickRecoverFinessInput.value = rawFiness;
       if (!rawEmail) {
         setTopStatusMessage('Saisissez votre email de validation pour reprendre la saisie.');
-        emailInput?.focus();
+        quickRecoverEmailInput?.focus();
         return;
       }
       const email = rawEmail.toLowerCase();
       if (!/^[^\s@]+@(?:[^\s@.]+\.)+[^\s@.]{2,}$/.test(email)) {
         setTopStatusMessage('Email invalide. Vérifiez le format puis réessayez.');
-        emailInput?.focus();
+        quickRecoverEmailInput?.focus();
         return;
       }
       if (!/^\d{9}$/.test(rawFiness)) {
         setTopStatusMessage('Saisissez un FINESS valide (9 chiffres).');
-        finessInput?.focus();
+        quickRecoverFinessInput?.focus();
         return;
       }
       setTopStatusMessage('Recherche du questionnaire en cours (email + FINESS)...');
@@ -9110,6 +9127,7 @@
         const loaded = await loadWizardFromServer(foundUuid);
         if (loaded) {
           setTopStatusMessage('Questionnaire restauré depuis votre email.');
+          setRecoverInlineVisible(false);
         } else {
           setTopStatusMessage('Lien trouvé, mais impossible de restaurer la saisie.');
         }
@@ -9117,7 +9135,12 @@
         setTopStatusMessage('Erreur réseau pendant la récupération du lien.');
       }
     }
-    document.getElementById('quick-recover-btn')?.addEventListener('click', recoverResumeLinkFromEmail);
+    quickRecoverBtn?.addEventListener('click', () => {
+      const isVisible = !!recoverInline?.classList.contains('visible');
+      setRecoverInlineVisible(!isVisible);
+      if (!isVisible) quickRecoverEmailInput?.focus();
+    });
+    quickRecoverSubmitBtn?.addEventListener('click', recoverResumeLinkFromEmail);
     document.getElementById('quick-recover-email')?.addEventListener('keydown', (event) => {
       if (event.key !== 'Enter') return;
       event.preventDefault();
@@ -9234,7 +9257,7 @@
           setTopStatusMessage('Questionnaire rechargé depuis Grist.');
           return;
         }
-        setTopStatusMessage('Aucune reprise trouvée pour ce lien. Nouveau questionnaire chargé.');
+        setTopStatusMessage('Aucune reprise trouvée pour ce formulaire. Nouveau questionnaire chargé.');
       }
       showStep(1);
     }
