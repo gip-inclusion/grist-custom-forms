@@ -5812,7 +5812,8 @@
       const index = getConditionalIndexFromStep(stepNumber);
       const def = conditionalDefs[index];
       if (!def) return;
-      if (focusedConditionalStepId !== def.id) {
+      const isStepSwitch = focusedConditionalStepId !== def.id;
+      if (isStepSwitch) {
         focusedConditionalStepId = def.id;
       }
       currentConditionalId = def.id;
@@ -5850,7 +5851,7 @@
       if (journeesEl) journeesEl.value = state.journees;
       if (dureeEl) dureeEl.value = computeConditionalDuree(state);
       renderConditionalCoherenceSections(state);
-      applyConditionalBlockFocus(state, { scroll: false, preferIncomplete: true });
+      applyConditionalBlockFocus(state, { scroll: false, preferIncomplete: isStepSwitch });
       refreshConditionalStatusUi(state);
     }
 
@@ -8496,9 +8497,12 @@
 
       const secondaryRows = conditionalDefs.map((def, index) => {
         const state = getConditionalStateById(def.id);
+        const doneNow = validateConditionalState(state, def.id);
+        state.done = doneNow;
+        conditionalState.set(def.id, state);
         const thisStepNumber = 6 + index;
         const blocksProgress = getConditionalBlocksProgress(state, def.id);
-        const rowState = state.done ? 'OK' : (blocksProgress.touched || step === thisStepNumber ? 'en cours' : 'à faire');
+        const rowState = doneNow ? 'OK' : (blocksProgress.touched || step === thisStepNumber ? 'en cours' : 'à faire');
         return {
           id: def.id,
           name: def.name,
@@ -8638,7 +8642,7 @@
       const metierRows = metierEtpInputs.length;
       const metierSum = metierEtpInputs.reduce((s, i) => s + (Number(i.value || 0) || 0), 0);
       const doneMetiers = targetMetiers > 0 && metierRows > 0 && Math.abs(metierSum - targetMetiers) < 0.0001;
-      const doneConditionals = conditionalDefs.every((def) => getConditionalStateById(def.id).done);
+      const doneConditionals = conditionalDefs.every((def) => validateConditionalState(getConditionalStateById(def.id), def.id));
       const final = document.getElementById('final-status');
       if (deacOnlyFlow && doneIdent && doneEtp) {
         final.className = 'status ok';
