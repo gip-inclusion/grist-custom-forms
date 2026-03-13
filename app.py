@@ -526,15 +526,18 @@ def check_finess(form_id: str):
 
 @app.route('/api/forms/<form_id>/recover-by-email', methods=['POST'])
 def recover_by_email(form_id: str):
-    """Recover a questionnaire UUID from validation email."""
+    """Recover a questionnaire UUID from validation email (+ optional FINESS)."""
     config = get_form_config(form_id)
     if not config:
         return jsonify({'error': f'Unknown form: {form_id}'}), 404
 
     data = request.get_json() or {}
     email = normalize_email(data.get('email'))
+    finess = normalize_finess(data.get('finess'))
     if not email:
         return jsonify({'error': 'Email required'}), 400
+    if finess and not finess.isdigit():
+        return jsonify({'error': 'FINESS invalide'}), 400
 
     url = f"{GRIST_BASE_URL}/api/docs/{config['doc_id']}/tables/{config['table_id']}/records"
     headers = {'Accept': 'application/json'}
@@ -555,6 +558,10 @@ def recover_by_email(form_id: str):
             fields = rec.get('fields', {}) if isinstance(rec, dict) else {}
             if not fields.get('uuid'):
                 continue
+            if finess:
+                rec_finess = extract_finess_values(fields)
+                if finess not in rec_finess:
+                    continue
             matches.append(rec)
 
         # 2) Fallback: scan and compare case-insensitively (older rows / casing differences).
@@ -569,9 +576,15 @@ def recover_by_email(form_id: str):
                     continue
                 if not fields.get('uuid'):
                     continue
+                if finess:
+                    rec_finess = extract_finess_values(fields)
+                    if finess not in rec_finess:
+                        continue
                 matches.append(rec)
 
         if not matches:
+            if finess:
+                return jsonify({'error': 'Aucun questionnaire trouvé pour ce couple email + FINESS.'}), 404
             return jsonify({'error': 'Aucun questionnaire trouvé pour cet email.'}), 404
 
         chosen = max(matches, key=lambda r: int(r.get('id', 0) or 0))
@@ -580,6 +593,7 @@ def recover_by_email(form_id: str):
             'ok': True,
             'uuid': chosen_fields.get('uuid'),
             'count': len(matches),
+            'match_on': 'email+finess' if finess else 'email',
         }), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500

@@ -2076,10 +2076,18 @@
           type="email"
           id="quick-recover-email"
           class="quick-actions-input"
-          placeholder="Email de validation (lien perdu)"
+          placeholder="Email de validation"
           autocomplete="email"
         >
-        <button type="button" id="quick-recover-btn">Récupérer mon lien</button>
+        <input
+          type="text"
+          id="quick-recover-finess"
+          class="quick-actions-input"
+          placeholder="FINESS (9 chiffres)"
+          inputmode="numeric"
+          maxlength="9"
+        >
+        <button type="button" id="quick-recover-btn">Reprendre la saisie</button>
         <button type="button" id="quick-export-csv-btn">Exporter en CSV</button>
         <button type="button" id="quick-export-pdf-btn">Exporter en PDF</button>
         <a
@@ -9057,9 +9065,12 @@
     });
     async function recoverResumeLinkFromEmail() {
       const emailInput = document.getElementById('quick-recover-email');
+      const finessInput = document.getElementById('quick-recover-finess');
       const rawEmail = String(emailInput?.value || '').trim();
+      const rawFiness = String(finessInput?.value || '').replace(/\D+/g, '').slice(0, 9);
+      if (finessInput) finessInput.value = rawFiness;
       if (!rawEmail) {
-        setTopStatusMessage('Saisissez votre email de validation pour récupérer le lien de reprise.');
+        setTopStatusMessage('Saisissez votre email de validation pour reprendre la saisie.');
         emailInput?.focus();
         return;
       }
@@ -9069,12 +9080,17 @@
         emailInput?.focus();
         return;
       }
-      setTopStatusMessage('Recherche du questionnaire en cours...');
+      if (!/^\d{9}$/.test(rawFiness)) {
+        setTopStatusMessage('Saisissez un FINESS valide (9 chiffres).');
+        finessInput?.focus();
+        return;
+      }
+      setTopStatusMessage('Recherche du questionnaire en cours (email + FINESS)...');
       try {
         const response = await fetch(`/api/forms/${FORM_ID}/recover-by-email`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-          body: JSON.stringify({ email }),
+          body: JSON.stringify({ email, finess: rawFiness }),
         });
         let payload = {};
         try { payload = await response.json(); } catch {}
@@ -9085,7 +9101,7 @@
         }
         const foundUuid = String(payload?.uuid || '').trim();
         if (!foundUuid) {
-          setTopStatusMessage('Aucun lien de reprise trouvé pour cet email.');
+          setTopStatusMessage('Aucune reprise trouvée pour ce couple email + FINESS.');
           return;
         }
         setTopStatusMessage('Lien trouvé. Chargement du questionnaire...');
@@ -9103,6 +9119,17 @@
     }
     document.getElementById('quick-recover-btn')?.addEventListener('click', recoverResumeLinkFromEmail);
     document.getElementById('quick-recover-email')?.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter') return;
+      event.preventDefault();
+      recoverResumeLinkFromEmail();
+    });
+    document.getElementById('quick-recover-finess')?.addEventListener('input', (event) => {
+      const el = event.target;
+      if (!el) return;
+      const cleaned = String(el.value || '').replace(/\D+/g, '').slice(0, 9);
+      if (el.value !== cleaned) el.value = cleaned;
+    });
+    document.getElementById('quick-recover-finess')?.addEventListener('keydown', (event) => {
       if (event.key !== 'Enter') return;
       event.preventDefault();
       recoverResumeLinkFromEmail();
