@@ -2868,20 +2868,20 @@
         <div class="box cond-block cond-block-anchor" data-block-key="fileactive" id="cond-block-fileactive">
           <strong>File active & journées</strong>
           <div class="field field-radio-inline q35-sub-inline q35-places-inline" style="margin-top:6px;">
-            <div><label>Nombre de personnes accompagnées au 31/12</label></div>
+            <div><label>Nombre de personnes accompagnées au 31/12/2025</label></div>
             <div><input id="cond-file-active" type="number" min="0" step="1"></div>
           </div>
           <div class="field field-radio-inline q35-sub-inline q35-places-inline">
-            <div><label>Nombre de sorties avant le terme de la prestation</label></div>
+            <div><label>Nombre de sorties en 2025 (auto)</label></div>
+            <div><input id="cond-sorties-total" type="number" min="0" step="1" readonly></div>
+          </div>
+          <div class="field field-radio-inline q35-sub-inline q35-places-inline">
+            <div><label>Dont : nombre de sorties avant le terme de la prestation</label></div>
             <div><input id="cond-sorties-avant-terme" type="number" min="0" step="1"></div>
           </div>
           <div class="field field-radio-inline q35-sub-inline q35-places-inline">
             <div><label>Nombre de sorties au terme de la prestation</label></div>
             <div><input id="cond-sorties-terme" type="number" min="0" step="1"></div>
-          </div>
-          <div class="field field-radio-inline q35-sub-inline q35-places-inline">
-            <div><label>Nombre total de sorties définitives (auto)</label></div>
-            <div><input id="cond-sorties-total" type="number" min="0" step="1" readonly></div>
           </div>
           <div class="field field-radio-inline q35-sub-inline q35-places-inline">
             <div><label>Nombre de journées réalisées</label></div>
@@ -5263,11 +5263,11 @@
       `));
       const directSansOrpLegacyHidden = hideLegacyDirectBlocks && !isDirectSansOrpInfoStep && !isDirectSansOrpCadrageStep;
       const directSansOrpHtml = directSansOrpLegacyHidden ? '' : `
-        <div class="${isDirectSansOrpInfoStep || isDirectSansOrpCadrageStep ? '' : 'box '}cond-block cond-block-anchor" data-block-key="direct_sans_orp" id="cond-block-direct_sans_orp">
+        <div class="box cond-block cond-block-anchor" data-block-key="direct_sans_orp" id="cond-block-direct_sans_orp">
           ${isDirectSansOrpInfoStep || isDirectSansOrpCadrageStep ? '' : '<strong>Prestations directes sans ORP CDAPH</strong>'}
           <div class="ctx-sub" style="display:${(isDirectSansOrpInfoStep || isDirectSansOrpCadrageStep || directSansOrp.enabled === 'Oui') ? 'block' : 'none'}; margin-top:${isDirectSansOrpInfoStep || isDirectSansOrpCadrageStep ? '0' : '8px'};">
           ${isDirectSansOrpCadrageStep ? `
-          <p class="hint" style="margin:8px 0 8px 0;">Pour le total d'heures, un coefficient de 1,5 est appliqué automatiquement.</p>
+          ${isDirectSansOrpEvalProConditionalStep(currentConditionalId) ? '' : '<p class="hint" style="margin:8px 0 8px 0;">Pour le total d&apos;heures, un coefficient de 1,5 est appliqué automatiquement.</p>'}
           <div>
             ${isDirectSansOrpEvalProConditionalStep(currentConditionalId) ? `
             <div class="field field-radio-inline q35-sub-inline q35-places-inline" style="padding:8px 0;">
@@ -5283,10 +5283,12 @@
               <div><label>Nombres d'heures totales d'intervention</label></div>
               <div><input class="cond-direct-sans-input" data-ds-row="pec" data-ds-key="heures" type="number" min="0" step="0.1" placeholder="Heures" value="${String(pecRow.heures || '')}"></div>
             </div>
+            ${isDirectSansOrpEvalProConditionalStep(currentConditionalId) ? '' : `
             <div class="ds-coef-tip">
               <span>Heures pondérées (coef 1,5) : <strong class="cond-pec-coef-value">${pecHeuresCoeff.toFixed(1)}</strong></span>
               <small>Calcul automatique: heures saisies × 1,5</small>
             </div>
+            `}
           </div>
           ` : `
           <div>
@@ -5294,6 +5296,10 @@
             <div class="ds-simple-section">
               <p class="ds-simple-subtitle">Informations collectives</p>
               <div class="field field-radio-inline q35-sub-inline q35-places-inline" style="padding:8px 0;"><div><label>Nombre de journées</label></div><div><input class="cond-direct-sans-input" data-ds-row="info_personnes_collectives" data-ds-key="journees" type="number" min="0" step="1" placeholder="Journées" value="${String(directSansOrp.rows?.info_personnes_collectives?.journees || '')}"></div></div>
+              <div class="ds-coef-tip">
+                <span>Journées pondérées (coef 1,5) : <strong class="cond-info-coll-coef-value">${(toNum(directSansOrp.rows?.info_personnes_collectives?.journees) * 1.5).toFixed(1)}</strong></span>
+                <small>Calcul automatique: journées saisies × 1,5</small>
+              </div>
               <p class="hint" style="margin:6px 0 0 0;">Le nombre de journées correspond à : nombre de professionnels mobilisés × nombre d'heures de réunion.</p>
               <p class="ds-simple-participants">Parmi les participants :</p>
               <div class="ds-simple-participants-block">
@@ -6126,6 +6132,10 @@
         const heures = toNum(state.directSansOrp?.rows?.pec?.heures);
         pecCoeffEl.textContent = (heures * 1.5).toFixed(1);
       }
+      conditionalCoherenceSections?.querySelectorAll('.cond-info-coll-coef-value').forEach((el) => {
+        const journees = toNum(state.directSansOrp?.rows?.info_personnes_collectives?.journees);
+        el.textContent = (journees * 1.5).toFixed(1);
+      });
       const dureeEl = document.getElementById('cond-duree');
       if (dureeEl) dureeEl.value = computeConditionalDuree(state);
       refreshConditionalCohUi(state);
