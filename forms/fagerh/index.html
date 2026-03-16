@@ -789,7 +789,7 @@
     }
     .finess-found-source {
       margin-top: 6px;
-      font-size: .78rem;
+      font-size: .82rem;
       color: #5f7286;
     }
     .finess-found-item {
@@ -1018,7 +1018,7 @@
     }
     .finess-assoc-help {
       margin: 2px 0 0 0;
-      font-size: .78rem;
+      font-size: .82rem;
       color: #a1661e;
       font-weight: 700;
     }
@@ -1100,7 +1100,7 @@
       align-items: center;
       justify-content: center;
       align-self: stretch;
-      font-size: .78rem;
+      font-size: .82rem;
       font-weight: 800;
       background: #e9f3fb;
       color: #2f4f6f;
@@ -1593,7 +1593,7 @@
     }
     .emploi-kpi-formula {
       margin-top: 2px;
-      font-size: .78rem;
+      font-size: .82rem;
       color: #4e6781;
     }
     .formation-toolbar {
@@ -2247,16 +2247,19 @@
                 <div id="manual-attach-wrap" class="field" style="border-top:none; padding-top:0; display:none;">
                   <div>
                     <strong>FINESS non trouvé : que souhaitez-vous faire ?</strong>
-                    <div style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap;">
-                      <label class="chip" style="display:inline-flex;">
-                        <input id="manual-attach-existing" type="radio" name="manual-attach-choice" value="existing" checked>
-                        Rattacher à l'établissement confirmé
-                      </label>
-                      <label class="chip" style="display:inline-flex;">
-                        <input id="manual-attach-new" type="radio" name="manual-attach-choice" value="new">
-                        Créer un nouvel établissement
-                      </label>
-                    </div>
+                    <fieldset class="a11y-group">
+                      <legend class="sr-only">FINESS non trouvé : que souhaitez-vous faire ?</legend>
+                      <div style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap;">
+                        <label class="chip" style="display:inline-flex;">
+                          <input id="manual-attach-existing" type="radio" name="manual-attach-choice" value="existing" checked>
+                          Rattacher à l'établissement confirmé
+                        </label>
+                        <label class="chip" style="display:inline-flex;">
+                          <input id="manual-attach-new" type="radio" name="manual-attach-choice" value="new">
+                          Créer un nouvel établissement
+                        </label>
+                      </div>
+                    </fieldset>
                   </div>
                 </div>
                 <div class="field"><div><label>Raison sociale</label></div><input id="es_nom"></div>
@@ -2273,10 +2276,13 @@
                 </div>
                 <div id="no-finess-deac-wrap" class="field" style="display:none;">
                   <div><label>Délivrez-vous des DEAc ?</label></div>
-                  <div class="row">
-                    <label class="chip"><input type="radio" name="ident-deac-question" id="ident-deac-yes" value="yes"> Oui</label>
-                    <label class="chip"><input type="radio" name="ident-deac-question" id="ident-deac-no" value="no" checked> Non</label>
-                  </div>
+                  <fieldset class="a11y-group">
+                    <legend class="sr-only">Délivrez-vous des DEAc ?</legend>
+                    <div class="row">
+                      <label class="chip"><input type="radio" name="ident-deac-question" id="ident-deac-yes" value="yes"> Oui</label>
+                      <label class="chip"><input type="radio" name="ident-deac-question" id="ident-deac-no" value="no" checked> Non</label>
+                    </div>
+                  </fieldset>
                 </div>
               </div>
             </div>
@@ -2308,10 +2314,13 @@
           <strong>Dispositif sans FINESS</strong>
           <div class="field field-radio-inline">
             <div><label>Délivrez-vous des DEAc ?</label></div>
-            <div class="row">
-              <label class="chip"><input type="radio" name="rh-deac-question" id="rh-deac-yes" value="yes"> Oui</label>
-              <label class="chip"><input type="radio" name="rh-deac-question" id="rh-deac-no" value="no" checked> Non</label>
-            </div>
+            <fieldset class="a11y-group">
+              <legend class="sr-only">Délivrez-vous des DEAc ?</legend>
+              <div class="row">
+                <label class="chip"><input type="radio" name="rh-deac-question" id="rh-deac-yes" value="yes"> Oui</label>
+                <label class="chip"><input type="radio" name="rh-deac-question" id="rh-deac-no" value="no" checked> Non</label>
+              </div>
+            </fieldset>
           </div>
         </div>
         <div class="box">
@@ -7002,14 +7011,17 @@
         <div class="finess-confirm-wrap">
           ${!confirmValue ? `
             <p class="finess-confirm-title">Confirmez-vous qu'il s'agit bien de votre établissement ?</p>
-            <div class="finess-confirm-row">
-              <label class="chip">
-                <input type="radio" name="confirm-${sanitizeSourceKey(group.groupKey)}" data-confirm-group="${group.groupKey}" data-confirm-sources="${sourceAttr}" value="yes"> Oui
-              </label>
-              <label class="chip">
-                <input type="radio" name="confirm-${sanitizeSourceKey(group.groupKey)}" data-confirm-group="${group.groupKey}" data-confirm-sources="${sourceAttr}" value="no"> Non
-              </label>
-            </div>
+            <fieldset class="a11y-group">
+              <legend class="sr-only">Confirmez-vous qu'il s'agit bien de votre établissement ?</legend>
+              <div class="finess-confirm-row">
+                <label class="chip">
+                  <input type="radio" name="confirm-${sanitizeSourceKey(group.groupKey)}" data-confirm-group="${group.groupKey}" data-confirm-sources="${sourceAttr}" value="yes"> Oui
+                </label>
+                <label class="chip">
+                  <input type="radio" name="confirm-${sanitizeSourceKey(group.groupKey)}" data-confirm-group="${group.groupKey}" data-confirm-sources="${sourceAttr}" value="no"> Non
+                </label>
+              </div>
+            </fieldset>
           ` : ''}
           ${confirmValue === 'yes' ? `
             <div class="sub visible ok">Établissement confirmé.</div>
