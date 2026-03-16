@@ -164,7 +164,7 @@
       background: #fbfdff;
       min-width: 0;
     }
-    .progress-card h3 {
+    .progress-card h2 {
       margin: 0 0 8px 0;
       font-size: 1.05rem;
     }
@@ -175,7 +175,7 @@
       gap: 10px;
       margin-bottom: 8px;
     }
-    .progress-card-head h3 {
+    .progress-card-head h2 {
       margin: 0;
       font-size: 1.05rem;
     }
@@ -185,7 +185,7 @@
       color: #355474;
       border-radius: 8px;
       padding: 5px 9px;
-      font-size: .78rem;
+      font-size: .86rem;
       font-weight: 700;
       cursor: pointer;
     }
@@ -298,7 +298,7 @@
       margin-right: 2px;
     }
     .toc-list .ok .toc-state { color: #1f7a45; }
-    .toc-list .todo .toc-state { color: #7a8b9f; }
+    .toc-list .todo .toc-state { color: #556b82; }
     .toc-list .in-progress .toc-state { color: #a05a00; }
     .toc-count {
       font-size: .82rem;
@@ -409,7 +409,7 @@
     }
     .cond-nav-link:hover { text-decoration: underline; }
     .cond-nav-badge {
-      font-size: .74rem;
+      font-size: .8rem;
       border-radius: 999px;
       border: 1px solid #d5e0ec;
       background: #fff;
@@ -732,7 +732,7 @@
       align-items: flex-end;
     }
     .auto-metric .auto-note {
-      font-size: .72rem;
+      font-size: .8rem;
       color: #5d7186;
       margin-top: 3px;
       line-height: 1.25;
@@ -891,7 +891,7 @@
       border: 1px solid #b8d6ef;
       background: #eef6fc;
       color: #2a5b85;
-      font-size: .72rem;
+      font-size: .8rem;
       font-weight: 700;
       letter-spacing: .02em;
       text-transform: uppercase;
@@ -906,7 +906,7 @@
       min-width: 104px;
       border-radius: 999px;
       border: 1px solid #c8d7e8;
-      font-size: .72rem;
+      font-size: .8rem;
       font-weight: 700;
       letter-spacing: .02em;
       text-transform: uppercase;
@@ -1035,7 +1035,7 @@
       border: 1px solid #c8d7e8;
       background: #f1f6fc;
       color: #3e5874;
-      font-size: .72rem;
+      font-size: .8rem;
       font-weight: 700;
       letter-spacing: .02em;
       text-transform: uppercase;
@@ -1721,7 +1721,7 @@
       text-align: center;
     }
     input[type="number"]::placeholder {
-      color: #94a3b5;
+      color: #5f738a;
       opacity: 1;
     }
     input[type="number"].num-zero-muted {
@@ -1854,7 +1854,7 @@
       color: #355474;
     }
     .kpi-mini-label {
-      font-size: .72rem;
+      font-size: .8rem;
       letter-spacing: .03em;
       text-transform: uppercase;
       color: #5b7088;
@@ -2147,7 +2147,7 @@
     <aside class="progress-panel" aria-label="Progression du formulaire">
       <div class="progress-card" id="primary-progress-card">
         <div class="progress-card-head">
-          <h3>Étapes Principales</h3>
+          <h2>Étapes Principales</h2>
           <button type="button" id="primary-progress-toggle" class="progress-card-toggle" aria-expanded="true">Replier</button>
         </div>
         <div class="progress-card-body" id="primary-progress-body">
@@ -2163,7 +2163,7 @@
         </div>
       </div>
       <div class="progress-card" id="secondary-progress-card">
-        <h3>Étapes Conditionnelles</h3>
+        <h2>Étapes Conditionnelles</h2>
         <div class="progress-head">
           <span>Progression conditionnelle</span>
           <strong id="secondary-completion-percent">0%</strong>
@@ -2175,7 +2175,7 @@
         <ul id="secondary-toc-list" class="toc-list"></ul>
       </div>
       <div class="progress-card" id="conditional-blocks-card">
-        <h3>Blocs de cette étape</h3>
+        <h2>Blocs de cette étape</h2>
         <ul id="conditional-block-nav-list" class="cond-nav-list"></ul>
       </div>
     </aside>
@@ -2320,7 +2320,7 @@
             <div class="dispo-line"><label class="chip"><input type="checkbox" data-dispo="esrp"> ESRP</label><input type="number" min="0" step="0.1" data-etp="esrp" placeholder="ETP ESRP"></div>
             <div class="dispo-line"><label class="chip"><input type="checkbox" data-dispo="espo"> ESPO</label><input type="number" min="0" step="0.1" data-etp="espo" placeholder="ETP ESPO"></div>
             <div class="dispo-line"><label class="chip"><input type="checkbox" data-dispo="ueros"> UEROS</label><input type="number" min="0" step="0.1" data-etp="ueros" placeholder="ETP UEROS"></div>
-            <div class="dispo-line" id="rh-deac-line" style="display:none;"><label class="chip">DEAc</label><label style="display:none;"><input type="checkbox" data-dispo="deac" id="rh-deac-dispo"></label><input type="number" min="0" step="0.1" data-etp="deac" placeholder="ETP DEAc"></div>
+            <div class="dispo-line" id="rh-deac-line" style="display:none;"><label class="chip">DEAc</label><span style="display:none;"><input type="checkbox" data-dispo="deac" id="rh-deac-dispo" aria-label="Activer DEAc"></span><input type="number" min="0" step="0.1" data-etp="deac" placeholder="ETP DEAc"></div>
           </div>
         </div>
         <div id="metier-section">
