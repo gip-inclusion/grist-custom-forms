@@ -2088,12 +2088,6 @@
         <button type="button" id="quick-recover-btn">Reprendre la saisie</button>
         <button type="button" id="quick-export-csv-btn">Exporter en CSV</button>
         <button type="button" id="quick-export-pdf-btn">Exporter en PDF</button>
-        <a
-          href="/forms/fagerh/saisie-quotidienne/"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="quick-actions-link"
-        >Tester l'outil de saisie quotidienne</a>
         <span class="spacer"></span>
         <button type="button" id="quick-finish-btn">J'ai terminé ma saisie</button>
       </div>
@@ -2209,6 +2203,11 @@
                 <button type="button" id="clear-main-finess" class="btn-remove-x is-idle" aria-label="Effacer ce FINESS" title="Effacer ce FINESS">×</button>
               </div>
               <div id="finess-msg" class="sub"></div>
+              <div id="ident-duplicate-recover" class="recover-inline" style="margin:8px 0 0 0;">
+                <input id="ident-duplicate-email" type="email" placeholder="Email de validation">
+                <input id="ident-duplicate-finess" placeholder="FINESS (9 chiffres)" inputmode="numeric">
+                <button type="button" id="ident-duplicate-recover-btn">Ouvrir ma reprise</button>
+              </div>
               <div id="finess-main-inline" class="finess-lookup-inline"></div>
               <div id="extra-finess"></div>
               <div id="finess-found-panel" class="finess-found-panel">
@@ -2872,8 +2871,8 @@
             <div><input id="cond-file-active" type="number" min="0" step="1"></div>
           </div>
           <div class="field field-radio-inline q35-sub-inline q35-places-inline">
-            <div><label>Nombre de sorties en 2025 (auto)</label></div>
-            <div><input id="cond-sorties-total" type="number" min="0" step="1" readonly></div>
+            <div><label>Nombre de sorties en 2025</label></div>
+            <div><input id="cond-sorties-total" type="number" min="0" step="1"></div>
           </div>
           <div class="field field-radio-inline q35-sub-inline q35-places-inline">
             <div><label>Dont : nombre de sorties avant le terme de la prestation</label></div>
@@ -2883,6 +2882,7 @@
             <div><label>Nombre de sorties au terme de la prestation</label></div>
             <div><input id="cond-sorties-terme" type="number" min="0" step="1"></div>
           </div>
+          <p class="hint" id="cond-sorties-split-help" style="display:none; margin-top:4px; margin-bottom:0;"></p>
           <div class="field field-radio-inline q35-sub-inline q35-places-inline">
             <div><label>Nombre de journées réalisées</label></div>
             <div><input id="cond-journees" type="number" min="0" step="1"></div>
@@ -3261,6 +3261,7 @@
       if (isCollectifRow) {
         return [
           { key: 'journees', label: 'Nombre de journées' },
+          { key: 'partenaires_total', label: 'Combien de partenaires ont participé au total ?' },
         ];
       }
       return getSpecialIndirectFieldDefs(conditionalId);
@@ -3393,14 +3394,14 @@
         rows: {
           destin_partenaires: { heures: '', partenaires: '' },
           destin_organismes: { heures: '', partenaires: '' },
-          collectives: { journees: '' },
+          collectives: { journees: '', partenaires_total: '' },
           individuelles: { heures: '', partenaires: '' },
           epe: { origine: '', limitrophes: '' },
           cdaph: { origine: '', limitrophes: '' },
           groupes_travail: { origine: '', limitrophes: '' },
-          part_collectives: { journees: '' },
+          part_collectives: { journees: '', partenaires_total: '' },
           part_individuelles: { heures: '', partenaires: '' },
-          of_collectives: { journees: '' },
+          of_collectives: { journees: '', partenaires_total: '' },
           of_individuelles: { heures: '', partenaires: '' },
         },
       };
@@ -3585,10 +3586,13 @@
         if (!Array.isArray(current.visitedBlocks)) current.visitedBlocks = [];
         if (typeof current.sortiesAvantTerme === 'undefined') current.sortiesAvantTerme = '';
         if (typeof current.sortiesTerme === 'undefined') current.sortiesTerme = '';
+        if (typeof current.sorties === 'undefined') current.sorties = '';
         if (!current.sortiesAvantTerme && !current.sortiesTerme && String(current.sorties || '').trim() !== '') {
           current.sortiesTerme = String(current.sorties || '').trim();
         }
-        current.sorties = String(toNum(current.sortiesAvantTerme) + toNum(current.sortiesTerme));
+        if (String(current.sorties || '').trim() === '' && (String(current.sortiesAvantTerme || '').trim() !== '' || String(current.sortiesTerme || '').trim() !== '')) {
+          current.sorties = String(toNum(current.sortiesAvantTerme) + toNum(current.sortiesTerme));
+        }
         if (!current.coh) current.coh = makeEmptyConditionalCohValues();
         conditionalCohDefs.forEach((cohDef) => {
           const defaultValue = ['age', 'niveau_entree', 'situation_entree', 'ressources_entree'].includes(cohDef.key) ? '0' : '';
@@ -3654,9 +3658,11 @@
     }
 
     function getConditionalSortiesTotal(state) {
-      const hasSplit = String(state?.sortiesAvantTerme || '').trim() !== '' || String(state?.sortiesTerme || '').trim() !== '';
-      if (hasSplit) return toNum(state?.sortiesAvantTerme) + toNum(state?.sortiesTerme);
       return toNum(state?.sorties);
+    }
+
+    function getConditionalSortiesSplitSum(state) {
+      return toNum(state?.sortiesAvantTerme) + toNum(state?.sortiesTerme);
     }
 
     function computeConditionalDuree(state) {
@@ -3768,11 +3774,14 @@
         return indirectBlock.done;
       }
       const fileActive = Number(state.fileActive || 0);
+      const sortiesFilled = isFilledNumberString(state.sorties);
       const sortiesAvantTermeFilled = isFilledNumberString(state.sortiesAvantTerme);
       const sortiesTermeFilled = isFilledNumberString(state.sortiesTerme);
       const sorties = getConditionalSortiesTotal(state);
+      const sortiesSplitSum = getConditionalSortiesSplitSum(state);
       const journees = Number(state.journees || 0);
-      if (fileActive < 0 || !sortiesAvantTermeFilled || !sortiesTermeFilled || sorties < 0 || journees <= 0) return false;
+      if (fileActive < 0 || !sortiesFilled || !sortiesAvantTermeFilled || !sortiesTermeFilled || sorties < 0 || journees <= 0) return false;
+      if (Math.abs(sortiesSplitSum - sorties) >= 0.0001) return false;
       const geoRows = Array.isArray(state?.geoRows) ? state.geoRows : [];
       const geoInvalid = geoRows.some((row) => {
         const count = Number(row?.count || 0);
@@ -3844,11 +3853,19 @@
         };
       }
       const fileActive = Number(state.fileActive || 0);
+      const sortiesFilled = isFilledNumberString(state.sorties);
       const sortiesAvantTermeFilled = isFilledNumberString(state.sortiesAvantTerme);
       const sortiesTermeFilled = isFilledNumberString(state.sortiesTerme);
       const sorties = getConditionalSortiesTotal(state);
+      const sortiesSplitSum = getConditionalSortiesSplitSum(state);
       const journees = Number(state.journees || 0);
-      const fileBlockDone = fileActive >= 0 && sortiesAvantTermeFilled && sortiesTermeFilled && sorties >= 0 && journees > 0;
+      const fileBlockDone = fileActive >= 0
+        && sortiesFilled
+        && sortiesAvantTermeFilled
+        && sortiesTermeFilled
+        && sorties >= 0
+        && journees > 0
+        && Math.abs(sortiesSplitSum - sorties) < 0.0001;
 
       const cohBlocks = evaluateConditionalCoh(state, conditionalId);
       const doneCohBlocks = cohBlocks.filter((block) => block.ok).length;
@@ -3890,6 +3907,7 @@
       });
 
       const touched = (String(state.fileActive || '').trim() !== '')
+        || (String(state.sorties || '').trim() !== '')
         || (String(state.sortiesAvantTerme || '').trim() !== '')
         || (String(state.sortiesTerme || '').trim() !== '')
         || (String(state.journees || '').trim() !== '')
@@ -4359,11 +4377,19 @@
         return [{ key: 'indirect', label: getSpecialIndirectTitle(currentConditionalId), done: indirectBlock.done }];
       }
       const fileActive = Number(state.fileActive || 0);
+      const sortiesFilled = isFilledNumberString(state.sorties);
       const sortiesAvantTermeFilled = isFilledNumberString(state.sortiesAvantTerme);
       const sortiesTermeFilled = isFilledNumberString(state.sortiesTerme);
       const sorties = getConditionalSortiesTotal(state);
+      const sortiesSplitSum = getConditionalSortiesSplitSum(state);
       const journees = Number(state.journees || 0);
-      const fileBlockDone = fileActive >= 0 && sortiesAvantTermeFilled && sortiesTermeFilled && sorties >= 0 && journees > 0;
+      const fileBlockDone = fileActive >= 0
+        && sortiesFilled
+        && sortiesAvantTermeFilled
+        && sortiesTermeFilled
+        && sorties >= 0
+        && journees > 0
+        && Math.abs(sortiesSplitSum - sorties) < 0.0001;
       const rows = [{ key: 'fileactive', label: 'File active & journées', done: fileBlockDone }];
       evaluateConditionalCoh(state, currentConditionalId).forEach((block) => {
         rows.push({ key: block.key, label: block.title, done: block.ok });
@@ -4556,6 +4582,7 @@
       const isSortiesSuspensions = normalizedKey === 'sorties_suspensions';
       const isModalitesAccueil = normalizedKey === 'modalites_accueil';
       const isActivitesParcours = normalizedKey === 'activites_parcours';
+      const isSuiviEmploi = normalizedKey === 'suivi_emploi';
       if (isHandicapMatrix) {
         const handicapEval = evaluateHandicapMatrixBlock(state);
         const handicapOk = handicapEval.principalOk;
@@ -4653,6 +4680,60 @@
               <span class="kpi-mini-label">Saisie</span>
               <span class="kpi-mini-value">${saisie.toFixed(0)}</span>
             </span>
+          </div>
+        `;
+        const headerHeight = conditionalCurrentHeader?.offsetHeight || 0;
+        conditionalStepEl?.style?.setProperty('--cond-header-height', `${headerHeight}px`);
+        return;
+      }
+      if (isSuiviEmploi) {
+        const row = state?.directAvecOrp?.row || {};
+        const showAcces = hasEmploiAccesBlockConditionalStep(currentConditionalId);
+        const showPresence = hasEmploiPresenceBlockConditionalStep(currentConditionalId);
+        const target = toNum(row.emploi_nb_repondants);
+        const accesSaisie = toNum(row.emploi_acces_nb);
+        const accesDiff = accesSaisie - target;
+        const accesOk = Math.abs(accesDiff) < 0.0001;
+        const presenceSaisie = toNum(row.emploi_presence_nb || row.emploi_acces_encore_nb);
+        const presenceDiff = presenceSaisie - target;
+        const presenceOk = Math.abs(presenceDiff) < 0.0001;
+        const globalOk = showPresence ? (accesOk && presenceOk) : accesOk;
+        conditionalCurrentKpi.hidden = false;
+        conditionalCurrentKpi.style.display = 'inline-flex';
+        conditionalCurrentHeader?.classList.remove('is-no-kpi');
+        conditionalCurrentKpi.className = globalOk ? 'status kpi cond-current-kpi ok' : 'status kpi cond-current-kpi err';
+        conditionalCurrentKpi.innerHTML = `
+          <div class="current-kpi-handicap">
+            ${showAcces ? `
+            <div class="current-kpi-handicap-line">
+              <span class="kpi-mini">
+                <span class="kpi-mini-label">Cible A.</span>
+                <span class="kpi-mini-value">${target.toFixed(0)}</span>
+              </span>
+              <span class="kpi-mini">
+                <span class="kpi-mini-label">Saisie A.</span>
+                <span class="kpi-mini-value">${accesSaisie.toFixed(0)}</span>
+              </span>
+              <span class="kpi-mini kpi-slot-diff ${accesOk ? 'diff-ok' : 'diff-warn'}">
+                <span class="kpi-mini-label">Écart A.</span>
+                <span class="kpi-mini-value">${accesDiff.toFixed(0)}</span>
+              </span>
+            </div>` : ''}
+            ${showPresence ? `
+            <div class="current-kpi-handicap-line">
+              <span class="kpi-mini">
+                <span class="kpi-mini-label">Cible P.</span>
+                <span class="kpi-mini-value">${target.toFixed(0)}</span>
+              </span>
+              <span class="kpi-mini">
+                <span class="kpi-mini-label">Saisie P.</span>
+                <span class="kpi-mini-value">${presenceSaisie.toFixed(0)}</span>
+              </span>
+              <span class="kpi-mini kpi-slot-diff ${presenceOk ? 'diff-ok' : 'diff-warn'}">
+                <span class="kpi-mini-label">Écart P.</span>
+                <span class="kpi-mini-value">${presenceDiff.toFixed(0)}</span>
+              </span>
+            </div>` : ''}
           </div>
         `;
         const headerHeight = conditionalCurrentHeader?.offsetHeight || 0;
@@ -5345,6 +5426,10 @@
                   `).join('')}
                 </div>
                 ${String(rowKey || '').includes('collectives') ? `
+                  <div class="cond-info-coll-coef" style="margin-top:8px;">
+                    <span>Journées pondérées (coef 1,5) : <strong class="cond-indirect-coll-coef-value" data-in-coll-row="${rowKey}">${(toNum(indirect.rows?.[rowKey]?.journees) * 1.5).toFixed(1)}</strong></span>
+                    <span>Calcul automatique: journées saisies × 1,5</span>
+                  </div>
                   <p class="hint" style="margin:6px 0 0 0;">Le nombre de journées correspond à : nombre de professionnels mobilisés × nombre d'heures de réunion.</p>
                 ` : ''}
               </div>
@@ -5832,6 +5917,7 @@
       const sortiesAvantTermeEl = document.getElementById('cond-sorties-avant-terme');
       const sortiesTermeEl = document.getElementById('cond-sorties-terme');
       const sortiesTotalEl = document.getElementById('cond-sorties-total');
+      const sortiesSplitHelpEl = document.getElementById('cond-sorties-split-help');
       const journeesEl = document.getElementById('cond-journees');
       const dureeEl = document.getElementById('cond-duree');
       const statusEl = document.getElementById('conditional-status');
@@ -5853,7 +5939,20 @@
       if (fileActiveEl) fileActiveEl.value = state.fileActive;
       if (sortiesAvantTermeEl) sortiesAvantTermeEl.value = state.sortiesAvantTerme;
       if (sortiesTermeEl) sortiesTermeEl.value = state.sortiesTerme;
-      if (sortiesTotalEl) sortiesTotalEl.value = String(getConditionalSortiesTotal(state));
+      if (sortiesTotalEl) sortiesTotalEl.value = String(state.sorties || '');
+      if (sortiesSplitHelpEl) {
+        const sorties = toNum(state.sorties);
+        const splitSum = getConditionalSortiesSplitSum(state);
+        const showSplitError = isFilledNumberString(state.sorties)
+          && isFilledNumberString(state.sortiesAvantTerme)
+          && isFilledNumberString(state.sortiesTerme)
+          && Math.abs(splitSum - sorties) >= 0.0001;
+        sortiesSplitHelpEl.style.display = showSplitError ? 'block' : 'none';
+        sortiesSplitHelpEl.className = showSplitError ? 'hint status err' : 'hint';
+        sortiesSplitHelpEl.textContent = showSplitError
+          ? `Contrôle: “sorties avant terme” + “sorties au terme” doit être égal à “sorties 2025” (${splitSum} / ${sorties}).`
+          : '';
+      }
       if (journeesEl) journeesEl.value = state.journees;
       if (dureeEl) dureeEl.value = computeConditionalDuree(state);
       renderConditionalCoherenceSections(state);
@@ -5917,9 +6016,23 @@
       if (!currentConditionalId) return;
       const state = getConditionalStateById(currentConditionalId);
       state.fileActive = String(condFileActiveInput?.value || '').trim();
+      state.sorties = String(condSortiesTotalInput?.value || '').trim();
       state.sortiesAvantTerme = String(condSortiesAvantTermeInput?.value || '').trim();
       state.sortiesTerme = String(condSortiesTermeInput?.value || '').trim();
-      state.sorties = String(getConditionalSortiesTotal(state));
+      const sortiesSplitHelpEl = document.getElementById('cond-sorties-split-help');
+      const sorties = toNum(state.sorties);
+      const splitSum = getConditionalSortiesSplitSum(state);
+      const showSplitError = isFilledNumberString(state.sorties)
+        && isFilledNumberString(state.sortiesAvantTerme)
+        && isFilledNumberString(state.sortiesTerme)
+        && Math.abs(splitSum - sorties) >= 0.0001;
+      if (sortiesSplitHelpEl) {
+        sortiesSplitHelpEl.style.display = showSplitError ? 'block' : 'none';
+        sortiesSplitHelpEl.className = showSplitError ? 'hint status err' : 'hint';
+        sortiesSplitHelpEl.textContent = showSplitError
+          ? `Contrôle: “sorties avant terme” + “sorties au terme” doit être égal à “sorties 2025” (${splitSum} / ${sorties}).`
+          : '';
+      }
       state.journees = String(condJourneesInput?.value || '').trim();
       const declaredSortiesDisplay = String(state.sortiesAvantTerme || '').trim() === '' ? '0' : String(toNum(state.sortiesAvantTerme));
       conditionalCoherenceSections?.querySelectorAll('[data-sorties-declarees]').forEach((el) => {
@@ -6068,7 +6181,7 @@
       if (hybrideTotalEl) hybrideTotalEl.textContent = String(toNum(state.directAvecOrp?.row?.hybride_total));
       if (distancielTotalEl) distancielTotalEl.textContent = String(toNum(state.directAvecOrp?.row?.distanciel_total));
       if (suspensionsTotalInput) suspensionsTotalInput.value = String(toNum(state.suspensionsBloc?.nb));
-      if (condSortiesTotalInput) condSortiesTotalInput.value = String(getConditionalSortiesTotal(state));
+      if (condSortiesTotalInput) condSortiesTotalInput.value = String(state.sorties || '');
       syncNumericZeroDisplay(conditionalCoherenceSections || document);
       const emploiRow = state.directAvecOrp?.row || {};
       const emploiNbRepondants = toNum(emploiRow.emploi_nb_repondants);
@@ -6136,6 +6249,11 @@
         const journees = toNum(state.directSansOrp?.rows?.info_personnes_collectives?.journees);
         el.textContent = (journees * 1.5).toFixed(1);
       });
+      conditionalCoherenceSections?.querySelectorAll('.cond-indirect-coll-coef-value').forEach((el) => {
+        const rowKey = String(el.getAttribute('data-in-coll-row') || '').trim();
+        const journees = toNum(state.indirect?.rows?.[rowKey]?.journees);
+        el.textContent = (journees * 1.5).toFixed(1);
+      });
       const dureeEl = document.getElementById('cond-duree');
       if (dureeEl) dureeEl.value = computeConditionalDuree(state);
       refreshConditionalCohUi(state);
@@ -6166,6 +6284,10 @@
     const deptInput = document.getElementById('dept');
     const deptMsg = document.getElementById('dept-msg');
     const finessMsg = document.getElementById('finess-msg');
+    const identDuplicateRecover = document.getElementById('ident-duplicate-recover');
+    const identDuplicateEmailInput = document.getElementById('ident-duplicate-email');
+    const identDuplicateFinessInput = document.getElementById('ident-duplicate-finess');
+    const identDuplicateRecoverBtn = document.getElementById('ident-duplicate-recover-btn');
     const extraFiness = document.getElementById('extra-finess');
     const clearMainFinessBtn = document.getElementById('clear-main-finess');
     const manualIdentFields = document.getElementById('manual-ident-fields');
@@ -7639,6 +7761,17 @@
           finessMsg.textContent = '';
         }
       }
+      if (identDuplicateRecover) {
+        const mainFiness = String(document.getElementById('finess')?.value || '').replace(/\D+/g, '').slice(0, 9);
+        identDuplicateRecover.classList.toggle('visible', !!duplicateServerConflict);
+        if (duplicateServerConflict) {
+          if (identDuplicateFinessInput) identDuplicateFinessInput.value = mainFiness;
+          if (identDuplicateEmailInput && !identDuplicateEmailInput.value.trim()) {
+            identDuplicateEmailInput.value = String(document.getElementById('v_email')?.value || '').trim();
+          }
+          finessFoundPanel?.classList.remove('visible');
+        }
+      }
       next.disabled = !(ok
         && emailOk
         && deptOk
@@ -8205,6 +8338,7 @@
 
     function getPrestationsState() {
       const selected = getSelectedDisposFromStep2();
+      if (!selected.length) return { state: 'à faire', valid: false, touched: false, missing: ['sélectionner au moins un dispositif à l’étape 2'] };
       const hasEsrp = selected.includes('esrp');
       const hasEspoOrUeros = selected.includes('espo') || selected.includes('ueros');
       const hasNonDeac = hasEsrp || hasEspoOrUeros;
@@ -8217,13 +8351,29 @@
       const directHorsOrp = getCheckedValuesByName('ps-direct-hors-orp');
       const directInfoPersonnesChildren = getCheckedValuesByName('ps-direct-info-personnes-child');
       const indirect = getCheckedValuesByName('ps-indirect-root');
+      const parcoursSocioChildren = getCheckedValuesByName('ps-parcours-socio-child');
+      const parcoursQualifChildren = getCheckedValuesByName('ps-parcours-qualif-child');
 
-      const touched = !!(directOrp.length || directPecRoot || directPecChildren.length || directHorsOrp.length || directInfoPersonnesChildren.length || indirect.length);
+      // Les dispositifs directs auto-cochés (ps-direct-orp) ne doivent pas suffire à passer l'étape en "en cours"/"OK".
+      const touched = !!(
+        directPecRoot
+        || directPecChildren.length
+        || directHorsOrp.length
+        || directInfoPersonnesChildren.length
+        || indirect.length
+        || parcoursSocioChildren.length
+        || parcoursQualifChildren.length
+      );
       const infoPersonnesSelected = directHorsOrp.includes('Informations aux personnes');
       const infoPersonnesChildrenValid = !infoPersonnesSelected || directInfoPersonnesChildren.length > 0;
       const pecChildrenValid = !directPecRoot || directPecChildren.length > 0;
 
-      const valid = ((directOrp.length + directHorsOrp.length + indirect.length + directPecChildren.length) > 0) && infoPersonnesChildrenValid && pecChildrenValid;
+      const explicitSelectionsCount = directHorsOrp.length
+        + indirect.length
+        + directPecChildren.length
+        + parcoursSocioChildren.length
+        + parcoursQualifChildren.length;
+      const valid = explicitSelectionsCount > 0 && infoPersonnesChildrenValid && pecChildrenValid;
       const state = valid ? 'OK' : (touched ? 'en cours' : 'à faire');
       const missing = [];
       if ((directOrp.length + directHorsOrp.length + indirect.length + directPecChildren.length) <= 0) missing.push('au moins une prestation');
@@ -8400,7 +8550,11 @@
       const ctxStepFields = Array.from(document.querySelector('.step[data-step="4"]')?.querySelectorAll('input, select, textarea') || []);
       const hasCtxPartial = ctxStepFields.some((field) => {
         if (field.type === 'radio') return field.checked;
-        return String(field.value || '').trim() !== '';
+        if (field.type === 'checkbox') return field.checked;
+        const value = String(field.value || '').trim();
+        if (!value) return false;
+        if (field.type === 'number') return Number(value) !== 0;
+        return true;
       });
       const ctxLabel = doneCtx ? 'OK' : (hasCtxPartial ? 'en cours' : 'à faire');
       const prestationsState = getPrestationsState().state;
@@ -9151,24 +9305,24 @@
         setTopStatusMessage('Renseignez email + FINESS, puis cliquez sur "Ouvrir ma reprise".');
       }
     }
-    async function recoverResumeLinkFromEmail() {
-      const rawEmail = String(quickRecoverEmailInput?.value || '').trim();
-      const rawFiness = String(quickRecoverFinessInput?.value || '').replace(/\D+/g, '').slice(0, 9);
-      if (quickRecoverFinessInput) quickRecoverFinessInput.value = rawFiness;
+    async function recoverResumeByEmailAndFiness(emailInputEl, finessInputEl) {
+      const rawEmail = String(emailInputEl?.value || '').trim();
+      const rawFiness = String(finessInputEl?.value || '').replace(/\D+/g, '').slice(0, 9);
+      if (finessInputEl) finessInputEl.value = rawFiness;
       if (!rawEmail) {
         setTopStatusMessage('Saisissez votre email de validation pour reprendre la saisie.');
-        quickRecoverEmailInput?.focus();
+        emailInputEl?.focus();
         return;
       }
       const email = rawEmail.toLowerCase();
       if (!/^[^\s@]+@(?:[^\s@.]+\.)+[^\s@.]{2,}$/.test(email)) {
         setTopStatusMessage('Email invalide. Vérifiez le format puis réessayez.');
-        quickRecoverEmailInput?.focus();
+        emailInputEl?.focus();
         return;
       }
       if (!/^\d{9}$/.test(rawFiness)) {
         setTopStatusMessage('Saisissez un FINESS valide (9 chiffres).');
-        quickRecoverFinessInput?.focus();
+        finessInputEl?.focus();
         return;
       }
       setTopStatusMessage('Recherche du questionnaire en cours (email + FINESS)...');
@@ -9204,6 +9358,9 @@
         setTopStatusMessage('Erreur réseau pendant la récupération du lien.');
       }
     }
+    async function recoverResumeLinkFromEmail() {
+      return recoverResumeByEmailAndFiness(quickRecoverEmailInput, quickRecoverFinessInput);
+    }
     quickRecoverBtn?.addEventListener('click', () => {
       const isVisible = !!recoverInline?.classList.contains('visible');
       setRecoverInlineVisible(!isVisible);
@@ -9225,6 +9382,25 @@
       if (event.key !== 'Enter') return;
       event.preventDefault();
       recoverResumeLinkFromEmail();
+    });
+    identDuplicateRecoverBtn?.addEventListener('click', () => {
+      recoverResumeByEmailAndFiness(identDuplicateEmailInput, identDuplicateFinessInput);
+    });
+    identDuplicateEmailInput?.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter') return;
+      event.preventDefault();
+      recoverResumeByEmailAndFiness(identDuplicateEmailInput, identDuplicateFinessInput);
+    });
+    identDuplicateFinessInput?.addEventListener('input', (event) => {
+      const el = event.target;
+      if (!el) return;
+      const cleaned = String(el.value || '').replace(/\D+/g, '').slice(0, 9);
+      if (el.value !== cleaned) el.value = cleaned;
+    });
+    identDuplicateFinessInput?.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter') return;
+      event.preventDefault();
+      recoverResumeByEmailAndFiness(identDuplicateEmailInput, identDuplicateFinessInput);
     });
     document.getElementById('quick-export-csv-btn')?.addEventListener('click', () => {
       if (topStatus) topStatus.textContent = "Maquette : export CSV simulé.";
@@ -9270,7 +9446,7 @@
       applyConditionalBlockFocus(getConditionalStateById(currentConditionalId), { scroll: true, preferIncomplete: false });
     });
 
-    [condFileActiveInput, condSortiesAvantTermeInput, condSortiesTermeInput, condJourneesInput].forEach((input) => {
+    [condFileActiveInput, condSortiesTotalInput, condSortiesAvantTermeInput, condSortiesTermeInput, condJourneesInput].forEach((input) => {
       input?.addEventListener('input', updateCurrentConditionalStateFromInputs);
       input?.addEventListener('change', updateCurrentConditionalStateFromInputs);
     });

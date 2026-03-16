@@ -165,6 +165,22 @@ def _safe_json(value, fallback):
     return value if value is not None else fallback
 
 
+def _details_payload(fields: dict) -> dict:
+    """Return parsed prestations_details_json payload as dict."""
+    payload = _safe_json((fields or {}).get('prestations_details_json'), {})
+    return payload if isinstance(payload, dict) else {}
+
+
+def _details_get(payload: dict, path: tuple[str, ...], fallback=None):
+    """Safely navigate a nested dict payload."""
+    cur = payload
+    for key in path:
+        if not isinstance(cur, dict):
+            return fallback
+        cur = cur.get(key)
+    return cur if cur is not None else fallback
+
+
 def _has_any_checked(data: dict) -> bool:
     if not isinstance(data, dict):
         return False
@@ -214,7 +230,14 @@ def compute_quick_step_progress(fields: dict) -> dict:
     ]
     rh_done = any(selected_dispositifs) and _has_value(fields.get('metiers_json'))
 
-    prestations_orp = _safe_json(fields.get('prestations_orp_json'), {})
+    details_json = _details_payload(fields)
+    prestations_orp_legacy = _safe_json(fields.get('prestations_orp_json'), {})
+    prestations_orp_canonical = _details_get(details_json, ('prestations', 'selection', 'orp'), {})
+    prestations_orp = {}
+    if isinstance(prestations_orp_canonical, dict):
+        prestations_orp.update(prestations_orp_canonical)
+    if isinstance(prestations_orp_legacy, dict):
+        prestations_orp.update(prestations_orp_legacy)
     vos_prestations_done = _has_value(fields.get('pec')) or _has_any_checked(prestations_orp)
 
     contexte_done = (
@@ -244,6 +267,9 @@ def compute_quick_step_progress(fields: dict) -> dict:
         cond_expected_labels.append('Prestations totales DEAc')
 
     prestations_json = _safe_json(fields.get('prestations_json'), {})
+    prestations_json_canonical = _details_get(details_json, ('prestations', 'conditional', 'state_by_key'), {})
+    if (not isinstance(prestations_json, dict) or not prestations_json) and isinstance(prestations_json_canonical, dict):
+        prestations_json = prestations_json_canonical
     if isinstance(prestations_json, dict):
         if _has_any_number_data(prestations_json.get('esrp')):
             cond_done_labels.append('Prestations totales ESRP')
@@ -274,10 +300,16 @@ def compute_quick_step_progress(fields: dict) -> dict:
                 selected_orp_keys.append((key, label))
                 cond_expected_labels.append(label)
 
-    details_json = _safe_json(fields.get('prestations_details_json'), {})
     if isinstance(details_json, dict):
         for key, label in selected_orp_keys:
             state = details_json.get(key, {})
+            if not isinstance(state, dict):
+                state = {}
+            # New canonical location (schema v2)
+            if not state:
+                canonical_state = _details_get(details_json, ('prestations', 'conditional', 'state_by_key', key), {})
+                if isinstance(canonical_state, dict):
+                    state = canonical_state
             if isinstance(state, dict) and _as_bool(state.get('__completed')):
                 cond_done_labels.append(label)
 
