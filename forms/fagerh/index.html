@@ -1216,7 +1216,7 @@
       font-weight: 700;
     }
     .radio-option.fagerh-compact .fagerh-compact-sub {
-      font-size: 0.8rem;
+      font-size: 0.95rem;
       color: #5f7286;
       font-weight: 600;
       white-space: nowrap;
@@ -1256,7 +1256,7 @@
       flex: 1 1 540px;
       min-width: 280px;
     }
-    .step[data-step="4"] .field-radio-inline > div:last-child {
+    .step[data-step="4"] .field-radio-inline > :last-child {
       margin-left: auto;
       flex: 0 1 auto;
     }
@@ -2827,50 +2827,58 @@
               Si un dispositif manque, revenez à l'étape précédente pour le sélectionner.
               <button type="button" id="ps-back-step2-btn" style="margin-left:8px;">Corriger les dispositifs (étape 2)</button>
             </div>
-            <div id="ps-orp-sub" class="ctx-sub" style="margin-top:6px; display:block;">
+            <fieldset id="ps-orp-sub" class="ctx-sub a11y-group" style="margin-top:6px; display:block;">
+              <legend class="sr-only">Prestations directes avec ORP CDAPH</legend>
               <label class="ps-checkline"><input type="checkbox" id="ps-orp-ueros" name="ps-direct-orp" value="UEROS"> UEROS</label>
               <label class="ps-checkline"><input type="checkbox" id="ps-orp-espo" name="ps-direct-orp" value="ESPO"> ESPO</label>
               <label class="ps-checkline"><input type="checkbox" id="ps-orp-esrp" name="ps-direct-orp" value="ESRP"> ESRP</label>
-              <div id="ps-esrp-parcours-sub" class="ctx-sub" style="margin-top:6px;">
+              <fieldset id="ps-esrp-parcours-sub" class="ctx-sub a11y-group" style="margin-top:6px;">
+                <legend class="sr-only">Parcours mobilisés ESRP</legend>
                 <label style="display:block; font-weight:800; color:var(--ink); margin-bottom:4px;">Parcours mobilisés</label>
-                <div id="ps-parcours-root-sub" class="ctx-sub" style="margin-top:6px; display:block;">
+                <fieldset id="ps-parcours-root-sub" class="ctx-sub a11y-group" style="margin-top:6px; display:block;">
+                  <legend class="sr-only">Choix des parcours mobilisés</legend>
                   <label class="ps-checkline"><input type="checkbox" id="ps-parcours-socio-root" name="ps-parcours-root" value="Parcours à visée socio-professionnelle"> Parcours à visée socio-professionnelle</label>
-                  <div id="ps-parcours-socio-sub" class="ctx-sub" style="margin-top:6px;">
+                  <fieldset id="ps-parcours-socio-sub" class="ctx-sub a11y-group" style="margin-top:6px;">
+                    <legend class="sr-only">Détail parcours à visée socio-professionnelle</legend>
                     <label class="ps-checkline"><input type="checkbox" name="ps-parcours-socio-child" value="Préparation d'un projet professionnel (orientation hors ESPO)"> Préparation d'un projet professionnel (orientation hors ESPO)</label>
                     <label class="ps-checkline"><input type="checkbox" name="ps-parcours-socio-child" value="Préparation à accéder à l'emploi (remobilisation, etc.)"> Préparation à accéder à l'emploi (remobilisation, etc.)</label>
                     <label class="ps-checkline"><input type="checkbox" name="ps-parcours-socio-child" value="Apprentissage/maîtrise de la langue (FLE, alpha...)"> Apprentissage/maîtrise de la langue (FLE, alpha...)</label>
                     <label class="ps-checkline"><input type="checkbox" name="ps-parcours-socio-child" value="Réentrainement au travail"> Réentrainement au travail</label>
-                  </div>
+                  </fieldset>
 
                   <label class="ps-checkline"><input type="checkbox" id="ps-parcours-qualif-root" name="ps-parcours-root" value="Parcours accompagnement à visée qualifiante"> Parcours accompagnement à visée qualifiante</label>
-                  <div id="ps-parcours-qualif-sub" class="ctx-sub" style="margin-top:6px;">
+                  <fieldset id="ps-parcours-qualif-sub" class="ctx-sub a11y-group" style="margin-top:6px;">
+                    <legend class="sr-only">Détail parcours accompagnement à visée qualifiante</legend>
                     <label class="ps-checkline"><input type="checkbox" name="ps-parcours-qualif-child" value="Préparer à accéder à une formation / remise à niveau savoirs de base"> Préparer à accéder à une formation / remise à niveau savoirs de base</label>
                     <label class="ps-checkline"><input type="checkbox" name="ps-parcours-qualif-child" value="Formation professionnalisante (ne débouchant pas sur un diplôme)"> Formation professionnalisante (ne débouchant pas sur un diplôme)</label>
                     <label class="ps-checkline"><input type="checkbox" name="ps-parcours-qualif-child" value="Formation certifiante ou diplômante"> Formation certifiante ou diplômante</label>
                     <label class="ps-checkline"><input type="checkbox" name="ps-parcours-qualif-child" value="Formation accompagnée professionnalisante (ne débouchant pas sur un diplôme)"> Formation accompagnée professionnalisante (ne débouchant pas sur un diplôme)</label>
                     <label class="ps-checkline"><input type="checkbox" name="ps-parcours-qualif-child" value="Formation accompagnée certifiante (avec titre pro ou diplôme)"> Formation accompagnée certifiante (avec titre pro ou diplôme)</label>
-                  </div>
-                </div>
-              </div>
-            </div>
+                  </fieldset>
+                </fieldset>
+              </fieldset>
+            </fieldset>
           </div>
           <div class="field field-vertical">
             <label class="ps-checkline"><input type="checkbox" id="ps-direct-pec-root" name="ps-direct-pec-root" value="Prestation d'évaluation et de compensation (PEC)"> Prestation d'évaluation et de compensation (PEC)</label>
-            <div id="ps-direct-pec-sub" class="ctx-sub" style="margin-top:6px;">
+            <fieldset id="ps-direct-pec-sub" class="ctx-sub a11y-group" style="margin-top:6px;">
+              <legend class="sr-only">Choix PEC</legend>
               <label class="ps-checkline"><input type="checkbox" name="ps-direct-pec-child" value="Avec ORP CDAPH"> Avec ORP CDAPH</label>
               <label class="ps-checkline"><input type="checkbox" name="ps-direct-pec-child" value="Sans ORP CDAPH"> Sans ORP CDAPH</label>
-            </div>
+            </fieldset>
           </div>
           <div class="field field-vertical">
             <label>Hors ORP CDAPH</label>
-            <div class="ctx-sub" style="margin-top:6px; display:block;">
+            <fieldset class="ctx-sub a11y-group" style="margin-top:6px; display:block;">
+              <legend class="sr-only">Prestations directes hors ORP CDAPH</legend>
               <label class="ps-checkline"><input type="checkbox" name="ps-direct-hors-orp" value="Évaluations professionnelles"> Évaluations professionnelles</label>
               <label class="ps-checkline"><input type="checkbox" id="ps-direct-info-personnes" name="ps-direct-hors-orp" value="Informations aux personnes"> Informations aux personnes</label>
-              <div id="ps-direct-info-personnes-sub" class="ctx-sub" style="margin-top:6px;">
+              <fieldset id="ps-direct-info-personnes-sub" class="ctx-sub a11y-group" style="margin-top:6px;">
+                <legend class="sr-only">Informations aux personnes</legend>
                 <label class="ps-checkline"><input type="checkbox" name="ps-direct-info-personnes-child" value="Informations collectives"> Informations collectives</label>
                 <label class="ps-checkline"><input type="checkbox" name="ps-direct-info-personnes-child" value="Informations individuelles"> Informations individuelles</label>
-              </div>
-            </div>
+              </fieldset>
+            </fieldset>
           </div>
         </div>
 
@@ -2878,21 +2886,24 @@
           <strong>Prestations indirectes</strong>
           <div class="field field-vertical" style="border-top:none; padding-top:10px;">
             <label class="ps-checkline"><input type="checkbox" id="ps-ind-partenaires" name="ps-indirect-root" value="Info partenaires"> Info partenaires</label>
-            <div id="ps-ind-partenaires-sub" class="ctx-sub" style="margin-top:6px;">
+            <fieldset id="ps-ind-partenaires-sub" class="ctx-sub a11y-group" style="margin-top:6px;">
+              <legend class="sr-only">Info partenaires</legend>
               <label class="ps-checkline"><input type="checkbox" name="ps-ind-partenaires-child" value="Collectives"> Collectives</label>
               <label class="ps-checkline"><input type="checkbox" name="ps-ind-partenaires-child" value="Individuelles"> Individuelles</label>
-            </div>
+            </fieldset>
             <label class="ps-checkline"><input type="checkbox" id="ps-ind-of" name="ps-indirect-root" value="Info organisme de formation"> Info organisme de formation</label>
-            <div id="ps-ind-of-sub" class="ctx-sub" style="margin-top:6px;">
+            <fieldset id="ps-ind-of-sub" class="ctx-sub a11y-group" style="margin-top:6px;">
+              <legend class="sr-only">Info organisme de formation</legend>
               <label class="ps-checkline"><input type="checkbox" name="ps-ind-of-child" value="Collectives"> Collectives</label>
               <label class="ps-checkline"><input type="checkbox" name="ps-ind-of-child" value="Individuelles"> Individuelles</label>
-            </div>
+            </fieldset>
             <label class="ps-checkline"><input type="checkbox" id="ps-ind-mdph" name="ps-indirect-root" value="Participations MDPH"> Participations MDPH</label>
-            <div id="ps-ind-mdph-sub" class="ctx-sub" style="margin-top:6px;">
+            <fieldset id="ps-ind-mdph-sub" class="ctx-sub a11y-group" style="margin-top:6px;">
+              <legend class="sr-only">Participations MDPH</legend>
               <label class="ps-checkline"><input type="checkbox" name="ps-ind-mdph-child" value="EPE"> EPE</label>
               <label class="ps-checkline"><input type="checkbox" name="ps-ind-mdph-child" value="CDAPH"> CDAPH</label>
               <label class="ps-checkline"><input type="checkbox" name="ps-ind-mdph-child" value="Groupes de travail"> Groupes de travail</label>
-            </div>
+            </fieldset>
           </div>
         </div>
 
@@ -6151,6 +6162,32 @@
         fieldset.appendChild(legend);
         group.parentNode?.insertBefore(fieldset, group);
         fieldset.appendChild(group);
+      });
+
+      const prestationsContainers = scope.querySelectorAll('#step-5 .ps-group, #step-5 .ps-subgroup, #step-5 .ps-child-group');
+      prestationsContainers.forEach((container) => {
+        if (!container || container.querySelector(':scope > fieldset.a11y-group')) return;
+        const controls = Array.from(container.querySelectorAll('input[type="radio"], input[type="checkbox"]'))
+          .filter((el) => !el.disabled);
+        if (controls.length < 2) return;
+
+        let legendText = '';
+        const previous = container.previousElementSibling;
+        legendText = getPlainTextWithoutControls(previous);
+        if (!legendText) {
+          const heading = container.closest('.box')?.querySelector('strong, h3, h4');
+          legendText = getPlainTextWithoutControls(heading);
+        }
+        if (!legendText) legendText = 'Choix de prestations';
+
+        const fieldset = document.createElement('fieldset');
+        fieldset.className = 'a11y-group';
+        const legend = document.createElement('legend');
+        legend.className = 'sr-only';
+        legend.textContent = legendText;
+        fieldset.appendChild(legend);
+        while (container.firstChild) fieldset.appendChild(container.firstChild);
+        container.appendChild(fieldset);
       });
 
       scope.querySelectorAll('label').forEach((label) => {
