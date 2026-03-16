@@ -6089,6 +6089,34 @@
         ensureControlAriaLabel(control);
       });
 
+      scope.querySelectorAll('.radio-group').forEach((group) => {
+        if (group.closest('fieldset')) return;
+        const controls = Array.from(group.querySelectorAll('input[type="radio"], input[type="checkbox"]'))
+          .filter((el) => !el.disabled);
+        if (controls.length < 2) return;
+
+        const field = group.closest('.field');
+        let legendText = '';
+        if (field) {
+          const prompt = field.querySelector(':scope > div:first-child > label');
+          legendText = getPlainTextWithoutControls(prompt);
+        }
+        if (!legendText) {
+          const prev = group.closest('div')?.previousElementSibling;
+          legendText = getPlainTextWithoutControls(prev);
+        }
+        if (!legendText) legendText = 'Choix';
+
+        const fieldset = document.createElement('fieldset');
+        fieldset.className = 'a11y-group';
+        const legend = document.createElement('legend');
+        legend.className = 'sr-only';
+        legend.textContent = legendText;
+        fieldset.appendChild(legend);
+        group.parentNode?.insertBefore(fieldset, group);
+        fieldset.appendChild(group);
+      });
+
       scope.querySelectorAll('label').forEach((label) => {
         const hasNestedControl = !!label.querySelector('input, select, textarea');
         const hasFor = !!label.getAttribute('for');
