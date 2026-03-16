@@ -9,12 +9,12 @@
       --bg: #f6f8fb;
       --card: #ffffff;
       --text: #1d2a39;
-      --muted: #5a6b7d;
+      --muted: #435a70;
       --line: #d9e1eb;
       --accent: #1f6fb2;
-      --ok: #1f7a45;
-      --warn: #a05a00;
-      --err: #a32222;
+      --ok: #145c33;
+      --warn: #7a4300;
+      --err: #8d1a1a;
       --focus: #1f6fb2;
       --radius: 12px;
       --field-col-width: 320px;
@@ -185,7 +185,7 @@
       color: #355474;
       border-radius: 8px;
       padding: 5px 9px;
-      font-size: .78rem;
+      font-size: .86rem;
       font-weight: 700;
       cursor: pointer;
     }
@@ -587,6 +587,23 @@
     .step.active { display: block; }
     .step h2 { margin: 0 0 var(--space-2) 0; font-size: 1.2rem; letter-spacing: -0.01em; }
     .hint { color: var(--muted); margin: 0 0 var(--space-3) 0; font-size: .97rem; }
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+    .a11y-group {
+      border: 0;
+      margin: 0;
+      padding: 0;
+      min-inline-size: 0;
+    }
     .field {
       border-top: 1px solid #edf2f7;
       padding: 14px 0;
@@ -2088,12 +2105,6 @@
         <button type="button" id="quick-recover-btn">Reprendre la saisie</button>
         <button type="button" id="quick-export-csv-btn">Exporter en CSV</button>
         <button type="button" id="quick-export-pdf-btn">Exporter en PDF</button>
-        <a
-          href="/forms/fagerh/saisie-quotidienne/"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="quick-actions-link"
-        >Tester l'outil de saisie quotidienne</a>
         <span class="spacer"></span>
         <button type="button" id="quick-finish-btn">J'ai terminé ma saisie</button>
       </div>
@@ -2209,6 +2220,11 @@
                 <button type="button" id="clear-main-finess" class="btn-remove-x is-idle" aria-label="Effacer ce FINESS" title="Effacer ce FINESS">×</button>
               </div>
               <div id="finess-msg" class="sub"></div>
+              <div id="ident-duplicate-recover" class="recover-inline" style="margin:8px 0 0 0;">
+                <input id="ident-duplicate-email" type="email" placeholder="Email de validation">
+                <input id="ident-duplicate-finess" placeholder="FINESS (9 chiffres)" inputmode="numeric">
+                <button type="button" id="ident-duplicate-recover-btn">Ouvrir ma reprise</button>
+              </div>
               <div id="finess-main-inline" class="finess-lookup-inline"></div>
               <div id="extra-finess"></div>
               <div id="finess-found-panel" class="finess-found-panel">
@@ -2291,7 +2307,7 @@
             <div class="dispo-line"><label class="chip"><input type="checkbox" data-dispo="esrp"> ESRP</label><input type="number" min="0" step="0.1" data-etp="esrp" placeholder="ETP ESRP"></div>
             <div class="dispo-line"><label class="chip"><input type="checkbox" data-dispo="espo"> ESPO</label><input type="number" min="0" step="0.1" data-etp="espo" placeholder="ETP ESPO"></div>
             <div class="dispo-line"><label class="chip"><input type="checkbox" data-dispo="ueros"> UEROS</label><input type="number" min="0" step="0.1" data-etp="ueros" placeholder="ETP UEROS"></div>
-            <div class="dispo-line" id="rh-deac-line" style="display:none;"><label class="chip">DEAc</label><label style="display:none;"><input type="checkbox" data-dispo="deac" id="rh-deac-dispo"></label><input type="number" min="0" step="0.1" data-etp="deac" placeholder="ETP DEAc"></div>
+            <div class="dispo-line" id="rh-deac-line" style="display:none;"><label class="chip">DEAc</label><div style="display:none;"><input type="checkbox" data-dispo="deac" id="rh-deac-dispo" aria-label="Dispositif DEAc"></div><input type="number" min="0" step="0.1" data-etp="deac" placeholder="ETP DEAc"></div>
           </div>
         </div>
         <div id="metier-section">
@@ -2872,8 +2888,8 @@
             <div><input id="cond-file-active" type="number" min="0" step="1"></div>
           </div>
           <div class="field field-radio-inline q35-sub-inline q35-places-inline">
-            <div><label>Nombre de sorties en 2025 (auto)</label></div>
-            <div><input id="cond-sorties-total" type="number" min="0" step="1" readonly></div>
+            <div><label>Nombre de sorties en 2025</label></div>
+            <div><input id="cond-sorties-total" type="number" min="0" step="1"></div>
           </div>
           <div class="field field-radio-inline q35-sub-inline q35-places-inline">
             <div><label>Dont : nombre de sorties avant le terme de la prestation</label></div>
@@ -2883,6 +2899,7 @@
             <div><label>Nombre de sorties au terme de la prestation</label></div>
             <div><input id="cond-sorties-terme" type="number" min="0" step="1"></div>
           </div>
+          <p class="hint" id="cond-sorties-split-help" style="display:none; margin-top:4px; margin-bottom:0;"></p>
           <div class="field field-radio-inline q35-sub-inline q35-places-inline">
             <div><label>Nombre de journées réalisées</label></div>
             <div><input id="cond-journees" type="number" min="0" step="1"></div>
@@ -3261,6 +3278,7 @@
       if (isCollectifRow) {
         return [
           { key: 'journees', label: 'Nombre de journées' },
+          { key: 'partenaires_total', label: 'Combien de partenaires ont participé au total ?' },
         ];
       }
       return getSpecialIndirectFieldDefs(conditionalId);
@@ -3381,7 +3399,7 @@
         enabled: '',
         rows: {
           pec: { beneficiaires: '', professionnels: '', heures: '' },
-          info_personnes_collectives: { journees: '', boeth: '', non_boeth: '', sans_statut: '' },
+          info_personnes_collectives: { journees: '', partenaires_total: '', boeth: '', non_boeth: '', sans_statut: '' },
           info_personnes_individuelles: { heures: '', boeth: '', non_boeth: '', sans_statut: '' },
         },
       };
@@ -3393,14 +3411,14 @@
         rows: {
           destin_partenaires: { heures: '', partenaires: '' },
           destin_organismes: { heures: '', partenaires: '' },
-          collectives: { journees: '' },
+          collectives: { journees: '', partenaires_total: '' },
           individuelles: { heures: '', partenaires: '' },
           epe: { origine: '', limitrophes: '' },
           cdaph: { origine: '', limitrophes: '' },
           groupes_travail: { origine: '', limitrophes: '' },
-          part_collectives: { journees: '' },
+          part_collectives: { journees: '', partenaires_total: '' },
           part_individuelles: { heures: '', partenaires: '' },
-          of_collectives: { journees: '' },
+          of_collectives: { journees: '', partenaires_total: '' },
           of_individuelles: { heures: '', partenaires: '' },
         },
       };
@@ -3585,10 +3603,13 @@
         if (!Array.isArray(current.visitedBlocks)) current.visitedBlocks = [];
         if (typeof current.sortiesAvantTerme === 'undefined') current.sortiesAvantTerme = '';
         if (typeof current.sortiesTerme === 'undefined') current.sortiesTerme = '';
+        if (typeof current.sorties === 'undefined') current.sorties = '';
         if (!current.sortiesAvantTerme && !current.sortiesTerme && String(current.sorties || '').trim() !== '') {
           current.sortiesTerme = String(current.sorties || '').trim();
         }
-        current.sorties = String(toNum(current.sortiesAvantTerme) + toNum(current.sortiesTerme));
+        if (String(current.sorties || '').trim() === '' && (String(current.sortiesAvantTerme || '').trim() !== '' || String(current.sortiesTerme || '').trim() !== '')) {
+          current.sorties = String(toNum(current.sortiesAvantTerme) + toNum(current.sortiesTerme));
+        }
         if (!current.coh) current.coh = makeEmptyConditionalCohValues();
         conditionalCohDefs.forEach((cohDef) => {
           const defaultValue = ['age', 'niveau_entree', 'situation_entree', 'ressources_entree'].includes(cohDef.key) ? '0' : '';
@@ -3654,9 +3675,11 @@
     }
 
     function getConditionalSortiesTotal(state) {
-      const hasSplit = String(state?.sortiesAvantTerme || '').trim() !== '' || String(state?.sortiesTerme || '').trim() !== '';
-      if (hasSplit) return toNum(state?.sortiesAvantTerme) + toNum(state?.sortiesTerme);
       return toNum(state?.sorties);
+    }
+
+    function getConditionalSortiesSplitSum(state) {
+      return toNum(state?.sortiesAvantTerme) + toNum(state?.sortiesTerme);
     }
 
     function computeConditionalDuree(state) {
@@ -3768,11 +3791,14 @@
         return indirectBlock.done;
       }
       const fileActive = Number(state.fileActive || 0);
+      const sortiesFilled = isFilledNumberString(state.sorties);
       const sortiesAvantTermeFilled = isFilledNumberString(state.sortiesAvantTerme);
       const sortiesTermeFilled = isFilledNumberString(state.sortiesTerme);
       const sorties = getConditionalSortiesTotal(state);
+      const sortiesSplitSum = getConditionalSortiesSplitSum(state);
       const journees = Number(state.journees || 0);
-      if (fileActive < 0 || !sortiesAvantTermeFilled || !sortiesTermeFilled || sorties < 0 || journees <= 0) return false;
+      if (fileActive < 0 || !sortiesFilled || !sortiesAvantTermeFilled || !sortiesTermeFilled || sorties < 0 || journees <= 0) return false;
+      if (Math.abs(sortiesSplitSum - sorties) >= 0.0001) return false;
       const geoRows = Array.isArray(state?.geoRows) ? state.geoRows : [];
       const geoInvalid = geoRows.some((row) => {
         const count = Number(row?.count || 0);
@@ -3844,11 +3870,19 @@
         };
       }
       const fileActive = Number(state.fileActive || 0);
+      const sortiesFilled = isFilledNumberString(state.sorties);
       const sortiesAvantTermeFilled = isFilledNumberString(state.sortiesAvantTerme);
       const sortiesTermeFilled = isFilledNumberString(state.sortiesTerme);
       const sorties = getConditionalSortiesTotal(state);
+      const sortiesSplitSum = getConditionalSortiesSplitSum(state);
       const journees = Number(state.journees || 0);
-      const fileBlockDone = fileActive >= 0 && sortiesAvantTermeFilled && sortiesTermeFilled && sorties >= 0 && journees > 0;
+      const fileBlockDone = fileActive >= 0
+        && sortiesFilled
+        && sortiesAvantTermeFilled
+        && sortiesTermeFilled
+        && sorties >= 0
+        && journees > 0
+        && Math.abs(sortiesSplitSum - sorties) < 0.0001;
 
       const cohBlocks = evaluateConditionalCoh(state, conditionalId);
       const doneCohBlocks = cohBlocks.filter((block) => block.ok).length;
@@ -3890,6 +3924,7 @@
       });
 
       const touched = (String(state.fileActive || '').trim() !== '')
+        || (String(state.sorties || '').trim() !== '')
         || (String(state.sortiesAvantTerme || '').trim() !== '')
         || (String(state.sortiesTerme || '').trim() !== '')
         || (String(state.journees || '').trim() !== '')
@@ -4224,7 +4259,7 @@
       const done = rowKeys.every((k) => {
         const row = rows[k] || {};
         const requiredKeys = k === 'info_personnes_collectives'
-          ? ['journees', 'boeth', 'non_boeth', 'sans_statut']
+          ? ['journees', 'partenaires_total', 'boeth', 'non_boeth', 'sans_statut']
           : ['heures', 'boeth', 'non_boeth', 'sans_statut'];
         return requiredKeys.every((fieldKey) => isFilledNumberString(row[fieldKey]));
       });
@@ -4257,11 +4292,11 @@
       const rows = state?.directSansOrp?.rows || {};
       const rowKeys = getSelectedDirectSansOrpInfoPersonnesRows();
       let done = 0;
-      const total = rowKeys.reduce((acc, rowKey) => acc + (rowKey === 'info_personnes_collectives' ? 4 : 4), 0);
+      const total = rowKeys.reduce((acc, rowKey) => acc + (rowKey === 'info_personnes_collectives' ? 5 : 4), 0);
       rowKeys.forEach((rowKey) => {
         const row = rows[rowKey] || {};
         const fieldKeys = rowKey === 'info_personnes_collectives'
-          ? ['journees', 'boeth', 'non_boeth', 'sans_statut']
+          ? ['journees', 'partenaires_total', 'boeth', 'non_boeth', 'sans_statut']
           : ['heures', 'boeth', 'non_boeth', 'sans_statut'];
         fieldKeys.forEach((fieldKey) => {
           if (isFilledNumberString(row[fieldKey])) done += 1;
@@ -4270,7 +4305,7 @@
       const touched = rowKeys.some((rowKey) => {
         const row = rows[rowKey] || {};
         const fieldKeys = rowKey === 'info_personnes_collectives'
-          ? ['journees', 'boeth', 'non_boeth', 'sans_statut']
+          ? ['journees', 'partenaires_total', 'boeth', 'non_boeth', 'sans_statut']
           : ['heures', 'boeth', 'non_boeth', 'sans_statut'];
         return fieldKeys.some((fieldKey) => isFilledNumberString(row[fieldKey]));
       });
@@ -4359,11 +4394,19 @@
         return [{ key: 'indirect', label: getSpecialIndirectTitle(currentConditionalId), done: indirectBlock.done }];
       }
       const fileActive = Number(state.fileActive || 0);
+      const sortiesFilled = isFilledNumberString(state.sorties);
       const sortiesAvantTermeFilled = isFilledNumberString(state.sortiesAvantTerme);
       const sortiesTermeFilled = isFilledNumberString(state.sortiesTerme);
       const sorties = getConditionalSortiesTotal(state);
+      const sortiesSplitSum = getConditionalSortiesSplitSum(state);
       const journees = Number(state.journees || 0);
-      const fileBlockDone = fileActive >= 0 && sortiesAvantTermeFilled && sortiesTermeFilled && sorties >= 0 && journees > 0;
+      const fileBlockDone = fileActive >= 0
+        && sortiesFilled
+        && sortiesAvantTermeFilled
+        && sortiesTermeFilled
+        && sorties >= 0
+        && journees > 0
+        && Math.abs(sortiesSplitSum - sorties) < 0.0001;
       const rows = [{ key: 'fileactive', label: 'File active & journées', done: fileBlockDone }];
       evaluateConditionalCoh(state, currentConditionalId).forEach((block) => {
         rows.push({ key: block.key, label: block.title, done: block.ok });
@@ -4556,6 +4599,7 @@
       const isSortiesSuspensions = normalizedKey === 'sorties_suspensions';
       const isModalitesAccueil = normalizedKey === 'modalites_accueil';
       const isActivitesParcours = normalizedKey === 'activites_parcours';
+      const isSuiviEmploi = normalizedKey === 'suivi_emploi';
       if (isHandicapMatrix) {
         const handicapEval = evaluateHandicapMatrixBlock(state);
         const handicapOk = handicapEval.principalOk;
@@ -4653,6 +4697,60 @@
               <span class="kpi-mini-label">Saisie</span>
               <span class="kpi-mini-value">${saisie.toFixed(0)}</span>
             </span>
+          </div>
+        `;
+        const headerHeight = conditionalCurrentHeader?.offsetHeight || 0;
+        conditionalStepEl?.style?.setProperty('--cond-header-height', `${headerHeight}px`);
+        return;
+      }
+      if (isSuiviEmploi) {
+        const row = state?.directAvecOrp?.row || {};
+        const showAcces = hasEmploiAccesBlockConditionalStep(currentConditionalId);
+        const showPresence = hasEmploiPresenceBlockConditionalStep(currentConditionalId);
+        const target = toNum(row.emploi_nb_repondants);
+        const accesSaisie = toNum(row.emploi_acces_nb);
+        const accesDiff = accesSaisie - target;
+        const accesOk = Math.abs(accesDiff) < 0.0001;
+        const presenceSaisie = toNum(row.emploi_presence_nb || row.emploi_acces_encore_nb);
+        const presenceDiff = presenceSaisie - target;
+        const presenceOk = Math.abs(presenceDiff) < 0.0001;
+        const globalOk = showPresence ? (accesOk && presenceOk) : accesOk;
+        conditionalCurrentKpi.hidden = false;
+        conditionalCurrentKpi.style.display = 'inline-flex';
+        conditionalCurrentHeader?.classList.remove('is-no-kpi');
+        conditionalCurrentKpi.className = globalOk ? 'status kpi cond-current-kpi ok' : 'status kpi cond-current-kpi err';
+        conditionalCurrentKpi.innerHTML = `
+          <div class="current-kpi-handicap">
+            ${showAcces ? `
+            <div class="current-kpi-handicap-line">
+              <span class="kpi-mini">
+                <span class="kpi-mini-label">Cible A.</span>
+                <span class="kpi-mini-value">${target.toFixed(0)}</span>
+              </span>
+              <span class="kpi-mini">
+                <span class="kpi-mini-label">Saisie A.</span>
+                <span class="kpi-mini-value">${accesSaisie.toFixed(0)}</span>
+              </span>
+              <span class="kpi-mini kpi-slot-diff ${accesOk ? 'diff-ok' : 'diff-warn'}">
+                <span class="kpi-mini-label">Écart A.</span>
+                <span class="kpi-mini-value">${accesDiff.toFixed(0)}</span>
+              </span>
+            </div>` : ''}
+            ${showPresence ? `
+            <div class="current-kpi-handicap-line">
+              <span class="kpi-mini">
+                <span class="kpi-mini-label">Cible P.</span>
+                <span class="kpi-mini-value">${target.toFixed(0)}</span>
+              </span>
+              <span class="kpi-mini">
+                <span class="kpi-mini-label">Saisie P.</span>
+                <span class="kpi-mini-value">${presenceSaisie.toFixed(0)}</span>
+              </span>
+              <span class="kpi-mini kpi-slot-diff ${presenceOk ? 'diff-ok' : 'diff-warn'}">
+                <span class="kpi-mini-label">Écart P.</span>
+                <span class="kpi-mini-value">${presenceDiff.toFixed(0)}</span>
+              </span>
+            </div>` : ''}
           </div>
         `;
         const headerHeight = conditionalCurrentHeader?.offsetHeight || 0;
@@ -5296,6 +5394,7 @@
             <div class="ds-simple-section">
               <p class="ds-simple-subtitle">Informations collectives</p>
               <div class="field field-radio-inline q35-sub-inline q35-places-inline" style="padding:8px 0;"><div><label>Nombre de journées</label></div><div><input class="cond-direct-sans-input" data-ds-row="info_personnes_collectives" data-ds-key="journees" type="number" min="0" step="1" placeholder="Journées" value="${String(directSansOrp.rows?.info_personnes_collectives?.journees || '')}"></div></div>
+              <div class="field field-radio-inline q35-sub-inline q35-places-inline" style="padding:8px 0;"><div><label>Combien de partenaires ont participé au total ?</label></div><div><input class="cond-direct-sans-input" data-ds-row="info_personnes_collectives" data-ds-key="partenaires_total" type="number" min="0" step="1" placeholder="Partenaires" value="${String(directSansOrp.rows?.info_personnes_collectives?.partenaires_total || '')}"></div></div>
               <div class="ds-coef-tip">
                 <span>Journées pondérées (coef 1,5) : <strong class="cond-info-coll-coef-value">${(toNum(directSansOrp.rows?.info_personnes_collectives?.journees) * 1.5).toFixed(1)}</strong></span>
                 <small>Calcul automatique: journées saisies × 1,5</small>
@@ -5345,6 +5444,10 @@
                   `).join('')}
                 </div>
                 ${String(rowKey || '').includes('collectives') ? `
+                  <div class="cond-info-coll-coef" style="margin-top:8px;">
+                    <span>Journées pondérées (coef 1,5) : <strong class="cond-indirect-coll-coef-value" data-in-coll-row="${rowKey}">${(toNum(indirect.rows?.[rowKey]?.journees) * 1.5).toFixed(1)}</strong></span>
+                    <span>Calcul automatique: journées saisies × 1,5</span>
+                  </div>
                   <p class="hint" style="margin:6px 0 0 0;">Le nombre de journées correspond à : nombre de professionnels mobilisés × nombre d'heures de réunion.</p>
                 ` : ''}
               </div>
@@ -5832,6 +5935,7 @@
       const sortiesAvantTermeEl = document.getElementById('cond-sorties-avant-terme');
       const sortiesTermeEl = document.getElementById('cond-sorties-terme');
       const sortiesTotalEl = document.getElementById('cond-sorties-total');
+      const sortiesSplitHelpEl = document.getElementById('cond-sorties-split-help');
       const journeesEl = document.getElementById('cond-journees');
       const dureeEl = document.getElementById('cond-duree');
       const statusEl = document.getElementById('conditional-status');
@@ -5853,10 +5957,24 @@
       if (fileActiveEl) fileActiveEl.value = state.fileActive;
       if (sortiesAvantTermeEl) sortiesAvantTermeEl.value = state.sortiesAvantTerme;
       if (sortiesTermeEl) sortiesTermeEl.value = state.sortiesTerme;
-      if (sortiesTotalEl) sortiesTotalEl.value = String(getConditionalSortiesTotal(state));
+      if (sortiesTotalEl) sortiesTotalEl.value = String(state.sorties || '');
+      if (sortiesSplitHelpEl) {
+        const sorties = toNum(state.sorties);
+        const splitSum = getConditionalSortiesSplitSum(state);
+        const showSplitError = isFilledNumberString(state.sorties)
+          && isFilledNumberString(state.sortiesAvantTerme)
+          && isFilledNumberString(state.sortiesTerme)
+          && Math.abs(splitSum - sorties) >= 0.0001;
+        sortiesSplitHelpEl.style.display = showSplitError ? 'block' : 'none';
+        sortiesSplitHelpEl.className = showSplitError ? 'hint status err' : 'hint';
+        sortiesSplitHelpEl.textContent = showSplitError
+          ? `Contrôle: “sorties avant terme” + “sorties au terme” doit être égal à “sorties 2025” (${splitSum} / ${sorties}).`
+          : '';
+      }
       if (journeesEl) journeesEl.value = state.journees;
       if (dureeEl) dureeEl.value = computeConditionalDuree(state);
       renderConditionalCoherenceSections(state);
+      applyAccessibilityPatches(conditionalCoherenceSections || document);
       applyConditionalBlockFocus(state, { scroll: false, preferIncomplete: isStepSwitch });
       refreshConditionalStatusUi(state);
     }
@@ -5872,6 +5990,92 @@
           input.value = '0';
         }
         input.classList.remove('num-zero-muted');
+      });
+    }
+
+    let a11yAutoIdCounter = 0;
+
+    function a11yNextId(prefix = 'fgr-a11y') {
+      a11yAutoIdCounter += 1;
+      return `${prefix}-${a11yAutoIdCounter}`;
+    }
+
+    function getPlainTextWithoutControls(node) {
+      if (!node) return '';
+      const clone = node.cloneNode(true);
+      clone.querySelectorAll('input, select, textarea, button').forEach((el) => el.remove());
+      return String(clone.textContent || '').replace(/\s+/g, ' ').trim();
+    }
+
+    function ensureControlAriaLabel(control, fallback = '') {
+      if (!control) return;
+      if (control.getAttribute('aria-label') || control.getAttribute('aria-labelledby')) return;
+      const value = String(fallback || control.getAttribute('placeholder') || control.name || control.id || '').trim();
+      if (value) control.setAttribute('aria-label', value);
+    }
+
+    function cssEscapeSafe(value) {
+      const str = String(value || '');
+      if (window.CSS && typeof window.CSS.escape === 'function') return window.CSS.escape(str);
+      return str.replace(/"/g, '\\"');
+    }
+
+    function applyAccessibilityPatches(root = document) {
+      const scope = root || document;
+
+      scope.querySelectorAll('.field').forEach((row) => {
+        const cols = Array.from(row.children).filter((el) => el.tagName === 'DIV');
+        if (cols.length < 2) return;
+        const questionLabel = cols[0].querySelector('label');
+        const questionText = getPlainTextWithoutControls(questionLabel);
+        const isQuestionLabel = questionLabel
+          && !questionLabel.closest('label')
+          && !questionLabel.querySelector('input, select, textarea');
+
+        const singleControl = cols[1].querySelector('input:not([type="radio"]):not([type="checkbox"]):not([type="hidden"]), select, textarea');
+        if (isQuestionLabel && singleControl) {
+          if (!singleControl.id) singleControl.id = a11yNextId('field');
+          if (!questionLabel.getAttribute('for')) questionLabel.setAttribute('for', singleControl.id);
+          ensureControlAriaLabel(singleControl, questionText);
+        }
+
+        const groupControls = Array.from(cols[1].querySelectorAll('input[type="radio"], input[type="checkbox"]'))
+          .filter((el) => !el.disabled);
+        if (isQuestionLabel && questionText && groupControls.length >= 2) {
+          const hasFieldset = !!cols[1].querySelector(':scope > fieldset.a11y-group');
+          if (!hasFieldset) {
+            const fieldset = document.createElement('fieldset');
+            fieldset.className = 'a11y-group';
+            const legend = document.createElement('legend');
+            legend.className = 'sr-only';
+            legend.textContent = questionText;
+            fieldset.appendChild(legend);
+            while (cols[1].firstChild) fieldset.appendChild(cols[1].firstChild);
+            cols[1].appendChild(fieldset);
+          }
+        }
+      });
+
+      scope.querySelectorAll('input, select, textarea').forEach((control) => {
+        if (control.type === 'hidden') return;
+        if (control.id) {
+          const linkedLabel = scope.querySelector(`label[for="${cssEscapeSafe(control.id)}"]`);
+          if (linkedLabel) return;
+        }
+        if (control.closest('label')) return;
+        ensureControlAriaLabel(control);
+      });
+
+      scope.querySelectorAll('label').forEach((label) => {
+        const hasNestedControl = !!label.querySelector('input, select, textarea');
+        const hasFor = !!label.getAttribute('for');
+        const text = getPlainTextWithoutControls(label);
+        if (!hasNestedControl && !hasFor && text) {
+          const span = document.createElement('span');
+          span.className = label.className;
+          span.innerHTML = label.innerHTML;
+          label.replaceWith(span);
+        }
       });
     }
 
@@ -5908,6 +6112,7 @@
       if (step === 3) validateEtp();
       if (step === 5) validatePrestations();
       syncNumericZeroDisplay();
+      applyAccessibilityPatches();
       refreshSummary();
       updateQuickSaveAvailability();
       if (step === getFinalStepNumber()) refreshFinal();
@@ -5917,9 +6122,23 @@
       if (!currentConditionalId) return;
       const state = getConditionalStateById(currentConditionalId);
       state.fileActive = String(condFileActiveInput?.value || '').trim();
+      state.sorties = String(condSortiesTotalInput?.value || '').trim();
       state.sortiesAvantTerme = String(condSortiesAvantTermeInput?.value || '').trim();
       state.sortiesTerme = String(condSortiesTermeInput?.value || '').trim();
-      state.sorties = String(getConditionalSortiesTotal(state));
+      const sortiesSplitHelpEl = document.getElementById('cond-sorties-split-help');
+      const sorties = toNum(state.sorties);
+      const splitSum = getConditionalSortiesSplitSum(state);
+      const showSplitError = isFilledNumberString(state.sorties)
+        && isFilledNumberString(state.sortiesAvantTerme)
+        && isFilledNumberString(state.sortiesTerme)
+        && Math.abs(splitSum - sorties) >= 0.0001;
+      if (sortiesSplitHelpEl) {
+        sortiesSplitHelpEl.style.display = showSplitError ? 'block' : 'none';
+        sortiesSplitHelpEl.className = showSplitError ? 'hint status err' : 'hint';
+        sortiesSplitHelpEl.textContent = showSplitError
+          ? `Contrôle: “sorties avant terme” + “sorties au terme” doit être égal à “sorties 2025” (${splitSum} / ${sorties}).`
+          : '';
+      }
       state.journees = String(condJourneesInput?.value || '').trim();
       const declaredSortiesDisplay = String(state.sortiesAvantTerme || '').trim() === '' ? '0' : String(toNum(state.sortiesAvantTerme));
       conditionalCoherenceSections?.querySelectorAll('[data-sorties-declarees]').forEach((el) => {
@@ -6068,7 +6287,7 @@
       if (hybrideTotalEl) hybrideTotalEl.textContent = String(toNum(state.directAvecOrp?.row?.hybride_total));
       if (distancielTotalEl) distancielTotalEl.textContent = String(toNum(state.directAvecOrp?.row?.distanciel_total));
       if (suspensionsTotalInput) suspensionsTotalInput.value = String(toNum(state.suspensionsBloc?.nb));
-      if (condSortiesTotalInput) condSortiesTotalInput.value = String(getConditionalSortiesTotal(state));
+      if (condSortiesTotalInput) condSortiesTotalInput.value = String(state.sorties || '');
       syncNumericZeroDisplay(conditionalCoherenceSections || document);
       const emploiRow = state.directAvecOrp?.row || {};
       const emploiNbRepondants = toNum(emploiRow.emploi_nb_repondants);
@@ -6136,6 +6355,11 @@
         const journees = toNum(state.directSansOrp?.rows?.info_personnes_collectives?.journees);
         el.textContent = (journees * 1.5).toFixed(1);
       });
+      conditionalCoherenceSections?.querySelectorAll('.cond-indirect-coll-coef-value').forEach((el) => {
+        const rowKey = String(el.getAttribute('data-in-coll-row') || '').trim();
+        const journees = toNum(state.indirect?.rows?.[rowKey]?.journees);
+        el.textContent = (journees * 1.5).toFixed(1);
+      });
       const dureeEl = document.getElementById('cond-duree');
       if (dureeEl) dureeEl.value = computeConditionalDuree(state);
       refreshConditionalCohUi(state);
@@ -6166,6 +6390,10 @@
     const deptInput = document.getElementById('dept');
     const deptMsg = document.getElementById('dept-msg');
     const finessMsg = document.getElementById('finess-msg');
+    const identDuplicateRecover = document.getElementById('ident-duplicate-recover');
+    const identDuplicateEmailInput = document.getElementById('ident-duplicate-email');
+    const identDuplicateFinessInput = document.getElementById('ident-duplicate-finess');
+    const identDuplicateRecoverBtn = document.getElementById('ident-duplicate-recover-btn');
     const extraFiness = document.getElementById('extra-finess');
     const clearMainFinessBtn = document.getElementById('clear-main-finess');
     const manualIdentFields = document.getElementById('manual-ident-fields');
@@ -7639,6 +7867,17 @@
           finessMsg.textContent = '';
         }
       }
+      if (identDuplicateRecover) {
+        const mainFiness = String(document.getElementById('finess')?.value || '').replace(/\D+/g, '').slice(0, 9);
+        identDuplicateRecover.classList.toggle('visible', !!duplicateServerConflict);
+        if (duplicateServerConflict) {
+          if (identDuplicateFinessInput) identDuplicateFinessInput.value = mainFiness;
+          if (identDuplicateEmailInput && !identDuplicateEmailInput.value.trim()) {
+            identDuplicateEmailInput.value = String(document.getElementById('v_email')?.value || '').trim();
+          }
+          finessFoundPanel?.classList.remove('visible');
+        }
+      }
       next.disabled = !(ok
         && emailOk
         && deptOk
@@ -8205,6 +8444,7 @@
 
     function getPrestationsState() {
       const selected = getSelectedDisposFromStep2();
+      if (!selected.length) return { state: 'à faire', valid: false, touched: false, missing: ['sélectionner au moins un dispositif à l’étape 2'] };
       const hasEsrp = selected.includes('esrp');
       const hasEspoOrUeros = selected.includes('espo') || selected.includes('ueros');
       const hasNonDeac = hasEsrp || hasEspoOrUeros;
@@ -8217,13 +8457,29 @@
       const directHorsOrp = getCheckedValuesByName('ps-direct-hors-orp');
       const directInfoPersonnesChildren = getCheckedValuesByName('ps-direct-info-personnes-child');
       const indirect = getCheckedValuesByName('ps-indirect-root');
+      const parcoursSocioChildren = getCheckedValuesByName('ps-parcours-socio-child');
+      const parcoursQualifChildren = getCheckedValuesByName('ps-parcours-qualif-child');
 
-      const touched = !!(directOrp.length || directPecRoot || directPecChildren.length || directHorsOrp.length || directInfoPersonnesChildren.length || indirect.length);
+      // Les dispositifs directs auto-cochés (ps-direct-orp) ne doivent pas suffire à passer l'étape en "en cours"/"OK".
+      const touched = !!(
+        directPecRoot
+        || directPecChildren.length
+        || directHorsOrp.length
+        || directInfoPersonnesChildren.length
+        || indirect.length
+        || parcoursSocioChildren.length
+        || parcoursQualifChildren.length
+      );
       const infoPersonnesSelected = directHorsOrp.includes('Informations aux personnes');
       const infoPersonnesChildrenValid = !infoPersonnesSelected || directInfoPersonnesChildren.length > 0;
       const pecChildrenValid = !directPecRoot || directPecChildren.length > 0;
 
-      const valid = ((directOrp.length + directHorsOrp.length + indirect.length + directPecChildren.length) > 0) && infoPersonnesChildrenValid && pecChildrenValid;
+      const explicitSelectionsCount = directHorsOrp.length
+        + indirect.length
+        + directPecChildren.length
+        + parcoursSocioChildren.length
+        + parcoursQualifChildren.length;
+      const valid = explicitSelectionsCount > 0 && infoPersonnesChildrenValid && pecChildrenValid;
       const state = valid ? 'OK' : (touched ? 'en cours' : 'à faire');
       const missing = [];
       if ((directOrp.length + directHorsOrp.length + indirect.length + directPecChildren.length) <= 0) missing.push('au moins une prestation');
@@ -8400,7 +8656,11 @@
       const ctxStepFields = Array.from(document.querySelector('.step[data-step="4"]')?.querySelectorAll('input, select, textarea') || []);
       const hasCtxPartial = ctxStepFields.some((field) => {
         if (field.type === 'radio') return field.checked;
-        return String(field.value || '').trim() !== '';
+        if (field.type === 'checkbox') return field.checked;
+        const value = String(field.value || '').trim();
+        if (!value) return false;
+        if (field.type === 'number') return Number(value) !== 0;
+        return true;
       });
       const ctxLabel = doneCtx ? 'OK' : (hasCtxPartial ? 'en cours' : 'à faire');
       const prestationsState = getPrestationsState().state;
@@ -8934,12 +9194,80 @@
       };
     }
 
+    function safeJsonClone(value, fallback) {
+      try {
+        return JSON.parse(JSON.stringify(value));
+      } catch {
+        return fallback;
+      }
+    }
+
+    function buildCanonicalPrestationsData(params) {
+      const {
+        uuid,
+        snapshot,
+        etpByDispositif,
+        checksByDispositif,
+        prestationsOrp,
+        prestationsIndirectes,
+        prestationsStateByKey,
+        formationsRows,
+        metiersRows,
+        finessValues,
+        contextEcologique,
+        identite,
+      } = params || {};
+
+      return {
+        schema_version: 2,
+        created_from: 'wizard_v3',
+        saved_at: new Date().toISOString(),
+        [WIZARD_STATE_KEY]: snapshot,
+        identification: {
+          uuid: String(uuid || ''),
+          etablissement: safeJsonClone(identite || {}, {}),
+          finess: {
+            main: String(document.getElementById('finess')?.value || '').trim(),
+            all_values: safeJsonClone(finessValues || [], []),
+          },
+        },
+        rh: {
+          checks_by_dispositif: safeJsonClone(checksByDispositif || {}, {}),
+          etp_by_dispositif: safeJsonClone(etpByDispositif || {}, {}),
+          metiers_rows: safeJsonClone(metiersRows || [], []),
+        },
+        prestations: {
+          selection: {
+            orp: safeJsonClone(prestationsOrp || {}, {}),
+            indirectes: safeJsonClone(prestationsIndirectes || {}, {}),
+          },
+          conditional: {
+            state_by_key: safeJsonClone(prestationsStateByKey || {}, {}),
+          },
+          formations_catalogue_selection: safeJsonClone(formationsRows || [], []),
+        },
+        contexte_ecologique: safeJsonClone(contextEcologique || {}, {}),
+      };
+    }
+
     function buildFieldsForSave(uuid, snapshot) {
       const dispoChecked = (key) => !!document.querySelector(`[data-dispo="${key}"]`)?.checked;
       const etpValue = (key) => String(document.querySelector(`[data-etp="${key}"]`)?.value || '').trim();
       const metiersJson = collectMetiersRows();
       const finessValues = collectFinessForSave();
       const prestationsOrp = collectPrestationsOrpForSave();
+      const checksByDispositif = {
+        esrp: dispoChecked('esrp'),
+        espo: dispoChecked('espo'),
+        ueros: dispoChecked('ueros'),
+        deac: dispoChecked('deac'),
+      };
+      const etpByDispositif = {
+        esrp: etpValue('esrp'),
+        espo: etpValue('espo'),
+        ueros: etpValue('ueros'),
+        deac: etpValue('deac'),
+      };
       const prestationsIndirectes = {
         info_partenaires: !!document.getElementById('ps-ind-partenaires')?.checked,
         info_organismes_formation: !!document.getElementById('ps-ind-of')?.checked,
@@ -8960,33 +9288,15 @@
         }
       });
 
-      return {
-        uuid,
+      const identite = {
         es_nom: String(document.getElementById('es_nom')?.value || '').trim(),
         es_departement: String(document.getElementById('dept')?.value || '').trim(),
         validateur_nom: String(document.getElementById('v_nom')?.value || '').trim(),
         validateur_prenom: String(document.getElementById('v_prenom')?.value || '').trim(),
         validateur_email: String(document.getElementById('v_email')?.value || '').trim(),
-        finess_main: String(document.getElementById('finess')?.value || '').trim(),
-        finess_json: JSON.stringify(finessValues),
-        check_esrp: dispoChecked('esrp'),
-        check_espo: dispoChecked('espo'),
-        check_ueros: dispoChecked('ueros'),
-        check_deac: dispoChecked('deac'),
-        etp_esrp: etpValue('esrp'),
-        etp_espo: etpValue('espo'),
-        etp_ueros: etpValue('ueros'),
-        etp_deac: etpValue('deac'),
-        metiers_json: JSON.stringify(metiersJson),
-        pec: document.getElementById('ps-direct-pec-root')?.checked ? 'Oui' : '',
-        prestations_orp_json: JSON.stringify(prestationsOrp),
-        prestations_indirectes_json: JSON.stringify(prestationsIndirectes),
-        prestations_json: JSON.stringify(prestationsJson),
-        catalogue_formations_json: JSON.stringify(formationsRows),
-        emploi_indicateurs_json: JSON.stringify({}),
-        prestations_details_json: JSON.stringify({
-          [WIZARD_STATE_KEY]: snapshot,
-        }),
+      };
+
+      const contextEcologique = {
         q32_implantation: getCheckedRadioValue('ctx-q32'),
         q33_transports: getCheckedRadioValue('ctx-q33'),
         q33_pmr: getCheckedRadioValue('ctx-q33-pmr'),
@@ -9011,6 +9321,73 @@
         q43_ei: String(document.getElementById('ctx-ei')?.value || '').trim(),
         q41_esat: String(document.getElementById('ctx-esat')?.value || '').trim(),
         q53_afpa: getCheckedRadioValue('ctx-q53'),
+      };
+
+      const canonicalPrestations = buildCanonicalPrestationsData({
+        uuid,
+        snapshot,
+        etpByDispositif,
+        checksByDispositif,
+        prestationsOrp,
+        prestationsIndirectes,
+        prestationsStateByKey: prestationsJson,
+        formationsRows,
+        metiersRows: metiersJson,
+        finessValues,
+        contextEcologique,
+        identite,
+      });
+
+      return {
+        uuid,
+        schema_version: 2,
+        es_nom: identite.es_nom,
+        es_departement: identite.es_departement,
+        validateur_nom: identite.validateur_nom,
+        validateur_prenom: identite.validateur_prenom,
+        validateur_email: identite.validateur_email,
+        finess_main: String(document.getElementById('finess')?.value || '').trim(),
+        finess_json: JSON.stringify(finessValues),
+        check_esrp: checksByDispositif.esrp,
+        check_espo: checksByDispositif.espo,
+        check_ueros: checksByDispositif.ueros,
+        check_deac: checksByDispositif.deac,
+        etp_esrp: etpByDispositif.esrp,
+        etp_espo: etpByDispositif.espo,
+        etp_ueros: etpByDispositif.ueros,
+        etp_deac: etpByDispositif.deac,
+        metiers_json: JSON.stringify(metiersJson),
+        pec: document.getElementById('ps-direct-pec-root')?.checked ? 'Oui' : '',
+        prestations_orp_json: JSON.stringify(prestationsOrp),
+        prestations_indirectes_json: JSON.stringify(prestationsIndirectes),
+        prestations_json: JSON.stringify(prestationsJson),
+        catalogue_formations_json: JSON.stringify(formationsRows),
+        emploi_indicateurs_json: JSON.stringify({}),
+        prestations_details_json: JSON.stringify(canonicalPrestations),
+        q32_implantation: contextEcologique.q32_implantation,
+        q33_transports: contextEcologique.q33_transports,
+        q33_pmr: contextEcologique.q33_pmr,
+        q33_alternatif: contextEcologique.q33_alternatif,
+        q34_prefecture: contextEcologique.q34_prefecture,
+        q35_hebergement: contextEcologique.q35_hebergement,
+        q35_places: contextEcologique.q35_places,
+        q35_weekend: contextEcologique.q35_weekend,
+        q35_comptabilite_we: contextEcologique.q35_comptabilite_we,
+        q35_fermetures: contextEcologique.q35_fermetures,
+        q35_fermetures_semaines: contextEcologique.q35_fermetures_semaines,
+        q35_alternatives: contextEcologique.q35_alternatives,
+        q36_restaurant: contextEcologique.q36_restaurant,
+        q36_weekend: contextEcologique.q36_weekend,
+        q36_externe: contextEcologique.q36_externe,
+        q36_participation: contextEcologique.q36_participation,
+        q37_cuisine: contextEcologique.q37_cuisine,
+        q37_weekend: contextEcologique.q37_weekend,
+        q40_remuneration: contextEcologique.q40_remuneration,
+        q40_operateur: contextEcologique.q40_operateur,
+        q42_ea: contextEcologique.q42_ea,
+        q43_ei: contextEcologique.q43_ei,
+        q41_esat: contextEcologique.q41_esat,
+        q53_afpa: contextEcologique.q53_afpa,
         saisie_terminee: step === getFinalStepNumber() && !document.getElementById('fake-submit')?.disabled,
       };
     }
@@ -9151,24 +9528,24 @@
         setTopStatusMessage('Renseignez email + FINESS, puis cliquez sur "Ouvrir ma reprise".');
       }
     }
-    async function recoverResumeLinkFromEmail() {
-      const rawEmail = String(quickRecoverEmailInput?.value || '').trim();
-      const rawFiness = String(quickRecoverFinessInput?.value || '').replace(/\D+/g, '').slice(0, 9);
-      if (quickRecoverFinessInput) quickRecoverFinessInput.value = rawFiness;
+    async function recoverResumeByEmailAndFiness(emailInputEl, finessInputEl) {
+      const rawEmail = String(emailInputEl?.value || '').trim();
+      const rawFiness = String(finessInputEl?.value || '').replace(/\D+/g, '').slice(0, 9);
+      if (finessInputEl) finessInputEl.value = rawFiness;
       if (!rawEmail) {
         setTopStatusMessage('Saisissez votre email de validation pour reprendre la saisie.');
-        quickRecoverEmailInput?.focus();
+        emailInputEl?.focus();
         return;
       }
       const email = rawEmail.toLowerCase();
       if (!/^[^\s@]+@(?:[^\s@.]+\.)+[^\s@.]{2,}$/.test(email)) {
         setTopStatusMessage('Email invalide. Vérifiez le format puis réessayez.');
-        quickRecoverEmailInput?.focus();
+        emailInputEl?.focus();
         return;
       }
       if (!/^\d{9}$/.test(rawFiness)) {
         setTopStatusMessage('Saisissez un FINESS valide (9 chiffres).');
-        quickRecoverFinessInput?.focus();
+        finessInputEl?.focus();
         return;
       }
       setTopStatusMessage('Recherche du questionnaire en cours (email + FINESS)...');
@@ -9204,6 +9581,9 @@
         setTopStatusMessage('Erreur réseau pendant la récupération du lien.');
       }
     }
+    async function recoverResumeLinkFromEmail() {
+      return recoverResumeByEmailAndFiness(quickRecoverEmailInput, quickRecoverFinessInput);
+    }
     quickRecoverBtn?.addEventListener('click', () => {
       const isVisible = !!recoverInline?.classList.contains('visible');
       setRecoverInlineVisible(!isVisible);
@@ -9225,6 +9605,25 @@
       if (event.key !== 'Enter') return;
       event.preventDefault();
       recoverResumeLinkFromEmail();
+    });
+    identDuplicateRecoverBtn?.addEventListener('click', () => {
+      recoverResumeByEmailAndFiness(identDuplicateEmailInput, identDuplicateFinessInput);
+    });
+    identDuplicateEmailInput?.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter') return;
+      event.preventDefault();
+      recoverResumeByEmailAndFiness(identDuplicateEmailInput, identDuplicateFinessInput);
+    });
+    identDuplicateFinessInput?.addEventListener('input', (event) => {
+      const el = event.target;
+      if (!el) return;
+      const cleaned = String(el.value || '').replace(/\D+/g, '').slice(0, 9);
+      if (el.value !== cleaned) el.value = cleaned;
+    });
+    identDuplicateFinessInput?.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter') return;
+      event.preventDefault();
+      recoverResumeByEmailAndFiness(identDuplicateEmailInput, identDuplicateFinessInput);
     });
     document.getElementById('quick-export-csv-btn')?.addEventListener('click', () => {
       if (topStatus) topStatus.textContent = "Maquette : export CSV simulé.";
@@ -9270,7 +9669,7 @@
       applyConditionalBlockFocus(getConditionalStateById(currentConditionalId), { scroll: true, preferIncomplete: false });
     });
 
-    [condFileActiveInput, condSortiesAvantTermeInput, condSortiesTermeInput, condJourneesInput].forEach((input) => {
+    [condFileActiveInput, condSortiesTotalInput, condSortiesAvantTermeInput, condSortiesTermeInput, condJourneesInput].forEach((input) => {
       input?.addEventListener('input', updateCurrentConditionalStateFromInputs);
       input?.addEventListener('change', updateCurrentConditionalStateFromInputs);
     });
