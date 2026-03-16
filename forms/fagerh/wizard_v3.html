@@ -631,6 +631,12 @@
       background: #fff;
       transition: border-color .15s ease, box-shadow .15s ease, background-color .15s ease;
     }
+    input::placeholder,
+    select::placeholder,
+    textarea::placeholder {
+      color: #586b82;
+      opacity: 1;
+    }
     input[type="radio"],
     input[type="checkbox"] {
       width: auto;
@@ -689,6 +695,7 @@
       border-color: #d48a1d !important;
       background: #fff8ee !important;
       box-shadow: 0 0 0 2px rgba(212, 138, 29, 0.18);
+      color: #6f4b10 !important;
     }
     .auto-filled {
       border-color: #76a9d7 !important;
@@ -1974,7 +1981,13 @@
       background: #1f6fb2;
       color: #fff;
     }
-    button:disabled { opacity: .5; cursor: not-allowed; }
+    button:disabled {
+      opacity: .92;
+      cursor: not-allowed;
+      color: #5f7186;
+      border-color: #a9bbcf;
+      background: #dde7f2;
+    }
     .btn-remove-x {
       width: 46px;
       min-width: 46px;
@@ -6010,7 +6023,18 @@
     function ensureControlAriaLabel(control, fallback = '') {
       if (!control) return;
       if (control.getAttribute('aria-label') || control.getAttribute('aria-labelledby')) return;
-      const value = String(fallback || control.getAttribute('placeholder') || control.name || control.id || '').trim();
+      const controlType = (control.getAttribute('type') || control.tagName || 'champ').toLowerCase();
+      const genericByType = {
+        number: 'Valeur numérique',
+        text: 'Texte',
+        email: 'Adresse email',
+        select: 'Liste de choix',
+        textarea: 'Texte libre',
+        radio: 'Option',
+        checkbox: 'Case à cocher',
+      };
+      const generic = genericByType[controlType] || 'Champ';
+      const value = String(fallback || control.getAttribute('placeholder') || control.name || control.id || generic).trim();
       if (value) control.setAttribute('aria-label', value);
     }
 
@@ -6075,8 +6099,37 @@
           span.className = label.className;
           span.innerHTML = label.innerHTML;
           label.replaceWith(span);
+          return;
+        }
+        if (!hasNestedControl && !hasFor && !text) {
+          label.remove();
         }
       });
+    }
+
+    let a11yObserver = null;
+    function startAccessibilityObserver() {
+      if (a11yObserver) return;
+      const host = document.body;
+      if (!host) return;
+      let raf = 0;
+      a11yObserver = new MutationObserver((mutations) => {
+        let shouldPatch = false;
+        for (const m of mutations) {
+          if (m.type !== 'childList') continue;
+          if ((m.addedNodes && m.addedNodes.length) || (m.removedNodes && m.removedNodes.length)) {
+            shouldPatch = true;
+            break;
+          }
+        }
+        if (!shouldPatch) return;
+        if (raf) cancelAnimationFrame(raf);
+        raf = requestAnimationFrame(() => {
+          applyAccessibilityPatches(document);
+          raf = 0;
+        });
+      });
+      a11yObserver.observe(host, { childList: true, subtree: true });
     }
 
     function setPrimaryProgressCollapsed(collapsed) {
@@ -9704,6 +9757,7 @@
     });
 
     async function initializeWizard() {
+      startAccessibilityObserver();
       validateIdent();
       applyRhDeacQuestionState();
       validateEtp();
