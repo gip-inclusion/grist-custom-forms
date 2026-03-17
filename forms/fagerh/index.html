@@ -6164,32 +6164,6 @@
         fieldset.appendChild(group);
       });
 
-      const prestationsContainers = scope.querySelectorAll('#step-5 .ps-group, #step-5 .ps-subgroup, #step-5 .ps-child-group');
-      prestationsContainers.forEach((container) => {
-        if (!container || container.querySelector(':scope > fieldset.a11y-group')) return;
-        const controls = Array.from(container.querySelectorAll('input[type="radio"], input[type="checkbox"]'))
-          .filter((el) => !el.disabled);
-        if (controls.length < 2) return;
-
-        let legendText = '';
-        const previous = container.previousElementSibling;
-        legendText = getPlainTextWithoutControls(previous);
-        if (!legendText) {
-          const heading = container.closest('.box')?.querySelector('strong, h3, h4');
-          legendText = getPlainTextWithoutControls(heading);
-        }
-        if (!legendText) legendText = 'Choix de prestations';
-
-        const fieldset = document.createElement('fieldset');
-        fieldset.className = 'a11y-group';
-        const legend = document.createElement('legend');
-        legend.className = 'sr-only';
-        legend.textContent = legendText;
-        fieldset.appendChild(legend);
-        while (container.firstChild) fieldset.appendChild(container.firstChild);
-        container.appendChild(fieldset);
-      });
-
       scope.querySelectorAll('label').forEach((label) => {
         const hasNestedControl = !!label.querySelector('input, select, textarea');
         const hasFor = !!label.getAttribute('for');
