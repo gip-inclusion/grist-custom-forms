@@ -6553,6 +6553,9 @@
     let manualAttachEnabled = false;
     let lastConfirmedFoundRecord = null;
     let finessLookupDebounce = null;
+    let finessLookupRequestSeq = 0;
+    let finessLookupActiveSeq = 0;
+    let finessLookupPending = false;
     let finessDuplicateCheckDebounce = null;
     let finessDuplicateCheckAbortController = null;
     let finessDuplicateCheckLoadingKey = '';
@@ -6903,7 +6906,11 @@
 
     function scheduleFinessLookup() {
       if (finessLookupDebounce) clearTimeout(finessLookupDebounce);
-      finessLookupDebounce = setTimeout(() => refreshIdentificationFromFiness(), 220);
+      const seq = ++finessLookupRequestSeq;
+      finessLookupActiveSeq = seq;
+      finessLookupPending = true;
+      validateIdent();
+      finessLookupDebounce = setTimeout(() => refreshIdentificationFromFiness(seq), 220);
     }
 
     function getCurrentRecordUuidForChecks() {
@@ -7290,8 +7297,11 @@
       manualResolvedRecord = { ...entry };
     }
 
-    async function refreshIdentificationFromFiness() {
+    async function refreshIdentificationFromFiness(requestSeq = ++finessLookupRequestSeq) {
+      if (requestSeq > finessLookupActiveSeq) finessLookupActiveSeq = requestSeq;
+      finessLookupPending = true;
       await loadFinessReferenceFromCsv();
+      if (requestSeq !== finessLookupActiveSeq) return;
       if (isNoFinessMode()) {
         currentAutoFoundSources = [];
         finessConfirmState.clear();
@@ -7334,6 +7344,7 @@
         applyRhDeacQuestionState();
         setRhDisposFromIdent();
         validateIdent();
+        if (requestSeq === finessLookupActiveSeq) finessLookupPending = false;
         return;
       }
       const inputs = collectFinessInputs();
@@ -7457,6 +7468,7 @@
       }
       syncFinessIntroVisibility();
       syncFinessTopEntryVisibility();
+      if (requestSeq === finessLookupActiveSeq) finessLookupPending = false;
       validateIdent();
     }
 
@@ -7896,6 +7908,10 @@
       const duplicatePayload = (!noFinessMode && !anyFinessInvalid) ? getFinessDuplicatePayload() : { key: '', values: [], uuid: '' };
       const duplicateInfoFresh = !!duplicatePayload.key && duplicatePayload.key === finessDuplicateCheckKey;
       const duplicateCheckPending = !!duplicatePayload.key && (duplicatePayload.key === finessDuplicateCheckLoadingKey || !duplicateInfoFresh);
+      const lookupCheckPending = !noFinessMode
+        && !anyFinessInvalid
+        && !!renderedFinessValues.some((v) => v !== '')
+        && !!finessLookupPending;
       const duplicateServerValues = duplicateInfoFresh ? finessDuplicateCheckDuplicates : [];
       const duplicateServerConflict = duplicateServerValues.length > 0;
       const confirmOk = noFinessMode ? true : (hasManualResolved || currentAutoFoundSources.every((src) => finessConfirmState.get(src) === 'yes'));
@@ -7971,6 +7987,9 @@
         } else if (anyFinessInvalid) {
           finessMsg.className = 'sub visible err';
           finessMsg.textContent = 'Chaque FINESS doit contenir exactement 9 chiffres.';
+        } else if (lookupCheckPending) {
+          finessMsg.className = 'sub visible';
+          finessMsg.textContent = 'Recherche FINESS en cours...';
         } else if (duplicateCheckPending) {
           finessMsg.className = 'sub visible';
           finessMsg.textContent = 'Vérification des doublons FINESS en cours...';
@@ -8013,6 +8032,7 @@
         && deptOk
         && finessFilled
         && finessOk
+        && !lookupCheckPending
         && !duplicateCheckPending
         && !duplicateServerConflict
         && confirmOk
