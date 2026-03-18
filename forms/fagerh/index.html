@@ -1267,6 +1267,21 @@
       overflow-x: auto;
       max-width: 100%;
     }
+    .step[data-step="4"] .field-radio-inline.field-committee {
+      flex-wrap: nowrap;
+      align-items: flex-start;
+    }
+    .step[data-step="4"] .field-radio-inline.field-committee > div:first-child {
+      flex: 1 1 auto;
+      min-width: 260px;
+    }
+    .step[data-step="4"] .field-radio-inline.field-committee > fieldset.a11y-group {
+      margin-left: auto;
+      flex: 0 1 auto;
+      max-width: 100%;
+      overflow-x: auto;
+      scrollbar-width: thin;
+    }
     .step[data-step="4"] .ctx-sub .field-radio-inline .radio-group {
       justify-content: flex-end;
     }
@@ -2885,15 +2900,15 @@
         <div class="box" id="ps-indirect-wrap">
           <strong>Prestations indirectes</strong>
           <div class="field field-vertical" style="border-top:none; padding-top:10px;">
-            <label class="ps-checkline"><input type="checkbox" id="ps-ind-partenaires" name="ps-indirect-root" value="Info partenaires"> Info partenaires</label>
+            <label class="ps-checkline"><input type="checkbox" id="ps-ind-partenaires" name="ps-indirect-root" value="Informations partenaires"> Informations partenaires</label>
             <fieldset id="ps-ind-partenaires-sub" class="ctx-sub a11y-group" style="margin-top:6px;">
-              <legend class="sr-only">Info partenaires</legend>
+              <legend class="sr-only">Informations partenaires</legend>
               <label class="ps-checkline"><input type="checkbox" name="ps-ind-partenaires-child" value="Collectives"> Collectives</label>
               <label class="ps-checkline"><input type="checkbox" name="ps-ind-partenaires-child" value="Individuelles"> Individuelles</label>
             </fieldset>
-            <label class="ps-checkline"><input type="checkbox" id="ps-ind-of" name="ps-indirect-root" value="Info organisme de formation"> Info organisme de formation</label>
+            <label class="ps-checkline"><input type="checkbox" id="ps-ind-of" name="ps-indirect-root" value="Informations organisme de formation"> Informations organisme de formation</label>
             <fieldset id="ps-ind-of-sub" class="ctx-sub a11y-group" style="margin-top:6px;">
-              <legend class="sr-only">Info organisme de formation</legend>
+              <legend class="sr-only">Informations organisme de formation</legend>
               <label class="ps-checkline"><input type="checkbox" name="ps-ind-of-child" value="Collectives"> Collectives</label>
               <label class="ps-checkline"><input type="checkbox" name="ps-ind-of-child" value="Individuelles"> Individuelles</label>
             </fieldset>
@@ -3045,7 +3060,7 @@
       {
         key: 'age',
         title: 'Âge',
-        fields: ['16-17 ans', '18-19 ans', '20-24 ans', '25-29 ans', '30-34 ans', '35-39 ans', '40-44 ans', '45-49 ans', '50-54 ans', '60 ans et +', 'Je ne sais pas'],
+        fields: ['16-17 ans', '18-19 ans', '20-24 ans', '25-29 ans', '30-34 ans', '35-39 ans', '40-44 ans', '45-49 ans', '50-54 ans', '55-59 ans', '60 ans et +', 'Je ne sais pas'],
       },
       {
         key: 'niveau_entree',
@@ -3255,12 +3270,12 @@
 
     function isInfoPartenairesConditionalStep(id) {
       const def = getConditionalDefById(id);
-      return /^Indirectes - Info partenaires\b/i.test(String(def?.name || ''));
+      return /^Indirectes - (Info|Informations) partenaires\b/i.test(String(def?.name || ''));
     }
 
     function isInfoOrganismesConditionalStep(id) {
       const def = getConditionalDefById(id);
-      return /^Indirectes - Info organisme de formation\b/i.test(String(def?.name || ''));
+      return /^Indirectes - (Info|Informations) organisme de formation\b/i.test(String(def?.name || ''));
     }
 
     function isSpecialIndirectConditionalStep(id) {
@@ -3346,8 +3361,8 @@
 
     function getSpecialIndirectTitle(conditionalId = currentConditionalId) {
       if (isMdphConditionalStep(conditionalId)) return 'Participations MDPH';
-      if (isInfoPartenairesConditionalStep(conditionalId)) return 'Info partenaires';
-      if (isInfoOrganismesConditionalStep(conditionalId)) return 'Info organisme de formation';
+      if (isInfoPartenairesConditionalStep(conditionalId)) return 'Informations partenaires';
+      if (isInfoOrganismesConditionalStep(conditionalId)) return 'Informations organisme de formation';
       return 'Prestations indirectes';
     }
 
@@ -3505,6 +3520,7 @@
         'TCC (comportement/com.)',
         'Diagnostics en cours',
         'Autres types de déficiences',
+        'Je ne sais pas',
       ];
     }
 
@@ -4048,9 +4064,7 @@
     }
 
     function hasActivitesParcoursBlockConditionalStep(conditionalId = currentConditionalId) {
-      return isEspoOrUerosConditionalStep(conditionalId)
-        || isEsrpConditionalStep(conditionalId)
-        || isParcoursConditionalStep(conditionalId);
+      return isUerosConditionalStep(conditionalId);
     }
 
     function hasModalitesAccueilBlockConditionalStep(conditionalId = currentConditionalId) {
@@ -4091,7 +4105,6 @@
 
     function evaluatePreconisationsBlock(state, conditionalId = currentConditionalId) {
       const visible = isEspoOrUerosConditionalStep(conditionalId)
-        || isEsrpConditionalStep(conditionalId)
         || isParcoursConditionalStep(conditionalId);
       if (!visible) return { visible: false, done: true, touched: false };
       const bloc = state?.preconisationsBloc || makeEmptyPreconisationsState();
@@ -5099,7 +5112,6 @@
       const tauxPresence = nbRepondants > 0 ? ((presenceNb / nbRepondants) * 100) : 0;
       const repondantsOk = nbRepondants <= sortiesN1;
       const showPrecoForStep = isEspoOrUerosConditionalStep(currentConditionalId)
-        || isEsrpConditionalStep(currentConditionalId)
         || isParcoursConditionalStep(currentConditionalId);
       const showPrecoBloc = showPrecoForStep;
       const hideLegacyDirectBlocks = shouldHideLegacyDirectBlocks(currentConditionalId);
@@ -5453,7 +5465,7 @@
             ${showDirectSansCollectives ? `
             <div class="ds-simple-section">
               <p class="ds-simple-subtitle">Informations collectives</p>
-              <div class="field field-radio-inline q35-sub-inline q35-places-inline" style="padding:8px 0;"><div><label>Nombre de journées</label></div><div><input class="cond-direct-sans-input" data-ds-row="info_personnes_collectives" data-ds-key="journees" type="number" min="0" step="1" placeholder="Journées" value="${String(directSansOrp.rows?.info_personnes_collectives?.journees || '')}"></div></div>
+              <div class="field field-radio-inline q35-sub-inline q35-places-inline" style="padding:8px 0;"><div><label>Nombre de journées</label></div><div><input class="cond-direct-sans-input" data-ds-row="info_personnes_collectives" data-ds-key="journees" type="number" min="0" step="0.5" placeholder="Journées" value="${String(directSansOrp.rows?.info_personnes_collectives?.journees || '')}"></div></div>
               <div class="ds-coef-tip">
                 <span>Journées pondérées (coef 1,5) : <strong class="cond-info-coll-coef-value">${(toNum(directSansOrp.rows?.info_personnes_collectives?.journees) * 1.5).toFixed(1)}</strong></span>
                 <small>Calcul automatique: journées saisies × 1,5</small>
@@ -5498,7 +5510,7 @@
                   ${getSpecialIndirectFieldDefsForRow(rowKey, currentConditionalId).map((field) => `
                     <div class="field field-radio-inline q35-sub-inline q35-places-inline">
                       <div><label>${field.label}</label></div>
-                      <div><input class="cond-indirect-input" data-in-row="${rowKey}" data-in-key="${field.key}" type="number" min="0" step="${field.key === 'heures' ? '0.1' : '1'}" value="${String(indirect.rows?.[rowKey]?.[field.key] || '')}"></div>
+                      <div><input class="cond-indirect-input" data-in-row="${rowKey}" data-in-key="${field.key}" type="number" min="0" step="${field.key === 'heures' ? '0.1' : (field.key === 'journees' ? '0.5' : '1')}" value="${String(indirect.rows?.[rowKey]?.[field.key] || '')}"></div>
                     </div>
                   `).join('')}
                 </div>
@@ -5597,7 +5609,7 @@
           <div class="ctx-sub" style="display:block; margin-top:6px;">
             <p class="hint" style="margin:0 0 8px 0;"><strong>Quelles en étaient les raisons ?</strong></p>
             <div class="dispo-list">
-              <div class="field field-radio-inline q35-sub-inline q35-places-inline"><div><label>Combien pour raisons de santé non liée au handicap</label></div><div><input class="cond-susp-input" data-susp-key="sante_non_liee" type="number" min="0" step="1" value="${String(suspBloc.raisons?.sante_non_liee || '')}"></div></div>
+              <div class="field field-radio-inline q35-sub-inline q35-places-inline"><div><label>Combien pour raison de santé non liée au handicap</label></div><div><input class="cond-susp-input" data-susp-key="sante_non_liee" type="number" min="0" step="1" value="${String(suspBloc.raisons?.sante_non_liee || '')}"></div></div>
               <div class="field field-radio-inline q35-sub-inline q35-places-inline"><div><label>Combien pour évolution du handicap</label></div><div><input class="cond-susp-input" data-susp-key="evolution_handicap" type="number" min="0" step="1" value="${String(suspBloc.raisons?.evolution_handicap || '')}"></div></div>
               <div class="field field-radio-inline q35-sub-inline q35-places-inline"><div><label>Combien pour évolution de la situation sociale et familiale</label></div><div><input class="cond-susp-input" data-susp-key="evolution_sociale" type="number" min="0" step="1" value="${String(suspBloc.raisons?.evolution_sociale || '')}"></div></div>
               <div class="field field-radio-inline q35-sub-inline q35-places-inline"><div><label>Combien parce que le parcours contractualisé inclut des périodes de suspension</label></div><div><input class="cond-susp-input" data-susp-key="parcours_suspendu" type="number" min="0" step="1" value="${String(suspBloc.raisons?.parcours_suspendu || '')}"></div></div>
@@ -8895,12 +8907,12 @@
           secondaryRowsRaw.push(`Directes hors ORP CDAPH - ${name}`);
         });
         getCheckedValuesByName('ps-indirect-root').forEach((name) => {
-          if (name === 'Info partenaires') {
+          if (name === 'Info partenaires' || name === 'Informations partenaires') {
             const children = getCheckedValuesByName('ps-ind-partenaires-child');
-            if (children.length) secondaryRowsRaw.push('Indirectes - Info partenaires');
-          } else if (name === 'Info organisme de formation') {
+            if (children.length) secondaryRowsRaw.push('Indirectes - Informations partenaires');
+          } else if (name === 'Info organisme de formation' || name === 'Informations organisme de formation') {
             const children = getCheckedValuesByName('ps-ind-of-child');
-            if (children.length) secondaryRowsRaw.push('Indirectes - Info organisme de formation');
+            if (children.length) secondaryRowsRaw.push('Indirectes - Informations organisme de formation');
           } else if (name === 'Participations MDPH') {
             const children = getCheckedValuesByName('ps-ind-mdph-child');
             if (children.length) secondaryRowsRaw.push('Indirectes - Participations MDPH');
@@ -8967,7 +8979,8 @@
           ['Formation professionnalisante (ne débouchant pas sur un diplôme)', 'Formation professionnalisante'],
           ['Formation accompagnée professionnalisante (ne débouchant pas sur un diplôme)', 'Formation accompagnée professionnalisante'],
           ['Formation accompagnée certifiante (avec titre pro ou diplôme)', 'Formation accompagnée certifiante'],
-          ['Info organisme de formation', 'Info organismes formation'],
+          ['Info organisme de formation', 'Informations organismes formation'],
+          ['Informations organisme de formation', 'Informations organismes formation'],
         ];
         replacements.forEach(([from, to]) => {
           if (out === from) out = to;
