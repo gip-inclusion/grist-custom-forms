@@ -7201,7 +7201,8 @@
           const src = String(entry.sourceFiness || '').trim();
           return !!String(finessDispoBySource.get(src) || '').trim();
         });
-        const showInlineAddFiness = !manual && confirmValue === 'yes' && siblingChoiceDone && allAssigned && missingDispos.length > 0;
+        const canAddInlineFiness = manual ? true : (confirmValue === 'yes' && siblingChoiceDone);
+        const showInlineAddFiness = canAddInlineFiness && allAssigned && missingDispos.length > 0;
         return `
         <div class="finess-found-right">
           ${manual ? '' : buildConfirmHtml(group)}
@@ -7998,7 +7999,7 @@
           finessMsg.textContent = `FINESS déjà utilisé dans un autre questionnaire : ${duplicateServerValues.join(', ')}. Utilisez "Reprendre la saisie" avec email + FINESS.`;
         } else if (mainLookupMiss && !hasManualResolved) {
           finessMsg.className = 'sub visible err';
-          finessMsg.textContent = "FINESS introuvable dans le référentiel. Merci de compléter manuellement les informations de l'établissement.";
+          finessMsg.textContent = "FINESS introuvable dans le référentiel. Merci de saisir un autre FINESS si vous en avez plusieurs. Si aucun FINESS n'est trouvé, merci de compléter manuellement les informations de l'établissement.";
         } else if (!confirmOk) {
           finessMsg.className = 'sub visible err';
           finessMsg.textContent = "Confirmez qu'il s'agit bien de votre établissement (Oui/Non).";
