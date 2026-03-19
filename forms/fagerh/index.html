@@ -7285,7 +7285,7 @@
           return !!String(finessDispoBySource.get(src) || '').trim();
         });
         const canAddInlineFiness = manual ? true : (confirmValue === 'yes' && siblingChoiceDone);
-        const showInlineAddFiness = canAddInlineFiness && allAssigned && missingDispos.length > 0;
+        const showInlineAddFiness = canAddInlineFiness && missingDispos.length > 0;
         return `
         <div class="finess-found-right">
           ${manual ? '' : buildConfirmHtml(group)}
