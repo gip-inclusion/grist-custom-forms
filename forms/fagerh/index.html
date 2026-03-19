@@ -6620,6 +6620,7 @@
     const finessDispoBySource = new Map();
     const finessRecordBySource = new Map();
     const finessConfirmState = new Map();
+    const finessSourceGroupBySource = new Map();
     const formationsReference = [];
     let formationsReferenceLoadPromise = null;
 
@@ -7084,12 +7085,13 @@
           manualEntries.push(entry);
           return;
         }
-        const groupKey = getEstablishmentKey(entry.record);
+        const sourceFiness = normalizeFinessLookupValue(entry.sourceFiness || '');
+        const groupKey = String(finessSourceGroupBySource.get(sourceFiness) || getEstablishmentKey(entry.record));
         if (!autoGroups.has(groupKey)) {
           autoGroups.set(groupKey, { groupKey, record: entry.record, sources: [], sourceEntries: [] });
         }
-        autoGroups.get(groupKey).sources.push(entry.sourceFiness);
-        autoGroups.get(groupKey).sourceEntries.push({ sourceFiness: entry.sourceFiness, record: entry.record });
+        autoGroups.get(groupKey).sources.push(sourceFiness);
+        autoGroups.get(groupKey).sourceEntries.push({ sourceFiness, record: entry.record });
       });
       const dispoLabels = { esrp: 'ESRP', espo: 'ESPO', ueros: 'UEROS', deac: 'DEAc' };
       const dispoKeys = getAssignableDispoKeys();
@@ -7391,6 +7393,7 @@
         finessConfirmState.clear();
         finessDispoBySource.clear();
         finessRecordBySource.clear();
+        finessSourceGroupBySource.clear();
         pendingManualAssocRows = [];
         manualAttachEnabled = false;
         manualEntryRequested = true;
@@ -7436,7 +7439,7 @@
       let foundAny = false;
       let preferred = null;
       let sourceFiness = '';
-      const allFound = [];
+      const allFoundMap = new Map();
       const pendingFoundCandidates = [];
       inputs.forEach((input) => {
         const value = normalizeFinessLookupValue(input.value);
@@ -7463,10 +7466,24 @@
           }
           if (!duplicateState.isDuplicate) {
             finessRecordBySource.set(value, found);
-            allFound.push({ record: found, sourceFiness: value });
+            allFoundMap.set(value, { record: found, sourceFiness: value });
           }
         }
       });
+      const persistedSources = new Set([
+        ...Array.from(finessRecordBySource.keys()),
+        ...Array.from(finessDispoBySource.keys()),
+        ...Array.from(finessConfirmState.keys()),
+      ]);
+      persistedSources.forEach((source) => {
+        const src = normalizeFinessLookupValue(source);
+        if (!src || allFoundMap.has(src)) return;
+        const record = finessRecordBySource.get(src) || getFinessReference(src);
+        if (!record) return;
+        finessRecordBySource.set(src, record);
+        allFoundMap.set(src, { record, sourceFiness: src });
+      });
+      const allFound = Array.from(allFoundMap.values());
       if (mainInput) {
         const mainValue = normalizeFinessLookupValue(mainInput.value);
         const mainFound = !!(mainValue && isValidFiness(mainValue) && getFinessReference(mainValue));
@@ -7474,7 +7491,8 @@
       }
       const groupedByEtab = new Map();
       allFound.forEach((entry) => {
-        const key = getEstablishmentKey(entry.record);
+        const sourceKey = normalizeFinessLookupValue(entry.sourceFiness);
+        const key = String(finessSourceGroupBySource.get(sourceKey) || getEstablishmentKey(entry.record));
         if (!groupedByEtab.has(key)) groupedByEtab.set(key, []);
         groupedByEtab.get(key).push(entry);
       });
@@ -7509,8 +7527,16 @@
 
       let recordsToRender = manualMode ? [] : [...allFound];
       if (!manualMode && groupedByEtab.size > 1) {
-        const preferredGroupKey = recordsToRender.length ? getEstablishmentKey(recordsToRender[0].record) : '';
-        recordsToRender = recordsToRender.filter((entry) => getEstablishmentKey(entry.record) === preferredGroupKey);
+        const preferredGroupKey = recordsToRender.length
+          ? String(
+              finessSourceGroupBySource.get(normalizeFinessLookupValue(recordsToRender[0]?.sourceFiness))
+              || getEstablishmentKey(recordsToRender[0].record),
+            )
+          : '';
+        recordsToRender = recordsToRender.filter((entry) => {
+          const sourceKey = normalizeFinessLookupValue(entry.sourceFiness);
+          return String(finessSourceGroupBySource.get(sourceKey) || getEstablishmentKey(entry.record)) === preferredGroupKey;
+        });
       }
       if (manualResolvedRecord) recordsToRender.unshift(manualResolvedRecord);
       const manualResolvedSource = normalizeFinessLookupValue(manualResolvedRecord?.sourceFiness || '');
@@ -7529,6 +7555,9 @@
       Array.from(finessRecordBySource.keys()).forEach((src) => {
         if (!currentAutoFoundSources.includes(src) && src !== manualResolvedSource) finessRecordBySource.delete(src);
       });
+      Array.from(finessSourceGroupBySource.keys()).forEach((src) => {
+        if (!currentAutoFoundSources.includes(src) && src !== manualResolvedSource) finessSourceGroupBySource.delete(src);
+      });
       const resolvedPendingIds = new Set();
       pendingFoundCandidates.forEach((candidate) => {
         const row = pendingManualAssocRows.find((item) => Number(item.id || 0) === Number(candidate.pendingId || 0));
@@ -7536,6 +7565,7 @@
         const src = normalizeFinessLookupValue(candidate.sourceFiness || '');
         if (!src) return;
         if (candidate.record) finessRecordBySource.set(src, candidate.record);
+        if (row.sourceGroup) finessSourceGroupBySource.set(src, String(row.sourceGroup));
         finessDispoBySource.set(src, candidate.dispo);
         finessConfirmState.set(src, 'yes');
         if (!currentAutoFoundSources.includes(src)) currentAutoFoundSources.push(src);
@@ -7895,6 +7925,7 @@
       finessConfirmState.delete(src);
       finessDispoBySource.delete(src);
       finessRecordBySource.delete(src);
+      finessSourceGroupBySource.delete(src);
     }
 
     function syncFinessTopEntryVisibility() {
@@ -8245,6 +8276,7 @@
         finessConfirmState.clear();
         finessDispoBySource.clear();
         finessRecordBySource.clear();
+        finessSourceGroupBySource.clear();
         pendingManualAssocRows = [];
         currentAutoFoundSources = [];
         forceTopFinessEntryVisible = false;
@@ -9409,6 +9441,7 @@
         finessDispoBySource: Array.from(finessDispoBySource.entries()),
         finessRecordBySource: Array.from(finessRecordBySource.entries()),
         finessConfirmState: Array.from(finessConfirmState.entries()),
+        finessSourceGroupBySource: Array.from(finessSourceGroupBySource.entries()),
       };
       return {
         version: 1,
@@ -9453,6 +9486,8 @@
       (Array.isArray(runtime.finessRecordBySource) ? runtime.finessRecordBySource : []).forEach(([k, v]) => finessRecordBySource.set(k, v));
       finessConfirmState.clear();
       (Array.isArray(runtime.finessConfirmState) ? runtime.finessConfirmState : []).forEach(([k, v]) => finessConfirmState.set(k, v));
+      finessSourceGroupBySource.clear();
+      (Array.isArray(runtime.finessSourceGroupBySource) ? runtime.finessSourceGroupBySource : []).forEach(([k, v]) => finessSourceGroupBySource.set(k, v));
     }
 
     function collectFinessForSave() {
