@@ -143,11 +143,11 @@ PARCOURS_TYPES = [
     "Parcours socio-professionnel • Préparation à accéder à l'emploi (remobilisation, etc.)",
     "Parcours socio-professionnel • Apprentissage/maîtrise de la langue (FLE, alpha...)",
     "Parcours socio-professionnel • Réentraînement au travail",
-    "Parcours qualifiant • Préparer à accéder à une formation / remise à niveau savoirs de base",
-    "Parcours qualifiant • Formation professionnalisante (ne débouchant pas sur un diplôme)",
-    "Parcours qualifiant • Formation certifiante ou diplômante",
-    "Parcours qualifiant • Formation accompagnée professionnalisante (ne débouchant pas sur un diplôme)",
-    "Parcours qualifiant • Formation accompagnée certifiante (avec titre pro ou diplôme)",
+    "Parcours certifiant • Préparer à accéder à une formation / remise à niveau savoirs de base",
+    "Parcours certifiant • Formation professionnalisante (ne débouchant pas sur un diplôme)",
+    "Parcours certifiant • Formation certifiante ou diplômante",
+    "Parcours certifiant • Formation accompagnée professionnalisante (ne débouchant pas sur un diplôme)",
+    "Parcours certifiant • Formation accompagnée certifiante (avec titre pro ou diplôme)",
     "Participation MDPH • EPE / CDAPH / Groupes de travail",
 ]
 FIN_PARCOURS_TYPES = ["Sortie avant terme", "Sortie à terme", "Réorientation", "Interruption", "Autre"]

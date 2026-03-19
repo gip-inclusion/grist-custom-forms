@@ -2861,9 +2861,9 @@
                     <label class="ps-checkline"><input type="checkbox" name="ps-parcours-socio-child" value="Réentrainement au travail"> Réentrainement au travail</label>
                   </fieldset>
 
-                  <label class="ps-checkline"><input type="checkbox" id="ps-parcours-qualif-root" name="ps-parcours-root" value="Parcours accompagnement à visée qualifiante"> Parcours accompagnement à visée qualifiante</label>
+                  <label class="ps-checkline"><input type="checkbox" id="ps-parcours-qualif-root" name="ps-parcours-root" value="Parcours accompagnement à visée certifiante"> Parcours accompagnement à visée certifiante</label>
                   <fieldset id="ps-parcours-qualif-sub" class="ctx-sub a11y-group" style="margin-top:6px;">
-                    <legend class="sr-only">Détail parcours accompagnement à visée qualifiante</legend>
+                    <legend class="sr-only">Détail parcours accompagnement à visée certifiante</legend>
                     <label class="ps-checkline"><input type="checkbox" name="ps-parcours-qualif-child" value="Préparer à accéder à une formation / remise à niveau savoirs de base"> Préparer à accéder à une formation / remise à niveau savoirs de base</label>
                     <label class="ps-checkline"><input type="checkbox" name="ps-parcours-qualif-child" value="Formation professionnalisante (ne débouchant pas sur un diplôme)"> Formation professionnalisante (ne débouchant pas sur un diplôme)</label>
                     <label class="ps-checkline"><input type="checkbox" name="ps-parcours-qualif-child" value="Formation certifiante ou diplômante"> Formation certifiante ou diplômante</label>
@@ -3187,12 +3187,12 @@
 
     function isFormationSelectionConditionalStep(id) {
       const def = getConditionalDefById(id);
-      return /Directes ORP CDAPH - Parcours accompagnement à visée qualifiante - Formation certifiante ou diplômante - Sélection des formations/i.test(String(def?.name || ''));
+      return /Directes ORP CDAPH - Parcours accompagnement à visée certifiante - Formation certifiante ou diplômante - Sélection des formations/i.test(String(def?.name || ''));
     }
 
     function isFormationDetailConditionalStep(id) {
       const def = getConditionalDefById(id);
-      return /Directes ORP CDAPH - Parcours accompagnement à visée qualifiante - Formation certifiante ou diplômante - Formation:/i.test(String(def?.name || ''));
+      return /Directes ORP CDAPH - Parcours accompagnement à visée certifiante - Formation certifiante ou diplômante - Formation:/i.test(String(def?.name || ''));
     }
 
     function isParcoursCertifConditionalStep(id) {
@@ -3201,7 +3201,7 @@
         .normalize('NFD')
         .replace(/[\u0300-\u036f]/g, '')
         .toLowerCase();
-      return normalized.includes('parcours accompagnement a visee qualifiante - formation certifiante ou diplomante');
+      return normalized.includes('parcours accompagnement a visee certifiante - formation certifiante ou diplomante');
     }
 
     function isParcoursFormationConditionalStep(id) {
@@ -3210,7 +3210,7 @@
         .normalize('NFD')
         .replace(/[\u0300-\u036f]/g, '')
         .toLowerCase();
-      return normalized.startsWith('directes orp cdaph - parcours accompagnement a visee qualifiante - formation');
+      return normalized.startsWith('directes orp cdaph - parcours accompagnement a visee certifiante - formation');
     }
 
     function shouldHideLegacyDirectBlocks(conditionalId = currentConditionalId) {
@@ -3606,15 +3606,15 @@
 
       if (parts[0] === 'Directes ORP CDAPH') {
         const section = parts[1] || '';
-        const formationSelectorLabel = 'Parcours accompagnement à visée qualifiante - Formation certifiante ou diplômante - Sélection des formations';
+        const formationSelectorLabel = 'Parcours accompagnement à visée certifiante - Formation certifiante ou diplômante - Sélection des formations';
         if (parts.slice(1).join(' - ') === formationSelectorLabel) {
-          return 'Parcours mobilisés • qualifiante › Sélection des formations';
+          return 'Parcours mobilisés • certifiante › Sélection des formations';
         }
         const formationPart = parts.find((p) => p.startsWith('Formation:'));
         if (formationPart) {
           const longLabel = formationPart.replace(/^Formation:\s*/, '').trim();
           const shortLabel = longLabel.replace(/\s*\(.+\)\s*$/, '').trim();
-          return `Parcours mobilisés • qualifiante › ${shortLabel || longLabel}`;
+          return `Parcours mobilisés • certifiante › ${shortLabel || longLabel}`;
         }
         if (section.startsWith('Parcours ')) {
           const parcoursLabel = section
@@ -5168,7 +5168,7 @@
       const formationSelectionHtml = `
         <div class="box cond-block cond-block-anchor" data-block-key="direct_avec_orp" id="cond-block-direct_avec_orp">
           <strong>Sélection des formations certifiantes ou diplômantes</strong>
-          <p class="hint" style="margin:6px 0 8px 0;">Ajoutez les formations concernées puis indiquez, pour chacune, le nombre de personnes ayant suivi cette formation dans un parcours à visée qualifiante.</p>
+          <p class="hint" style="margin:6px 0 8px 0;">Ajoutez les formations concernées puis indiquez, pour chacune, le nombre de personnes ayant suivi cette formation dans un parcours à visée certifiante.</p>
           <div style="padding:8px 0;">
             <label>Formation</label>
             <div class="formation-toolbar">
@@ -5301,11 +5301,11 @@
               <div class="cond-subgroup-title">Si pas d'accès à l'emploi</div>
               <div class="ds-simple-participants-block">
                 <div class="field field-radio-inline q35-sub-inline q35-places-inline cond-subline">
-                  <div><label>Nombre ayant réalisé une formation qualifiante</label></div>
+                  <div><label>Nombre ayant réalisé une formation certifiante</label></div>
                   <div><input class="cond-direct-avec-input" data-da-key="emploi_sans_acces_formation_qualifiante_nb" type="number" min="0" step="1" value="${String(parcoursRow.emploi_sans_acces_formation_qualifiante_nb || '')}"></div>
                 </div>
                 <div class="field field-radio-inline q35-sub-inline q35-places-inline cond-subline">
-                  <div><label>Nombre ayant réalisé une formation non qualifiante</label></div>
+                  <div><label>Nombre ayant réalisé une formation non certifiante</label></div>
                   <div><input class="cond-direct-avec-input" data-da-key="emploi_sans_acces_formation_non_qualifiante_nb" type="number" min="0" step="1" value="${String(parcoursRow.emploi_sans_acces_formation_non_qualifiante_nb || '')}"></div>
                 </div>
                 <div class="field field-radio-inline q35-sub-inline q35-places-inline cond-subline">
@@ -6583,6 +6583,7 @@
     const deptStatsByName = {};
     const finessReferenceByEt = new Map();
     const finessReferenceByEj = new Map();
+    const finessReferenceByEjGroup = new Map();
     const finessReferenceBySiret = new Map();
     let finessReferenceLoadPromise = null;
     let manualIdentResolved = false;
@@ -6758,6 +6759,26 @@
       return String(value || '').replace(/\D+/g, '').trim();
     }
 
+    function getSiblingGroupInfo(record) {
+      const siret = normalizeSiretValue(record?.siret);
+      if (siret) {
+        return {
+          key: `siret:${siret}`,
+          label: 'SIRET',
+          records: finessReferenceBySiret.get(siret) || [],
+        };
+      }
+      const finessEj = normalizeFinessLookupValue(record?.finessEj);
+      if (finessEj) {
+        return {
+          key: `ej:${finessEj}`,
+          label: 'FINESS EJ',
+          records: finessReferenceByEjGroup.get(finessEj) || [],
+        };
+      }
+      return null;
+    }
+
     function getEstablishmentKey(record) {
       const siret = normalizeSiretValue(record?.siret);
       if (siret) return `siret:${siret}`;
@@ -6868,6 +6889,12 @@
             }
             if (finessEj && !finessReferenceByEj.has(finessEj)) {
               finessReferenceByEj.set(finessEj, record);
+            }
+            if (finessEj) {
+              if (!finessReferenceByEjGroup.has(finessEj)) finessReferenceByEjGroup.set(finessEj, []);
+              const ejList = finessReferenceByEjGroup.get(finessEj);
+              const ejRecordKey = `${record.finessEt}|${record.finessEj}`;
+              if (!ejList.some((item) => `${item.finessEt}|${item.finessEj}` === ejRecordKey)) ejList.push(record);
             }
             if (record.siret) {
               if (!finessReferenceBySiret.has(record.siret)) finessReferenceBySiret.set(record.siret, []);
@@ -7072,7 +7099,7 @@
         const no = sources.some((src) => finessConfirmState.get(src) === 'no');
         const confirmValue = yes ? 'yes' : (no ? 'no' : '');
         const sourceAttr = sources.join(',');
-        const siret = normalizeSiretValue(group.record?.siret);
+        const siblingGroup = getSiblingGroupInfo(group.record);
         const inputValues = new Set(collectFinessInputs().map((input) => normalizeFinessLookupValue(input.value)).filter(Boolean));
         const groupSourceValues = new Set(
           (group.sourceEntries || [])
@@ -7082,8 +7109,8 @@
         // Exclut aussi les FINESS déjà portés par l'enregistrement courant (ET/EJ).
         groupSourceValues.add(normalizeFinessLookupValue(group.record?.finessEt));
         groupSourceValues.add(normalizeFinessLookupValue(group.record?.finessEj));
-        const siblings = (siret && !ignoredSiretSuggestions.has(siret))
-          ? (finessReferenceBySiret.get(siret) || [])
+        const siblings = (siblingGroup && !ignoredSiretSuggestions.has(siblingGroup.key))
+          ? (siblingGroup.records || [])
               .flatMap((item) => [item.finessEt, item.finessEj])
               .map((v) => normalizeFinessLookupValue(v))
               .filter((v) => v && !inputValues.has(v) && !groupSourceValues.has(v))
@@ -7117,10 +7144,10 @@
             </div>
           ` : ''}
           ${hasSuggestion ? `
-            <div class="sub visible" style="margin-top:8px;">D'autres FINESS sont liés au même SIRET. Voulez-vous aussi les ajouter ?</div>
+            <div class="sub visible" style="margin-top:8px;">D'autres FINESS sont liés au même ${siblingGroup.label}. Voulez-vous aussi les ajouter ?</div>
             <div class="finess-confirm-actions">
-              <button type="button" data-finess-action="include-siret-siblings" data-finess-values="${uniqueSiblings.join(',')}" data-finess-siret="${siret}">Oui, ajouter (${uniqueSiblings.length})</button>
-              <button type="button" data-finess-action="ignore-siret-siblings" data-finess-siret="${siret}">Non</button>
+              <button type="button" data-finess-action="include-siret-siblings" data-finess-values="${uniqueSiblings.join(',')}" data-finess-group="${siblingGroup.key}">Oui, ajouter (${uniqueSiblings.length})</button>
+              <button type="button" data-finess-action="ignore-siret-siblings" data-finess-group="${siblingGroup.key}">Non</button>
             </div>
           ` : ''}
         </div>
@@ -7131,7 +7158,7 @@
         const sourceEntries = manual
           ? [{ sourceFiness: group.sourceFiness || '', record: group.record }]
           : (group.sourceEntries || []);
-        const siret = normalizeSiretValue(group.record?.siret);
+        const siblingGroup = getSiblingGroupInfo(group.record);
         const inputValues = new Set(collectFinessInputs().map((input) => normalizeFinessLookupValue(input.value)).filter(Boolean));
         const sourceValuesInGroup = new Set(
           sourceEntries
@@ -7140,14 +7167,14 @@
         );
         sourceValuesInGroup.add(normalizeFinessLookupValue(group.record?.finessEt));
         sourceValuesInGroup.add(normalizeFinessLookupValue(group.record?.finessEj));
-        const siblings = (siret && !ignoredSiretSuggestions.has(siret))
-          ? (finessReferenceBySiret.get(siret) || [])
+        const siblings = (siblingGroup && !ignoredSiretSuggestions.has(siblingGroup.key))
+          ? (siblingGroup.records || [])
               .flatMap((item) => [item.finessEt, item.finessEj])
               .map((v) => normalizeFinessLookupValue(v))
               .filter((v) => v && !inputValues.has(v) && !sourceValuesInGroup.has(v))
           : [];
         const hasSiblingQuestion = confirmValue === 'yes' && siblings.length > 0;
-        const siblingChoiceDone = !hasSiblingQuestion || handledSiretSuggestions.has(siret);
+        const siblingChoiceDone = !hasSiblingQuestion || handledSiretSuggestions.has(siblingGroup?.key || '');
         const rowsHtml = sourceEntries.map((sourceEntry) => {
           const src = String(sourceEntry.sourceFiness || '').trim();
           const inferred = inferDispoFromFinessRecord(sourceEntry.record);
@@ -7612,8 +7639,8 @@
           }
           if (action === 'include-siret-siblings') {
             const values = String(btn.dataset.finessValues || '').split(',').map((v) => normalizeFinessLookupValue(v)).filter(Boolean);
-            const siret = normalizeSiretValue(btn.dataset.finessSiret || '');
-            if (siret) handledSiretSuggestions.add(siret);
+            const groupKey = String(btn.dataset.finessGroup || '').trim();
+            if (groupKey) handledSiretSuggestions.add(groupKey);
             values.forEach((value) => {
               finessConfirmState.set(value, 'yes');
               const exists = collectFinessInputs().some((input) => normalizeFinessLookupValue(input.value) === value);
@@ -7625,10 +7652,10 @@
             return;
           }
           if (action === 'ignore-siret-siblings') {
-            const siret = normalizeSiretValue(btn.dataset.finessSiret || '');
-            if (siret) {
-              ignoredSiretSuggestions.add(siret);
-              handledSiretSuggestions.add(siret);
+            const groupKey = String(btn.dataset.finessGroup || '').trim();
+            if (groupKey) {
+              ignoredSiretSuggestions.add(groupKey);
+              handledSiretSuggestions.add(groupKey);
             }
             refreshIdentificationFromFiness();
             return;
@@ -8882,7 +8909,7 @@
       const secondaryRowsRaw = [];
       const selectedRawDispos = getSelectedDisposFromStep2();
       const hasNonDeacSecondary = selectedRawDispos.some((d) => d !== 'deac');
-      const formationSelectorStepName = 'Directes ORP CDAPH - Parcours accompagnement à visée qualifiante - Formation certifiante ou diplômante - Sélection des formations';
+      const formationSelectorStepName = 'Directes ORP CDAPH - Parcours accompagnement à visée certifiante - Formation certifiante ou diplômante - Sélection des formations';
       const previousFormationSelectorDef = conditionalDefs.find((def) => def.name === formationSelectorStepName);
       const previousFormationRows = previousFormationSelectorDef
         ? ((conditionalState.get(previousFormationSelectorDef.id)?.formationsSelection?.rows) || [])
@@ -8905,7 +8932,7 @@
               const children = getCheckedValuesByName('ps-parcours-socio-child');
               if (children.length) children.forEach((child) => secondaryRowsRaw.push(`Directes ORP CDAPH - ${root} - ${child}`));
               else secondaryRowsRaw.push(`Directes ORP CDAPH - ${root}`);
-            } else if (root === 'Parcours accompagnement à visée qualifiante') {
+            } else if (root === 'Parcours accompagnement à visée certifiante') {
               const children = getCheckedValuesByName('ps-parcours-qualif-child');
               if (children.length) {
                 children.forEach((child) => {
@@ -8991,7 +9018,7 @@
           ['Prestations directes', 'Directes'],
           ['Prestations indirectes', 'Indirectes'],
           ['Parcours à visée socio-professionnelle', 'Parcours socio-pro'],
-          ['Parcours accompagnement à visée qualifiante', 'Parcours qualifiant'],
+          ['Parcours accompagnement à visée certifiante', 'Parcours certifiant'],
         ]);
         return map.get(raw) || raw;
       };
@@ -9034,17 +9061,17 @@
           if (second === 'Parcours à visée socio-professionnelle') {
             return { title: 'Parcours à visée socio-professionnelle', child: parts.slice(2).join(' › ') || second };
           }
-          if (second === 'Parcours accompagnement à visée qualifiante') {
+          if (second === 'Parcours accompagnement à visée certifiante') {
             const formationPart = parts.find((p) => p.startsWith('Formation:'));
             if (formationPart) {
               const longLabel = formationPart.replace(/^Formation:\s*/, '').trim();
               const shortLabel = longLabel.replace(/\s*\(.+\)\s*$/, '').trim();
-              return { title: 'Parcours accompagnement à visée qualifiante', child: shortLabel || longLabel };
+              return { title: 'Parcours accompagnement à visée certifiante', child: shortLabel || longLabel };
             }
             if (parts.includes('Sélection des formations')) {
-              return { title: 'Parcours accompagnement à visée qualifiante', child: 'Sélection des formations' };
+              return { title: 'Parcours accompagnement à visée certifiante', child: 'Sélection des formations' };
             }
-            return { title: 'Parcours accompagnement à visée qualifiante', child: parts.slice(2).join(' › ') || second };
+            return { title: 'Parcours accompagnement à visée certifiante', child: parts.slice(2).join(' › ') || second };
           }
           const child = parts.slice(1).join(' › ');
           if (child) return { title: 'Prestations directes', child };

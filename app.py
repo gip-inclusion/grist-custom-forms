@@ -286,7 +286,7 @@ def compute_quick_step_progress(fields: dict) -> dict:
         'orp_orientation_espo': 'Prestation ORP: Orientation ESPO',
         'orp_parcours_sociopro': 'Prestation ORP: Parcours socio-professionnel',
         'orp_autre_parcours': 'Prestation ORP: Autre type de parcours',
-        'orp_parcours_qualif': 'Prestation ORP: Parcours qualifiant',
+        'orp_parcours_qualif': 'Prestation ORP: Parcours certifiant',
         'orp_remise_niveau': 'Prestation ORP: Remise à niveau',
         'orp_formation_pro': 'Prestation ORP: Formation professionnalisante',
         'orp_formation_certif': 'Prestation ORP: Formation certifiante',
