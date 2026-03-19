@@ -2979,28 +2979,33 @@
         </div>
 
         <div class="box cond-block cond-block-anchor" data-block-key="fileactive" id="cond-block-fileactive">
-          <strong>File active & journées</strong>
-          <div class="field field-radio-inline q35-sub-inline q35-places-inline" style="margin-top:6px;">
-            <div><label>Nombre de personnes présentes à l'effectif au 31-12 ayant signé un contrat de séjour</label></div>
+          <strong>File active</strong>
+          <div class="field field-radio-inline q35-sub-inline q35-places-inline" style="margin-top:6px;" id="cond-row-file-active">
+            <div><label id="cond-file-active-label">Nombre de personnes présentes à l'effectif au 31-12 ayant signé un contrat de séjour</label></div>
             <div><input id="cond-file-active" type="number" min="0" step="1"></div>
           </div>
-          <div class="field field-radio-inline q35-sub-inline q35-places-inline">
+          <div class="field field-radio-inline q35-sub-inline q35-places-inline" id="cond-row-preaccueil">
             <div><label>Nombre de personnes reçues en pré-accueil pour lesquelles il n'y a pas eu de suite dans l'année</label></div>
             <div><input id="cond-preaccueil-sans-suite" type="number" min="0" step="1"></div>
           </div>
-          <div class="field field-radio-inline q35-sub-inline q35-places-inline">
+          <div class="field field-radio-inline q35-sub-inline q35-places-inline" id="cond-row-sorties-total">
             <div><label>Nombre de sorties définitives en 2025 (calcul automatique)</label></div>
             <div><input id="cond-sorties-total" type="number" min="0" step="1" readonly></div>
           </div>
-          <div class="field field-radio-inline q35-sub-inline q35-places-inline">
+          <div class="field field-radio-inline q35-sub-inline q35-places-inline" id="cond-row-sorties-avant-terme">
             <div><label>Dont : nombre de sorties définitives avant le terme de la prestation</label></div>
             <div><input id="cond-sorties-avant-terme" type="number" min="0" step="1"></div>
           </div>
-          <div class="field field-radio-inline q35-sub-inline q35-places-inline">
+          <div class="field field-radio-inline q35-sub-inline q35-places-inline" id="cond-row-sorties-terme">
             <div><label>Nombre de sorties au terme de la prestation</label></div>
             <div><input id="cond-sorties-terme" type="number" min="0" step="1"></div>
           </div>
           <p class="hint" id="cond-sorties-split-help" style="display:none; margin-top:4px; margin-bottom:0;"></p>
+          <p class="hint" id="cond-cible-help" style="margin-top:6px; margin-bottom:0; font-weight:700;"></p>
+        </div>
+
+        <div class="box cond-block cond-block-anchor" data-block-key="journees" id="cond-block-journees">
+          <strong>Journées</strong>
           <div class="field field-radio-inline q35-sub-inline q35-places-inline">
             <div><label>Nombre de journées réalisées</label></div>
             <div><input id="cond-journees" type="number" min="0" step="1"></div>
@@ -3010,7 +3015,6 @@
             <div><input id="cond-duree" type="number" min="0" step="0.01" readonly></div>
           </div>
           <p class="hint" id="cond-duree-help" style="display:none; margin-top:4px; margin-bottom:0;"></p>
-          <p class="hint" id="cond-cible-help" style="margin-top:6px; margin-bottom:0; font-weight:700;"></p>
         </div>
 
         <div id="conditional-coherence-sections"></div>
@@ -3200,6 +3204,10 @@
     function isPecOrpConditionalStep(id) {
       const def = getConditionalDefById(id);
       return /^Directes ORP CDAPH - Prestation d'évaluation et de compensation \(PEC\) - (Avec|Sans) ORP CDAPH\b/i.test(String(def?.name || ''));
+    }
+
+    function isPecConditionalStep(id) {
+      return isPecOrpConditionalStep(id) || isDirectSansOrpPecConditionalStep(id);
     }
 
     function isUerosConditionalStep(id) {
@@ -3780,7 +3788,8 @@
       }
     }
 
-    function getConditionalSortiesTotal(state) {
+    function getConditionalSortiesTotal(state, conditionalId = currentConditionalId) {
+      if (isPecConditionalStep(conditionalId)) return 0;
       return toNum(state?.sorties);
     }
 
@@ -3788,23 +3797,26 @@
       return toNum(state?.sortiesAvantTerme) + toNum(state?.sortiesTerme);
     }
 
-    function computeConditionalDuree(state) {
+    function computeConditionalDuree(state, conditionalId = currentConditionalId) {
+      if (isPecConditionalStep(conditionalId)) return '';
       const fileActive = Number(state.fileActive || 0);
-      const sorties = getConditionalSortiesTotal(state);
+      const sorties = getConditionalSortiesTotal(state, conditionalId);
       const journees = Number(state.journees || 0);
       const totalPersonnes = fileActive + sorties;
       if (journees <= 0 || totalPersonnes <= 0) return '';
       return (journees / totalPersonnes).toFixed(2);
     }
 
-    function getConditionalTarget(state) {
+    function getConditionalTarget(state, conditionalId = currentConditionalId) {
       const fileActive = Number(state.fileActive || 0);
-      const sorties = getConditionalSortiesTotal(state);
-      return fileActive + sorties;
+      if (isPecConditionalStep(conditionalId)) return fileActive;
+      const preaccueilSansSuite = Number(state.preaccueilSansSuite || 0);
+      const sorties = getConditionalSortiesTotal(state, conditionalId);
+      return fileActive + preaccueilSansSuite + sorties;
     }
 
     function evaluateConditionalCoh(state, conditionalId = currentConditionalId) {
-      const target = getConditionalTarget(state);
+      const target = getConditionalTarget(state, conditionalId);
       return getActiveConditionalCohDefs(conditionalId).map((def) => {
         let sum = 0;
         let ruleChecks = [];
@@ -3896,13 +3908,19 @@
         const indirectBlock = evaluateIndirectBlock(state, conditionalId);
         return indirectBlock.done;
       }
+      const isPecStep = isPecOrpConditionalStep(conditionalId);
       const fileActive = Number(state.fileActive || 0);
       const preaccueilSansSuiteFilled = isFilledNumberString(state.preaccueilSansSuite);
       const sortiesAvantTermeFilled = isFilledNumberString(state.sortiesAvantTerme);
       const sortiesTermeFilled = isFilledNumberString(state.sortiesTerme);
-      const sorties = getConditionalSortiesTotal(state);
+      const sorties = getConditionalSortiesTotal(state, conditionalId);
+      const journeesFilled = isFilledNumberString(state.journees);
       const journees = Number(state.journees || 0);
-      if (fileActive < 0 || !preaccueilSansSuiteFilled || !sortiesAvantTermeFilled || !sortiesTermeFilled || sorties < 0 || journees <= 0) return false;
+      if (isPecStep) {
+        if (!isFilledNumberString(state.fileActive) || fileActive < 0) return false;
+      } else if (fileActive < 0 || !preaccueilSansSuiteFilled || !sortiesAvantTermeFilled || !sortiesTermeFilled || sorties < 0 || !journeesFilled || journees < 0) {
+        return false;
+      }
       const geoRows = Array.isArray(state?.geoRows) ? state.geoRows : [];
       const geoInvalid = geoRows.some((row) => {
         const count = Number(row?.count || 0);
@@ -3973,18 +3991,22 @@
           touched: !!progress.touched,
         };
       }
+      const isPecStep = isPecOrpConditionalStep(conditionalId);
       const fileActive = Number(state.fileActive || 0);
       const preaccueilSansSuiteFilled = isFilledNumberString(state.preaccueilSansSuite);
       const sortiesAvantTermeFilled = isFilledNumberString(state.sortiesAvantTerme);
       const sortiesTermeFilled = isFilledNumberString(state.sortiesTerme);
-      const sorties = getConditionalSortiesTotal(state);
+      const sorties = getConditionalSortiesTotal(state, conditionalId);
+      const journeesFilled = isFilledNumberString(state.journees);
       const journees = Number(state.journees || 0);
-      const fileBlockDone = fileActive >= 0
-        && preaccueilSansSuiteFilled
-        && sortiesAvantTermeFilled
-        && sortiesTermeFilled
-        && sorties >= 0
-        && journees > 0;
+      const fileActiveBlockDone = isPecStep
+        ? (isFilledNumberString(state.fileActive) && fileActive >= 0)
+        : (fileActive >= 0
+          && preaccueilSansSuiteFilled
+          && sortiesAvantTermeFilled
+          && sortiesTermeFilled
+          && sorties >= 0);
+      const journeesBlockDone = isPecStep ? true : (journeesFilled && journees >= 0);
 
       const cohBlocks = evaluateConditionalCoh(state, conditionalId);
       const doneCohBlocks = cohBlocks.filter((block) => block.ok).length;
@@ -4004,8 +4026,10 @@
       const modalitesBlock = modalitesVisible
         ? evaluateModalitesAccueilBlock(state)
         : { done: true, touched: false };
-      const total = 1 + cohBlocks.length + (includeLegacyDirectBlocks ? 5 : 3) + (precoBlock.visible ? 1 : 0) + (modalitesVisible ? 1 : 0) + (activitesParcoursBlock.visible ? 1 : 0); // file active + cohérence + (optionnel direct avec/sans ORP) + handicap/sorties/suspensions + préconisations + modalités d'accueil + activités de parcours
-      const done = (fileBlockDone ? 1 : 0)
+      const baseFileBlocksCount = isPecStep ? 1 : 2;
+      const doneFileBlocksCount = (fileActiveBlockDone ? 1 : 0) + (!isPecStep && journeesBlockDone ? 1 : 0);
+      const total = baseFileBlocksCount + cohBlocks.length + (includeLegacyDirectBlocks ? 5 : 3) + (precoBlock.visible ? 1 : 0) + (modalitesVisible ? 1 : 0) + (activitesParcoursBlock.visible ? 1 : 0); // file active (+ journées sauf PEC) + cohérence + (optionnel direct avec/sans ORP) + handicap/sorties/suspensions + préconisations + modalités d'accueil + activités de parcours
+      const done = doneFileBlocksCount
         + doneCohBlocks
         + (includeLegacyDirectBlocks && directAvecOrpBlock.done ? 1 : 0)
         + (includeLegacyDirectBlocks && directSansOrpBlock.done ? 1 : 0)
@@ -4479,25 +4503,29 @@
         }];
       }
       if (isParcoursConditionalStep(currentConditionalId)) {
+        const isPecStep = isPecOrpConditionalStep(currentConditionalId);
         const fileActive = Number(state.fileActive || 0);
         const preaccueilSansSuiteFilled = isFilledNumberString(state.preaccueilSansSuite);
         const sortiesAvantTermeFilled = isFilledNumberString(state.sortiesAvantTerme);
         const sortiesTermeFilled = isFilledNumberString(state.sortiesTerme);
-        const sorties = getConditionalSortiesTotal(state);
+        const sorties = getConditionalSortiesTotal(state, currentConditionalId);
+        const journeesFilled = isFilledNumberString(state.journees);
         const journees = Number(state.journees || 0);
-        const fileBlockDone = fileActive >= 0
-          && preaccueilSansSuiteFilled
-          && sortiesAvantTermeFilled
-          && sortiesTermeFilled
-          && sorties >= 0
-          && journees > 0;
+        const fileActiveBlockDone = isPecStep
+          ? (isFilledNumberString(state.fileActive) && fileActive >= 0)
+          : (fileActive >= 0
+            && preaccueilSansSuiteFilled
+            && sortiesAvantTermeFilled
+            && sortiesTermeFilled
+            && sorties >= 0);
+        const journeesBlockDone = isPecStep ? true : (journeesFilled && journees >= 0);
         const emploiKeys = getEmploiRequiredFieldKeys(currentConditionalId);
         const emploiRow = state?.directAvecOrp?.row || {};
         const emploiDone = emploiKeys.length ? emploiKeys.every((key) => isFilledNumberString(emploiRow[key])) : false;
-        return [
-          { key: 'fileactive', label: 'File active & journées', done: fileBlockDone },
-          { key: 'suivi_emploi', label: "Suivi vers l'emploi", done: emploiDone },
-        ];
+        const rows = [{ key: 'fileactive', label: isPecStep ? 'File active' : 'File active', done: fileActiveBlockDone }];
+        if (!isPecStep) rows.push({ key: 'journees', label: 'Journées', done: journeesBlockDone });
+        rows.push({ key: 'suivi_emploi', label: "Suivi vers l'emploi", done: emploiDone });
+        return rows;
       }
       if (isDirectSansOrpCadrageConditionalStep(currentConditionalId)) {
         const directSansOrpPecBlock = evaluateDirectSansOrpPecBlock(state, currentConditionalId);
@@ -4511,19 +4539,24 @@
         const indirectBlock = evaluateIndirectBlock(state, currentConditionalId);
         return [{ key: 'indirect', label: getSpecialIndirectTitle(currentConditionalId), done: indirectBlock.done }];
       }
+      const isPecStep = isPecOrpConditionalStep(currentConditionalId);
       const fileActive = Number(state.fileActive || 0);
       const preaccueilSansSuiteFilled = isFilledNumberString(state.preaccueilSansSuite);
       const sortiesAvantTermeFilled = isFilledNumberString(state.sortiesAvantTerme);
       const sortiesTermeFilled = isFilledNumberString(state.sortiesTerme);
-      const sorties = getConditionalSortiesTotal(state);
+      const sorties = getConditionalSortiesTotal(state, currentConditionalId);
+      const journeesFilled = isFilledNumberString(state.journees);
       const journees = Number(state.journees || 0);
-      const fileBlockDone = fileActive >= 0
-        && preaccueilSansSuiteFilled
-        && sortiesAvantTermeFilled
-        && sortiesTermeFilled
-        && sorties >= 0
-        && journees > 0;
-      const rows = [{ key: 'fileactive', label: 'File active & journées', done: fileBlockDone }];
+      const fileActiveBlockDone = isPecStep
+        ? (isFilledNumberString(state.fileActive) && fileActive >= 0)
+        : (fileActive >= 0
+          && preaccueilSansSuiteFilled
+          && sortiesAvantTermeFilled
+          && sortiesTermeFilled
+          && sorties >= 0);
+      const journeesBlockDone = isPecStep ? true : (journeesFilled && journees >= 0);
+      const rows = [{ key: 'fileactive', label: 'File active', done: fileActiveBlockDone }];
+      if (!isPecStep) rows.push({ key: 'journees', label: 'Journées', done: journeesBlockDone });
       evaluateConditionalCoh(state, currentConditionalId).forEach((block) => {
         rows.push({ key: block.key, label: block.title, done: block.ok });
       });
@@ -4559,6 +4592,7 @@
       }
       const preferredOrder = [
         'fileactive',
+        'journees',
         'genre',
         'age',
         'niveau_entree',
@@ -6022,7 +6056,12 @@
       const cibleHelp = document.getElementById('cond-cible-help');
       if (cibleHelp) {
         const target = getConditionalTarget(state);
-        cibleHelp.textContent = `Cible de référence pour les écrans suivants : ${target.toFixed(1)} personnes (accompagnées au 31/12 + sorties définitives). Cette cible sert à vérifier automatiquement la cohérence de vos répartitions.`;
+        const isPecStep = isPecOrpConditionalStep(currentConditionalId);
+        if (isPecStep) {
+          cibleHelp.textContent = `Référence: ${target.toFixed(1)} personne(s) évaluée(s) en 2025.`;
+        } else {
+          cibleHelp.textContent = `File active calculée automatiquement: ${target.toFixed(1)} = présents au 31/12 + pré-accueil sans suite + sorties définitives 2025.`;
+        }
       }
       updateConditionalCurrentHeaderKpi(state, focusedConditionalBlockKey);
       renderConditionalBlockNav(state);
@@ -6061,6 +6100,12 @@
       const dureeEl = document.getElementById('cond-duree');
       const statusEl = document.getElementById('conditional-status');
       const fileactiveBlock = document.getElementById('cond-block-fileactive');
+      const journeesBlock = document.getElementById('cond-block-journees');
+      const fileActiveLabelEl = document.getElementById('cond-file-active-label');
+      const rowPreaccueilEl = document.getElementById('cond-row-preaccueil');
+      const rowSortiesTotalEl = document.getElementById('cond-row-sorties-total');
+      const rowSortiesAvantTermeEl = document.getElementById('cond-row-sorties-avant-terme');
+      const rowSortiesTermeEl = document.getElementById('cond-row-sorties-terme');
       const dureeHelpEl = document.getElementById('cond-duree-help');
       const isFormationSelectionStep = isFormationSelectionConditionalStep(def.id);
       const isDirectSansOrpCadrageStep = isDirectSansOrpCadrageConditionalStep(def.id);
@@ -6075,6 +6120,21 @@
       }
       if (dureeHelpEl) dureeHelpEl.style.display = 'none';
       if (fileactiveBlock) fileactiveBlock.style.display = isFieldsBasedStep ? 'none' : '';
+      const isPecStep = isPecOrpConditionalStep(def.id);
+      if (!isFieldsBasedStep) {
+        if (fileActiveLabelEl) {
+          fileActiveLabelEl.textContent = isPecStep
+            ? 'Nombre de personnes évaluées en 2025'
+            : "Nombre de personnes présentes à l'effectif au 31-12 ayant signé un contrat de séjour";
+        }
+        if (rowPreaccueilEl) rowPreaccueilEl.style.display = isPecStep ? 'none' : '';
+        if (rowSortiesTotalEl) rowSortiesTotalEl.style.display = isPecStep ? 'none' : '';
+        if (rowSortiesAvantTermeEl) rowSortiesAvantTermeEl.style.display = isPecStep ? 'none' : '';
+        if (rowSortiesTermeEl) rowSortiesTermeEl.style.display = isPecStep ? 'none' : '';
+        if (journeesBlock) journeesBlock.style.display = isPecStep ? 'none' : '';
+      } else if (journeesBlock) {
+        journeesBlock.style.display = 'none';
+      }
       if (fileActiveEl) fileActiveEl.value = state.fileActive;
       if (preaccueilSansSuiteEl) preaccueilSansSuiteEl.value = state.preaccueilSansSuite;
       if (sortiesAvantTermeEl) sortiesAvantTermeEl.value = state.sortiesAvantTerme;
