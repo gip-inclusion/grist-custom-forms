@@ -4452,7 +4452,27 @@
         }];
       }
       if (isParcoursConditionalStep(currentConditionalId)) {
-        // Parcours mobilisés: détail des blocs aligné sur le modèle ESRP (pas de bloc unique dédié).
+        const fileActive = Number(state.fileActive || 0);
+        const sortiesFilled = isFilledNumberString(state.sorties);
+        const sortiesAvantTermeFilled = isFilledNumberString(state.sortiesAvantTerme);
+        const sortiesTermeFilled = isFilledNumberString(state.sortiesTerme);
+        const sorties = getConditionalSortiesTotal(state);
+        const sortiesSplitSum = getConditionalSortiesSplitSum(state);
+        const journees = Number(state.journees || 0);
+        const fileBlockDone = fileActive >= 0
+          && sortiesFilled
+          && sortiesAvantTermeFilled
+          && sortiesTermeFilled
+          && sorties >= 0
+          && journees > 0
+          && Math.abs(sortiesSplitSum - sorties) < 0.0001;
+        const emploiKeys = getEmploiRequiredFieldKeys(currentConditionalId);
+        const emploiRow = state?.directAvecOrp?.row || {};
+        const emploiDone = emploiKeys.length ? emploiKeys.every((key) => isFilledNumberString(emploiRow[key])) : false;
+        return [
+          { key: 'fileactive', label: 'File active & journées', done: fileBlockDone },
+          { key: 'suivi_emploi', label: "Suivi vers l'emploi", done: emploiDone },
+        ];
       }
       if (isDirectSansOrpCadrageConditionalStep(currentConditionalId)) {
         const directSansOrpPecBlock = evaluateDirectSansOrpPecBlock(state, currentConditionalId);
@@ -5709,6 +5729,12 @@
       if (isFormationSelectionStep) {
         conditionalCoherenceSections.querySelectorAll('.cond-block').forEach((block) => {
           const isShown = block.getAttribute('data-block-key') === 'direct_avec_orp';
+          block.style.display = isShown ? '' : 'none';
+          block.dataset.renderable = isShown ? '1' : '0';
+        });
+      } else if (isParcoursStep) {
+        conditionalCoherenceSections.querySelectorAll('.cond-block').forEach((block) => {
+          const isShown = block.getAttribute('data-block-key') === 'suivi_emploi';
           block.style.display = isShown ? '' : 'none';
           block.dataset.renderable = isShown ? '1' : '0';
         });
