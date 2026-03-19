@@ -6768,14 +6768,6 @@
           records: finessReferenceBySiret.get(siret) || [],
         };
       }
-      const finessEj = normalizeFinessLookupValue(record?.finessEj);
-      if (finessEj) {
-        return {
-          key: `ej:${finessEj}`,
-          label: 'FINESS EJ',
-          records: finessReferenceByEjGroup.get(finessEj) || [],
-        };
-      }
       return null;
     }
 
@@ -7111,7 +7103,7 @@
         groupSourceValues.add(normalizeFinessLookupValue(group.record?.finessEj));
         const siblings = (siblingGroup && !ignoredSiretSuggestions.has(siblingGroup.key))
           ? (siblingGroup.records || [])
-              .flatMap((item) => [item.finessEt, item.finessEj])
+              .map((item) => item.finessEt)
               .map((v) => normalizeFinessLookupValue(v))
               .filter((v) => v && !inputValues.has(v) && !groupSourceValues.has(v))
           : [];
@@ -7169,7 +7161,7 @@
         sourceValuesInGroup.add(normalizeFinessLookupValue(group.record?.finessEj));
         const siblings = (siblingGroup && !ignoredSiretSuggestions.has(siblingGroup.key))
           ? (siblingGroup.records || [])
-              .flatMap((item) => [item.finessEt, item.finessEj])
+              .map((item) => item.finessEt)
               .map((v) => normalizeFinessLookupValue(v))
               .filter((v) => v && !inputValues.has(v) && !sourceValuesInGroup.has(v))
           : [];
@@ -7217,12 +7209,13 @@
         const pendingRows = pendingManualAssocRows.filter((row) => !row.sourceGroup || row.sourceGroup === group.groupKey);
         const pendingHtml = pendingRows.map((row) => {
           const duplicateState = getPendingManualRowDuplicateState(row);
+          const lookupState = getPendingManualRowLookupState(row);
           const manualValue = String(row.value || '').trim();
           const dispoOriginBadge = row.dispo
             ? `<span class="finess-dispo-origin-badge is-manual">Manuel</span>`
             : '';
           return `
-          <div class="finess-assoc-row is-assigned-dispo is-pending-manual ${duplicateState.isDuplicate && !duplicateState.confirmed ? 'has-duplicate' : ''}">
+          <div class="finess-assoc-row is-assigned-dispo is-pending-manual ${(duplicateState.isDuplicate && !duplicateState.confirmed) || (lookupState.isMissing && !row.confirmNotFound) ? 'has-duplicate' : ''}">
             <div class="finess-assoc-main-left">
               <div class="finess-assoc-label">FINESS ${manualValue || '(non renseigné)'} <span class="finess-origin-badge is-manual">Manuel</span></div>
               ${manualValue ? '' : `<p class="finess-assoc-help is-muted">Saisir le FINESS correspondant au dispositif ${dispoLabels[row.dispo] || row.dispo}.</p>`}
@@ -7247,6 +7240,15 @@
               <label class="finess-duplicate-confirm">
                 <input type="checkbox" class="finess-duplicate-confirm-input" data-pending-id="${row.id}" ${duplicateState.confirmed ? 'checked' : ''}>
                 Je confirme ce même FINESS pour ${dispoLabels[row.dispo] || row.dispo}
+              </label>
+            </div>
+            ` : ''}
+            ${lookupState.isMissing && !duplicateState.isDuplicate ? `
+            <div class="finess-assoc-duplicate-msg">
+              <p class="finess-assoc-help finess-assoc-duplicate-note">Je n'ai pas trouvé ce FINESS dans le référentiel. Voulez-vous l'ajouter tout de même ?</p>
+              <label class="finess-duplicate-confirm">
+                <input type="checkbox" class="finess-missing-confirm-input" data-pending-id="${row.id}" ${row.confirmNotFound ? 'checked' : ''}>
+                Oui, ajouter ce FINESS manuellement pour ${dispoLabels[row.dispo] || row.dispo}
               </label>
             </div>
             ` : ''}
@@ -7677,6 +7679,7 @@
                 sourceGroup: groupKey,
                 value: '',
                 confirmDuplicate: false,
+                confirmNotFound: false,
               });
             }
             refreshIdentificationFromFiness();
@@ -7711,6 +7714,7 @@
           if (row) {
             row.value = cleaned;
             row.confirmDuplicate = false;
+            row.confirmNotFound = false;
           }
         };
         input.addEventListener('input', () => {
@@ -7733,6 +7737,16 @@
           const pendingId = Number(input.dataset.pendingId || 0);
           const row = pendingManualAssocRows.find((item) => Number(item.id || 0) === pendingId);
           if (row) row.confirmDuplicate = !!input.checked;
+          refreshIdentificationFromFiness();
+        });
+      });
+      document.querySelectorAll('.finess-missing-confirm-input').forEach((input) => {
+        if (input.dataset.bound === '1') return;
+        input.dataset.bound = '1';
+        input.addEventListener('change', () => {
+          const pendingId = Number(input.dataset.pendingId || 0);
+          const row = pendingManualAssocRows.find((item) => Number(item.id || 0) === pendingId);
+          if (row) row.confirmNotFound = !!input.checked;
           refreshIdentificationFromFiness();
         });
       });
@@ -7767,6 +7781,17 @@
       return {
         isDuplicate: duplicateInAuto || duplicateInPending,
         confirmed: !!row?.confirmDuplicate,
+      };
+    }
+
+    function getPendingManualRowLookupState(row) {
+      const currentValue = normalizeFinessLookupValue(row?.value || '');
+      if (!isValidFiness(currentValue)) return { isValid: false, found: null, isMissing: false };
+      const found = getFinessReference(currentValue);
+      return {
+        isValid: true,
+        found,
+        isMissing: !found,
       };
     }
 
@@ -7968,6 +7993,11 @@
         return duplicateState.isDuplicate;
       });
       const manualDuplicatesConfirmed = manualDuplicatePending.every((row) => !!row.confirmDuplicate);
+      const manualMissingPending = pendingManualAssocRows.filter((row) => {
+        const lookupState = getPendingManualRowLookupState(row);
+        return lookupState.isMissing;
+      });
+      const manualMissingConfirmed = manualMissingPending.every((row) => !!row.confirmNotFound);
       const finessFilled = noFinessMode ? true : (regularFinessFilled && manualPendingFilled);
       const finessOk = noFinessMode ? true : (regularFinessOk && manualPendingOk);
       const anyFinessInvalid = renderedFinessValues.some((v) => v !== '' && !isValidFiness(v));
@@ -8077,6 +8107,9 @@
         } else if (!manualDuplicatesConfirmed) {
           finessMsg.className = 'sub visible err';
           finessMsg.textContent = "Confirmez la réutilisation du FINESS déjà présent pour le second dispositif.";
+        } else if (!manualMissingConfirmed) {
+          finessMsg.className = 'sub visible err';
+          finessMsg.textContent = "Confirmez les FINESS manuels non trouvés avant de continuer.";
         } else {
           finessMsg.className = 'sub';
           finessMsg.textContent = '';
@@ -8105,7 +8138,8 @@
         && !identMultiEtabConflict
         && assignComplete
         && assignUnique
-        && manualDuplicatesConfirmed);
+        && manualDuplicatesConfirmed
+        && manualMissingConfirmed);
       if (noFinessMode || anyFinessInvalid) {
         resetFinessDuplicateCheckState();
       } else {
