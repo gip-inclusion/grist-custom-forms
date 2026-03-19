@@ -2981,15 +2981,19 @@
         <div class="box cond-block cond-block-anchor" data-block-key="fileactive" id="cond-block-fileactive">
           <strong>File active & journées</strong>
           <div class="field field-radio-inline q35-sub-inline q35-places-inline" style="margin-top:6px;">
-            <div><label>Nombre de personnes accompagnées au 31/12/2025</label></div>
+            <div><label>Nombre de personnes présentes à l'effectif au 31-12 ayant signé un contrat de séjour</label></div>
             <div><input id="cond-file-active" type="number" min="0" step="1"></div>
           </div>
           <div class="field field-radio-inline q35-sub-inline q35-places-inline">
-            <div><label>Nombre de sorties en 2025</label></div>
-            <div><input id="cond-sorties-total" type="number" min="0" step="1"></div>
+            <div><label>Nombre de personnes reçues en pré-accueil pour lesquelles il n'y a pas eu de suite dans l'année</label></div>
+            <div><input id="cond-preaccueil-sans-suite" type="number" min="0" step="1"></div>
           </div>
           <div class="field field-radio-inline q35-sub-inline q35-places-inline">
-            <div><label>Dont : nombre de sorties avant le terme de la prestation</label></div>
+            <div><label>Nombre de sorties définitives en 2025 (calcul automatique)</label></div>
+            <div><input id="cond-sorties-total" type="number" min="0" step="1" readonly></div>
+          </div>
+          <div class="field field-radio-inline q35-sub-inline q35-places-inline">
+            <div><label>Dont : nombre de sorties définitives avant le terme de la prestation</label></div>
             <div><input id="cond-sorties-avant-terme" type="number" min="0" step="1"></div>
           </div>
           <div class="field field-radio-inline q35-sub-inline q35-places-inline">
@@ -3045,6 +3049,7 @@
     const conditionalPrevBtn = document.getElementById('conditional-prev-btn');
     const conditionalNextBtn = document.getElementById('conditional-next-btn');
     const condFileActiveInput = document.getElementById('cond-file-active');
+    const condPreaccueilSansSuiteInput = document.getElementById('cond-preaccueil-sans-suite');
     const condSortiesAvantTermeInput = document.getElementById('cond-sorties-avant-terme');
     const condSortiesTermeInput = document.getElementById('cond-sorties-terme');
     const condSortiesTotalInput = document.getElementById('cond-sorties-total');
@@ -3682,6 +3687,7 @@
           done: false,
           visitedBlocks: [],
           fileActive: '',
+          preaccueilSansSuite: '',
           sortiesAvantTerme: '',
           sortiesTerme: '',
           sorties: '',
@@ -3699,6 +3705,7 @@
         });
         const current = nextState.get(def.id);
         if (!Array.isArray(current.visitedBlocks)) current.visitedBlocks = [];
+        if (typeof current.preaccueilSansSuite === 'undefined') current.preaccueilSansSuite = '';
         if (typeof current.sortiesAvantTerme === 'undefined') current.sortiesAvantTerme = '';
         if (typeof current.sortiesTerme === 'undefined') current.sortiesTerme = '';
         if (typeof current.sorties === 'undefined') current.sorties = '';
@@ -3742,6 +3749,7 @@
         done: false,
         visitedBlocks: [],
         fileActive: '',
+        preaccueilSansSuite: '',
         sortiesAvantTerme: '',
         sortiesTerme: '',
         sorties: '',
@@ -3889,14 +3897,12 @@
         return indirectBlock.done;
       }
       const fileActive = Number(state.fileActive || 0);
-      const sortiesFilled = isFilledNumberString(state.sorties);
+      const preaccueilSansSuiteFilled = isFilledNumberString(state.preaccueilSansSuite);
       const sortiesAvantTermeFilled = isFilledNumberString(state.sortiesAvantTerme);
       const sortiesTermeFilled = isFilledNumberString(state.sortiesTerme);
       const sorties = getConditionalSortiesTotal(state);
-      const sortiesSplitSum = getConditionalSortiesSplitSum(state);
       const journees = Number(state.journees || 0);
-      if (fileActive < 0 || !sortiesFilled || !sortiesAvantTermeFilled || !sortiesTermeFilled || sorties < 0 || journees <= 0) return false;
-      if (Math.abs(sortiesSplitSum - sorties) >= 0.0001) return false;
+      if (fileActive < 0 || !preaccueilSansSuiteFilled || !sortiesAvantTermeFilled || !sortiesTermeFilled || sorties < 0 || journees <= 0) return false;
       const geoRows = Array.isArray(state?.geoRows) ? state.geoRows : [];
       const geoInvalid = geoRows.some((row) => {
         const count = Number(row?.count || 0);
@@ -3968,19 +3974,17 @@
         };
       }
       const fileActive = Number(state.fileActive || 0);
-      const sortiesFilled = isFilledNumberString(state.sorties);
+      const preaccueilSansSuiteFilled = isFilledNumberString(state.preaccueilSansSuite);
       const sortiesAvantTermeFilled = isFilledNumberString(state.sortiesAvantTerme);
       const sortiesTermeFilled = isFilledNumberString(state.sortiesTerme);
       const sorties = getConditionalSortiesTotal(state);
-      const sortiesSplitSum = getConditionalSortiesSplitSum(state);
       const journees = Number(state.journees || 0);
       const fileBlockDone = fileActive >= 0
-        && sortiesFilled
+        && preaccueilSansSuiteFilled
         && sortiesAvantTermeFilled
         && sortiesTermeFilled
         && sorties >= 0
-        && journees > 0
-        && Math.abs(sortiesSplitSum - sorties) < 0.0001;
+        && journees > 0;
 
       const cohBlocks = evaluateConditionalCoh(state, conditionalId);
       const doneCohBlocks = cohBlocks.filter((block) => block.ok).length;
@@ -4022,6 +4026,7 @@
       });
 
       const touched = (String(state.fileActive || '').trim() !== '')
+        || (String(state.preaccueilSansSuite || '').trim() !== '')
         || (String(state.sorties || '').trim() !== '')
         || (String(state.sortiesAvantTerme || '').trim() !== '')
         || (String(state.sortiesTerme || '').trim() !== '')
@@ -4475,19 +4480,17 @@
       }
       if (isParcoursConditionalStep(currentConditionalId)) {
         const fileActive = Number(state.fileActive || 0);
-        const sortiesFilled = isFilledNumberString(state.sorties);
+        const preaccueilSansSuiteFilled = isFilledNumberString(state.preaccueilSansSuite);
         const sortiesAvantTermeFilled = isFilledNumberString(state.sortiesAvantTerme);
         const sortiesTermeFilled = isFilledNumberString(state.sortiesTerme);
         const sorties = getConditionalSortiesTotal(state);
-        const sortiesSplitSum = getConditionalSortiesSplitSum(state);
         const journees = Number(state.journees || 0);
         const fileBlockDone = fileActive >= 0
-          && sortiesFilled
+          && preaccueilSansSuiteFilled
           && sortiesAvantTermeFilled
           && sortiesTermeFilled
           && sorties >= 0
-          && journees > 0
-          && Math.abs(sortiesSplitSum - sorties) < 0.0001;
+          && journees > 0;
         const emploiKeys = getEmploiRequiredFieldKeys(currentConditionalId);
         const emploiRow = state?.directAvecOrp?.row || {};
         const emploiDone = emploiKeys.length ? emploiKeys.every((key) => isFilledNumberString(emploiRow[key])) : false;
@@ -4509,19 +4512,17 @@
         return [{ key: 'indirect', label: getSpecialIndirectTitle(currentConditionalId), done: indirectBlock.done }];
       }
       const fileActive = Number(state.fileActive || 0);
-      const sortiesFilled = isFilledNumberString(state.sorties);
+      const preaccueilSansSuiteFilled = isFilledNumberString(state.preaccueilSansSuite);
       const sortiesAvantTermeFilled = isFilledNumberString(state.sortiesAvantTerme);
       const sortiesTermeFilled = isFilledNumberString(state.sortiesTerme);
       const sorties = getConditionalSortiesTotal(state);
-      const sortiesSplitSum = getConditionalSortiesSplitSum(state);
       const journees = Number(state.journees || 0);
       const fileBlockDone = fileActive >= 0
-        && sortiesFilled
+        && preaccueilSansSuiteFilled
         && sortiesAvantTermeFilled
         && sortiesTermeFilled
         && sorties >= 0
-        && journees > 0
-        && Math.abs(sortiesSplitSum - sorties) < 0.0001;
+        && journees > 0;
       const rows = [{ key: 'fileactive', label: 'File active & journées', done: fileBlockDone }];
       evaluateConditionalCoh(state, currentConditionalId).forEach((block) => {
         rows.push({ key: block.key, label: block.title, done: block.ok });
@@ -4549,7 +4550,7 @@
       if (activitesParcoursBlock.visible) {
         rows.push({ key: 'activites_parcours', label: 'Activités de parcours', done: activitesParcoursBlock.done });
       }
-      rows.push({ key: 'sorties_suspensions', label: 'Sortie avant le terme de la prestation', done: sortiesBlock.done });
+      rows.push({ key: 'sorties_suspensions', label: 'Sortie définitive avant le terme de la prestation', done: sortiesBlock.done });
       const emploiKeys = getEmploiRequiredFieldKeys(currentConditionalId);
       if (emploiKeys.length) {
         const emploiRow = state?.directAvecOrp?.row || {};
@@ -5296,7 +5297,7 @@
               <div class="cond-subgroup-title">Taux de présence à l'emploi (12 mois)</div>
               <div class="ds-simple-participants-block">
                 <div class="field field-radio-inline q35-sub-inline q35-places-inline cond-subline">
-                  <div><label>Nombre de personnes en emploi à 12 mois</label></div>
+                  <div><label>Nombre de personnes en emploi à 12 mois au moment de l'enquête</label></div>
                   <div><input class="cond-direct-avec-input cond-direct-avec-auto-presence" data-da-key="emploi_presence_nb" type="number" min="0" step="1" readonly value="${String(accesEncoreNb)}"></div>
                 </div>
               </div>
@@ -5685,9 +5686,9 @@
         ` : ''}
         <div class="box cond-block cond-block-anchor" data-block-key="sorties_suspensions" id="cond-block-sorties_suspensions">
           <div class="cond-block-head">
-            <strong>Sortie avant le terme de la prestation</strong>
+            <strong>Sortie définitive avant le terme de la prestation</strong>
           </div>
-          <p class="hint" style="margin:6px 0 0 0;">Vous avez déclaré <strong><span data-sorties-declarees>${declaredSortiesNb}</span></strong> sortie(s) avant le terme de la prestation.<br>Comment se répartissent ces départs ?</p>
+          <p class="hint" style="margin:6px 0 0 0;">Vous avez déclaré <strong><span data-sorties-declarees>${declaredSortiesNb}</span></strong> sortie(s) définitive(s) avant le terme de la prestation.<br>Comment se répartissent ces départs ?</p>
           <div>
             <div class="ctx-sub" style="display:${showSortiesReasons ? 'block' : 'none'}; margin-top:6px;">
               <p class="hint" style="margin:0 0 8px 0;"><strong>Quelles en ont été les raisons ?</strong></p>
@@ -6051,6 +6052,7 @@
       const titleEl = document.getElementById('conditional-step-title');
       const hintEl = document.getElementById('conditional-step-hint');
       const fileActiveEl = document.getElementById('cond-file-active');
+      const preaccueilSansSuiteEl = document.getElementById('cond-preaccueil-sans-suite');
       const sortiesAvantTermeEl = document.getElementById('cond-sorties-avant-terme');
       const sortiesTermeEl = document.getElementById('cond-sorties-terme');
       const sortiesTotalEl = document.getElementById('cond-sorties-total');
@@ -6074,21 +6076,14 @@
       if (dureeHelpEl) dureeHelpEl.style.display = 'none';
       if (fileactiveBlock) fileactiveBlock.style.display = isFieldsBasedStep ? 'none' : '';
       if (fileActiveEl) fileActiveEl.value = state.fileActive;
+      if (preaccueilSansSuiteEl) preaccueilSansSuiteEl.value = state.preaccueilSansSuite;
       if (sortiesAvantTermeEl) sortiesAvantTermeEl.value = state.sortiesAvantTerme;
       if (sortiesTermeEl) sortiesTermeEl.value = state.sortiesTerme;
-      if (sortiesTotalEl) sortiesTotalEl.value = String(state.sorties || '');
+      if (sortiesTotalEl) sortiesTotalEl.value = String(toNum(state.sortiesAvantTerme) + toNum(state.sortiesTerme));
       if (sortiesSplitHelpEl) {
-        const sorties = toNum(state.sorties);
-        const splitSum = getConditionalSortiesSplitSum(state);
-        const showSplitError = isFilledNumberString(state.sorties)
-          && isFilledNumberString(state.sortiesAvantTerme)
-          && isFilledNumberString(state.sortiesTerme)
-          && Math.abs(splitSum - sorties) >= 0.0001;
-        sortiesSplitHelpEl.style.display = showSplitError ? 'block' : 'none';
-        sortiesSplitHelpEl.className = showSplitError ? 'hint status err' : 'hint';
-        sortiesSplitHelpEl.textContent = showSplitError
-          ? `Contrôle: “sorties avant terme” + “sorties au terme” doit être égal à “sorties 2025” (${splitSum} / ${sorties}).`
-          : '';
+        sortiesSplitHelpEl.style.display = 'none';
+        sortiesSplitHelpEl.className = 'hint';
+        sortiesSplitHelpEl.textContent = '';
       }
       if (journeesEl) journeesEl.value = state.journees;
       if (dureeEl) dureeEl.value = computeConditionalDuree(state);
@@ -6309,22 +6304,15 @@
       if (!currentConditionalId) return;
       const state = getConditionalStateById(currentConditionalId);
       state.fileActive = String(condFileActiveInput?.value || '').trim();
-      state.sorties = String(condSortiesTotalInput?.value || '').trim();
+      state.preaccueilSansSuite = String(condPreaccueilSansSuiteInput?.value || '').trim();
       state.sortiesAvantTerme = String(condSortiesAvantTermeInput?.value || '').trim();
       state.sortiesTerme = String(condSortiesTermeInput?.value || '').trim();
+      state.sorties = String(toNum(state.sortiesAvantTerme) + toNum(state.sortiesTerme));
       const sortiesSplitHelpEl = document.getElementById('cond-sorties-split-help');
-      const sorties = toNum(state.sorties);
-      const splitSum = getConditionalSortiesSplitSum(state);
-      const showSplitError = isFilledNumberString(state.sorties)
-        && isFilledNumberString(state.sortiesAvantTerme)
-        && isFilledNumberString(state.sortiesTerme)
-        && Math.abs(splitSum - sorties) >= 0.0001;
       if (sortiesSplitHelpEl) {
-        sortiesSplitHelpEl.style.display = showSplitError ? 'block' : 'none';
-        sortiesSplitHelpEl.className = showSplitError ? 'hint status err' : 'hint';
-        sortiesSplitHelpEl.textContent = showSplitError
-          ? `Contrôle: “sorties avant terme” + “sorties au terme” doit être égal à “sorties 2025” (${splitSum} / ${sorties}).`
-          : '';
+        sortiesSplitHelpEl.style.display = 'none';
+        sortiesSplitHelpEl.className = 'hint';
+        sortiesSplitHelpEl.textContent = '';
       }
       state.journees = String(condJourneesInput?.value || '').trim();
       const declaredSortiesDisplay = String(state.sortiesAvantTerme || '').trim() === '' ? '0' : String(toNum(state.sortiesAvantTerme));
@@ -7172,6 +7160,7 @@
         const sourceEntries = manual
           ? [{ sourceFiness: group.sourceFiness || '', record: group.record }]
           : (group.sourceEntries || []);
+        const sourceGroupKey = manual ? getEstablishmentKey(group.record) : String(group.groupKey || '');
         const siblingGroup = getSiblingGroupInfo(group.record);
         const inputValues = new Set(collectFinessInputs().map((input) => normalizeFinessLookupValue(input.value)).filter(Boolean));
         const sourceValuesInGroup = new Set(
@@ -7228,7 +7217,7 @@
             </div>
           `;
         }).join('');
-        const pendingRows = pendingManualAssocRows.filter((row) => !row.sourceGroup || row.sourceGroup === group.groupKey);
+        const pendingRows = pendingManualAssocRows.filter((row) => !row.sourceGroup || String(row.sourceGroup) === sourceGroupKey);
         const pendingHtml = pendingRows.map((row) => {
           const duplicateState = getPendingManualRowDuplicateState(row);
           const lookupState = getPendingManualRowLookupState(row);
@@ -7274,6 +7263,11 @@
               </label>
             </div>
             ` : ''}
+            ${row.lookupConflict ? `
+            <div class="finess-assoc-duplicate-msg">
+              <p class="finess-assoc-help finess-assoc-duplicate-note">Ce FINESS correspond à un autre établissement. Saisissez un FINESS rattaché au même établissement que la ligne principale.</p>
+            </div>
+            ` : ''}
           </div>
         `;
         }).join('');
@@ -7303,7 +7297,7 @@
             </div>
             ${showInlineAddFiness ? `
               <div class="finess-add-actions">
-                ${missingDispos.map((key) => `<button type="button" class="finess-add-dispo-btn" data-finess-action="add-missing-dispo" data-missing-dispo="${key}" data-group-key="${group.groupKey}">Ajouter ${dispoLabels[key]}</button>`).join('')}
+                ${missingDispos.map((key) => `<button type="button" class="finess-add-dispo-btn" data-finess-action="add-missing-dispo" data-missing-dispo="${key}" data-group-key="${sourceGroupKey}">Ajouter ${dispoLabels[key]}</button>`).join('')}
               </div>
             ` : ''}
           ` : ''}
@@ -7443,7 +7437,7 @@
       let preferred = null;
       let sourceFiness = '';
       const allFound = [];
-      const resolvedPendingIds = new Set();
+      const pendingFoundCandidates = [];
       inputs.forEach((input) => {
         const value = normalizeFinessLookupValue(input.value);
         const valid = !!value && isValidFiness(value);
@@ -7459,20 +7453,20 @@
         }
         if (found) {
           foundAny = true;
-          if (pendingDispo && !duplicateState.isDuplicate) {
-            finessDispoBySource.set(value, pendingDispo);
-            finessConfirmState.set(value, 'yes');
+          if (pendingId && pendingDispo && !duplicateState.isDuplicate) {
+            pendingFoundCandidates.push({
+              pendingId,
+              sourceFiness: value,
+              dispo: pendingDispo,
+              record: found,
+            });
           }
-          if (pendingId && !duplicateState.isDuplicate) resolvedPendingIds.add(pendingId);
           if (!duplicateState.isDuplicate) {
             finessRecordBySource.set(value, found);
             allFound.push({ record: found, sourceFiness: value });
           }
         }
       });
-      if (resolvedPendingIds.size) {
-        pendingManualAssocRows = pendingManualAssocRows.filter((row) => !resolvedPendingIds.has(Number(row.id || 0)));
-      }
       if (mainInput) {
         const mainValue = normalizeFinessLookupValue(mainInput.value);
         const mainFound = !!(mainValue && isValidFiness(mainValue) && getFinessReference(mainValue));
@@ -7535,6 +7529,24 @@
       Array.from(finessRecordBySource.keys()).forEach((src) => {
         if (!currentAutoFoundSources.includes(src) && src !== manualResolvedSource) finessRecordBySource.delete(src);
       });
+      const resolvedPendingIds = new Set();
+      pendingFoundCandidates.forEach((candidate) => {
+        const row = pendingManualAssocRows.find((item) => Number(item.id || 0) === Number(candidate.pendingId || 0));
+        if (!row) return;
+        const src = normalizeFinessLookupValue(candidate.sourceFiness || '');
+        if (!src) return;
+        if (candidate.record) finessRecordBySource.set(src, candidate.record);
+        finessDispoBySource.set(src, candidate.dispo);
+        finessConfirmState.set(src, 'yes');
+        if (!currentAutoFoundSources.includes(src)) currentAutoFoundSources.push(src);
+        if (!recordsToRender.some((entry) => !entry.manual && entry.sourceFiness === src) && candidate.record) {
+          recordsToRender.push({ record: candidate.record, sourceFiness: src });
+        }
+        resolvedPendingIds.add(Number(candidate.pendingId || 0));
+      });
+      if (resolvedPendingIds.size) {
+        pendingManualAssocRows = pendingManualAssocRows.filter((row) => !resolvedPendingIds.has(Number(row.id || 0)));
+      }
       if (recordsToRender.length) {
         renderFoundRecords(recordsToRender);
         finessFoundPanel?.classList.add('visible');
@@ -7693,7 +7705,7 @@
             const dispo = String(btn.dataset.missingDispo || '').trim();
             const groupKey = String(btn.dataset.groupKey || '').trim();
             if (!dispo) return;
-            const exists = pendingManualAssocRows.some((row) => row.dispo === dispo && row.sourceGroup === groupKey);
+            const exists = pendingManualAssocRows.some((row) => row.dispo === dispo && String(row.sourceGroup || '') === groupKey);
             if (!exists) {
               pendingManualAssocRows.push({
                 id: pendingManualAssocSeq++,
@@ -7702,6 +7714,7 @@
                 value: '',
                 confirmDuplicate: false,
                 confirmNotFound: false,
+                lookupConflict: false,
               });
             }
             refreshIdentificationFromFiness();
@@ -7737,6 +7750,7 @@
             row.value = cleaned;
             row.confirmDuplicate = false;
             row.confirmNotFound = false;
+            row.lookupConflict = false;
           }
         };
         input.addEventListener('input', () => {
@@ -9829,7 +9843,7 @@
       applyConditionalBlockFocus(getConditionalStateById(currentConditionalId), { scroll: true, preferIncomplete: false });
     });
 
-    [condFileActiveInput, condSortiesTotalInput, condSortiesAvantTermeInput, condSortiesTermeInput, condJourneesInput].forEach((input) => {
+    [condFileActiveInput, condPreaccueilSansSuiteInput, condSortiesTotalInput, condSortiesAvantTermeInput, condSortiesTermeInput, condJourneesInput].forEach((input) => {
       input?.addEventListener('input', updateCurrentConditionalStateFromInputs);
       input?.addEventListener('change', updateCurrentConditionalStateFromInputs);
     });
