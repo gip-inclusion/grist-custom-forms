@@ -2512,6 +2512,17 @@
               </div>
             </div>
           </div>
+          <div id="ctx-sub-35-non" class="ctx-sub">
+            <div class="field field-radio-inline ctx-inline-preferred q35-sub-inline q-sub-inline">
+              <div><label>Des alternatives sont-elles proposées ?</label></div>
+              <div>
+                <div class="radio-group">
+                  <label class="radio-option"><input type="radio" name="ctx-q35-alt-no-hebergement" value="Oui"> Oui</label>
+                  <label class="radio-option"><input type="radio" name="ctx-q35-alt-no-hebergement" value="Non"> Non</label>
+                </div>
+              </div>
+            </div>
+          </div>
           <div id="ctx-sub-35" class="ctx-sub">
             <div class="field field-radio-inline ctx-inline-preferred q35-sub-inline q35-places-inline">
               <div><label>Pour combien de places ?</label></div>
@@ -2525,6 +2536,17 @@
                 <div class="radio-group">
                   <label class="radio-option"><input type="radio" name="ctx-q35-weekend" value="Oui"> Oui</label>
                   <label class="radio-option"><input type="radio" name="ctx-q35-weekend" value="Non"> Non</label>
+                </div>
+              </div>
+            </div>
+            <div id="ctx-sub-35-weekend-non" class="ctx-sub">
+              <div class="field field-radio-inline ctx-inline-preferred q35-sub-inline q-sub-inline">
+                <div><label>Des alternatives sont-elles proposées ?</label></div>
+                <div>
+                  <div class="radio-group">
+                    <label class="radio-option"><input type="radio" name="ctx-q35-alt-no-weekend" value="Oui"> Oui</label>
+                    <label class="radio-option"><input type="radio" name="ctx-q35-alt-no-weekend" value="Non"> Non</label>
+                  </div>
                 </div>
               </div>
             </div>
@@ -8425,9 +8447,11 @@
       });
       bindRadio('ctx-q35', (value) => {
         setCtxSubVisible('ctx-sub-35', value === 'Oui');
+        setCtxSubVisible('ctx-sub-35-non', value === 'Non');
       });
       bindRadio('ctx-q35-weekend', (value) => {
         setCtxSubVisible('ctx-sub-35-we', value === 'Oui');
+        setCtxSubVisible('ctx-sub-35-weekend-non', value === 'Non');
       });
       bindRadio('ctx-q35-fermetures', (value) => {
         setCtxSubVisible('ctx-sub-35-fermetures', value === 'Oui');
@@ -9504,8 +9528,10 @@
         q33_alternatif: getCheckedRadioValue('ctx-q33-alt'),
         q34_prefecture: getCheckedRadioValue('ctx-q34'),
         q35_hebergement: getCheckedRadioValue('ctx-q35'),
+        q35_alternatives_si_pas_hebergement: getCheckedRadioValue('ctx-q35-alt-no-hebergement'),
         q35_places: String(document.getElementById('ctx-q35-places')?.value || '').trim(),
         q35_weekend: getCheckedRadioValue('ctx-q35-weekend'),
+        q35_alternatives_si_ferme_weekend: getCheckedRadioValue('ctx-q35-alt-no-weekend'),
         q35_comptabilite_we: getCheckedRadioValue('ctx-q35-compta'),
         q35_fermetures: getCheckedRadioValue('ctx-q35-fermetures'),
         q35_fermetures_semaines: String(document.getElementById('ctx-q35-fermetures-semaines')?.value || '').trim(),
