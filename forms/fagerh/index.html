@@ -2989,16 +2989,16 @@
             <div><input id="cond-preaccueil-sans-suite" type="number" min="0" step="1"></div>
           </div>
           <div class="field field-radio-inline q35-sub-inline q35-places-inline" id="cond-row-sorties-total">
-            <div><label>Nombre de sorties définitives en 2025 (calcul automatique)</label></div>
-            <div><input id="cond-sorties-total" type="number" min="0" step="1" readonly></div>
+            <div><label>Nombre de sorties définitives en 2025</label></div>
+            <div><input id="cond-sorties-total" type="number" min="0" step="1"></div>
           </div>
           <div class="field field-radio-inline q35-sub-inline q35-places-inline" id="cond-row-sorties-avant-terme">
-            <div><label>Dont : nombre de sorties définitives avant le terme de la prestation</label></div>
+            <div><label>Dont nombre de sorties définitives avant le terme de la prestation</label></div>
             <div><input id="cond-sorties-avant-terme" type="number" min="0" step="1"></div>
           </div>
           <div class="field field-radio-inline q35-sub-inline q35-places-inline" id="cond-row-sorties-terme">
-            <div><label>Nombre de sorties au terme de la prestation</label></div>
-            <div><input id="cond-sorties-terme" type="number" min="0" step="1"></div>
+            <div><label>Dont nombre de sorties au terme de la prestation (calcul automatique)</label></div>
+            <div><input id="cond-sorties-terme" type="number" min="0" step="1" readonly></div>
           </div>
           <p class="hint" id="cond-sorties-split-help" style="display:none; margin-top:4px; margin-bottom:0;"></p>
           <p class="hint" id="cond-cible-help" style="margin-top:6px; margin-bottom:0; font-weight:700;"></p>
@@ -3194,6 +3194,15 @@
     function isEsrpConditionalStep(id) {
       const def = getConditionalDefById(id);
       return /\bESRP\b/i.test(String(def?.name || ''));
+    }
+
+    function isEspoConditionalStep(id) {
+      const def = getConditionalDefById(id);
+      return /\bESPO\b/i.test(String(def?.name || ''));
+    }
+
+    function isEspoOrEsrpConditionalStep(id) {
+      return isEspoConditionalStep(id) || isEsrpConditionalStep(id);
     }
 
     function isEspoOrUerosConditionalStep(id) {
@@ -3480,6 +3489,7 @@
         enabled: '',
         row: {
           beneficiaires: '',
+          discontinue_personnes: '',
           presentiel_total: '',
           presentiel_complet: '',
           presentiel_partiel: '',
@@ -3797,6 +3807,12 @@
       return toNum(state?.sortiesAvantTerme) + toNum(state?.sortiesTerme);
     }
 
+    function getConditionalSortiesTermeAuto(state) {
+      const sortiesTotal = toNum(state?.sorties);
+      const sortiesAvantTerme = toNum(state?.sortiesAvantTerme);
+      return Math.max(0, sortiesTotal - sortiesAvantTerme);
+    }
+
     function computeConditionalDuree(state, conditionalId = currentConditionalId) {
       if (isPecConditionalStep(conditionalId)) return '';
       const fileActive = Number(state.fileActive || 0);
@@ -3911,14 +3927,16 @@
       const isPecStep = isPecOrpConditionalStep(conditionalId);
       const fileActive = Number(state.fileActive || 0);
       const preaccueilSansSuiteFilled = isFilledNumberString(state.preaccueilSansSuite);
+      const sortiesTotalFilled = isFilledNumberString(state.sorties);
       const sortiesAvantTermeFilled = isFilledNumberString(state.sortiesAvantTerme);
-      const sortiesTermeFilled = isFilledNumberString(state.sortiesTerme);
       const sorties = getConditionalSortiesTotal(state, conditionalId);
+      const sortiesAvantTerme = toNum(state.sortiesAvantTerme);
+      const sortiesSplitOk = sortiesAvantTerme <= sorties;
       const journeesFilled = isFilledNumberString(state.journees);
       const journees = Number(state.journees || 0);
       if (isPecStep) {
         if (!isFilledNumberString(state.fileActive) || fileActive < 0) return false;
-      } else if (fileActive < 0 || !preaccueilSansSuiteFilled || !sortiesAvantTermeFilled || !sortiesTermeFilled || sorties < 0 || !journeesFilled || journees < 0) {
+      } else if (fileActive < 0 || !preaccueilSansSuiteFilled || !sortiesTotalFilled || !sortiesAvantTermeFilled || !sortiesSplitOk || sorties < 0 || !journeesFilled || journees < 0) {
         return false;
       }
       const geoRows = Array.isArray(state?.geoRows) ? state.geoRows : [];
@@ -3994,17 +4012,20 @@
       const isPecStep = isPecOrpConditionalStep(conditionalId);
       const fileActive = Number(state.fileActive || 0);
       const preaccueilSansSuiteFilled = isFilledNumberString(state.preaccueilSansSuite);
+      const sortiesTotalFilled = isFilledNumberString(state.sorties);
       const sortiesAvantTermeFilled = isFilledNumberString(state.sortiesAvantTerme);
-      const sortiesTermeFilled = isFilledNumberString(state.sortiesTerme);
       const sorties = getConditionalSortiesTotal(state, conditionalId);
+      const sortiesAvantTerme = toNum(state.sortiesAvantTerme);
+      const sortiesSplitOk = sortiesAvantTerme <= sorties;
       const journeesFilled = isFilledNumberString(state.journees);
       const journees = Number(state.journees || 0);
       const fileActiveBlockDone = isPecStep
         ? (isFilledNumberString(state.fileActive) && fileActive >= 0)
         : (fileActive >= 0
           && preaccueilSansSuiteFilled
+          && sortiesTotalFilled
           && sortiesAvantTermeFilled
-          && sortiesTermeFilled
+          && sortiesSplitOk
           && sorties >= 0);
       const journeesBlockDone = isPecStep ? true : (journeesFilled && journees >= 0);
 
@@ -4189,7 +4210,9 @@
       const selectedModalites = getSelectedContextModalites();
       const hasHebergement = getContextHasHebergement();
       const hasHorsMurs = getContextHasHorsMurs();
+      const requireDiscontinue = isEspoOrEsrpConditionalStep(currentConditionalId);
       const keys = [];
+      if (requireDiscontinue) keys.push('discontinue_personnes');
       if (selectedModalites.has('presentiel')) keys.push('presentiel_complet', 'presentiel_partiel');
       if (selectedModalites.has('hybride')) keys.push('hybride_complet', 'hybride_partiel');
       if (selectedModalites.has('distanciel')) keys.push('distanciel_complet', 'distanciel_partiel');
@@ -4506,17 +4529,20 @@
         const isPecStep = isPecOrpConditionalStep(currentConditionalId);
         const fileActive = Number(state.fileActive || 0);
         const preaccueilSansSuiteFilled = isFilledNumberString(state.preaccueilSansSuite);
+        const sortiesTotalFilled = isFilledNumberString(state.sorties);
         const sortiesAvantTermeFilled = isFilledNumberString(state.sortiesAvantTerme);
-        const sortiesTermeFilled = isFilledNumberString(state.sortiesTerme);
         const sorties = getConditionalSortiesTotal(state, currentConditionalId);
+        const sortiesAvantTerme = toNum(state.sortiesAvantTerme);
+        const sortiesSplitOk = sortiesAvantTerme <= sorties;
         const journeesFilled = isFilledNumberString(state.journees);
         const journees = Number(state.journees || 0);
         const fileActiveBlockDone = isPecStep
           ? (isFilledNumberString(state.fileActive) && fileActive >= 0)
           : (fileActive >= 0
             && preaccueilSansSuiteFilled
+            && sortiesTotalFilled
             && sortiesAvantTermeFilled
-            && sortiesTermeFilled
+            && sortiesSplitOk
             && sorties >= 0);
         const journeesBlockDone = isPecStep ? true : (journeesFilled && journees >= 0);
         const emploiKeys = getEmploiRequiredFieldKeys(currentConditionalId);
@@ -4542,17 +4568,20 @@
       const isPecStep = isPecOrpConditionalStep(currentConditionalId);
       const fileActive = Number(state.fileActive || 0);
       const preaccueilSansSuiteFilled = isFilledNumberString(state.preaccueilSansSuite);
+      const sortiesTotalFilled = isFilledNumberString(state.sorties);
       const sortiesAvantTermeFilled = isFilledNumberString(state.sortiesAvantTerme);
-      const sortiesTermeFilled = isFilledNumberString(state.sortiesTerme);
       const sorties = getConditionalSortiesTotal(state, currentConditionalId);
+      const sortiesAvantTerme = toNum(state.sortiesAvantTerme);
+      const sortiesSplitOk = sortiesAvantTerme <= sorties;
       const journeesFilled = isFilledNumberString(state.journees);
       const journees = Number(state.journees || 0);
       const fileActiveBlockDone = isPecStep
         ? (isFilledNumberString(state.fileActive) && fileActive >= 0)
         : (fileActive >= 0
           && preaccueilSansSuiteFilled
+          && sortiesTotalFilled
           && sortiesAvantTermeFilled
-          && sortiesTermeFilled
+          && sortiesSplitOk
           && sorties >= 0);
       const journeesBlockDone = isPecStep ? true : (journeesFilled && journees >= 0);
       const rows = [{ key: 'fileactive', label: 'File active', done: fileActiveBlockDone }];
@@ -5101,6 +5130,7 @@
       const selectedModalites = getSelectedContextModalites();
       const hasHebergement = getContextHasHebergement();
       const hasHorsMurs = getContextHasHorsMurs();
+      const showDiscontinuePersonnes = isEspoOrEsrpConditionalStep(currentConditionalId);
       const showEmploiAccesBlock = hasEmploiAccesBlockConditionalStep(currentConditionalId);
       const showEmploiPresenceBlock = hasEmploiPresenceBlockConditionalStep(currentConditionalId);
       const specialRowKeys = getSpecialIndirectRowsForConditional(currentConditionalId);
@@ -5630,12 +5660,21 @@
         <div class="box cond-block cond-block-anchor" data-block-key="modalites_accueil" id="cond-block-modalites_accueil">
           <strong>Modalité d'accueil</strong>
           <div class="parcours-stack" style="margin-top:8px;">
+            ${showDiscontinuePersonnes ? `
+            <div class="parcours-section">
+              <div class="parcours-nested">
+                <div class="field field-radio-inline q35-sub-inline q35-places-inline cond-subline"><div><label>Dont nombre de personnes accompagnées en discontinue</label></div><div><input class="cond-direct-avec-input" data-da-key="discontinue_personnes" type="number" min="0" step="1" value="${String(directAvecOrp.row?.discontinue_personnes || '')}"></div></div>
+                <p class="hint" style="margin:6px 0 0 0;">Une personne entre en parcours, suspension, puis reprise dans l'année.</p>
+              </div>
+            </div>
+            ` : ''}
             ${selectedModalites.has('presentiel') ? `
             <div class="parcours-section">
               <div class="cond-subgroup-title"><span>Dont en présentiel</span><span class="cond-auto-total" data-da-total="presentiel">${presentielAutoTotal}</span></div>
               <div class="parcours-nested">
                 <div class="field field-radio-inline q35-sub-inline q35-places-inline cond-subline"><div><label>À temps complet</label></div><div><input class="cond-direct-avec-input" data-da-key="presentiel_complet" type="number" min="0" step="1" value="${String(directAvecOrp.row?.presentiel_complet || '')}"></div></div>
                 <div class="field field-radio-inline q35-sub-inline q35-places-inline cond-subline"><div><label>À temps partiel</label></div><div><input class="cond-direct-avec-input" data-da-key="presentiel_partiel" type="number" min="0" step="1" value="${String(directAvecOrp.row?.presentiel_partiel || '')}"></div></div>
+                <p class="hint" style="margin:6px 0 0 0;">Aménagement de parcours qui mène à une réduction horaire au regard de l'horaire de référence défini dans l'établissement. Horaires aménagés, etc.</p>
               </div>
             </div>
             ` : ''}
@@ -5645,6 +5684,7 @@
               <div class="parcours-nested">
                 <div class="field field-radio-inline q35-sub-inline q35-places-inline cond-subline"><div><label>À temps complet</label></div><div><input class="cond-direct-avec-input" data-da-key="hybride_complet" type="number" min="0" step="1" value="${String(directAvecOrp.row?.hybride_complet || '')}"></div></div>
                 <div class="field field-radio-inline q35-sub-inline q35-places-inline cond-subline"><div><label>À temps partiel</label></div><div><input class="cond-direct-avec-input" data-da-key="hybride_partiel" type="number" min="0" step="1" value="${String(directAvecOrp.row?.hybride_partiel || '')}"></div></div>
+                <p class="hint" style="margin:6px 0 0 0;">Aménagement de parcours qui mène à une réduction horaire au regard de l'horaire de référence défini dans l'établissement. Horaires aménagés, etc.</p>
               </div>
             </div>
             ` : ''}
@@ -5654,6 +5694,7 @@
               <div class="parcours-nested">
                 <div class="field field-radio-inline q35-sub-inline q35-places-inline cond-subline"><div><label>À temps complet</label></div><div><input class="cond-direct-avec-input" data-da-key="distanciel_complet" type="number" min="0" step="1" value="${String(directAvecOrp.row?.distanciel_complet || '')}"></div></div>
                 <div class="field field-radio-inline q35-sub-inline q35-places-inline cond-subline"><div><label>À temps partiel</label></div><div><input class="cond-direct-avec-input" data-da-key="distanciel_partiel" type="number" min="0" step="1" value="${String(directAvecOrp.row?.distanciel_partiel || '')}"></div></div>
+                <p class="hint" style="margin:6px 0 0 0;">Aménagement de parcours qui mène à une réduction horaire au regard de l'horaire de référence défini dans l'établissement. Horaires aménagés, etc.</p>
               </div>
             </div>
             ` : ''}
@@ -6060,7 +6101,7 @@
         if (isPecStep) {
           cibleHelp.textContent = `Référence: ${target.toFixed(1)} personne(s) évaluée(s) en 2025.`;
         } else {
-          cibleHelp.textContent = `File active calculée automatiquement: ${target.toFixed(1)} = présents au 31/12 + pré-accueil sans suite + sorties définitives 2025.`;
+          cibleHelp.textContent = `File active de référence: ${target.toFixed(1)} = présents au 31/12 + pré-accueil sans suite + sorties définitives 2025.`;
         }
       }
       updateConditionalCurrentHeaderKpi(state, focusedConditionalBlockKey);
@@ -6138,12 +6179,18 @@
       if (fileActiveEl) fileActiveEl.value = state.fileActive;
       if (preaccueilSansSuiteEl) preaccueilSansSuiteEl.value = state.preaccueilSansSuite;
       if (sortiesAvantTermeEl) sortiesAvantTermeEl.value = state.sortiesAvantTerme;
-      if (sortiesTermeEl) sortiesTermeEl.value = state.sortiesTerme;
-      if (sortiesTotalEl) sortiesTotalEl.value = String(toNum(state.sortiesAvantTerme) + toNum(state.sortiesTerme));
+      if (sortiesTotalEl) sortiesTotalEl.value = state.sorties;
+      if (sortiesTermeEl) sortiesTermeEl.value = String(getConditionalSortiesTermeAuto(state));
       if (sortiesSplitHelpEl) {
-        sortiesSplitHelpEl.style.display = 'none';
-        sortiesSplitHelpEl.className = 'hint';
-        sortiesSplitHelpEl.textContent = '';
+        const sortiesTotal = toNum(state.sorties);
+        const sortiesAvantTerme = toNum(state.sortiesAvantTerme);
+        const hasAnyValue = isFilledNumberString(state.sorties) || isFilledNumberString(state.sortiesAvantTerme);
+        const hasError = sortiesAvantTerme > sortiesTotal;
+        sortiesSplitHelpEl.style.display = hasAnyValue ? '' : 'none';
+        sortiesSplitHelpEl.className = hasError ? 'status err' : 'hint';
+        sortiesSplitHelpEl.textContent = hasError
+          ? "La valeur « Dont sorties définitives avant le terme » ne peut pas dépasser le nombre de sorties définitives en 2025."
+          : "Le nombre de sorties au terme de la prestation est calculé automatiquement : sorties 2025 - sorties définitives avant le terme.";
       }
       if (journeesEl) journeesEl.value = state.journees;
       if (dureeEl) dureeEl.value = computeConditionalDuree(state);
@@ -6365,17 +6412,24 @@
       const state = getConditionalStateById(currentConditionalId);
       state.fileActive = String(condFileActiveInput?.value || '').trim();
       state.preaccueilSansSuite = String(condPreaccueilSansSuiteInput?.value || '').trim();
+      state.sorties = String(condSortiesTotalInput?.value || '').trim();
       state.sortiesAvantTerme = String(condSortiesAvantTermeInput?.value || '').trim();
-      state.sortiesTerme = String(condSortiesTermeInput?.value || '').trim();
-      state.sorties = String(toNum(state.sortiesAvantTerme) + toNum(state.sortiesTerme));
+      state.sortiesTerme = String(getConditionalSortiesTermeAuto(state));
+      if (condSortiesTermeInput) condSortiesTermeInput.value = state.sortiesTerme;
       const sortiesSplitHelpEl = document.getElementById('cond-sorties-split-help');
       if (sortiesSplitHelpEl) {
-        sortiesSplitHelpEl.style.display = 'none';
-        sortiesSplitHelpEl.className = 'hint';
-        sortiesSplitHelpEl.textContent = '';
+        const sortiesTotal = toNum(state.sorties);
+        const sortiesAvantTerme = toNum(state.sortiesAvantTerme);
+        const hasAnyValue = isFilledNumberString(state.sorties) || isFilledNumberString(state.sortiesAvantTerme);
+        const hasError = sortiesAvantTerme > sortiesTotal;
+        sortiesSplitHelpEl.style.display = hasAnyValue ? '' : 'none';
+        sortiesSplitHelpEl.className = hasError ? 'status err' : 'hint';
+        sortiesSplitHelpEl.textContent = hasError
+          ? "La valeur « Dont sorties définitives avant le terme » ne peut pas dépasser le nombre de sorties définitives en 2025."
+          : "Le nombre de sorties au terme de la prestation est calculé automatiquement : sorties 2025 - sorties définitives avant le terme.";
       }
       state.journees = String(condJourneesInput?.value || '').trim();
-      const declaredSortiesDisplay = String(state.sortiesAvantTerme || '').trim() === '' ? '0' : String(toNum(state.sortiesAvantTerme));
+      const declaredSortiesDisplay = String(state.sorties || '').trim() === '' ? '0' : String(toNum(state.sorties));
       conditionalCoherenceSections?.querySelectorAll('[data-sorties-declarees]').forEach((el) => {
         el.textContent = declaredSortiesDisplay;
       });
