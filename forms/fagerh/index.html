@@ -2984,6 +2984,23 @@
             <div><label id="cond-file-active-label">Nombre de personnes présentes à l'effectif au 31-12 ayant signé un contrat de séjour</label></div>
             <div><input id="cond-file-active" type="number" min="0" step="1"></div>
           </div>
+          <div id="cond-pec-file-active-breakdown" class="ctx-sub a11y-group" style="display:none; margin-top:6px;">
+            <fieldset class="a11y-group">
+              <legend class="sr-only">Répartition des personnes évaluées en 2025</legend>
+              <div class="field field-radio-inline q35-sub-inline q35-places-inline">
+                <div><label>Dont BOETH</label></div>
+                <div><input class="cond-pec-file-input" data-pec-file-key="boeth" type="number" min="0" step="1"></div>
+              </div>
+              <div class="field field-radio-inline q35-sub-inline q35-places-inline">
+                <div><label>Dont non BOETH</label></div>
+                <div><input class="cond-pec-file-input" data-pec-file-key="non_boeth" type="number" min="0" step="1"></div>
+              </div>
+              <div class="field field-radio-inline q35-sub-inline q35-places-inline">
+                <div><label>Dont Je ne sais pas</label></div>
+                <div><input class="cond-pec-file-input" data-pec-file-key="je_ne_sais_pas" type="number" min="0" step="1"></div>
+              </div>
+            </fieldset>
+          </div>
           <div class="field field-radio-inline q35-sub-inline q35-places-inline" id="cond-row-preaccueil">
             <div><label>Nombre de personnes reçues en pré-accueil pour lesquelles il n'y a pas eu de suite dans l'année</label></div>
             <div><input id="cond-preaccueil-sans-suite" type="number" min="0" step="1"></div>
@@ -3053,6 +3070,7 @@
     const conditionalPrevBtn = document.getElementById('conditional-prev-btn');
     const conditionalNextBtn = document.getElementById('conditional-next-btn');
     const condFileActiveInput = document.getElementById('cond-file-active');
+    const condPecFileInputs = Array.from(document.querySelectorAll('.cond-pec-file-input'));
     const condPreaccueilSansSuiteInput = document.getElementById('cond-preaccueil-sans-suite');
     const condSortiesAvantTermeInput = document.getElementById('cond-sorties-avant-terme');
     const condSortiesTermeInput = document.getElementById('cond-sorties-terme');
@@ -3267,6 +3285,7 @@
 
     function hasEmploiAccesBlockConditionalStep(id) {
       if (!id) return false;
+      if (isPecConditionalStep(id)) return false;
       if (isFormationSelectionConditionalStep(id)) return false;
       if (isSpecialIndirectConditionalStep(id)) return false;
       if (isDirectSansOrpEvalProConditionalStep(id)) return false;
@@ -3416,6 +3435,7 @@
       return conditionalCohDefs.filter((def) => {
         if (def.onlyEsrp && !isEsrpLike) return false;
         if (def.onlyUeros && !isUeros) return false;
+        if (isPecConditionalStep(conditionalId) && def.key === 'geographie') return false;
         return true;
       });
     }
@@ -3481,6 +3501,32 @@
         emploi_accompagne: '',
         autres: '',
         autres_precision: '',
+        droit_commun: '',
+        sante_social: '',
+        readaptation_professionnelle: '',
+        readaptation_ueros: '',
+        readaptation_espo: '',
+        readaptation_esrp: '',
+        readaptation_dfa: '',
+      };
+    }
+
+    function makeEmptyPecFileActiveState() {
+      return {
+        boeth: '',
+        non_boeth: '',
+        je_ne_sais_pas: '',
+      };
+    }
+
+    function makeEmptyOrienteursState() {
+      return {
+        reseau_emploi: '',
+        mdph: '',
+        demande_personnelle: '',
+        employeur_public: '',
+        employeur_prive: '',
+        autres: '',
       };
     }
 
@@ -3705,6 +3751,7 @@
           done: false,
           visitedBlocks: [],
           fileActive: '',
+          pecFileActive: makeEmptyPecFileActiveState(),
           preaccueilSansSuite: '',
           sortiesAvantTerme: '',
           sortiesTerme: '',
@@ -3719,10 +3766,12 @@
           suspensionsBloc: makeEmptySuspensionsState(),
           handicapMatrix: makeEmptyHandicapMatrix(),
           preconisationsBloc: makeEmptyPreconisationsState(),
+          orienteursBloc: makeEmptyOrienteursState(),
           formationsSelection: makeEmptyFormationsSelectionState(),
         });
         const current = nextState.get(def.id);
         if (!Array.isArray(current.visitedBlocks)) current.visitedBlocks = [];
+        if (!current.pecFileActive) current.pecFileActive = makeEmptyPecFileActiveState();
         if (typeof current.preaccueilSansSuite === 'undefined') current.preaccueilSansSuite = '';
         if (typeof current.sortiesAvantTerme === 'undefined') current.sortiesAvantTerme = '';
         if (typeof current.sortiesTerme === 'undefined') current.sortiesTerme = '';
@@ -3750,6 +3799,7 @@
           current.handicapMatrix = makeEmptyHandicapMatrix();
         }
         if (!current.preconisationsBloc) current.preconisationsBloc = makeEmptyPreconisationsState();
+        if (!current.orienteursBloc) current.orienteursBloc = makeEmptyOrienteursState();
         if (!current.formationsSelection) current.formationsSelection = makeEmptyFormationsSelectionState();
       });
       conditionalState.clear();
@@ -3767,6 +3817,7 @@
         done: false,
         visitedBlocks: [],
         fileActive: '',
+        pecFileActive: makeEmptyPecFileActiveState(),
         preaccueilSansSuite: '',
         sortiesAvantTerme: '',
         sortiesTerme: '',
@@ -3781,6 +3832,7 @@
         suspensionsBloc: makeEmptySuspensionsState(),
         handicapMatrix: makeEmptyHandicapMatrix(),
         preconisationsBloc: makeEmptyPreconisationsState(),
+        orienteursBloc: makeEmptyOrienteursState(),
         formationsSelection: makeEmptyFormationsSelectionState(),
       };
     }
@@ -3829,6 +3881,20 @@
       const preaccueilSansSuite = Number(state.preaccueilSansSuite || 0);
       const sorties = getConditionalSortiesTotal(state, conditionalId);
       return fileActive + preaccueilSansSuite + sorties;
+    }
+
+    function evaluatePecFileActiveBlock(state) {
+      const total = toNum(state?.fileActive);
+      const bloc = state?.pecFileActive || makeEmptyPecFileActiveState();
+      const keys = ['boeth', 'non_boeth', 'je_ne_sais_pas'];
+      const sum = keys.reduce((acc, key) => acc + toNum(bloc[key]), 0);
+      const diff = sum - total;
+      const touched = isFilledNumberString(state?.fileActive) || keys.some((key) => isFilledNumberString(bloc[key]));
+      const done = isFilledNumberString(state?.fileActive)
+        && total >= 0
+        && keys.every((key) => isFilledNumberString(bloc[key]))
+        && Math.abs(diff) < 0.0001;
+      return { done, touched, total, sum, diff };
     }
 
     function evaluateConditionalCoh(state, conditionalId = currentConditionalId) {
@@ -3925,6 +3991,7 @@
         return indirectBlock.done;
       }
       const isPecStep = isPecOrpConditionalStep(conditionalId);
+      const pecFileActiveBlock = evaluatePecFileActiveBlock(state);
       const fileActive = Number(state.fileActive || 0);
       const preaccueilSansSuiteFilled = isFilledNumberString(state.preaccueilSansSuite);
       const sortiesTotalFilled = isFilledNumberString(state.sorties);
@@ -3935,17 +4002,19 @@
       const journeesFilled = isFilledNumberString(state.journees);
       const journees = Number(state.journees || 0);
       if (isPecStep) {
-        if (!isFilledNumberString(state.fileActive) || fileActive < 0) return false;
+        if (!pecFileActiveBlock.done || fileActive < 0) return false;
       } else if (fileActive < 0 || !preaccueilSansSuiteFilled || !sortiesTotalFilled || !sortiesAvantTermeFilled || !sortiesSplitOk || sorties < 0 || !journeesFilled || journees < 0) {
         return false;
       }
-      const geoRows = Array.isArray(state?.geoRows) ? state.geoRows : [];
-      const geoInvalid = geoRows.some((row) => {
-        const count = Number(row?.count || 0);
-        const dept = String(row?.dept || '').trim().toUpperCase();
-        return count > 0 && !isValidDept(dept);
-      });
-      if (geoInvalid) return false;
+      if (!isPecConditionalStep(conditionalId)) {
+        const geoRows = Array.isArray(state?.geoRows) ? state.geoRows : [];
+        const geoInvalid = geoRows.some((row) => {
+          const count = Number(row?.count || 0);
+          const dept = String(row?.dept || '').trim().toUpperCase();
+          return count > 0 && !isValidDept(dept);
+        });
+        if (geoInvalid) return false;
+      }
       const blocks = evaluateConditionalCoh(state, conditionalId);
       const includeLegacyDirectBlocks = !shouldHideLegacyDirectBlocks(conditionalId);
       const directAvecOrpBlock = includeLegacyDirectBlocks
@@ -3959,17 +4028,19 @@
       const activitesParcoursBlock = evaluateActivitesParcoursBlock(state, conditionalId);
       const handicapBlock = evaluateHandicapMatrixBlock(state);
       const precoBlock = evaluatePreconisationsBlock(state, conditionalId);
+      const orienteursBlock = evaluateOrienteursBlock(state, conditionalId);
       const modalitesBlock = hasModalitesAccueilBlockConditionalStep(conditionalId)
         ? evaluateModalitesAccueilBlock(state)
         : { done: true };
       return blocks.every((block) => block.ok)
         && directAvecOrpBlock.done
         && directSansOrpBlock.done
-        && sortiesBlock.done
-        && suspensionsBlock.done
+        && (isPecConditionalStep(conditionalId) || sortiesBlock.done)
+        && (isPecConditionalStep(conditionalId) || suspensionsBlock.done)
         && activitesParcoursBlock.done
         && handicapBlock.done
         && modalitesBlock.done
+        && orienteursBlock.done
         && precoBlock.done;
     }
 
@@ -4010,6 +4081,8 @@
         };
       }
       const isPecStep = isPecOrpConditionalStep(conditionalId);
+      const isPecFlow = isPecConditionalStep(conditionalId);
+      const pecFileActiveBlock = evaluatePecFileActiveBlock(state);
       const fileActive = Number(state.fileActive || 0);
       const preaccueilSansSuiteFilled = isFilledNumberString(state.preaccueilSansSuite);
       const sortiesTotalFilled = isFilledNumberString(state.sorties);
@@ -4020,7 +4093,7 @@
       const journeesFilled = isFilledNumberString(state.journees);
       const journees = Number(state.journees || 0);
       const fileActiveBlockDone = isPecStep
-        ? (isFilledNumberString(state.fileActive) && fileActive >= 0)
+        ? pecFileActiveBlock.done
         : (fileActive >= 0
           && preaccueilSansSuiteFilled
           && sortiesTotalFilled
@@ -4043,22 +4116,31 @@
       const activitesParcoursBlock = evaluateActivitesParcoursBlock(state, conditionalId);
       const handicapBlock = evaluateHandicapMatrixBlock(state);
       const precoBlock = evaluatePreconisationsBlock(state, conditionalId);
+      const orienteursBlock = evaluateOrienteursBlock(state, conditionalId);
       const modalitesVisible = hasModalitesAccueilBlockConditionalStep(conditionalId);
       const modalitesBlock = modalitesVisible
         ? evaluateModalitesAccueilBlock(state)
         : { done: true, touched: false };
       const baseFileBlocksCount = isPecStep ? 1 : 2;
       const doneFileBlocksCount = (fileActiveBlockDone ? 1 : 0) + (!isPecStep && journeesBlockDone ? 1 : 0);
-      const total = baseFileBlocksCount + cohBlocks.length + (includeLegacyDirectBlocks ? 5 : 3) + (precoBlock.visible ? 1 : 0) + (modalitesVisible ? 1 : 0) + (activitesParcoursBlock.visible ? 1 : 0); // file active (+ journées sauf PEC) + cohérence + (optionnel direct avec/sans ORP) + handicap/sorties/suspensions + préconisations + modalités d'accueil + activités de parcours
+      const total = baseFileBlocksCount
+        + cohBlocks.length
+        + (includeLegacyDirectBlocks ? 5 : 3)
+        + (precoBlock.visible ? 1 : 0)
+        + (modalitesVisible ? 1 : 0)
+        + (activitesParcoursBlock.visible ? 1 : 0)
+        + (orienteursBlock.visible ? 1 : 0)
+        - (isPecFlow ? 2 : 0); // file active (+ journées sauf PEC) + cohérence + (optionnel direct avec/sans ORP) + handicap/sorties/suspensions + préconisations + modalités d'accueil + activités de parcours + orienteurs
       const done = doneFileBlocksCount
         + doneCohBlocks
         + (includeLegacyDirectBlocks && directAvecOrpBlock.done ? 1 : 0)
         + (includeLegacyDirectBlocks && directSansOrpBlock.done ? 1 : 0)
         + (handicapBlock.done ? 1 : 0)
-        + (sortiesBlock.done ? 1 : 0)
-        + (suspensionsBlock.done ? 1 : 0)
+        + (!isPecFlow && sortiesBlock.done ? 1 : 0)
+        + (!isPecFlow && suspensionsBlock.done ? 1 : 0)
         + (activitesParcoursBlock.visible && activitesParcoursBlock.done ? 1 : 0)
         + (modalitesVisible && modalitesBlock.done ? 1 : 0)
+        + (orienteursBlock.visible && orienteursBlock.done ? 1 : 0)
         + (precoBlock.visible && precoBlock.done ? 1 : 0);
 
       const hasCohInput = getActiveConditionalCohDefs(conditionalId).some((def) => {
@@ -4070,7 +4152,7 @@
         return values.some((v) => String(v || '').trim() !== '');
       });
 
-      const touched = (String(state.fileActive || '').trim() !== '')
+      const touched = pecFileActiveBlock.touched
         || (String(state.preaccueilSansSuite || '').trim() !== '')
         || (String(state.sorties || '').trim() !== '')
         || (String(state.sortiesAvantTerme || '').trim() !== '')
@@ -4080,10 +4162,11 @@
         || (includeLegacyDirectBlocks && directAvecOrpBlock.touched)
         || (includeLegacyDirectBlocks && directSansOrpBlock.touched)
         || handicapBlock.touched
-        || sortiesBlock.touched
-        || suspensionsBlock.touched
+        || (!isPecFlow && sortiesBlock.touched)
+        || (!isPecFlow && suspensionsBlock.touched)
         || (activitesParcoursBlock.visible && activitesParcoursBlock.touched)
         || (modalitesVisible && modalitesBlock.touched)
+        || (orienteursBlock.visible && orienteursBlock.touched)
         || precoBlock.touched;
 
       return { done, total, touched };
@@ -4136,6 +4219,21 @@
       return { done, touched, sum, nb: sum };
     }
 
+    function evaluateOrienteursBlock(state, conditionalId = currentConditionalId) {
+      if (!isPecConditionalStep(conditionalId)) {
+        return { visible: false, done: true, touched: false, target: 0, sum: 0, diff: 0 };
+      }
+      const bloc = state?.orienteursBloc || makeEmptyOrienteursState();
+      const keys = ['reseau_emploi', 'mdph', 'demande_personnelle', 'employeur_public', 'employeur_prive', 'autres'];
+      const target = toNum(state?.fileActive);
+      const sum = keys.reduce((acc, key) => acc + toNum(bloc[key]), 0);
+      const diff = sum - target;
+      const touched = keys.some((key) => isFilledNumberString(bloc[key]));
+      const done = keys.every((key) => isFilledNumberString(bloc[key]))
+        && Math.abs(diff) < 0.0001;
+      return { visible: true, done, touched, target, sum, diff };
+    }
+
     function hasActivitesParcoursBlockConditionalStep(conditionalId = currentConditionalId) {
       return isUerosConditionalStep(conditionalId);
     }
@@ -4177,10 +4275,30 @@
     }
 
     function evaluatePreconisationsBlock(state, conditionalId = currentConditionalId) {
-      const visible = isEspoOrUerosConditionalStep(conditionalId)
+      const isPecFlow = isPecConditionalStep(conditionalId);
+      const visible = isPecFlow
+        || isEspoOrUerosConditionalStep(conditionalId)
         || isParcoursConditionalStep(conditionalId);
       if (!visible) return { visible: false, done: true, touched: false };
       const bloc = state?.preconisationsBloc || makeEmptyPreconisationsState();
+      if (isPecFlow) {
+        const totalKeys = ['droit_commun', 'sante_social', 'readaptation_professionnelle'];
+        const detailKeys = ['readaptation_ueros', 'readaptation_espo', 'readaptation_esrp', 'readaptation_dfa'];
+        const target = getConditionalTarget(state, conditionalId);
+        const sum = totalKeys.reduce((acc, key) => acc + toNum(bloc?.[key]), 0);
+        const diff = sum - target;
+        const readaptationSum = detailKeys.reduce((acc, key) => acc + toNum(bloc?.[key]), 0);
+        const readaptationDiff = readaptationSum - toNum(bloc?.readaptation_professionnelle);
+        const calculable = target > 0;
+        const ok = calculable
+          && Math.abs(diff) < 0.0001
+          && Math.abs(readaptationDiff) < 0.0001;
+        const touched = [...totalKeys, ...detailKeys].some((key) => isFilledNumberString(bloc[key]));
+        const done = [...totalKeys, ...detailKeys].every((key) => isFilledNumberString(bloc[key]))
+          && Math.abs(diff) < 0.0001
+          && Math.abs(readaptationDiff) < 0.0001;
+        return { visible: true, done, touched, target, sum, diff, calculable, ok };
+      }
       const numericKeys = [
         'emploi_milieu_ordinaire',
         'entreprise_adaptee',
@@ -4543,7 +4661,7 @@
         const journeesFilled = isFilledNumberString(state.journees);
         const journees = Number(state.journees || 0);
         const fileActiveBlockDone = isPecStep
-          ? (isFilledNumberString(state.fileActive) && fileActive >= 0)
+          ? evaluatePecFileActiveBlock(state).done
           : (fileActive >= 0
             && preaccueilSansSuiteFilled
             && sortiesTotalFilled
@@ -4555,8 +4673,10 @@
         const emploiRow = state?.directAvecOrp?.row || {};
         const emploiDone = emploiKeys.length ? emploiKeys.every((key) => isFilledNumberString(emploiRow[key])) : false;
         const rows = [{ key: 'fileactive', label: isPecStep ? 'File active' : 'File active', done: fileActiveBlockDone }];
+        const orienteursBlock = evaluateOrienteursBlock(state, currentConditionalId);
         if (!isPecStep) rows.push({ key: 'journees', label: 'Journées', done: journeesBlockDone });
-        rows.push({ key: 'suivi_emploi', label: "Suivi vers l'emploi", done: emploiDone });
+        if (orienteursBlock.visible) rows.push({ key: 'orienteurs', label: 'Orienteurs', done: orienteursBlock.done });
+        if (emploiKeys.length) rows.push({ key: 'suivi_emploi', label: "Suivi vers l'emploi", done: emploiDone });
         return rows;
       }
       if (isDirectSansOrpCadrageConditionalStep(currentConditionalId)) {
@@ -4582,7 +4702,7 @@
       const journeesFilled = isFilledNumberString(state.journees);
       const journees = Number(state.journees || 0);
       const fileActiveBlockDone = isPecStep
-        ? (isFilledNumberString(state.fileActive) && fileActive >= 0)
+        ? evaluatePecFileActiveBlock(state).done
         : (fileActive >= 0
           && preaccueilSansSuiteFilled
           && sortiesTotalFilled
@@ -4603,6 +4723,10 @@
       }
       const handicapBlock = evaluateHandicapMatrixBlock(state);
       rows.push({ key: 'handicap_matrix', label: 'Type de handicap principal et associé', done: handicapBlock.done });
+      const orienteursBlock = evaluateOrienteursBlock(state, currentConditionalId);
+      if (orienteursBlock.visible) {
+        rows.push({ key: 'orienteurs', label: 'Orienteurs', done: orienteursBlock.done });
+      }
       const precoBlock = evaluatePreconisationsBlock(state, currentConditionalId);
       if (precoBlock.visible) {
         rows.push({ key: 'preconisations_sortie', label: 'Préconisations lors de la sortie définitive', done: precoBlock.done });
@@ -4614,11 +4738,15 @@
       const sortiesBlock = evaluateSortiesBlock(state);
       const suspensionsBlock = evaluateSuspensionsBlock(state);
       const activitesParcoursBlock = evaluateActivitesParcoursBlock(state, currentConditionalId);
-      rows.push({ key: 'suspensions', label: 'Suspensions', done: suspensionsBlock.done });
+      if (!isPecConditionalStep(currentConditionalId)) {
+        rows.push({ key: 'suspensions', label: 'Suspensions', done: suspensionsBlock.done });
+      }
       if (activitesParcoursBlock.visible) {
         rows.push({ key: 'activites_parcours', label: 'Activités de parcours', done: activitesParcoursBlock.done });
       }
-      rows.push({ key: 'sorties_suspensions', label: 'Sortie définitive avant le terme de la prestation', done: sortiesBlock.done });
+      if (!isPecConditionalStep(currentConditionalId)) {
+        rows.push({ key: 'sorties_suspensions', label: 'Sortie définitive avant le terme de la prestation', done: sortiesBlock.done });
+      }
       const emploiKeys = getEmploiRequiredFieldKeys(currentConditionalId);
       if (emploiKeys.length) {
         const emploiRow = state?.directAvecOrp?.row || {};
@@ -4638,6 +4766,7 @@
         'origine_handicap',
         'handicap_matrix',
         'lesion_origine',
+        'orienteurs',
         'modalites_accueil',
         'suspensions',
         'activites_parcours',
@@ -5147,6 +5276,8 @@
       const sortiesBloc = state?.sortiesBloc || makeEmptySortiesState();
       const suspBloc = state?.suspensionsBloc || makeEmptySuspensionsState();
       const precoBloc = state?.preconisationsBloc || makeEmptyPreconisationsState();
+      const pecFileActiveBloc = state?.pecFileActive || makeEmptyPecFileActiveState();
+      const orienteursBloc = state?.orienteursBloc || makeEmptyOrienteursState();
       const directAvecOrp = state?.directAvecOrp || makeEmptyDirectAvecOrpState();
       const directSansOrp = state?.directSansOrp || makeEmptyDirectSansOrpState();
       const indirect = state?.indirect || makeEmptyIndirectState();
@@ -5164,6 +5295,7 @@
       const hasHebergement = getContextHasHebergement();
       const hasHorsMurs = getContextHasHorsMurs();
       const showDiscontinuePersonnes = isEspoOrEsrpConditionalStep(currentConditionalId);
+      const isPecFlow = isPecConditionalStep(currentConditionalId);
       const showEmploiAccesBlock = hasEmploiAccesBlockConditionalStep(currentConditionalId);
       const showEmploiPresenceBlock = hasEmploiPresenceBlockConditionalStep(currentConditionalId);
       const specialRowKeys = getSpecialIndirectRowsForConditional(currentConditionalId);
@@ -5182,7 +5314,6 @@
       ).trim();
       const declaredSortiesNb = toNum(declaredSortiesValue);
       sortiesBloc.nb = declaredSortiesValue;
-      const suspEval = evaluateSuspensionsBlock(state);
       const showSortiesReasons = true;
       const sortiesPrecisionHtml = showSortiesReasons && toNum(sortiesBloc.raisons?.autres_nb) > 0 && String(sortiesBloc.raisons?.autres_precision || sortiesBloc.raisons?.autres || '').trim() === ''
         ? '<div class="status err">Précisez le motif si la ligne « Autres » comporte un effectif.</div>'
@@ -5195,7 +5326,11 @@
       const showDirectSansCollectives = getSelectedDirectSansOrpInfoPersonnesRows().includes('info_personnes_collectives');
       const showDirectSansIndividuelles = getSelectedDirectSansOrpInfoPersonnesRows().includes('info_personnes_individuelles');
       const handicapEval = evaluateHandicapMatrixBlock(state);
-      const preconisationsNumericKeys = [
+      const preconisationsNumericKeys = isPecFlow ? [
+        'droit_commun',
+        'sante_social',
+        'readaptation_professionnelle',
+      ] : [
         'emploi_milieu_ordinaire',
         'entreprise_adaptee',
         'esat',
@@ -5210,7 +5345,7 @@
         'emploi_accompagne',
         'autres',
       ];
-      if (!isEsrpConditionalStep(currentConditionalId)) {
+      if (!isPecFlow && !isEsrpConditionalStep(currentConditionalId)) {
         preconisationsNumericKeys.splice(7, 0, 'formation_esrp_dfa');
       }
       const preconisationsCasesCount = preconisationsNumericKeys.reduce((acc, key) => acc + toNum(precoBloc?.[key]), 0);
@@ -5251,7 +5386,8 @@
       const tauxAcces = nbRepondants > 0 ? ((accesNb / nbRepondants) * 100) : 0;
       const tauxPresence = nbRepondants > 0 ? ((presenceNb / nbRepondants) * 100) : 0;
       const repondantsOk = nbRepondants <= sortiesN1;
-      const showPrecoForStep = isEspoOrUerosConditionalStep(currentConditionalId)
+      const showPrecoForStep = isPecFlow
+        || isEspoOrUerosConditionalStep(currentConditionalId)
         || isParcoursConditionalStep(currentConditionalId);
       const showPrecoBloc = showPrecoForStep;
       const hideLegacyDirectBlocks = shouldHideLegacyDirectBlocks(currentConditionalId);
@@ -5689,6 +5825,19 @@
             </table>
           </div>
         </div>
+        ${isPecFlow ? `
+        <div class="box cond-block cond-block-anchor" data-block-key="orienteurs" id="cond-block-orienteurs">
+          <strong>Orienteurs</strong>
+          <div class="dispo-list" style="margin-top:8px;">
+            <div class="field field-radio-inline q35-sub-inline q35-places-inline"><div><label>Réseau pour l'emploi (RPE)</label></div><div><input class="cond-orienteur-input" data-orienteur-key="reseau_emploi" type="number" min="0" step="1" value="${String(orienteursBloc.reseau_emploi || '')}"></div></div>
+            <div class="field field-radio-inline q35-sub-inline q35-places-inline"><div><label>MDPH</label></div><div><input class="cond-orienteur-input" data-orienteur-key="mdph" type="number" min="0" step="1" value="${String(orienteursBloc.mdph || '')}"></div></div>
+            <div class="field field-radio-inline q35-sub-inline q35-places-inline"><div><label>Demande personnelle</label></div><div><input class="cond-orienteur-input" data-orienteur-key="demande_personnelle" type="number" min="0" step="1" value="${String(orienteursBloc.demande_personnelle || '')}"></div></div>
+            <div class="field field-radio-inline q35-sub-inline q35-places-inline"><div><label>Employeur public</label></div><div><input class="cond-orienteur-input" data-orienteur-key="employeur_public" type="number" min="0" step="1" value="${String(orienteursBloc.employeur_public || '')}"></div></div>
+            <div class="field field-radio-inline q35-sub-inline q35-places-inline"><div><label>Employeur privé</label></div><div><input class="cond-orienteur-input" data-orienteur-key="employeur_prive" type="number" min="0" step="1" value="${String(orienteursBloc.employeur_prive || '')}"></div></div>
+            <div class="field field-radio-inline q35-sub-inline q35-places-inline"><div><label>Autres</label></div><div><input class="cond-orienteur-input" data-orienteur-key="autres" type="number" min="0" step="1" value="${String(orienteursBloc.autres || '')}"></div></div>
+          </div>
+        </div>
+        ` : ''}
         ${showModalitesAccueilBlock ? `
         <div class="box cond-block cond-block-anchor" data-block-key="modalites_accueil" id="cond-block-modalites_accueil">
           <strong>Modalité d'accueil</strong>
@@ -5749,6 +5898,7 @@
           </div>
         </div>
         ` : ''}
+        ${isPecFlow ? '' : `
         <div class="box cond-block cond-block-anchor" data-block-key="suspensions" id="cond-block-suspensions">
           <strong>Suspensions</strong>
           <div class="field field-radio-inline q35-sub-inline q35-places-inline" style="margin-top:8px;">
@@ -5773,6 +5923,7 @@
             </div>
           </div>
         </div>
+        `}
         ${hasActivitesParcoursBlockConditionalStep(currentConditionalId) ? `
         <div class="box cond-block cond-block-anchor" data-block-key="activites_parcours" id="cond-block-activites_parcours">
           <strong>Activités de parcours</strong>
@@ -5791,6 +5942,7 @@
           </div>
         </div>
         ` : ''}
+        ${isPecFlow ? '' : `
         <div class="box cond-block cond-block-anchor" data-block-key="sorties_suspensions" id="cond-block-sorties_suspensions">
           <div class="cond-block-head">
             <strong>Sortie définitive avant le terme de la prestation</strong>
@@ -5814,10 +5966,26 @@
             </div>
           </div>
         </div>
+        `}
         ${showPrecoBloc ? `
         <div class="box cond-block cond-block-anchor" data-block-key="preconisations_sortie" id="cond-block-preconisations_sortie">
           <strong>Préconisations lors de la sortie définitive</strong>
           <div class="dispo-list" style="margin-top:6px;">
+            ${isPecFlow ? `
+            <div class="cond-subgroup-title">Préconisations</div>
+            <div class="ds-simple-participants-block">
+              <div class="field field-radio-inline q35-sub-inline q35-places-inline"><div><label>Droit commun</label></div><div><input class="cond-preco-input" data-preco-key="droit_commun" type="number" min="0" step="1" value="${precoValue('droit_commun')}"></div></div>
+              <div class="field field-radio-inline q35-sub-inline q35-places-inline"><div><label>Santé / Social</label></div><div><input class="cond-preco-input" data-preco-key="sante_social" type="number" min="0" step="1" value="${precoValue('sante_social')}"></div></div>
+              <div class="field field-radio-inline q35-sub-inline q35-places-inline"><div><label>Réadaptation professionnelle</label></div><div><input class="cond-preco-input" data-preco-key="readaptation_professionnelle" type="number" min="0" step="1" value="${precoValue('readaptation_professionnelle')}"></div></div>
+            </div>
+            <div class="cond-subgroup-title">Réadaptation professionnelle, dont</div>
+            <div class="ds-simple-participants-block">
+              <div class="field field-radio-inline q35-sub-inline q35-places-inline"><div><label>UEROS</label></div><div><input class="cond-preco-input" data-preco-key="readaptation_ueros" type="number" min="0" step="1" value="${precoValue('readaptation_ueros')}"></div></div>
+              <div class="field field-radio-inline q35-sub-inline q35-places-inline"><div><label>ESPO</label></div><div><input class="cond-preco-input" data-preco-key="readaptation_espo" type="number" min="0" step="1" value="${precoValue('readaptation_espo')}"></div></div>
+              <div class="field field-radio-inline q35-sub-inline q35-places-inline"><div><label>ESRP</label></div><div><input class="cond-preco-input" data-preco-key="readaptation_esrp" type="number" min="0" step="1" value="${precoValue('readaptation_esrp')}"></div></div>
+              <div class="field field-radio-inline q35-sub-inline q35-places-inline"><div><label>DFA</label></div><div><input class="cond-preco-input" data-preco-key="readaptation_dfa" type="number" min="0" step="1" value="${precoValue('readaptation_dfa')}"></div></div>
+            </div>
+            ` : `
             <div class="cond-subgroup-title">Préconisations d'orientation emploi</div>
             <div class="ds-simple-participants-block">
               <div class="field field-radio-inline q35-sub-inline q35-places-inline"><div><label>Emploi en milieu ordinaire</label></div><div><input class="cond-preco-input" data-preco-key="emploi_milieu_ordinaire" type="number" min="0" step="1" value="${precoValue('emploi_milieu_ordinaire')}"></div></div>
@@ -5848,6 +6016,7 @@
               <div class="field field-radio-inline q35-sub-inline q35-places-inline"><div><label>Précisez</label></div><div><input class="cond-preco-input" data-preco-key="autres_precision" type="text" value="${String(precoBloc.autres_precision || '').replace(/\"/g, '&quot;')}"></div></div>
               <div class="field field-radio-inline q35-sub-inline q35-places-inline"><div><label>Effectif</label></div><div><input class="cond-preco-input" data-preco-key="autres" type="number" min="0" step="1" value="${precoValue('autres')}"></div></div>
             </div>
+            `}
           </div>
           <div class="status" style="margin-top:10px;">Cas complétés (calcul automatique) : <strong>${preconisationsCasesCount.toFixed(0)}</strong></div>
         </div>` : ''}
@@ -5910,6 +6079,10 @@
         input.addEventListener('change', updateCurrentConditionalStateFromInputs);
       });
       conditionalCoherenceSections.querySelectorAll('.cond-preco-input').forEach((input) => {
+        input.addEventListener('input', updateCurrentConditionalStateFromInputs);
+        input.addEventListener('change', updateCurrentConditionalStateFromInputs);
+      });
+      conditionalCoherenceSections.querySelectorAll('.cond-orienteur-input').forEach((input) => {
         input.addEventListener('input', updateCurrentConditionalStateFromInputs);
         input.addEventListener('change', updateCurrentConditionalStateFromInputs);
       });
@@ -6179,6 +6352,7 @@
       const rowSortiesTotalEl = document.getElementById('cond-row-sorties-total');
       const rowSortiesAvantTermeEl = document.getElementById('cond-row-sorties-avant-terme');
       const rowSortiesTermeEl = document.getElementById('cond-row-sorties-terme');
+      const pecFileActiveBreakdownEl = document.getElementById('cond-pec-file-active-breakdown');
       const dureeHelpEl = document.getElementById('cond-duree-help');
       const isFormationSelectionStep = isFormationSelectionConditionalStep(def.id);
       const isDirectSansOrpCadrageStep = isDirectSansOrpCadrageConditionalStep(def.id);
@@ -6204,11 +6378,17 @@
         if (rowSortiesTotalEl) rowSortiesTotalEl.style.display = isPecStep ? 'none' : '';
         if (rowSortiesAvantTermeEl) rowSortiesAvantTermeEl.style.display = isPecStep ? 'none' : '';
         if (rowSortiesTermeEl) rowSortiesTermeEl.style.display = isPecStep ? 'none' : '';
+        if (pecFileActiveBreakdownEl) pecFileActiveBreakdownEl.style.display = isPecStep ? 'block' : 'none';
         if (journeesBlock) journeesBlock.style.display = isPecStep ? 'none' : '';
       } else if (journeesBlock) {
         journeesBlock.style.display = 'none';
       }
       if (fileActiveEl) fileActiveEl.value = state.fileActive;
+      condPecFileInputs.forEach((input) => {
+        const key = String(input.getAttribute('data-pec-file-key') || '').trim();
+        if (!key) return;
+        input.value = String(state?.pecFileActive?.[key] || '');
+      });
       if (preaccueilSansSuiteEl) preaccueilSansSuiteEl.value = state.preaccueilSansSuite;
       if (sortiesAvantTermeEl) sortiesAvantTermeEl.value = state.sortiesAvantTerme;
       if (sortiesTotalEl) sortiesTotalEl.value = state.sorties;
@@ -6443,6 +6623,12 @@
       if (!currentConditionalId) return;
       const state = getConditionalStateById(currentConditionalId);
       state.fileActive = String(condFileActiveInput?.value || '').trim();
+      state.pecFileActive = makeEmptyPecFileActiveState();
+      condPecFileInputs.forEach((input) => {
+        const key = String(input.getAttribute('data-pec-file-key') || '').trim();
+        if (!key) return;
+        state.pecFileActive[key] = String(input.value || '').trim();
+      });
       state.preaccueilSansSuite = String(condPreaccueilSansSuiteInput?.value || '').trim();
       state.sorties = String(condSortiesTotalInput?.value || '').trim();
       state.sortiesAvantTerme = String(condSortiesAvantTermeInput?.value || '').trim();
@@ -6570,6 +6756,21 @@
         emploi_accompagne: String(conditionalCoherenceSections?.querySelector('.cond-preco-input[data-preco-key="emploi_accompagne"]')?.value || '').trim(),
         autres: String(conditionalCoherenceSections?.querySelector('.cond-preco-input[data-preco-key="autres"]')?.value || '').trim(),
         autres_precision: String(conditionalCoherenceSections?.querySelector('.cond-preco-input[data-preco-key="autres_precision"]')?.value || '').trim(),
+        droit_commun: String(conditionalCoherenceSections?.querySelector('.cond-preco-input[data-preco-key="droit_commun"]')?.value || '').trim(),
+        sante_social: String(conditionalCoherenceSections?.querySelector('.cond-preco-input[data-preco-key="sante_social"]')?.value || '').trim(),
+        readaptation_professionnelle: String(conditionalCoherenceSections?.querySelector('.cond-preco-input[data-preco-key="readaptation_professionnelle"]')?.value || '').trim(),
+        readaptation_ueros: String(conditionalCoherenceSections?.querySelector('.cond-preco-input[data-preco-key="readaptation_ueros"]')?.value || '').trim(),
+        readaptation_espo: String(conditionalCoherenceSections?.querySelector('.cond-preco-input[data-preco-key="readaptation_espo"]')?.value || '').trim(),
+        readaptation_esrp: String(conditionalCoherenceSections?.querySelector('.cond-preco-input[data-preco-key="readaptation_esrp"]')?.value || '').trim(),
+        readaptation_dfa: String(conditionalCoherenceSections?.querySelector('.cond-preco-input[data-preco-key="readaptation_dfa"]')?.value || '').trim(),
+      };
+      const orienteursBloc = {
+        reseau_emploi: String(conditionalCoherenceSections?.querySelector('.cond-orienteur-input[data-orienteur-key="reseau_emploi"]')?.value || '').trim(),
+        mdph: String(conditionalCoherenceSections?.querySelector('.cond-orienteur-input[data-orienteur-key="mdph"]')?.value || '').trim(),
+        demande_personnelle: String(conditionalCoherenceSections?.querySelector('.cond-orienteur-input[data-orienteur-key="demande_personnelle"]')?.value || '').trim(),
+        employeur_public: String(conditionalCoherenceSections?.querySelector('.cond-orienteur-input[data-orienteur-key="employeur_public"]')?.value || '').trim(),
+        employeur_prive: String(conditionalCoherenceSections?.querySelector('.cond-orienteur-input[data-orienteur-key="employeur_prive"]')?.value || '').trim(),
+        autres: String(conditionalCoherenceSections?.querySelector('.cond-orienteur-input[data-orienteur-key="autres"]')?.value || '').trim(),
       };
       const formationsSelectionRows = Array.from(conditionalCoherenceSections?.querySelectorAll('.cond-formation-row') || []).map((row) => {
         const idx = Number(row.getAttribute('data-formation-idx') || -1);
@@ -6593,6 +6794,7 @@
       state.sortiesBloc = sortiesBloc;
       state.suspensionsBloc = suspensionsBloc;
       state.preconisationsBloc = preconisationsBloc;
+      state.orienteursBloc = orienteursBloc;
       state.formationsSelection = { rows: formationsSelectionRows };
       state.done = validateConditionalState(state, currentConditionalId);
       conditionalState.set(currentConditionalId, state);
@@ -10027,6 +10229,10 @@
     [condFileActiveInput, condPreaccueilSansSuiteInput, condSortiesTotalInput, condSortiesAvantTermeInput, condSortiesTermeInput, condJourneesInput].forEach((input) => {
       input?.addEventListener('input', updateCurrentConditionalStateFromInputs);
       input?.addEventListener('change', updateCurrentConditionalStateFromInputs);
+    });
+    condPecFileInputs.forEach((input) => {
+      input.addEventListener('input', updateCurrentConditionalStateFromInputs);
+      input.addEventListener('change', updateCurrentConditionalStateFromInputs);
     });
 
     conditionalPrevBtn?.addEventListener('click', () => {
