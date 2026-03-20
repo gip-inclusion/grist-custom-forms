@@ -1546,6 +1546,25 @@
       font-size: 1rem;
       color: #2b4864;
     }
+    #cond-block-preconisations_sortie .pec-preco-section {
+      margin-top: 10px;
+    }
+    #cond-block-preconisations_sortie .pec-preco-total-row {
+      display: grid;
+      grid-template-columns: minmax(260px, 1fr) minmax(180px, 42%);
+      align-items: center;
+      gap: 16px;
+      padding: 10px 0 8px 0;
+      border-top: 1px dashed #d7e4f0;
+    }
+    #cond-block-preconisations_sortie .pec-preco-total-row .cond-subgroup-title {
+      margin: 0;
+      font-size: 1rem;
+    }
+    #cond-block-preconisations_sortie .pec-preco-total-row .field {
+      border-top: none;
+      padding-top: 0;
+    }
     #cond-block-preconisations_sortie .cond-subgroup-title:first-of-type {
       margin-top: 4px;
     }
@@ -5975,17 +5994,23 @@
           <strong>Préconisations lors de la sortie définitive</strong>
           <div class="dispo-list" style="margin-top:6px;">
             ${isPecFlow ? `
-            <div class="ds-simple-participants-block">
-              <div class="field field-radio-inline q35-sub-inline q35-places-inline"><div><label>Droit commun</label></div><div><input class="cond-preco-input" data-preco-key="droit_commun" type="number" min="0" step="1" value="${precoValue('droit_commun')}"></div></div>
-              <div class="field field-radio-inline q35-sub-inline q35-places-inline"><div><label>Santé / Social</label></div><div><input class="cond-preco-input" data-preco-key="sante_social" type="number" min="0" step="1" value="${precoValue('sante_social')}"></div></div>
+            <div class="pec-preco-section">
+              <div class="ds-simple-participants-block">
+                <div class="field field-radio-inline q35-sub-inline q35-places-inline"><div><label>Droit commun</label></div><div><input class="cond-preco-input" data-preco-key="droit_commun" type="number" min="0" step="1" value="${precoValue('droit_commun')}"></div></div>
+                <div class="field field-radio-inline q35-sub-inline q35-places-inline"><div><label>Santé / Social</label></div><div><input class="cond-preco-input" data-preco-key="sante_social" type="number" min="0" step="1" value="${precoValue('sante_social')}"></div></div>
+              </div>
             </div>
-            <div class="cond-subgroup-title">Réadaptation professionnelle, dont</div>
-            <div class="field field-radio-inline q35-sub-inline q35-places-inline"><div><label>Réadaptation professionnelle</label></div><div><input class="cond-preco-input" data-preco-key="readaptation_professionnelle" type="number" min="0" step="1" value="${precoValue('readaptation_professionnelle')}"></div></div>
-            <div class="ds-simple-participants-block">
-              <div class="field field-radio-inline q35-sub-inline q35-places-inline"><div><label>UEROS</label></div><div><input class="cond-preco-input" data-preco-key="readaptation_ueros" type="number" min="0" step="1" value="${precoValue('readaptation_ueros')}"></div></div>
-              <div class="field field-radio-inline q35-sub-inline q35-places-inline"><div><label>ESPO</label></div><div><input class="cond-preco-input" data-preco-key="readaptation_espo" type="number" min="0" step="1" value="${precoValue('readaptation_espo')}"></div></div>
-              <div class="field field-radio-inline q35-sub-inline q35-places-inline"><div><label>ESRP</label></div><div><input class="cond-preco-input" data-preco-key="readaptation_esrp" type="number" min="0" step="1" value="${precoValue('readaptation_esrp')}"></div></div>
-              <div class="field field-radio-inline q35-sub-inline q35-places-inline"><div><label>DFA</label></div><div><input class="cond-preco-input" data-preco-key="readaptation_dfa" type="number" min="0" step="1" value="${precoValue('readaptation_dfa')}"></div></div>
+            <div class="pec-preco-section">
+              <div class="pec-preco-total-row">
+                <div class="cond-subgroup-title">Réadaptation professionnelle, dont</div>
+                <div class="field field-radio-inline q35-sub-inline q35-places-inline"><div><label>Réadaptation professionnelle</label></div><div><input class="cond-preco-input" data-preco-key="readaptation_professionnelle" type="number" min="0" step="1" value="${precoValue('readaptation_professionnelle')}"></div></div>
+              </div>
+              <div class="ds-simple-participants-block">
+                <div class="field field-radio-inline q35-sub-inline q35-places-inline"><div><label>UEROS</label></div><div><input class="cond-preco-input" data-preco-key="readaptation_ueros" type="number" min="0" step="1" value="${precoValue('readaptation_ueros')}"></div></div>
+                <div class="field field-radio-inline q35-sub-inline q35-places-inline"><div><label>ESPO</label></div><div><input class="cond-preco-input" data-preco-key="readaptation_espo" type="number" min="0" step="1" value="${precoValue('readaptation_espo')}"></div></div>
+                <div class="field field-radio-inline q35-sub-inline q35-places-inline"><div><label>ESRP</label></div><div><input class="cond-preco-input" data-preco-key="readaptation_esrp" type="number" min="0" step="1" value="${precoValue('readaptation_esrp')}"></div></div>
+                <div class="field field-radio-inline q35-sub-inline q35-places-inline"><div><label>DFA</label></div><div><input class="cond-preco-input" data-preco-key="readaptation_dfa" type="number" min="0" step="1" value="${precoValue('readaptation_dfa')}"></div></div>
+              </div>
             </div>
             ` : `
             <div class="cond-subgroup-title">Préconisations d'orientation emploi</div>
