@@ -4090,7 +4090,8 @@
     }
 
     function toNum(value) {
-      const n = Number(value || 0);
+      const normalized = String(value ?? '').trim().replace(',', '.');
+      const n = Number(normalized || 0);
       return Number.isFinite(n) ? n : 0;
     }
 
@@ -4198,11 +4199,16 @@
       if (!isEsrpConditionalStep(conditionalId)) {
         numericKeys.splice(7, 0, 'formation_esrp_dfa');
       }
+      const target = toNum(String(state?.sortiesTerme || getConditionalSortiesTermeAuto(state)));
+      const sum = numericKeys.reduce((acc, key) => acc + toNum(bloc?.[key]), 0);
+      const diff = sum - target;
+      const calculable = target > 0;
+      const ok = calculable && Math.abs(diff) < 0.0001;
       const touched = numericKeys.some((k) => isFilledNumberString(bloc[k])) || String(bloc.autres_precision || '').trim() !== '';
       const needAutresPrecision = toNum(bloc.autres) > 0;
       const done = numericKeys.every((k) => isFilledNumberString(bloc[k]))
         && (!needAutresPrecision || String(bloc.autres_precision || '').trim() !== '');
-      return { visible: true, done, touched };
+      return { visible: true, done, touched, target, sum, diff, calculable, ok };
     }
 
     function evaluateModalitesAccueilBlock(state) {
@@ -4217,7 +4223,7 @@
       if (selectedModalites.has('hybride')) keys.push('hybride_complet', 'hybride_partiel');
       if (selectedModalites.has('distanciel')) keys.push('distanciel_complet', 'distanciel_partiel');
       if (hasHorsMurs) keys.push('hors_murs_personnes');
-      if (hasHebergement) keys.push('hebergees_personnes', 'hebergees_nuitees');
+      if (hasHebergement) keys.push('hebergees_personnes');
       const target = getConditionalTarget(state);
       const presentielTotal = selectedModalites.has('presentiel')
         ? toNum(row.presentiel_complet) + toNum(row.presentiel_partiel)
@@ -4778,6 +4784,7 @@
       const isSortiesSuspensions = normalizedKey === 'sorties_suspensions';
       const isModalitesAccueil = normalizedKey === 'modalites_accueil';
       const isActivitesParcours = normalizedKey === 'activites_parcours';
+      const isPreconisationsSortie = normalizedKey === 'preconisations_sortie';
       const isSuiviEmploi = normalizedKey === 'suivi_emploi';
       if (isHandicapMatrix) {
         const handicapEval = evaluateHandicapMatrixBlock(state);
@@ -4875,6 +4882,32 @@
             <span class="kpi-mini">
               <span class="kpi-mini-label">Saisie</span>
               <span class="kpi-mini-value">${saisie.toFixed(0)}</span>
+            </span>
+          </div>
+        `;
+        const headerHeight = conditionalCurrentHeader?.offsetHeight || 0;
+        conditionalStepEl?.style?.setProperty('--cond-header-height', `${headerHeight}px`);
+        return;
+      }
+      if (isPreconisationsSortie) {
+        const precoEval = evaluatePreconisationsBlock(state, currentConditionalId);
+        conditionalCurrentKpi.hidden = false;
+        conditionalCurrentKpi.style.display = 'inline-flex';
+        conditionalCurrentHeader?.classList.remove('is-no-kpi');
+        conditionalCurrentKpi.className = precoEval.ok ? 'status kpi cond-current-kpi ok' : 'status kpi cond-current-kpi err';
+        conditionalCurrentKpi.innerHTML = `
+          <div class="current-kpi-single">
+            <span class="kpi-mini">
+              <span class="kpi-mini-label">Cible*</span>
+              <span class="kpi-mini-value">${precoEval.target.toFixed(0)}</span>
+            </span>
+            <span class="kpi-mini">
+              <span class="kpi-mini-label">Saisie</span>
+              <span class="kpi-mini-value">${precoEval.sum.toFixed(0)}</span>
+            </span>
+            <span class="kpi-mini kpi-slot-diff ${precoEval.ok ? 'diff-ok' : 'diff-warn'}">
+              <span class="kpi-mini-label">Écart</span>
+              <span class="kpi-mini-value">${precoEval.calculable ? precoEval.diff.toFixed(0) : 'n/c'}</span>
             </span>
           </div>
         `;
@@ -5350,7 +5383,7 @@
               <div class="status ${accesContratsOk ? 'ok' : 'err'}" data-emploi-status="acces-contrats">Contrats saisis: <span data-emploi-val="acces-contrats-sum">${accesContratsSum}</span> / <span data-emploi-val="acces-nb">${accesNb}</span> (doit être = au nombre ayant accédé)</div>
               <div class="ds-simple-participants-block">
                 <div class="field field-radio-inline q35-sub-inline q35-places-inline cond-subline">
-                  <div><label>Parmi eux, combien y sont encore ?</label></div>
+                  <div><label>Combien sont en emploi au moment de l'enquête ?</label></div>
                   <div><input class="cond-direct-avec-input" data-da-key="emploi_acces_encore_nb" type="number" min="0" step="1" value="${String(parcoursRow.emploi_acces_encore_nb || '')}"></div>
                 </div>
               </div>
@@ -5572,7 +5605,7 @@
             ${showDirectSansCollectives ? `
             <div class="ds-simple-section">
               <p class="ds-simple-subtitle">Informations collectives</p>
-              <div class="field field-radio-inline q35-sub-inline q35-places-inline" style="padding:8px 0;"><div><label>Nombre de journées</label></div><div><input class="cond-direct-sans-input" data-ds-row="info_personnes_collectives" data-ds-key="journees" type="number" min="0" step="0.5" placeholder="Journées" value="${String(directSansOrp.rows?.info_personnes_collectives?.journees || '')}"></div></div>
+              <div class="field field-radio-inline q35-sub-inline q35-places-inline" style="padding:8px 0;"><div><label>Nombre de journées</label></div><div><input class="cond-direct-sans-input" data-ds-row="info_personnes_collectives" data-ds-key="journees" type="number" min="0" step="any" placeholder="Journées" value="${String(directSansOrp.rows?.info_personnes_collectives?.journees || '')}"></div></div>
               <div class="ds-coef-tip">
                 <span>Journées pondérées (coef 1,5) : <strong class="cond-info-coll-coef-value">${(toNum(directSansOrp.rows?.info_personnes_collectives?.journees) * 1.5).toFixed(1)}</strong></span>
                 <small>Calcul automatique: journées saisies × 1,5</small>
@@ -5617,7 +5650,7 @@
                   ${getSpecialIndirectFieldDefsForRow(rowKey, currentConditionalId).map((field) => `
                     <div class="field field-radio-inline q35-sub-inline q35-places-inline">
                       <div><label>${field.label}</label></div>
-                      <div><input class="cond-indirect-input" data-in-row="${rowKey}" data-in-key="${field.key}" type="number" min="0" step="${field.key === 'heures' ? '0.1' : (field.key === 'journees' ? '0.5' : '1')}" value="${String(indirect.rows?.[rowKey]?.[field.key] || '')}"></div>
+                      <div><input class="cond-indirect-input" data-in-row="${rowKey}" data-in-key="${field.key}" type="number" min="0" step="${field.key === 'heures' ? '0.1' : (field.key === 'journees' ? 'any' : '1')}" value="${String(indirect.rows?.[rowKey]?.[field.key] || '')}"></div>
                     </div>
                   `).join('')}
                 </div>
@@ -5710,7 +5743,6 @@
               <div class="cond-subgroup-title"><span>Hébergement</span></div>
               <div class="parcours-nested">
                 <div class="field field-radio-inline q35-sub-inline q35-places-inline cond-subline"><div><label>Combien de personnes ont été hébergées ?</label></div><div><input class="cond-direct-avec-input" data-da-key="hebergees_personnes" type="number" min="0" step="1" value="${String(directAvecOrp.row?.hebergees_personnes || '')}"></div></div>
-                <div class="field field-radio-inline q35-sub-inline q35-places-inline cond-subline"><div><label>Pour un total de combien de nuitées ?</label></div><div><input class="cond-direct-avec-input" data-da-key="hebergees_nuitees" type="number" min="0" step="1" value="${String(directAvecOrp.row?.hebergees_nuitees || directAvecOrp.row?.hebergees_journees || '')}"></div></div>
               </div>
             </div>
             ` : ''}
