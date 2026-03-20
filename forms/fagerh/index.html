@@ -1223,8 +1223,10 @@
       margin-top: 2px;
     }
     .field-committee .radio-group {
-      flex-wrap: nowrap;
-      gap: 6px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 8px;
     }
     .prefecture-distance-wrap .radio-group {
       justify-content: flex-end;
@@ -1268,19 +1270,20 @@
       max-width: 100%;
     }
     .step[data-step="4"] .field-radio-inline.field-committee {
-      flex-wrap: nowrap;
-      align-items: flex-start;
+      display: grid;
+      grid-template-columns: minmax(320px, 1fr) max-content;
+      align-items: center;
+      column-gap: 16px;
+      row-gap: 10px;
     }
     .step[data-step="4"] .field-radio-inline.field-committee > div:first-child {
-      flex: 1 1 auto;
-      min-width: 260px;
+      min-width: 0;
     }
     .step[data-step="4"] .field-radio-inline.field-committee > fieldset.a11y-group {
-      margin-left: auto;
-      flex: 0 1 auto;
+      margin-left: 0;
+      min-width: max-content;
       max-width: 100%;
-      overflow-x: auto;
-      scrollbar-width: thin;
+      overflow: visible;
     }
     .step[data-step="4"] .ctx-sub .field-radio-inline .radio-group {
       justify-content: flex-end;
