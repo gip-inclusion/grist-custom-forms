@@ -5763,12 +5763,12 @@
             ${showDirectSansCollectives ? `
             <div class="ds-simple-section">
               <p class="ds-simple-subtitle">Informations collectives</p>
-              <div class="field field-radio-inline q35-sub-inline q35-places-inline" style="padding:8px 0;"><div><label>Nombre de journées</label></div><div><input class="cond-direct-sans-input" data-ds-row="info_personnes_collectives" data-ds-key="journees" type="number" min="0" step="any" placeholder="Journées" value="${String(directSansOrp.rows?.info_personnes_collectives?.journees || '')}"></div></div>
+              <div class="field field-radio-inline q35-sub-inline q35-places-inline" style="padding:8px 0;"><div><label>Nombre de journées</label></div><div><input class="cond-direct-sans-input" data-ds-row="info_personnes_collectives" data-ds-key="journees" type="number" min="0" step="0.5" placeholder="Journées" value="${String(directSansOrp.rows?.info_personnes_collectives?.journees || '')}"></div></div>
               <div class="ds-coef-tip">
                 <span>Journées pondérées (coef 1,5) : <strong class="cond-info-coll-coef-value">${(toNum(directSansOrp.rows?.info_personnes_collectives?.journees) * 1.5).toFixed(1)}</strong></span>
                 <small>Calcul automatique: journées saisies × 1,5</small>
               </div>
-              <p class="hint" style="margin:6px 0 0 0;">Le nombre de journées correspond à : nombre de professionnels mobilisés × nombre d'heures de réunion.</p>
+              <p class="hint" style="margin:6px 0 0 0;">Le nombre de journées correspond à : nombre de professionnels mobilisés × nombre d'heures de réunion. Vous pouvez saisir des demi-journées par pas de 0,5.</p>
               <p class="ds-simple-participants">Parmi les participants :</p>
               <div class="ds-simple-participants-block">
                 <div class="field field-radio-inline q35-sub-inline q35-places-inline" style="padding:8px 0;"><div><label>Combien de personnes BOETH ?</label></div><div><input class="cond-direct-sans-input" data-ds-row="info_personnes_collectives" data-ds-key="boeth" type="number" min="0" step="1" placeholder="BOETH" value="${String(directSansOrp.rows?.info_personnes_collectives?.boeth || '')}"></div></div>
@@ -5808,7 +5808,7 @@
                   ${getSpecialIndirectFieldDefsForRow(rowKey, currentConditionalId).map((field) => `
                     <div class="field field-radio-inline q35-sub-inline q35-places-inline">
                       <div><label>${field.label}</label></div>
-                      <div><input class="cond-indirect-input" data-in-row="${rowKey}" data-in-key="${field.key}" type="number" min="0" step="${field.key === 'heures' ? '0.1' : (field.key === 'journees' ? 'any' : '1')}" value="${String(indirect.rows?.[rowKey]?.[field.key] || '')}"></div>
+                      <div><input class="cond-indirect-input" data-in-row="${rowKey}" data-in-key="${field.key}" type="number" min="0" step="${field.key === 'heures' ? '0.1' : (field.key === 'journees' ? '0.5' : '1')}" value="${String(indirect.rows?.[rowKey]?.[field.key] || '')}"></div>
                     </div>
                   `).join('')}
                 </div>
@@ -5817,7 +5817,7 @@
                     <span>Journées pondérées (coef 1,5) : <strong class="cond-indirect-coll-coef-value" data-in-coll-row="${rowKey}">${(toNum(indirect.rows?.[rowKey]?.journees) * 1.5).toFixed(1)}</strong></span>
                     <span>Calcul automatique: journées saisies × 1,5</span>
                   </div>
-                  <p class="hint" style="margin:6px 0 0 0;">Le nombre de journées correspond à : nombre de professionnels mobilisés × nombre d'heures de réunion.</p>
+                  <p class="hint" style="margin:6px 0 0 0;">Le nombre de journées correspond à : nombre de professionnels mobilisés × nombre d'heures de réunion. Vous pouvez saisir des demi-journées par pas de 0,5.</p>
                 ` : ''}
               </div>
             `).join('')}
