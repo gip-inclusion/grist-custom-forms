@@ -2255,7 +2255,7 @@
         <div class="box">
           <strong>Votre établissement et service</strong>
           <p id="finess-intro-1" class="ident-intro">La recherche de votre établissement s'effectue par son numéro FINESS.</p>
-          <p id="finess-intro-2" class="ident-intro">La recherche démarre automatiquement dès que les 9 chiffres sont saisis.</p>
+          <p id="finess-intro-2" class="ident-intro">La recherche démarre automatiquement dès que les 9 chiffres sont saisis. Elle peut prendre environ 10 à 15 secondes.</p>
           <div id="finess-no-number-wrap">
             <label class="ps-checkline" style="margin:8px 0 10px 0; display:flex; align-items:center; gap:8px;">
               <input type="checkbox" id="finess-no-number">
@@ -8557,7 +8557,7 @@
           finessMsg.textContent = 'Chaque FINESS doit contenir exactement 9 chiffres.';
         } else if (lookupCheckPending) {
           finessMsg.className = 'sub visible';
-          finessMsg.textContent = 'Recherche FINESS en cours...';
+          finessMsg.textContent = 'Recherche FINESS en cours... Cela peut prendre environ 10 à 15 secondes.';
         } else if (duplicateCheckPending) {
           finessMsg.className = 'sub visible';
           finessMsg.textContent = 'Vérification des doublons FINESS en cours...';
