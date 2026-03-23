@@ -3027,7 +3027,7 @@
             <div><label>Nombre de personnes reçues en pré-accueil pour lesquelles il n'y a pas eu de suite dans l'année</label></div>
             <div><input id="cond-preaccueil-sans-suite" type="number" min="0" step="1"></div>
           </div>
-          <p class="hint" id="cond-preaccueil-help" style="margin-top:4px; margin-bottom:0;">Les personnes saisies en pré-accueil sans suite ne sont pas prises en compte dans les répartitions suivantes (genre, âge, handicap, etc.) ni dans la cible des KPI associés.</p>
+          <p class="hint" id="cond-preaccueil-help" style="margin-top:4px; margin-bottom:0;">Les personnes saisies en pré-accueil sans suite ne sont pas prises en compte dans les répartitions suivantes (genre, âge, handicap, etc.) ni dans la cible associée.</p>
           <div class="field field-radio-inline q35-sub-inline q35-places-inline" id="cond-row-sorties-total">
             <div><label>Nombre de sorties définitives en 2025</label></div>
             <div><input id="cond-sorties-total" type="number" min="0" step="1"></div>
@@ -4962,7 +4962,7 @@
       const isModalitesAccueil = normalizedKey === 'modalites_accueil';
       const isActivitesParcours = normalizedKey === 'activites_parcours';
       const isPreconisationsSortie = normalizedKey === 'preconisations_sortie';
-      const isSuiviEmploi = normalizedKey === 'suivi_emploi';
+      const isSuiviEmploi = normalizedKey === 'suivi_emploi' || currentTitleLower.includes("suivi vers l'emploi");
       if (isHandicapMatrix) {
         const handicapEval = evaluateHandicapMatrixBlock(state);
         const handicapOk = handicapEval.principalOk;
