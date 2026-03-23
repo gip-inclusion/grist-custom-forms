@@ -5097,7 +5097,11 @@
         const showAcces = hasEmploiAccesBlockConditionalStep(currentConditionalId);
         const showPresence = hasEmploiPresenceBlockConditionalStep(currentConditionalId);
         const target = toNum(row.emploi_nb_repondants);
-        const accesSaisie = toNum(row.emploi_acces_nb);
+        const sansAccesTotal = toNum(row.emploi_sans_acces_formation_qualifiante_nb)
+          + toNum(row.emploi_sans_acces_formation_non_qualifiante_nb)
+          + toNum(row.emploi_sans_acces_stage_nb)
+          + toNum(row.emploi_sans_acces_benevolat_nb);
+        const accesSaisie = toNum(row.emploi_acces_nb) + sansAccesTotal;
         const accesDiff = accesSaisie - target;
         const accesOk = Math.abs(accesDiff) < 0.0001;
         const presenceSaisie = toNum(row.emploi_presence_nb || row.emploi_acces_encore_nb);
