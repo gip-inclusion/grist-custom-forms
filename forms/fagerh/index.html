@@ -7364,7 +7364,8 @@
       const choice = document.querySelector('input[name="manual-attach-choice"]:checked')?.value || 'existing';
       const shouldAttachExisting = choice === 'existing';
       const record = lastConfirmedFoundRecord;
-      if (shouldAttachExisting && record) {
+      if (shouldAttachExisting) {
+        if (!record) return;
         const esNom = document.getElementById('es_nom');
         const cpVille = document.getElementById('cp_ville');
         const dept = document.getElementById('dept');
