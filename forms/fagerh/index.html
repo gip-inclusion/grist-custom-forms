@@ -8431,10 +8431,20 @@
     });
 
     function validateIdent() {
-      const ok = identInputs.every(i => String(i.value || '').trim() !== '');
+      const manualResolved = !!manualResolvedRecord;
+      const resolvedRaisonSociale = String(manualResolvedRecord?.record?.raisonSociale || '').trim();
+      const resolvedDepartement = String(manualResolvedRecord?.record?.departement || '').trim().toUpperCase();
+      const esNomValue = manualResolved ? resolvedRaisonSociale : String(document.getElementById('es_nom')?.value || '').trim();
+      const deptValue = manualResolved ? resolvedDepartement : String(deptInput?.value || '').trim();
+      const ok = [
+        esNomValue,
+        String(document.getElementById('v_nom')?.value || '').trim(),
+        String(document.getElementById('v_prenom')?.value || '').trim(),
+        String(document.getElementById('v_email')?.value || '').trim(),
+        deptValue,
+      ].every((value) => value !== '');
       const email = document.getElementById('v_email').value.trim();
       const emailOk = !email || /^[^\s@]+@(?:[^\s@.]+\.)+[^\s@.]{2,}$/.test(email);
-      const deptValue = String(deptInput?.value || '').trim();
       const deptOk = isValidDept(deptValue);
       const noFinessMode = isNoFinessMode();
       const allFiness = collectFinessInputs();
@@ -8514,7 +8524,7 @@
         if (state === 'invalid') input.classList.add('field-input-invalid');
       };
 
-      setFieldState(document.getElementById('es_nom'), document.getElementById('es_nom').value.trim() ? 'valid' : 'pending');
+      setFieldState(document.getElementById('es_nom'), esNomValue ? 'valid' : 'pending');
       setFieldState(document.getElementById('v_nom'), document.getElementById('v_nom').value.trim() ? 'valid' : 'pending');
       setFieldState(document.getElementById('v_prenom'), document.getElementById('v_prenom').value.trim() ? 'valid' : 'pending');
       setFieldState(document.getElementById('v_email'), !email ? 'pending' : (emailOk ? 'valid' : 'invalid'));
@@ -8543,11 +8553,11 @@
       }
       if (finessMsg) {
         const missingIdentFields = [];
-        if (!String(document.getElementById('es_nom')?.value || '').trim()) missingIdentFields.push("raison sociale");
+        if (!esNomValue) missingIdentFields.push("raison sociale");
         if (!String(document.getElementById('v_nom')?.value || '').trim()) missingIdentFields.push("nom");
         if (!String(document.getElementById('v_prenom')?.value || '').trim()) missingIdentFields.push("prenom");
         if (!String(document.getElementById('v_email')?.value || '').trim()) missingIdentFields.push("email");
-        if (!String(deptInput?.value || '').trim()) missingIdentFields.push("departement");
+        if (!deptValue) missingIdentFields.push("departement");
         const mainInput = document.getElementById('finess');
         const mainValue = String(mainInput?.value || '').trim();
         const mainLookupFound = mainInput?.dataset.lookupFound === '1';
