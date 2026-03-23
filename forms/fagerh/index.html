@@ -2491,7 +2491,7 @@
           </div>
 
           <div class="field field-radio-inline">
-            <div><label>Où se situe votre établissement par rapport à la préfecture ?</label></div>
+            <div><label>Où se situe votre établissement par rapport à la préfecture de votre département ?</label></div>
             <div class="prefecture-distance-wrap">
               <div class="radio-group">
                 <label class="radio-option"><input type="radio" name="ctx-q34" value="Dans l'agglomération"> Dans l'agglomération</label>
@@ -3027,6 +3027,7 @@
             <div><label>Nombre de personnes reçues en pré-accueil pour lesquelles il n'y a pas eu de suite dans l'année</label></div>
             <div><input id="cond-preaccueil-sans-suite" type="number" min="0" step="1"></div>
           </div>
+          <p class="hint" id="cond-preaccueil-help" style="margin-top:4px; margin-bottom:0;">Les personnes saisies en pré-accueil sans suite ne sont pas prises en compte dans les répartitions suivantes (genre, âge, handicap, etc.) ni dans la cible des KPI associés.</p>
           <div class="field field-radio-inline q35-sub-inline q35-places-inline" id="cond-row-sorties-total">
             <div><label>Nombre de sorties définitives en 2025</label></div>
             <div><input id="cond-sorties-total" type="number" min="0" step="1"></div>
@@ -3900,9 +3901,8 @@
     function getConditionalTarget(state, conditionalId = currentConditionalId) {
       const fileActive = Number(state.fileActive || 0);
       if (isPecConditionalStep(conditionalId)) return fileActive;
-      const preaccueilSansSuite = Number(state.preaccueilSansSuite || 0);
       const sorties = getConditionalSortiesTotal(state, conditionalId);
-      return fileActive + preaccueilSansSuite + sorties;
+      return fileActive + sorties;
     }
 
     function evaluatePecFileActiveBlock(state) {
@@ -4419,8 +4419,23 @@
     function evaluateEmploiBlockRules(row, conditionalId = currentConditionalId) {
       const nbRepondants = toNum(row?.emploi_nb_repondants);
       const sortiesN1 = toNum(row?.emploi_sorties_n_1);
+      const accesNb = toNum(row?.emploi_acces_nb);
+      const sansAccesTotal = toNum(row?.emploi_sans_acces_formation_qualifiante_nb)
+        + toNum(row?.emploi_sans_acces_formation_non_qualifiante_nb)
+        + toNum(row?.emploi_sans_acces_stage_nb)
+        + toNum(row?.emploi_sans_acces_benevolat_nb);
       const repondantsOk = !hasEmploiAccesBlockConditionalStep(conditionalId) || nbRepondants <= sortiesN1;
-      return { repondantsOk, nbRepondants, sortiesN1 };
+      const sansAccesMax = Math.max(nbRepondants - accesNb, 0);
+      const sansAccesOk = !hasEmploiAccesBlockConditionalStep(conditionalId) || sansAccesTotal <= sansAccesMax;
+      return {
+        repondantsOk,
+        sansAccesOk,
+        nbRepondants,
+        sortiesN1,
+        accesNb,
+        sansAccesTotal,
+        sansAccesMax,
+      };
     }
 
     function evaluateParcoursBlock(state, conditionalId = currentConditionalId) {
@@ -4458,8 +4473,16 @@
       const distancielOk = distancielFilled && (toNum(row.distanciel_total) === (toNum(row.distanciel_complet) + toNum(row.distanciel_partiel)));
       const emploiRules = evaluateEmploiBlockRules(row, conditionalId);
 
-      const done = allFilled && presentielOk && hybrideOk && distancielOk && emploiRules.repondantsOk;
-      return { done, touched, presentielOk, hybrideOk, distancielOk, repondantsOk: emploiRules.repondantsOk };
+      const done = allFilled && presentielOk && hybrideOk && distancielOk && emploiRules.repondantsOk && emploiRules.sansAccesOk;
+      return {
+        done,
+        touched,
+        presentielOk,
+        hybrideOk,
+        distancielOk,
+        repondantsOk: emploiRules.repondantsOk,
+        sansAccesOk: emploiRules.sansAccesOk,
+      };
     }
 
     function getParcoursFieldProgress(state, conditionalId = currentConditionalId) {
@@ -4525,11 +4548,14 @@
       const emploiRules = evaluateEmploiBlockRules(row, conditionalId);
       if (isUerosStep) {
         const done = keys.every((k) => isFilledNumberString(row[k]));
-        return { done: done && emploiRules.repondantsOk, touched: keys.some((k) => isFilledNumberString(row[k])) };
+        return {
+          done: done && emploiRules.repondantsOk && emploiRules.sansAccesOk,
+          touched: keys.some((k) => isFilledNumberString(row[k])),
+        };
       }
       if (!enabled) return { done: false, touched };
       if (enabled === 'Non') return { done: true, touched: true };
-      const done = keys.every((k) => isFilledNumberString(row[k])) && emploiRules.repondantsOk;
+      const done = keys.every((k) => isFilledNumberString(row[k])) && emploiRules.repondantsOk && emploiRules.sansAccesOk;
       return { done, touched: true };
     }
 
@@ -5595,7 +5621,7 @@
                   <div><input class="cond-direct-avec-input" data-da-key="emploi_sans_acces_benevolat_nb" type="number" min="0" step="1" value="${String(parcoursRow.emploi_sans_acces_benevolat_nb || '')}"></div>
                 </div>
               </div>
-              <div class="status ${sansAccesTotal <= nbRepondants ? 'ok' : 'err'}" data-emploi-status="sans-acces-total">Total actions hors emploi: <span data-emploi-val="sans-acces-total">${sansAccesTotal}</span> / <span data-emploi-val="sans-acces-max">${nbRepondants}</span> répondants</div>
+              <div class="status ${sansAccesTotal <= Math.max(nbRepondants - accesNb, 0) ? 'ok' : 'err'}" data-emploi-status="sans-acces-total">Total situations sans accès: <span data-emploi-val="sans-acces-total">${sansAccesTotal}</span> / <span data-emploi-val="sans-acces-max">${Math.max(nbRepondants - accesNb, 0)}</span> répondants sans accès à l'emploi</div>
               ` : ''}
             </div>
       ` : '';
@@ -6333,7 +6359,7 @@
         if (isPecStep) {
           cibleHelp.textContent = `Référence: ${target.toFixed(1)} personne(s) évaluée(s) en 2025.`;
         } else {
-          cibleHelp.textContent = `File active de référence: ${target.toFixed(1)} = présents au 31/12 + pré-accueil sans suite + sorties définitives 2025.`;
+          cibleHelp.textContent = `File active de référence: ${target.toFixed(1)} = présents au 31/12 + sorties définitives 2025.`;
         }
       }
       updateConditionalCurrentHeaderKpi(state, focusedConditionalBlockKey);
@@ -6674,7 +6700,7 @@
           : "Le nombre de sorties au terme de la prestation est calculé automatiquement : sorties 2025 - sorties définitives avant le terme.";
       }
       state.journees = String(condJourneesInput?.value || '').trim();
-      const declaredSortiesDisplay = String(state.sorties || '').trim() === '' ? '0' : String(toNum(state.sorties));
+      const declaredSortiesDisplay = String(state.sortiesAvantTerme || '').trim() === '' ? '0' : String(toNum(state.sortiesAvantTerme));
       conditionalCoherenceSections?.querySelectorAll('[data-sorties-declarees]').forEach((el) => {
         el.textContent = declaredSortiesDisplay;
       });
@@ -6883,7 +6909,7 @@
       setText('[data-emploi-val="presence-contrats-sum"]', emploiPresenceContratsSum);
       setText('[data-emploi-val="presence-nb"]', emploiPresenceNb);
       setText('[data-emploi-val="sans-acces-total"]', emploiSansAccesTotal);
-      setText('[data-emploi-val="sans-acces-max"]', emploiNbRepondants);
+      setText('[data-emploi-val="sans-acces-max"]', Math.max(emploiNbRepondants - emploiAccesNb, 0));
 
       const setStatusClass = (selector, ok) => {
         const el = conditionalCoherenceSections?.querySelector(selector);
@@ -6895,7 +6921,7 @@
       setStatusClass('[data-emploi-status="acces-contrats"]', emploiAccesContratsSum === emploiAccesNb);
       setStatusClass('[data-emploi-status="acces-encore"]', toNum(emploiRow.emploi_acces_encore_nb) <= emploiAccesNb);
       setStatusClass('[data-emploi-status="presence-contrats"]', emploiPresenceContratsSum === emploiPresenceNb);
-      setStatusClass('[data-emploi-status="sans-acces-total"]', emploiSansAccesTotal <= emploiNbRepondants);
+      setStatusClass('[data-emploi-status="sans-acces-total"]', emploiSansAccesTotal <= Math.max(emploiNbRepondants - emploiAccesNb, 0));
       const pecCoeffEl = conditionalCoherenceSections?.querySelector('.cond-pec-coef-value');
       if (pecCoeffEl) {
         const heures = toNum(state.directSansOrp?.rows?.pec?.heures);
