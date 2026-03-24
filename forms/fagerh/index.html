@@ -2679,6 +2679,29 @@
         <div class="box">
           <strong>Rémunération et environnement</strong>
           <div class="field field-radio-inline">
+            <div><label>Avez-vous un DUI (dossier usager informatisé) ?</label></div>
+            <div>
+              <div class="radio-group">
+                <label class="radio-option"><input type="radio" name="ctx-q38" value="Oui"> Oui</label>
+                <label class="radio-option"><input type="radio" name="ctx-q38" value="Non"> Non</label>
+              </div>
+              <div id="ctx-sub-38-oui" class="ctx-sub">
+                <label>Si oui, lequel ?</label>
+                <input id="ctx-q38-lequel" type="text" style="margin-top:8px;">
+              </div>
+              <div id="ctx-sub-38-non" class="ctx-sub">
+                <div class="field q-sub-inline" style="margin-top:12px;">
+                  <label>Disposez-vous d'un autre outil informatisé pour le suivi des parcours ?</label>
+                  <input id="ctx-q38-autre-outil" type="text" style="margin-top:8px;">
+                </div>
+                <div class="field q-sub-inline" style="margin-top:12px;">
+                  <label>Sinon, quel outil utilisez-vous actuellement pour le suivi des parcours ?</label>
+                  <input id="ctx-q38-outil-actuel" type="text" style="margin-top:8px;">
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="field field-radio-inline">
             <div><label>Le traitement de la rémunération est-il délégué à un opérateur ?</label></div>
             <div>
               <div class="radio-group">
@@ -8950,6 +8973,10 @@
       bindRadio('ctx-q37', (value) => {
         setCtxSubVisible('ctx-sub-37-oui', value === 'Oui');
       });
+      bindRadio('ctx-q38', (value) => {
+        setCtxSubVisible('ctx-sub-38-oui', value === 'Oui');
+        setCtxSubVisible('ctx-sub-38-non', value === 'Non');
+      });
       bindRadio('ctx-q40', (value) => {
         setCtxSubVisible('ctx-sub-40-oui', value === 'Oui');
       });
@@ -10029,6 +10056,10 @@
         q36_participation: getCheckedRadioValue('ctx-q36-participation'),
         q37_cuisine: getCheckedRadioValue('ctx-q37'),
         q37_weekend: getCheckedRadioValue('ctx-q37-weekend'),
+        q38_dui: getCheckedRadioValue('ctx-q38'),
+        q38_dui_lequel: String(document.getElementById('ctx-q38-lequel')?.value || '').trim(),
+        q38_autre_outil_informatise: String(document.getElementById('ctx-q38-autre-outil')?.value || '').trim(),
+        q38_outil_suivi_actuel: String(document.getElementById('ctx-q38-outil-actuel')?.value || '').trim(),
         q40_remuneration: getCheckedRadioValue('ctx-q40'),
         q40_operateur: String(document.getElementById('ctx-q40-operateur')?.value || '').trim(),
         q42_ea: String(document.getElementById('ctx-ea')?.value || '').trim(),

@@ -51,6 +51,10 @@ q36_restaurant
 q36_weekend
 q37_cuisine
 q37_weekend
+q38_autre_outil_informatise
+q38_dui
+q38_dui_lequel
+q38_outil_suivi_actuel
 q40_operateur
 q40_remuneration
 q41_esat
