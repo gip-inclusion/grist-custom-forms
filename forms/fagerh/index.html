@@ -2942,11 +2942,19 @@
             </fieldset>
           </div>
           <div class="field field-vertical">
-            <label class="ps-checkline"><input type="checkbox" id="ps-direct-pec-root" name="ps-direct-pec-root" value="Prestation d'évaluation et de compensation (PEC)"> Prestation d'évaluation et de compensation (PEC)</label>
+            <label class="ps-checkline"><input type="checkbox" id="ps-direct-pec-root" name="ps-direct-pec-root" value="Prestation d'Evaluations et de Conseils"> Prestation d'Evaluations et de Conseils</label>
             <fieldset id="ps-direct-pec-sub" class="ctx-sub a11y-group" style="margin-top:6px;">
               <legend class="sr-only">Choix PEC</legend>
               <label class="ps-checkline"><input type="checkbox" name="ps-direct-pec-child" value="Avec ORP CDAPH"> Avec ORP CDAPH</label>
               <label class="ps-checkline"><input type="checkbox" name="ps-direct-pec-child" value="Sans ORP CDAPH"> Sans ORP CDAPH</label>
+            </fieldset>
+          </div>
+          <div class="field field-vertical">
+            <label class="ps-checkline"><input type="checkbox" id="ps-direct-autre-eval-root" name="ps-direct-autre-eval-root" value="Autre dispositif d'évaluation"> Autre dispositif d'évaluation</label>
+            <fieldset id="ps-direct-autre-eval-sub" class="ctx-sub a11y-group" style="margin-top:6px;">
+              <legend class="sr-only">Choix autre dispositif d'évaluation</legend>
+              <label class="ps-checkline"><input type="checkbox" name="ps-direct-autre-eval-child" value="Avec ORP CDAPH"> Avec ORP CDAPH</label>
+              <label class="ps-checkline"><input type="checkbox" name="ps-direct-autre-eval-child" value="Sans ORP CDAPH"> Sans ORP CDAPH</label>
             </fieldset>
           </div>
           <div class="field field-vertical">
@@ -3026,7 +3034,7 @@
         <div class="box cond-block cond-block-anchor" data-block-key="fileactive" id="cond-block-fileactive">
           <strong>File active</strong>
           <div class="field field-radio-inline q35-sub-inline q35-places-inline" style="margin-top:6px;" id="cond-row-file-active">
-            <div><label id="cond-file-active-label">Nombre de personnes présentes à l'effectif au 31-12 ayant signé un contrat de séjour</label></div>
+            <div><label id="cond-file-active-label">Nombre de personnes reçues dans l'année</label></div>
             <div><input id="cond-file-active" type="number" min="0" step="1"></div>
           </div>
           <div id="cond-pec-file-active-breakdown" class="ctx-sub a11y-group" style="display:none; margin-top:6px;">
@@ -3050,7 +3058,6 @@
             <div><label>Nombre de personnes reçues en pré-accueil pour lesquelles il n'y a pas eu de suite dans l'année</label></div>
             <div><input id="cond-preaccueil-sans-suite" type="number" min="0" step="1"></div>
           </div>
-          <p class="hint" id="cond-preaccueil-help" style="margin-top:4px; margin-bottom:0;">Les personnes saisies en pré-accueil sans suite ne sont pas prises en compte dans les répartitions suivantes (genre, âge, handicap, etc.) ni dans la cible associée.</p>
           <div class="field field-radio-inline q35-sub-inline q35-places-inline" id="cond-row-sorties-total">
             <div><label>Nombre de sorties définitives en 2025</label></div>
             <div><input id="cond-sorties-total" type="number" min="0" step="1"></div>
@@ -3271,12 +3278,12 @@
 
     function isEspoOrUerosConditionalStep(id) {
       const def = getConditionalDefById(id);
-      return /\b(ESPO|UEROS)\b/i.test(String(def?.name || '')) || isPecOrpConditionalStep(id);
+      return /\b(ESPO|UEROS)\b/i.test(String(def?.name || ''));
     }
 
     function isPecOrpConditionalStep(id) {
       const def = getConditionalDefById(id);
-      return /^Directes ORP CDAPH - Prestation d'évaluation et de compensation \(PEC\) - (Avec|Sans) ORP CDAPH\b/i.test(String(def?.name || ''));
+      return /^Directes ORP CDAPH - (Prestation d'Evaluations et de Conseils|Autre dispositif d'évaluation) - (Avec|Sans) ORP CDAPH\b/i.test(String(def?.name || ''));
     }
 
     function isPecConditionalStep(id) {
@@ -3761,6 +3768,10 @@
           return rest.length
             ? `Parcours mobilisés • ${parcoursLabel} › ${rest.join(' › ')}`
             : `Parcours mobilisés • ${parcoursLabel}`;
+        }
+        if (section === "Prestation d'Evaluations et de Conseils" || section === "Autre dispositif d'évaluation") {
+          const mode = parts[2] || '';
+          return `Prestations directes • ${section}${mode ? ` › ${mode}` : ''}`;
         }
         return `Prestations directes • ${parts.slice(1).join(' › ')}`;
       }
@@ -5286,7 +5297,12 @@
         .map((key) => key.toUpperCase());
       if (document.getElementById('ps-direct-pec-root')?.checked) {
         getCheckedValuesByName('ps-direct-pec-child').forEach((label) => {
-          directDispos.push(`Prestation d'évaluation et de compensation (PEC) › ${label}`);
+          directDispos.push(`Prestation d'Evaluations et de Conseils › ${label}`);
+        });
+      }
+      if (document.getElementById('ps-direct-autre-eval-root')?.checked) {
+        getCheckedValuesByName('ps-direct-autre-eval-child').forEach((label) => {
+          directDispos.push(`Autre dispositif d'évaluation › ${label}`);
         });
       }
 
@@ -6451,7 +6467,7 @@
       if (!isFieldsBasedStep) {
         if (fileActiveLabelEl) {
           fileActiveLabelEl.textContent = isPecStep
-            ? 'Nombre de personnes évaluées en 2025'
+            ? "Nombre de personnes reçues dans l'année"
             : "Nombre de personnes présentes à l'effectif au 31-12 ayant signé un contrat de séjour";
         }
         if (rowPreaccueilEl) rowPreaccueilEl.style.display = isPecStep ? 'none' : '';
@@ -9203,18 +9219,21 @@
       const indMdphChecked = !!document.getElementById('ps-ind-mdph')?.checked;
       const directInfoPersonnesChecked = !!document.getElementById('ps-direct-info-personnes')?.checked;
       const directPecChecked = !!document.getElementById('ps-direct-pec-root')?.checked;
+      const directAutreEvalChecked = !!document.getElementById('ps-direct-autre-eval-root')?.checked;
 
       setCtxSubVisible('ps-ind-partenaires-sub', hasNonDeac && indPartChecked);
       setCtxSubVisible('ps-ind-of-sub', hasNonDeac && indOfChecked);
       setCtxSubVisible('ps-ind-mdph-sub', hasNonDeac && indMdphChecked);
       setCtxSubVisible('ps-direct-info-personnes-sub', hasNonDeac && directInfoPersonnesChecked);
       setCtxSubVisible('ps-direct-pec-sub', hasNonDeac && directPecChecked);
+      setCtxSubVisible('ps-direct-autre-eval-sub', hasNonDeac && directAutreEvalChecked);
 
       if (!indPartChecked) document.querySelectorAll('input[name="ps-ind-partenaires-child"]').forEach((cb) => { cb.checked = false; });
       if (!indOfChecked) document.querySelectorAll('input[name="ps-ind-of-child"]').forEach((cb) => { cb.checked = false; });
       if (!indMdphChecked) document.querySelectorAll('input[name="ps-ind-mdph-child"]').forEach((cb) => { cb.checked = false; });
       if (!directInfoPersonnesChecked) document.querySelectorAll('input[name="ps-direct-info-personnes-child"]').forEach((cb) => { cb.checked = false; });
       if (!directPecChecked) document.querySelectorAll('input[name="ps-direct-pec-child"]').forEach((cb) => { cb.checked = false; });
+      if (!directAutreEvalChecked) document.querySelectorAll('input[name="ps-direct-autre-eval-child"]').forEach((cb) => { cb.checked = false; });
 
       if (!stepMsg) return;
       if (!hasNonDeac) {
@@ -9239,6 +9258,8 @@
       const directOrp = getCheckedValuesByName('ps-direct-orp');
       const directPecRoot = !!document.getElementById('ps-direct-pec-root')?.checked;
       const directPecChildren = getCheckedValuesByName('ps-direct-pec-child');
+      const directAutreEvalRoot = !!document.getElementById('ps-direct-autre-eval-root')?.checked;
+      const directAutreEvalChildren = getCheckedValuesByName('ps-direct-autre-eval-child');
       const directHorsOrp = getCheckedValuesByName('ps-direct-hors-orp');
       const directInfoPersonnesChildren = getCheckedValuesByName('ps-direct-info-personnes-child');
       const indirect = getCheckedValuesByName('ps-indirect-root');
@@ -9249,6 +9270,8 @@
       const touched = !!(
         directPecRoot
         || directPecChildren.length
+        || directAutreEvalRoot
+        || directAutreEvalChildren.length
         || directHorsOrp.length
         || directInfoPersonnesChildren.length
         || indirect.length
@@ -9258,18 +9281,21 @@
       const infoPersonnesSelected = directHorsOrp.includes('Informations aux personnes');
       const infoPersonnesChildrenValid = !infoPersonnesSelected || directInfoPersonnesChildren.length > 0;
       const pecChildrenValid = !directPecRoot || directPecChildren.length > 0;
+      const autreEvalChildrenValid = !directAutreEvalRoot || directAutreEvalChildren.length > 0;
 
       const explicitSelectionsCount = directHorsOrp.length
         + indirect.length
         + directPecChildren.length
+        + directAutreEvalChildren.length
         + parcoursSocioChildren.length
         + parcoursQualifChildren.length;
-      const valid = explicitSelectionsCount > 0 && infoPersonnesChildrenValid && pecChildrenValid;
+      const valid = explicitSelectionsCount > 0 && infoPersonnesChildrenValid && pecChildrenValid && autreEvalChildrenValid;
       const state = valid ? 'OK' : (touched ? 'en cours' : 'à faire');
       const missing = [];
-      if ((directOrp.length + directHorsOrp.length + indirect.length + directPecChildren.length) <= 0) missing.push('au moins une prestation');
+      if ((directOrp.length + directHorsOrp.length + indirect.length + directPecChildren.length + directAutreEvalChildren.length) <= 0) missing.push('au moins une prestation');
       if (!infoPersonnesChildrenValid) missing.push('cocher Informations collectives et/ou Informations individuelles');
       if (!pecChildrenValid) missing.push('cocher Avec ORP CDAPH et/ou Sans ORP CDAPH pour la PEC');
+      if (!autreEvalChildrenValid) missing.push("cocher Avec ORP CDAPH et/ou Sans ORP CDAPH pour l'autre dispositif d'évaluation");
       return { state, valid, touched, missing };
     }
 
@@ -9489,7 +9515,12 @@
         });
         if (document.getElementById('ps-direct-pec-root')?.checked) {
           getCheckedValuesByName('ps-direct-pec-child').forEach((name) => {
-            secondaryRowsRaw.push(`Directes ORP CDAPH - Prestation d'évaluation et de compensation (PEC) - ${name}`);
+            secondaryRowsRaw.push(`Directes ORP CDAPH - Prestation d'Evaluations et de Conseils - ${name}`);
+          });
+        }
+        if (document.getElementById('ps-direct-autre-eval-root')?.checked) {
+          getCheckedValuesByName('ps-direct-autre-eval-child').forEach((name) => {
+            secondaryRowsRaw.push(`Directes ORP CDAPH - Autre dispositif d'évaluation - ${name}`);
           });
         }
         const parcoursRoots = getCheckedValuesByName('ps-parcours-root');
@@ -9595,7 +9626,8 @@
         let out = String(label || '').trim();
         if (!out) return 'Étape';
         const replacements = [
-          ["Prestation d'évaluation et de compensation (PEC)", 'PEC'],
+          ["Prestation d'Evaluations et de Conseils", 'PEC'],
+          ["Autre dispositif d'évaluation", 'Autre évaluation'],
           ['Préparation à accéder à l\'emploi (remobilisation, etc.)', 'Prépa accès emploi'],
           ['Préparation d\'un projet professionnel (orientation hors ESPO)', 'Projet pro (hors ESPO)'],
           ['Formation professionnalisante (ne débouchant pas sur un diplôme)', 'Formation professionnalisante'],
@@ -9623,9 +9655,13 @@
         if (!parts.length) return { title: 'Autres', child: row.displayName };
         if (parts[0] === 'Directes ORP CDAPH') {
           const second = parts[1] || '';
-          if (second === "Prestation d'évaluation et de compensation (PEC)") {
+          if (second === "Prestation d'Evaluations et de Conseils") {
             const mode = parts[2] || '';
             return { title: 'Prestations directes', child: mode ? `PEC › ${mode}` : 'PEC' };
+          }
+          if (second === "Autre dispositif d'évaluation") {
+            const mode = parts[2] || '';
+            return { title: 'Prestations directes', child: mode ? `Autre dispositif d'évaluation › ${mode}` : "Autre dispositif d'évaluation" };
           }
           if (second === 'Parcours à visée socio-professionnelle') {
             return { title: 'Parcours à visée socio-professionnelle', child: parts.slice(2).join(' › ') || second };
@@ -9970,6 +10006,7 @@
     function collectPrestationsOrpForSave() {
       return {
         orp_pec: !!document.getElementById('ps-direct-pec-root')?.checked,
+        orp_autre_dispositif_eval: !!document.getElementById('ps-direct-autre-eval-root')?.checked,
         orp_parcours_sociopro: !!document.getElementById('ps-parcours-socio-root')?.checked,
         orp_parcours_qualif: !!document.getElementById('ps-parcours-qualif-root')?.checked,
         orp_orientation_espo: getCheckedValuesByName('ps-parcours-socio-child').includes("Préparation d'un projet professionnel (orientation hors ESPO)"),
