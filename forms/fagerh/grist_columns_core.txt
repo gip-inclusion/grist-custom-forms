@@ -25,11 +25,16 @@ orp_parcours_qualif
 orp_parcours_sociopro
 orp_pec
 orp_remise_niveau
+pec_avec_orp_cdaph
+pec_sans_orp_cdaph
 pec
 prestations_details_json
 prestations_json
 prestations_indirectes_json
 prestations_orp_json
+autre_dispositif_eval
+autre_dispositif_eval_avec_orp_cdaph
+autre_dispositif_eval_sans_orp_cdaph
 emploi_indicateurs_json
 catalogue_formations_json
 q32_implantation
