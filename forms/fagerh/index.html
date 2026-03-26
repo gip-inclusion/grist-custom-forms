@@ -4450,6 +4450,56 @@
       return keys;
     }
 
+    function getEsrpEmploymentAggregateRow(conditionalId = currentConditionalId) {
+      const sumKeys = [
+        'emploi_sorties_n_1',
+        'emploi_nb_repondants',
+        'emploi_acces_nb',
+        'emploi_acces_cdi',
+        'emploi_acces_cdd_plus6',
+        'emploi_acces_cdd_moins6',
+        'emploi_acces_alternance',
+        'emploi_acces_interim',
+        'emploi_acces_autre',
+        'emploi_acces_encore_nb',
+        'emploi_sans_acces_formation_qualifiante_nb',
+        'emploi_sans_acces_formation_non_qualifiante_nb',
+        'emploi_sans_acces_stage_nb',
+        'emploi_sans_acces_benevolat_nb',
+      ];
+      const aggregate = {};
+      sumKeys.forEach((key) => { aggregate[key] = '0'; });
+      if (!isEsrpConditionalStep(conditionalId)) return aggregate;
+      const sourceDefs = conditionalDefs.filter((def) => def.id !== conditionalId && (isParcoursConditionalStep(def.id) || isFormationDetailConditionalStep(def.id)));
+      sourceDefs.forEach((def) => {
+        const row = conditionalState.get(def.id)?.directAvecOrp?.row || {};
+        sumKeys.forEach((key) => {
+          aggregate[key] = String(toNum(aggregate[key]) + toNum(row[key]));
+        });
+      });
+      aggregate.emploi_presence_nb = String(toNum(aggregate.emploi_acces_encore_nb));
+      return aggregate;
+    }
+
+    function getEffectiveDirectAvecOrpRow(state, conditionalId = currentConditionalId) {
+      const row = { ...((state?.directAvecOrp?.row) || {}) };
+      if (!isEsrpConditionalStep(conditionalId)) return row;
+      return { ...row, ...getEsrpEmploymentAggregateRow(conditionalId) };
+    }
+
+    function syncDerivedConditionalStateValues() {
+      conditionalDefs.forEach((def) => {
+        if (!isEsrpConditionalStep(def.id)) return;
+        const state = getConditionalStateById(def.id);
+        if (!state.directAvecOrp) state.directAvecOrp = makeEmptyDirectAvecOrpState();
+        if (!state.directAvecOrp.row) state.directAvecOrp.row = {};
+        Object.assign(state.directAvecOrp.row, getEsrpEmploymentAggregateRow(def.id));
+        state.directAvecOrp.row.emploi_presence_nb = String(toNum(state.directAvecOrp.row.emploi_acces_encore_nb));
+        state.done = validateConditionalState(state, def.id);
+        conditionalState.set(def.id, state);
+      });
+    }
+
     function evaluateEmploiBlockRules(row, conditionalId = currentConditionalId) {
       const nbRepondants = toNum(row?.emploi_nb_repondants);
       const sortiesN1 = toNum(row?.emploi_sorties_n_1);
@@ -4559,7 +4609,7 @@
     function evaluateDirectAvecOrpBlock(state, conditionalId = currentConditionalId) {
       const bloc = state?.directAvecOrp || makeEmptyDirectAvecOrpState();
       const enabled = String(bloc.enabled || '').trim();
-      const row = bloc.row || {};
+      const row = getEffectiveDirectAvecOrpRow(state, conditionalId);
       const isUerosStep = isUerosConditionalStep(conditionalId);
       const hasHorsMurs = getContextHasHorsMurs();
       const keys = [
@@ -4751,9 +4801,9 @@
             && sortiesSplitOk
             && sorties >= 0);
         const journeesBlockDone = isPecStep ? true : (journeesFilled && journees >= 0);
-        const emploiKeys = getEmploiRequiredFieldKeys(currentConditionalId);
-        const emploiRow = state?.directAvecOrp?.row || {};
-        const emploiDone = emploiKeys.length ? emploiKeys.every((key) => isFilledNumberString(emploiRow[key])) : false;
+      const emploiKeys = getEmploiRequiredFieldKeys(currentConditionalId);
+      const emploiRow = getEffectiveDirectAvecOrpRow(state, currentConditionalId);
+      const emploiDone = emploiKeys.length ? emploiKeys.every((key) => isFilledNumberString(emploiRow[key])) : false;
         const rows = [{ key: 'fileactive', label: isPecStep ? 'File active' : 'File active', done: fileActiveBlockDone }];
         const orienteursBlock = evaluateOrienteursBlock(state, currentConditionalId);
         if (!isPecStep) rows.push({ key: 'journees', label: 'Journées', done: journeesBlockDone });
@@ -4831,7 +4881,7 @@
       }
       const emploiKeys = getEmploiRequiredFieldKeys(currentConditionalId);
       if (emploiKeys.length) {
-        const emploiRow = state?.directAvecOrp?.row || {};
+        const emploiRow = getEffectiveDirectAvecOrpRow(state, currentConditionalId);
         const emploiDone = emploiKeys.every((key) => isFilledNumberString(emploiRow[key]));
         rows.push({ key: 'suivi_emploi', label: "Suivi vers l'emploi", done: emploiDone });
       }
@@ -5380,6 +5430,7 @@
       const isDirectSansOrpCadrageStep = isDirectSansOrpCadrageConditionalStep(currentConditionalId);
       const isSpecialIndirectStep = isSpecialIndirectConditionalStep(currentConditionalId);
       const isUerosStep = isUerosConditionalStep(currentConditionalId);
+      const isEsrpStep = isEsrpConditionalStep(currentConditionalId);
       const isEspoOrUerosStep = isEspoOrUerosConditionalStep(currentConditionalId);
       const showModalitesAccueilBlock = hasModalitesAccueilBlockConditionalStep(currentConditionalId);
       const selectedModalites = getSelectedContextModalites();
@@ -5440,7 +5491,9 @@
         preconisationsNumericKeys.splice(7, 0, 'formation_esrp_dfa');
       }
       const preconisationsCasesCount = preconisationsNumericKeys.reduce((acc, key) => acc + toNum(precoBloc?.[key]), 0);
+      directAvecOrp.row = getEffectiveDirectAvecOrpRow(state, currentConditionalId);
       const parcoursRow = directAvecOrp.row || {};
+      const emploiReadonlyAttr = isEsrpStep ? 'readonly' : '';
       const formationSelectionRows = Array.isArray(state?.formationsSelection?.rows) ? state.formationsSelection.rows : [];
       if (isFormationSelectionStep && !formationsReference.length) {
         loadFormationsReferenceFromCsv().then(() => {
@@ -5558,6 +5611,7 @@
       const emploiSuiviHtml = (showEmploiAccesBlock || showEmploiPresenceBlock) ? `
             <div class="ds-simple-section" style="margin-top:14px;">
               <p class="ds-simple-subtitle">Suivi vers l'emploi</p>
+              ${isEsrpStep ? '<p class="hint" style="margin:0 0 8px 0;">Bloc rempli automatiquement à partir des données saisies dans les parcours et formations ESRP.</p>' : ''}
               <p class="hint" style="margin:0 0 8px 0;">Les taux affichés ci-dessous sont calculés automatiquement à partir des réponses saisies.</p>
               <div class="status" style="margin-top:6px;">
                 <strong>Taux d'accès à l'emploi :</strong> part des répondants ayant démarré un emploi dans les 12 mois suivant la sortie.
@@ -5580,11 +5634,11 @@
               <div class="ds-simple-participants-block" style="margin-top:8px;">
                 <div class="field field-radio-inline q35-sub-inline q35-places-inline">
                   <div><label>Nombre de personnes sorties année N-1</label></div>
-                  <div><input class="cond-direct-avec-input" data-da-key="emploi_sorties_n_1" type="number" min="0" step="1" value="${String(parcoursRow.emploi_sorties_n_1 || '')}"></div>
+                  <div><input class="cond-direct-avec-input" data-da-key="emploi_sorties_n_1" type="number" min="0" step="1" ${emploiReadonlyAttr} value="${String(parcoursRow.emploi_sorties_n_1 || '')}"></div>
                 </div>
                 <div class="field field-radio-inline q35-sub-inline q35-places-inline">
                   <div><label>Nombre de répondants (base de calcul)</label></div>
-                  <div><input class="cond-direct-avec-input" data-da-key="emploi_nb_repondants" type="number" min="0" step="1" value="${String(parcoursRow.emploi_nb_repondants || '')}"></div>
+                  <div><input class="cond-direct-avec-input" data-da-key="emploi_nb_repondants" type="number" min="0" step="1" ${emploiReadonlyAttr} value="${String(parcoursRow.emploi_nb_repondants || '')}"></div>
                 </div>
               </div>
               <div class="status ${repondantsOk ? 'ok' : 'err'}" data-emploi-status="repondants-coherence">Nombre de répondants: <span data-emploi-val="repondants-nb">${nbRepondants}</span> / <span data-emploi-val="sorties-n1">${sortiesN1}</span> sorties année N-1 (doit être ≤)</div>
@@ -5594,24 +5648,24 @@
               <div class="ds-simple-participants-block">
                 <div class="field field-radio-inline q35-sub-inline q35-places-inline cond-subline">
                   <div><label>Nombre de personnes ayant accédé à l'emploi dans les 12 mois</label></div>
-                  <div><input class="cond-direct-avec-input" data-da-key="emploi_acces_nb" type="number" min="0" step="1" value="${String(parcoursRow.emploi_acces_nb || '')}"></div>
+                  <div><input class="cond-direct-avec-input" data-da-key="emploi_acces_nb" type="number" min="0" step="1" ${emploiReadonlyAttr} value="${String(parcoursRow.emploi_acces_nb || '')}"></div>
                 </div>
               </div>
               <div class="status" data-emploi-status="taux-acces-detail">Taux d'accès calculé: <span data-emploi-val="taux-acces-detail">${accesNb}/${nbRepondants}</span></div>
               <p class="ds-simple-participants">Répartition par type de contrat :</p>
               <div class="ds-simple-participants-block">
-                <div class="field field-radio-inline q35-sub-inline q35-places-inline cond-subline"><div><label>CDI</label></div><div><input class="cond-direct-avec-input" data-da-key="emploi_acces_cdi" type="number" min="0" step="1" value="${String(parcoursRow.emploi_acces_cdi || '')}"></div></div>
-                <div class="field field-radio-inline q35-sub-inline q35-places-inline cond-subline"><div><label>CDD + de 6 mois</label></div><div><input class="cond-direct-avec-input" data-da-key="emploi_acces_cdd_plus6" type="number" min="0" step="1" value="${String(parcoursRow.emploi_acces_cdd_plus6 || '')}"></div></div>
-                <div class="field field-radio-inline q35-sub-inline q35-places-inline cond-subline"><div><label>CDD - de 6 mois</label></div><div><input class="cond-direct-avec-input" data-da-key="emploi_acces_cdd_moins6" type="number" min="0" step="1" value="${String(parcoursRow.emploi_acces_cdd_moins6 || '')}"></div></div>
-                <div class="field field-radio-inline q35-sub-inline q35-places-inline cond-subline"><div><label>Contrat d'alternance</label></div><div><input class="cond-direct-avec-input" data-da-key="emploi_acces_alternance" type="number" min="0" step="1" value="${String(parcoursRow.emploi_acces_alternance || '')}"></div></div>
-                <div class="field field-radio-inline q35-sub-inline q35-places-inline cond-subline"><div><label>Interim</label></div><div><input class="cond-direct-avec-input" data-da-key="emploi_acces_interim" type="number" min="0" step="1" value="${String(parcoursRow.emploi_acces_interim || '')}"></div></div>
-                <div class="field field-radio-inline q35-sub-inline q35-places-inline cond-subline"><div><label>Autre</label></div><div><input class="cond-direct-avec-input" data-da-key="emploi_acces_autre" type="number" min="0" step="1" value="${String(parcoursRow.emploi_acces_autre || '')}"></div></div>
+                <div class="field field-radio-inline q35-sub-inline q35-places-inline cond-subline"><div><label>CDI</label></div><div><input class="cond-direct-avec-input" data-da-key="emploi_acces_cdi" type="number" min="0" step="1" ${emploiReadonlyAttr} value="${String(parcoursRow.emploi_acces_cdi || '')}"></div></div>
+                <div class="field field-radio-inline q35-sub-inline q35-places-inline cond-subline"><div><label>CDD + de 6 mois</label></div><div><input class="cond-direct-avec-input" data-da-key="emploi_acces_cdd_plus6" type="number" min="0" step="1" ${emploiReadonlyAttr} value="${String(parcoursRow.emploi_acces_cdd_plus6 || '')}"></div></div>
+                <div class="field field-radio-inline q35-sub-inline q35-places-inline cond-subline"><div><label>CDD - de 6 mois</label></div><div><input class="cond-direct-avec-input" data-da-key="emploi_acces_cdd_moins6" type="number" min="0" step="1" ${emploiReadonlyAttr} value="${String(parcoursRow.emploi_acces_cdd_moins6 || '')}"></div></div>
+                <div class="field field-radio-inline q35-sub-inline q35-places-inline cond-subline"><div><label>Contrat d'alternance</label></div><div><input class="cond-direct-avec-input" data-da-key="emploi_acces_alternance" type="number" min="0" step="1" ${emploiReadonlyAttr} value="${String(parcoursRow.emploi_acces_alternance || '')}"></div></div>
+                <div class="field field-radio-inline q35-sub-inline q35-places-inline cond-subline"><div><label>Interim</label></div><div><input class="cond-direct-avec-input" data-da-key="emploi_acces_interim" type="number" min="0" step="1" ${emploiReadonlyAttr} value="${String(parcoursRow.emploi_acces_interim || '')}"></div></div>
+                <div class="field field-radio-inline q35-sub-inline q35-places-inline cond-subline"><div><label>Autre</label></div><div><input class="cond-direct-avec-input" data-da-key="emploi_acces_autre" type="number" min="0" step="1" ${emploiReadonlyAttr} value="${String(parcoursRow.emploi_acces_autre || '')}"></div></div>
               </div>
               <div class="status ${accesContratsOk ? 'ok' : 'err'}" data-emploi-status="acces-contrats">Contrats saisis: <span data-emploi-val="acces-contrats-sum">${accesContratsSum}</span> / <span data-emploi-val="acces-nb">${accesNb}</span> (doit être = au nombre ayant accédé)</div>
               <div class="ds-simple-participants-block">
                 <div class="field field-radio-inline q35-sub-inline q35-places-inline cond-subline">
                   <div><label>Combien sont en emploi au moment de l'enquête ?</label></div>
-                  <div><input class="cond-direct-avec-input" data-da-key="emploi_acces_encore_nb" type="number" min="0" step="1" value="${String(parcoursRow.emploi_acces_encore_nb || '')}"></div>
+                  <div><input class="cond-direct-avec-input" data-da-key="emploi_acces_encore_nb" type="number" min="0" step="1" ${emploiReadonlyAttr} value="${String(parcoursRow.emploi_acces_encore_nb || '')}"></div>
                 </div>
               </div>
               <div class="status ${accesEncoreNb <= accesNb ? 'ok' : 'err'}" data-emploi-status="acces-encore">Cohérence maintien: <span data-emploi-val="acces-encore">${accesEncoreNb}</span> / <span data-emploi-val="acces-encore-max">${accesNb}</span> (doit être ≤)</div>
@@ -5649,19 +5703,19 @@
               <div class="ds-simple-participants-block">
                 <div class="field field-radio-inline q35-sub-inline q35-places-inline cond-subline">
                   <div><label>Nombre ayant réalisé une formation certifiante</label></div>
-                  <div><input class="cond-direct-avec-input" data-da-key="emploi_sans_acces_formation_qualifiante_nb" type="number" min="0" step="1" value="${String(parcoursRow.emploi_sans_acces_formation_qualifiante_nb || '')}"></div>
+                  <div><input class="cond-direct-avec-input" data-da-key="emploi_sans_acces_formation_qualifiante_nb" type="number" min="0" step="1" ${emploiReadonlyAttr} value="${String(parcoursRow.emploi_sans_acces_formation_qualifiante_nb || '')}"></div>
                 </div>
                 <div class="field field-radio-inline q35-sub-inline q35-places-inline cond-subline">
                   <div><label>Nombre ayant réalisé une formation non certifiante</label></div>
-                  <div><input class="cond-direct-avec-input" data-da-key="emploi_sans_acces_formation_non_qualifiante_nb" type="number" min="0" step="1" value="${String(parcoursRow.emploi_sans_acces_formation_non_qualifiante_nb || '')}"></div>
+                  <div><input class="cond-direct-avec-input" data-da-key="emploi_sans_acces_formation_non_qualifiante_nb" type="number" min="0" step="1" ${emploiReadonlyAttr} value="${String(parcoursRow.emploi_sans_acces_formation_non_qualifiante_nb || '')}"></div>
                 </div>
                 <div class="field field-radio-inline q35-sub-inline q35-places-inline cond-subline">
                   <div><label>Nombre ayant réalisé un stage en entreprise</label></div>
-                  <div><input class="cond-direct-avec-input" data-da-key="emploi_sans_acces_stage_nb" type="number" min="0" step="1" value="${String(parcoursRow.emploi_sans_acces_stage_nb || '')}"></div>
+                  <div><input class="cond-direct-avec-input" data-da-key="emploi_sans_acces_stage_nb" type="number" min="0" step="1" ${emploiReadonlyAttr} value="${String(parcoursRow.emploi_sans_acces_stage_nb || '')}"></div>
                 </div>
                 <div class="field field-radio-inline q35-sub-inline q35-places-inline cond-subline">
                   <div><label>Nombre ayant réalisé une activité bénévole</label></div>
-                  <div><input class="cond-direct-avec-input" data-da-key="emploi_sans_acces_benevolat_nb" type="number" min="0" step="1" value="${String(parcoursRow.emploi_sans_acces_benevolat_nb || '')}"></div>
+                  <div><input class="cond-direct-avec-input" data-da-key="emploi_sans_acces_benevolat_nb" type="number" min="0" step="1" ${emploiReadonlyAttr} value="${String(parcoursRow.emploi_sans_acces_benevolat_nb || '')}"></div>
                 </div>
               </div>
               <div class="status ${sansAccesTotal <= Math.max(nbRepondants - accesNb, 0) ? 'ok' : 'err'}" data-emploi-status="sans-acces-total">Total situations sans accès: <span data-emploi-val="sans-acces-total">${sansAccesTotal}</span> / <span data-emploi-val="sans-acces-max">${Math.max(nbRepondants - accesNb, 0)}</span> répondants sans accès à l'emploi</div>
@@ -6787,6 +6841,10 @@
       directAvecOrp.row.distanciel_total = String(distancielTotalAuto);
       directAvecOrp.row.beneficiaires = String(presentielTotalAuto + hybrideTotalAuto + distancielTotalAuto);
       directAvecOrp.row.emploi_presence_nb = String(toNum(directAvecOrp.row.emploi_acces_encore_nb));
+      if (isEsrpConditionalStep(currentConditionalId)) {
+        Object.assign(directAvecOrp.row, getEsrpEmploymentAggregateRow(currentConditionalId));
+        directAvecOrp.row.emploi_presence_nb = String(toNum(directAvecOrp.row.emploi_acces_encore_nb));
+      }
       const directSansOrp = makeEmptyDirectSansOrpState();
       const withoutOrpChecked = !!conditionalCoherenceSections?.querySelector('.cond-prestation-mode[value="sans_orp_cdaph"]:checked');
       directSansOrp.enabled = withoutOrpChecked ? 'Oui' : 'Non';
@@ -9917,6 +9975,7 @@
     }
 
     function serializeWizardSnapshot() {
+      syncDerivedConditionalStateValues();
       const runtime = {
         step,
         deacOnlyFlow,
