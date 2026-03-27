@@ -4602,14 +4602,14 @@
       const rows = Array.isArray(state?.formationsSelection?.rows) ? state.formationsSelection.rows : [];
       const touched = rows.length > 0;
       if (!rows.length) return { done: false, touched };
-      const done = rows.every((row) => toNum(row?.nb) > 0);
+      const done = rows.every((row) => String(row?.nb || '').trim() !== '');
       return { done, touched };
     }
 
     function getFormationSelectionFieldProgress(state) {
       const rows = Array.isArray(state?.formationsSelection?.rows) ? state.formationsSelection.rows : [];
       if (!rows.length) return { done: 0, total: 1, touched: false };
-      const done = rows.reduce((acc, row) => acc + (toNum(row?.nb) > 0 ? 1 : 0), 0);
+      const done = rows.reduce((acc, row) => acc + (String(row?.nb || '').trim() !== '' ? 1 : 0), 0);
       return { done, total: rows.length, touched: true };
     }
 
@@ -5319,7 +5319,7 @@
           conditionalNextBtn.disabled = isLastBlock ? !validateConditionalState(state, currentConditionalId) : false;
         }
       }
-      if (conditionalPrevBtn) conditionalPrevBtn.textContent = singleBlock ? 'Précédent étape' : 'Précédent';
+      if (conditionalPrevBtn) conditionalPrevBtn.textContent = singleBlock ? 'Étape précédente' : 'Précédent';
       if (conditionalNextBtn) {
         conditionalNextBtn.textContent = (singleBlock && isFormationSelectionConditionalStep(currentConditionalId))
           ? "J'ai terminé la sélection"
@@ -5590,6 +5590,14 @@
               <button type="button" id="cond-formation-add-btn">Ajouter</button>
             </div>
             <p class="formation-search-help">La saisie dans Recherche limite automatiquement les choix de « Choisir une formation » (minimum 2 caractères, maximum 5).</p>
+          </div>
+          <div style="padding:8px 0; border-top:1px dashed #d9e2ec; margin-top:6px;">
+            <p class="hint" style="margin:0 0 8px 0;">Si vous n'avez pas trouvé vos formations dans la liste, merci de renseigner les champs ci-dessous.</p>
+            <div class="formation-toolbar">
+              <input id="cond-formation-manual-name" type="text" placeholder="Nom de la formation non listée">
+              <input id="cond-formation-manual-count" type="number" min="0" step="1" placeholder="Nombre" style="max-width:140px;">
+              <button type="button" id="cond-formation-manual-add-btn">Ajouter</button>
+            </div>
           </div>
           <div style="margin-top:8px; overflow:auto;">
             <table style="width:100%; border-collapse:collapse;">
@@ -6305,6 +6313,9 @@
       const formationAddBtn = document.getElementById('cond-formation-add-btn');
       const formationSearchInput = document.getElementById('cond-formation-search');
       const formationPicker = document.getElementById('cond-formation-picker');
+      const formationManualNameInput = document.getElementById('cond-formation-manual-name');
+      const formationManualCountInput = document.getElementById('cond-formation-manual-count');
+      const formationManualAddBtn = document.getElementById('cond-formation-manual-add-btn');
       formationSearchInput?.addEventListener('input', () => {
         if (!formationPicker) return;
         const raw = String(formationSearchInput.value || '');
@@ -6329,12 +6340,37 @@
             nom: ref.nom,
             niveau: ref.niveau,
             secteur: ref.secteur,
-            nb: '',
+            nb: '0',
           });
         }
         stateLocal.formationsSelection = { rows };
         stateLocal.done = validateConditionalState(stateLocal, currentConditionalId);
         conditionalState.set(currentConditionalId, stateLocal);
+        renderConditionalStepByNumber(step);
+        refreshSummary();
+      });
+      formationManualAddBtn?.addEventListener('click', () => {
+        if (!currentConditionalId) return;
+        const manualName = String(formationManualNameInput?.value || '').trim();
+        const manualCount = String(formationManualCountInput?.value || '').trim();
+        if (!manualName) return;
+        const manualKey = `manual:${manualName.toLowerCase()}`;
+        const stateLocal = getConditionalStateById(currentConditionalId);
+        const rows = Array.isArray(stateLocal?.formationsSelection?.rows) ? [...stateLocal.formationsSelection.rows] : [];
+        if (!rows.some((row) => String(row.key || '') === manualKey)) {
+          rows.push({
+            key: manualKey,
+            nom: manualName,
+            niveau: '',
+            secteur: '',
+            nb: manualCount || '0',
+          });
+        }
+        stateLocal.formationsSelection = { rows };
+        stateLocal.done = validateConditionalState(stateLocal, currentConditionalId);
+        conditionalState.set(currentConditionalId, stateLocal);
+        if (formationManualNameInput) formationManualNameInput.value = '';
+        if (formationManualCountInput) formationManualCountInput.value = '';
         renderConditionalStepByNumber(step);
         refreshSummary();
       });
@@ -9694,7 +9730,7 @@
           ['Prestations directes', 'Directes'],
           ['Prestations indirectes', 'Indirectes'],
           ['Parcours à visée socio-professionnelle', 'Parcours socio-pro'],
-          ['Parcours accompagnement à visée certifiante', 'Parcours certifiant'],
+          ['Parcours accompagnement à visée certifiante', 'Parcours à visée certifiante'],
         ]);
         return map.get(raw) || raw;
       };
