@@ -3034,7 +3034,7 @@
         <div class="box cond-block cond-block-anchor" data-block-key="fileactive" id="cond-block-fileactive">
           <strong>File active</strong>
           <div class="field field-radio-inline q35-sub-inline q35-places-inline" style="margin-top:6px;" id="cond-row-file-active">
-            <div><label id="cond-file-active-label">Nombre de personnes reçues dans l'année</label></div>
+            <div><label id="cond-file-active-label">Nombre de personnes présentes à l'effectif au 31/12 ayant signé un contrat de séjour</label></div>
             <div><input id="cond-file-active" type="number" min="0" step="1"></div>
           </div>
           <div id="cond-pec-file-active-breakdown" class="ctx-sub a11y-group" style="display:none; margin-top:6px;">
@@ -6539,7 +6539,7 @@
         if (fileActiveLabelEl) {
           fileActiveLabelEl.textContent = isPecStep
             ? "Nombre de personnes reçues dans l'année"
-            : "Nombre de personnes présentes à l'effectif au 31-12 ayant signé un contrat de séjour";
+            : "Nombre de personnes présentes à l'effectif au 31/12 ayant signé un contrat de séjour";
         }
         if (rowPreaccueilEl) rowPreaccueilEl.style.display = isPecStep ? 'none' : '';
         if (rowSortiesTotalEl) rowSortiesTotalEl.style.display = isPecStep ? 'none' : '';
