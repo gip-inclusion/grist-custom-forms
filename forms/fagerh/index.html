@@ -3286,6 +3286,11 @@
       return /^Directes ORP CDAPH - (Prestation d'Evaluations et de Conseils|Autre dispositif d'évaluation) - (Avec|Sans) ORP CDAPH\b/i.test(String(def?.name || ''));
     }
 
+    function isAutreDispositifEvaluationConditionalStep(id) {
+      const def = getConditionalDefById(id);
+      return /^Directes ORP CDAPH - Autre dispositif d'évaluation - (Avec|Sans) ORP CDAPH\b/i.test(String(def?.name || ''));
+    }
+
     function isPecConditionalStep(id) {
       return isPecOrpConditionalStep(id) || isDirectSansOrpPecConditionalStep(id);
     }
@@ -3539,6 +3544,7 @@
 
     function makeEmptyPreconisationsState() {
       return {
+        autre: '',
         emploi_milieu_ordinaire: '',
         entreprise_adaptee: '',
         esat: '',
@@ -4339,6 +4345,7 @@
       const bloc = state?.preconisationsBloc || makeEmptyPreconisationsState();
       if (isPecFlow) {
         const totalKeys = ['droit_commun', 'sante_social', 'readaptation_professionnelle'];
+        if (isAutreDispositifEvaluationConditionalStep(conditionalId)) totalKeys.push('autre');
         const detailKeys = ['readaptation_ueros', 'readaptation_espo', 'readaptation_esrp', 'readaptation_dfa'];
         const target = getConditionalTarget(state, conditionalId);
         const sum = totalKeys.reduce((acc, key) => acc + toNum(bloc?.[key]), 0);
@@ -5487,6 +5494,9 @@
         'emploi_accompagne',
         'autres',
       ];
+      if (isPecFlow && isAutreDispositifEvaluationConditionalStep(currentConditionalId)) {
+        preconisationsNumericKeys.push('autre');
+      }
       if (!isPecFlow && !isEsrpConditionalStep(currentConditionalId)) {
         preconisationsNumericKeys.splice(7, 0, 'formation_esrp_dfa');
       }
@@ -6135,6 +6145,13 @@
                 <div class="field field-radio-inline q35-sub-inline q35-places-inline"><div><label>DFA</label></div><div><input class="cond-preco-input" data-preco-key="readaptation_dfa" type="number" min="0" step="1" value="${precoValue('readaptation_dfa')}"></div></div>
               </div>
             </div>
+            ${isAutreDispositifEvaluationConditionalStep(currentConditionalId) ? `
+            <div class="pec-preco-section">
+              <div class="ds-simple-participants-block">
+                <div class="field field-radio-inline q35-sub-inline q35-places-inline"><div><label>Autre</label></div><div><input class="cond-preco-input" data-preco-key="autre" type="number" min="0" step="1" value="${precoValue('autre')}"></div></div>
+              </div>
+            </div>
+            ` : ''}
             ` : `
             <div class="cond-subgroup-title">Préconisations d'orientation emploi</div>
             <div class="ds-simple-participants-block">
@@ -6895,6 +6912,7 @@
         + toNum(suspensionsBloc.raisons.autres_nb)
       );
       const preconisationsBloc = {
+        autre: String(conditionalCoherenceSections?.querySelector('.cond-preco-input[data-preco-key="autre"]')?.value || '').trim(),
         emploi_milieu_ordinaire: String(conditionalCoherenceSections?.querySelector('.cond-preco-input[data-preco-key="emploi_milieu_ordinaire"]')?.value || '').trim(),
         entreprise_adaptee: String(conditionalCoherenceSections?.querySelector('.cond-preco-input[data-preco-key="entreprise_adaptee"]')?.value || '').trim(),
         esat: String(conditionalCoherenceSections?.querySelector('.cond-preco-input[data-preco-key="esat"]')?.value || '').trim(),
