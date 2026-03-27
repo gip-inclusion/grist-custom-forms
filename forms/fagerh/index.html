@@ -1549,6 +1549,18 @@
     #cond-block-preconisations_sortie .pec-preco-section {
       margin-top: 10px;
     }
+    #cond-block-preconisations_sortie .pec-preco-standalone-row {
+      display: grid;
+      grid-template-columns: minmax(260px, 1fr) minmax(180px, 42%);
+      align-items: center;
+      gap: 16px;
+      padding: 14px 0 0 0;
+      border-top: 1px dashed #d7e4f0;
+    }
+    #cond-block-preconisations_sortie .pec-preco-standalone-row .field {
+      border-top: none;
+      padding-top: 0;
+    }
     #cond-block-preconisations_sortie .pec-preco-total-row {
       display: grid;
       grid-template-columns: minmax(260px, 1fr) minmax(180px, 42%);
@@ -6155,7 +6167,8 @@
             </div>
             ${isAutreDispositifEvaluationConditionalStep(currentConditionalId) ? `
             <div class="pec-preco-section">
-              <div class="ds-simple-participants-block">
+              <div class="pec-preco-standalone-row">
+                <div class="cond-subgroup-title">Autre préconisation</div>
                 <div class="field field-radio-inline q35-sub-inline q35-places-inline"><div><label>Autre</label></div><div><input class="cond-preco-input" data-preco-key="autre" type="number" min="0" step="1" value="${precoValue('autre')}"></div></div>
               </div>
             </div>
