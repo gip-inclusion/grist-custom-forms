@@ -3310,6 +3310,14 @@
         || /\bAutre dispositif d'évaluation\b/i.test(name);
     }
 
+    function getConditionalStepOrpMode(id) {
+      const def = getConditionalDefById(id);
+      const name = String(def?.name || '');
+      if (/\bAvec ORP CDAPH\b/i.test(name)) return 'avec';
+      if (/\bSans ORP CDAPH\b/i.test(name)) return 'sans';
+      return '';
+    }
+
     function isPecConditionalStep(id) {
       return isPecOrpConditionalStep(id) || isDirectSansOrpPecConditionalStep(id);
     }
@@ -5640,17 +5648,7 @@
           </div>
         </div>
       `;
-      const topEnableQuestionsHtml = (!isParcoursStep && !isFormationSelectionStep && !isUerosStep && !isEspoOrUerosConditionalStep(currentConditionalId) && !isEsrpConditionalStep(currentConditionalId) && !isSpecialIndirectStep && !isDirectSansOrpInfoStep && !isDirectSansOrpCadrageStep) ? `
-        <div class="box cond-block" style="margin-bottom:14px;">
-          <div class="field field-vertical" style="padding-top:4px;">
-            <div><label>Vous délivrez cette prestation :</label></div>
-            <div class="cond-mode-options">
-              <label class="cond-mode-checkline"><input class="cond-prestation-mode" type="checkbox" value="avec_orp_cdaph" ${directAvecOrp.enabled === 'Oui' ? 'checked' : ''}>avec ORP CDAPH</label>
-              <label class="cond-mode-checkline"><input class="cond-prestation-mode" type="checkbox" value="sans_orp_cdaph" ${directSansOrp.enabled === 'Oui' ? 'checked' : ''}>sans ORP CDAPH</label>
-            </div>
-          </div>
-        </div>
-      ` : '';
+      const topEnableQuestionsHtml = '';
       const emploiSuiviHtml = (showEmploiAccesBlock || showEmploiPresenceBlock) ? `
             <div class="ds-simple-section" style="margin-top:14px;">
               <p class="ds-simple-subtitle">Suivi vers l'emploi</p>
@@ -6907,7 +6905,8 @@
       });
       state.handicapMatrix = handicapRows;
       const directAvecOrp = makeEmptyDirectAvecOrpState();
-      const withOrpChecked = !!conditionalCoherenceSections?.querySelector('.cond-prestation-mode[value="avec_orp_cdaph"]:checked');
+      const orpMode = getConditionalStepOrpMode(currentConditionalId);
+      const withOrpChecked = orpMode === 'avec' || !!conditionalCoherenceSections?.querySelector('.cond-prestation-mode[value="avec_orp_cdaph"]:checked');
       directAvecOrp.enabled = withOrpChecked ? 'Oui' : 'Non';
       conditionalCoherenceSections?.querySelectorAll('.cond-direct-avec-input').forEach((input) => {
         const key = String(input.getAttribute('data-da-key') || '').trim();
@@ -6927,7 +6926,7 @@
         directAvecOrp.row.emploi_presence_nb = String(toNum(directAvecOrp.row.emploi_acces_encore_nb));
       }
       const directSansOrp = makeEmptyDirectSansOrpState();
-      const withoutOrpChecked = !!conditionalCoherenceSections?.querySelector('.cond-prestation-mode[value="sans_orp_cdaph"]:checked');
+      const withoutOrpChecked = orpMode === 'sans' || !!conditionalCoherenceSections?.querySelector('.cond-prestation-mode[value="sans_orp_cdaph"]:checked');
       directSansOrp.enabled = withoutOrpChecked ? 'Oui' : 'Non';
       conditionalCoherenceSections?.querySelectorAll('.cond-direct-sans-input').forEach((input) => {
         const row = String(input.getAttribute('data-ds-row') || '').trim();
