@@ -2250,7 +2250,7 @@
         <div class="box">
           <p class="hint" style="margin:0 0 10px 0;">
             Merci de compléter le questionnaire dans cet ordre :
-            <strong>Identification</strong>, <strong>Volet RH</strong>, <strong>Contexte écologique</strong>, puis <strong>Vos prestations</strong>.
+            <strong>Identification</strong>, <strong>Volet RH</strong>, <strong>Contexte social</strong>, puis <strong>Vos prestations</strong>.
             Les formulaires conditionnels s'affichent automatiquement selon vos choix.
           </p>
           <div class="status" style="margin-top: 0;">
@@ -2465,7 +2465,7 @@
       </section>
 
       <section class="step" id="step-4" data-step="4">
-        <h2>Contexte écologique</h2>
+        <h2>Contexte social</h2>
 
         <div class="box">
           <strong>Votre environnement</strong>
@@ -9664,7 +9664,7 @@
         { name: 'Identification', state: identLabel, jump: 2 },
         { name: 'Volet RH', state: doneEtp ? 'OK' : (etpInProgress ? 'en cours' : 'à faire'), jump: 3 },
         { name: 'Répartition des métiers', state: metierPrimaryState, jump: 3 },
-        { name: 'Contexte écologique', state: ctxLabel, jump: 4 },
+        { name: 'Contexte social', state: ctxLabel, jump: 4 },
         { name: 'Vos prestations', state: prestationsState, jump: 5 },
       ];
       const primaryDone = primaryRows.filter((r) => r.state === 'OK').length;
