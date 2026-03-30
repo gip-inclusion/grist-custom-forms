@@ -5199,16 +5199,22 @@
         const row = state?.directAvecOrp?.row || {};
         const showAcces = hasEmploiAccesBlockConditionalStep(currentConditionalId);
         const showPresence = hasEmploiPresenceBlockConditionalStep(currentConditionalId);
-        const target = toNum(row.emploi_nb_repondants);
+        const accesTarget = toNum(row.emploi_nb_repondants);
         const sansAccesTotal = toNum(row.emploi_sans_acces_formation_qualifiante_nb)
           + toNum(row.emploi_sans_acces_formation_non_qualifiante_nb)
           + toNum(row.emploi_sans_acces_stage_nb)
           + toNum(row.emploi_sans_acces_benevolat_nb);
         const accesSaisie = toNum(row.emploi_acces_nb) + sansAccesTotal;
-        const accesDiff = accesSaisie - target;
+        const accesDiff = accesSaisie - accesTarget;
         const accesOk = Math.abs(accesDiff) < 0.0001;
-        const presenceSaisie = toNum(row.emploi_presence_nb || row.emploi_acces_encore_nb);
-        const presenceDiff = presenceSaisie - target;
+        const presenceTarget = toNum(row.emploi_presence_nb || row.emploi_acces_encore_nb);
+        const presenceSaisie = toNum(row.emploi_presence_cdi)
+          + toNum(row.emploi_presence_cdd_plus6)
+          + toNum(row.emploi_presence_cdd_moins6)
+          + toNum(row.emploi_presence_alternance)
+          + toNum(row.emploi_presence_interim)
+          + toNum(row.emploi_presence_autre);
+        const presenceDiff = presenceSaisie - presenceTarget;
         const presenceOk = Math.abs(presenceDiff) < 0.0001;
         const globalOk = showPresence ? (accesOk && presenceOk) : accesOk;
         conditionalCurrentKpi.hidden = false;
@@ -5221,7 +5227,7 @@
             <div class="current-kpi-handicap-line">
               <span class="kpi-mini">
                 <span class="kpi-mini-label">Cible A.</span>
-                <span class="kpi-mini-value">${target.toFixed(0)}</span>
+                <span class="kpi-mini-value">${accesTarget.toFixed(0)}</span>
               </span>
               <span class="kpi-mini">
                 <span class="kpi-mini-label">Saisie A.</span>
@@ -5236,7 +5242,7 @@
             <div class="current-kpi-handicap-line">
               <span class="kpi-mini">
                 <span class="kpi-mini-label">Cible P.</span>
-                <span class="kpi-mini-value">${target.toFixed(0)}</span>
+                <span class="kpi-mini-value">${presenceTarget.toFixed(0)}</span>
               </span>
               <span class="kpi-mini">
                 <span class="kpi-mini-label">Saisie P.</span>
