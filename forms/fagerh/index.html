@@ -1573,6 +1573,13 @@
       margin: 0;
       font-size: 1rem;
     }
+    #cond-block-preconisations_sortie .pec-preco-breakdown-label {
+      margin: 4px 0 8px 0;
+      padding-left: 14px;
+      font-size: .95rem;
+      font-weight: 700;
+      color: #5b7288;
+    }
     #cond-block-preconisations_sortie .pec-preco-total-row .field {
       border-top: none;
       padding-top: 0;
@@ -6178,9 +6185,10 @@
             </div>
             <div class="pec-preco-section">
               <div class="pec-preco-total-row">
-                <div class="cond-subgroup-title">Réadaptation professionnelle, dont</div>
+                <div class="cond-subgroup-title">Réadaptation professionnelle</div>
                 <div class="field field-radio-inline q35-sub-inline q35-places-inline"><div aria-hidden="true"></div><div><input class="cond-preco-input" data-preco-key="readaptation_professionnelle" type="number" min="0" step="1" value="${precoValue('readaptation_professionnelle')}"></div></div>
               </div>
+              <div class="pec-preco-breakdown-label">dont :</div>
               <div class="ds-simple-participants-block">
                 <div class="field field-radio-inline q35-sub-inline q35-places-inline"><div><label>UEROS</label></div><div><input class="cond-preco-input" data-preco-key="readaptation_ueros" type="number" min="0" step="1" value="${precoValue('readaptation_ueros')}"></div></div>
                 <div class="field field-radio-inline q35-sub-inline q35-places-inline"><div><label>ESPO</label></div><div><input class="cond-preco-input" data-preco-key="readaptation_espo" type="number" min="0" step="1" value="${precoValue('readaptation_espo')}"></div></div>
