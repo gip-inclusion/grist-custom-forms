@@ -3303,6 +3303,13 @@
       return /^Directes ORP CDAPH - Autre dispositif d'évaluation - (Avec|Sans) ORP CDAPH\b/i.test(String(def?.name || ''));
     }
 
+    function isEvaluationConditionalStep(id) {
+      const def = getConditionalDefById(id);
+      const name = String(def?.name || '');
+      return /\bPrestation d'Evaluations et de Conseils\b/i.test(name)
+        || /\bAutre dispositif d'évaluation\b/i.test(name);
+    }
+
     function isPecConditionalStep(id) {
       return isPecOrpConditionalStep(id) || isDirectSansOrpPecConditionalStep(id);
     }
@@ -6524,8 +6531,8 @@
       const cibleHelp = document.getElementById('cond-cible-help');
       if (cibleHelp) {
         const target = getConditionalTarget(state);
-        const isPecStep = isPecOrpConditionalStep(currentConditionalId);
-        if (isPecStep) {
+        const isEvaluationStep = isEvaluationConditionalStep(currentConditionalId);
+        if (isEvaluationStep) {
           cibleHelp.textContent = `Référence: ${target.toFixed(1)} personne(s) évaluée(s) en 2025.`;
         } else {
           cibleHelp.textContent = `File active de référence: ${target.toFixed(1)} = présents au 31/12 + sorties définitives 2025.`;
@@ -6589,7 +6596,7 @@
       }
       if (dureeHelpEl) dureeHelpEl.style.display = 'none';
       if (fileactiveBlock) fileactiveBlock.style.display = isFieldsBasedStep ? 'none' : '';
-      const isEvaluationStep = isPecConditionalStep(def.id) || isAutreDispositifEvaluationConditionalStep(def.id);
+      const isEvaluationStep = isEvaluationConditionalStep(def.id);
       if (!isFieldsBasedStep) {
         if (fileActiveLabelEl) {
           fileActiveLabelEl.textContent = isEvaluationStep
