@@ -6583,19 +6583,19 @@
       }
       if (dureeHelpEl) dureeHelpEl.style.display = 'none';
       if (fileactiveBlock) fileactiveBlock.style.display = isFieldsBasedStep ? 'none' : '';
-      const isPecStep = isPecOrpConditionalStep(def.id);
+      const isEvaluationStep = isPecConditionalStep(def.id) || isAutreDispositifEvaluationConditionalStep(def.id);
       if (!isFieldsBasedStep) {
         if (fileActiveLabelEl) {
-          fileActiveLabelEl.textContent = isPecStep
+          fileActiveLabelEl.textContent = isEvaluationStep
             ? "Nombre de personnes reçues dans l'année"
             : "Nombre de personnes présentes à l'effectif au 31/12 ayant signé un contrat de séjour";
         }
-        if (rowPreaccueilEl) rowPreaccueilEl.style.display = isPecStep ? 'none' : '';
-        if (rowSortiesTotalEl) rowSortiesTotalEl.style.display = isPecStep ? 'none' : '';
-        if (rowSortiesAvantTermeEl) rowSortiesAvantTermeEl.style.display = isPecStep ? 'none' : '';
-        if (rowSortiesTermeEl) rowSortiesTermeEl.style.display = isPecStep ? 'none' : '';
-        if (pecFileActiveBreakdownEl) pecFileActiveBreakdownEl.style.display = isPecStep ? 'block' : 'none';
-        if (journeesBlock) journeesBlock.style.display = isPecStep ? 'none' : '';
+        if (rowPreaccueilEl) rowPreaccueilEl.style.display = isEvaluationStep ? 'none' : '';
+        if (rowSortiesTotalEl) rowSortiesTotalEl.style.display = isEvaluationStep ? 'none' : '';
+        if (rowSortiesAvantTermeEl) rowSortiesAvantTermeEl.style.display = isEvaluationStep ? 'none' : '';
+        if (rowSortiesTermeEl) rowSortiesTermeEl.style.display = isEvaluationStep ? 'none' : '';
+        if (pecFileActiveBreakdownEl) pecFileActiveBreakdownEl.style.display = isEvaluationStep ? 'block' : 'none';
+        if (journeesBlock) journeesBlock.style.display = isEvaluationStep ? 'none' : '';
       } else if (journeesBlock) {
         journeesBlock.style.display = 'none';
       }
