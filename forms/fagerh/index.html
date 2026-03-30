@@ -3106,6 +3106,10 @@
             <div><input id="cond-journees-theoriques" type="number" min="0" step="1"></div>
           </div>
           <div class="field field-radio-inline q35-sub-inline q35-places-inline">
+            <div><label>Taux d'absentéisme (auto)</label></div>
+            <div><input id="cond-taux-absenteisme" type="number" min="0" max="100" step="0.01" readonly></div>
+          </div>
+          <div class="field field-radio-inline q35-sub-inline q35-places-inline">
             <div><label>Durée moyenne de séjour (auto)</label></div>
             <div><input id="cond-duree" type="number" min="0" step="0.01" readonly></div>
           </div>
@@ -3155,6 +3159,7 @@
     const condSortiesTotalInput = document.getElementById('cond-sorties-total');
     const condJourneesInput = document.getElementById('cond-journees');
     const condJourneesTheoriquesInput = document.getElementById('cond-journees-theoriques');
+    const condTauxAbsenteismeInput = document.getElementById('cond-taux-absenteisme');
     const conditionalCoherenceSections = document.getElementById('conditional-coherence-sections');
     const conditionalBlockNavList = document.getElementById('conditional-block-nav-list');
     const conditionalFocusToolbar = document.getElementById('conditional-focus-toolbar');
@@ -3980,6 +3985,15 @@
       const totalPersonnes = fileActive + sorties;
       if (journees <= 0 || totalPersonnes <= 0) return '';
       return (journees / totalPersonnes).toFixed(2);
+    }
+
+    function computeConditionalTauxAbsenteisme(state, conditionalId = currentConditionalId) {
+      if (isPecConditionalStep(conditionalId)) return '';
+      const journeesRealisees = Number(state?.journees || 0);
+      const journeesTheoriques = Number(state?.journeesTheoriques || 0);
+      if (journeesTheoriques <= 0) return '';
+      const absences = Math.max(0, journeesTheoriques - journeesRealisees);
+      return ((absences / journeesTheoriques) * 100).toFixed(2);
     }
 
     function getConditionalTarget(state, conditionalId = currentConditionalId) {
@@ -6593,6 +6607,7 @@
       const sortiesSplitHelpEl = document.getElementById('cond-sorties-split-help');
       const journeesEl = document.getElementById('cond-journees');
       const journeesTheoriquesEl = document.getElementById('cond-journees-theoriques');
+      const tauxAbsenteismeEl = document.getElementById('cond-taux-absenteisme');
       const dureeEl = document.getElementById('cond-duree');
       const statusEl = document.getElementById('conditional-status');
       const fileactiveBlock = document.getElementById('cond-block-fileactive');
@@ -6656,6 +6671,7 @@
       }
       if (journeesEl) journeesEl.value = state.journees;
       if (journeesTheoriquesEl) journeesTheoriquesEl.value = state.journeesTheoriques;
+      if (tauxAbsenteismeEl) tauxAbsenteismeEl.value = computeConditionalTauxAbsenteisme(state);
       if (dureeEl) dureeEl.value = computeConditionalDuree(state);
       renderConditionalCoherenceSections(state);
       applyAccessibilityPatches(conditionalCoherenceSections || document);
@@ -7143,6 +7159,7 @@
         const journees = toNum(state.indirect?.rows?.[rowKey]?.journees);
         el.textContent = (journees * 1.5).toFixed(1);
       });
+      if (condTauxAbsenteismeInput) condTauxAbsenteismeInput.value = computeConditionalTauxAbsenteisme(state);
       const dureeEl = document.getElementById('cond-duree');
       if (dureeEl) dureeEl.value = computeConditionalDuree(state);
       refreshConditionalCohUi(state);
