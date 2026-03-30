@@ -1557,9 +1557,15 @@
       padding: 14px 0 0 0;
       border-top: 1px dashed #d7e4f0;
     }
-    #cond-block-preconisations_sortie .pec-preco-standalone-row .field {
-      border-top: none;
-      padding-top: 0;
+    #cond-block-preconisations_sortie .pec-preco-inline-input {
+      display: flex;
+      align-items: center;
+      width: 100%;
+      min-width: 0;
+    }
+    #cond-block-preconisations_sortie .pec-preco-inline-input input {
+      width: 100%;
+      box-sizing: border-box;
     }
     #cond-block-preconisations_sortie .pec-preco-total-row {
       display: grid;
@@ -1579,10 +1585,6 @@
       font-size: .95rem;
       font-weight: 700;
       color: #5b7288;
-    }
-    #cond-block-preconisations_sortie .pec-preco-total-row .field {
-      border-top: none;
-      padding-top: 0;
     }
     #cond-block-preconisations_sortie .cond-subgroup-title:first-of-type {
       margin-top: 4px;
@@ -6186,7 +6188,7 @@
             <div class="pec-preco-section">
               <div class="pec-preco-total-row">
                 <div class="cond-subgroup-title">Réadaptation professionnelle</div>
-                <div class="field field-radio-inline q35-sub-inline q35-places-inline"><div aria-hidden="true"></div><div><input class="cond-preco-input" data-preco-key="readaptation_professionnelle" type="number" min="0" step="1" value="${precoValue('readaptation_professionnelle')}"></div></div>
+                <div class="pec-preco-inline-input"><input class="cond-preco-input" data-preco-key="readaptation_professionnelle" type="number" min="0" step="1" value="${precoValue('readaptation_professionnelle')}"></div>
               </div>
               <div class="pec-preco-breakdown-label">dont :</div>
               <div class="ds-simple-participants-block">
@@ -6200,7 +6202,7 @@
             <div class="pec-preco-section">
               <div class="pec-preco-standalone-row">
                 <div class="cond-subgroup-title">Autre préconisation</div>
-                <div class="field field-radio-inline q35-sub-inline q35-places-inline"><div aria-hidden="true"></div><div><input class="cond-preco-input" data-preco-key="autre" type="number" min="0" step="1" value="${precoValue('autre')}"></div></div>
+                <div class="pec-preco-inline-input"><input class="cond-preco-input" data-preco-key="autre" type="number" min="0" step="1" value="${precoValue('autre')}"></div>
               </div>
             </div>
             ` : ''}
