@@ -3093,6 +3093,10 @@
             <div><input id="cond-journees" type="number" min="0" step="1"></div>
           </div>
           <div class="field field-radio-inline q35-sub-inline q35-places-inline">
+            <div><label>Nombre de journées théoriques</label></div>
+            <div><input id="cond-journees-theoriques" type="number" min="0" step="1"></div>
+          </div>
+          <div class="field field-radio-inline q35-sub-inline q35-places-inline">
             <div><label>Durée moyenne de séjour (auto)</label></div>
             <div><input id="cond-duree" type="number" min="0" step="0.01" readonly></div>
           </div>
@@ -3141,6 +3145,7 @@
     const condSortiesTermeInput = document.getElementById('cond-sorties-terme');
     const condSortiesTotalInput = document.getElementById('cond-sorties-total');
     const condJourneesInput = document.getElementById('cond-journees');
+    const condJourneesTheoriquesInput = document.getElementById('cond-journees-theoriques');
     const conditionalCoherenceSections = document.getElementById('conditional-coherence-sections');
     const conditionalBlockNavList = document.getElementById('conditional-block-nav-list');
     const conditionalFocusToolbar = document.getElementById('conditional-focus-toolbar');
@@ -3847,6 +3852,7 @@
           sortiesTerme: '',
           sorties: '',
           journees: '',
+          journeesTheoriques: '',
           coh: makeEmptyConditionalCohValues(),
           geoRows: makeEmptyGeoRows(),
           directAvecOrp: makeEmptyDirectAvecOrpState(),
@@ -3866,6 +3872,7 @@
         if (typeof current.sortiesAvantTerme === 'undefined') current.sortiesAvantTerme = '';
         if (typeof current.sortiesTerme === 'undefined') current.sortiesTerme = '';
         if (typeof current.sorties === 'undefined') current.sorties = '';
+        if (typeof current.journeesTheoriques === 'undefined') current.journeesTheoriques = '';
         if (!current.sortiesAvantTerme && !current.sortiesTerme && String(current.sorties || '').trim() !== '') {
           current.sortiesTerme = String(current.sorties || '').trim();
         }
@@ -3913,6 +3920,7 @@
         sortiesTerme: '',
         sorties: '',
         journees: '',
+        journeesTheoriques: '',
         coh: makeEmptyConditionalCohValues(),
         geoRows: makeEmptyGeoRows(),
         directAvecOrp: makeEmptyDirectAvecOrpState(),
@@ -4090,9 +4098,11 @@
       const sortiesSplitOk = sortiesAvantTerme <= sorties;
       const journeesFilled = isFilledNumberString(state.journees);
       const journees = Number(state.journees || 0);
+      const journeesTheoriquesFilled = isFilledNumberString(state.journeesTheoriques);
+      const journeesTheoriques = Number(state.journeesTheoriques || 0);
       if (isPecStep) {
         if (!pecFileActiveBlock.done || fileActive < 0) return false;
-      } else if (fileActive < 0 || !preaccueilSansSuiteFilled || !sortiesTotalFilled || !sortiesAvantTermeFilled || !sortiesSplitOk || sorties < 0 || !journeesFilled || journees < 0) {
+      } else if (fileActive < 0 || !preaccueilSansSuiteFilled || !sortiesTotalFilled || !sortiesAvantTermeFilled || !sortiesSplitOk || sorties < 0 || !journeesFilled || journees < 0 || !journeesTheoriquesFilled || journeesTheoriques < 0) {
         return false;
       }
       if (!isPecConditionalStep(conditionalId)) {
@@ -4181,6 +4191,8 @@
       const sortiesSplitOk = sortiesAvantTerme <= sorties;
       const journeesFilled = isFilledNumberString(state.journees);
       const journees = Number(state.journees || 0);
+      const journeesTheoriquesFilled = isFilledNumberString(state.journeesTheoriques);
+      const journeesTheoriques = Number(state.journeesTheoriques || 0);
       const fileActiveBlockDone = isPecStep
         ? pecFileActiveBlock.done
         : (fileActive >= 0
@@ -4189,7 +4201,7 @@
           && sortiesAvantTermeFilled
           && sortiesSplitOk
           && sorties >= 0);
-      const journeesBlockDone = isPecStep ? true : (journeesFilled && journees >= 0);
+      const journeesBlockDone = isPecStep ? true : (journeesFilled && journees >= 0 && journeesTheoriquesFilled && journeesTheoriques >= 0);
 
       const cohBlocks = evaluateConditionalCoh(state, conditionalId);
       const doneCohBlocks = cohBlocks.filter((block) => block.ok).length;
@@ -6570,6 +6582,7 @@
       const sortiesTotalEl = document.getElementById('cond-sorties-total');
       const sortiesSplitHelpEl = document.getElementById('cond-sorties-split-help');
       const journeesEl = document.getElementById('cond-journees');
+      const journeesTheoriquesEl = document.getElementById('cond-journees-theoriques');
       const dureeEl = document.getElementById('cond-duree');
       const statusEl = document.getElementById('conditional-status');
       const fileactiveBlock = document.getElementById('cond-block-fileactive');
@@ -6632,6 +6645,7 @@
           : "Le nombre de sorties au terme de la prestation est calculé automatiquement : sorties 2025 - sorties définitives avant le terme.";
       }
       if (journeesEl) journeesEl.value = state.journees;
+      if (journeesTheoriquesEl) journeesTheoriquesEl.value = state.journeesTheoriques;
       if (dureeEl) dureeEl.value = computeConditionalDuree(state);
       renderConditionalCoherenceSections(state);
       applyAccessibilityPatches(conditionalCoherenceSections || document);
@@ -6876,6 +6890,7 @@
           : "Le nombre de sorties au terme de la prestation est calculé automatiquement : sorties 2025 - sorties définitives avant le terme.";
       }
       state.journees = String(condJourneesInput?.value || '').trim();
+      state.journeesTheoriques = String(condJourneesTheoriquesInput?.value || '').trim();
       const declaredSortiesDisplay = String(state.sortiesAvantTerme || '').trim() === '' ? '0' : String(toNum(state.sortiesAvantTerme));
       conditionalCoherenceSections?.querySelectorAll('[data-sorties-declarees]').forEach((el) => {
         el.textContent = declaredSortiesDisplay;
@@ -10529,7 +10544,7 @@
       applyConditionalBlockFocus(getConditionalStateById(currentConditionalId), { scroll: true, preferIncomplete: false });
     });
 
-    [condFileActiveInput, condPreaccueilSansSuiteInput, condSortiesTotalInput, condSortiesAvantTermeInput, condSortiesTermeInput, condJourneesInput].forEach((input) => {
+    [condFileActiveInput, condPreaccueilSansSuiteInput, condSortiesTotalInput, condSortiesAvantTermeInput, condSortiesTermeInput, condJourneesInput, condJourneesTheoriquesInput].forEach((input) => {
       input?.addEventListener('input', updateCurrentConditionalStateFromInputs);
       input?.addEventListener('change', updateCurrentConditionalStateFromInputs);
     });
