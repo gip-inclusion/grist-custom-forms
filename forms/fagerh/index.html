@@ -6773,7 +6773,9 @@
         const text = getPlainTextWithoutControls(label);
         if (!hasNestedControl && !hasFor && text) {
           const span = document.createElement('span');
-          span.className = label.className;
+          Array.from(label.attributes || []).forEach((attr) => {
+            span.setAttribute(attr.name, attr.value);
+          });
           span.innerHTML = label.innerHTML;
           label.replaceWith(span);
           return;
