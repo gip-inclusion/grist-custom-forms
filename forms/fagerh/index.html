@@ -223,6 +223,10 @@
       color: #5f7286;
       margin-bottom: 8px;
     }
+    .progress-card-action {
+      width: 100%;
+      margin-top: 10px;
+    }
     .toc-list {
       list-style: none;
       margin: 0;
@@ -2175,7 +2179,7 @@
         <button type="button" id="quick-save-btn" class="primary">Enregistrer</button>
         <button type="button" id="quick-recover-btn">Reprendre la saisie</button>
         <button type="button" id="quick-export-csv-btn">Exporter en CSV</button>
-        <button type="button" id="quick-export-pdf-btn">Exporter en PDF</button>
+        <button type="button" id="quick-export-pdf-btn">Exporter ma saisie en PDF</button>
         <span class="spacer"></span>
         <button type="button" id="quick-finish-btn">J'ai terminé ma saisie</button>
       </div>
@@ -2218,6 +2222,7 @@
           </div>
           <div id="primary-completion-stats" class="progress-stats">0 / 4 étapes terminées</div>
           <ul id="primary-toc-list" class="toc-list"></ul>
+          <button type="button" id="primary-export-questions-pdf-btn" class="progress-card-action">Exporter les questions en PDF</button>
         </div>
       </div>
       <div class="progress-card" id="secondary-progress-card">
@@ -10532,6 +10537,9 @@
     });
     document.getElementById('quick-export-pdf-btn')?.addEventListener('click', () => {
       if (topStatus) topStatus.textContent = "Maquette : export PDF simulé.";
+    });
+    document.getElementById('primary-export-questions-pdf-btn')?.addEventListener('click', () => {
+      if (topStatus) topStatus.textContent = "Maquette : export PDF des questions simulé.";
     });
     document.getElementById('quick-finish-btn')?.addEventListener('click', () => {
       showStep(getFinalStepNumber());
