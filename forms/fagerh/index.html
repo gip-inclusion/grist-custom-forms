@@ -9957,6 +9957,7 @@
     }
 
     const FORM_ID = 'fagerh';
+    const QUESTIONS_PDF_URL = `/forms/${FORM_ID}/questions-pdf`;
     const WIZARD_STATE_KEY = '__wizard_v3_state';
     let resumeUuid = '';
     let isHydratingFromSnapshot = false;
@@ -9964,6 +9965,16 @@
     function setTopStatusMessage(message) {
       const topStatus = document.getElementById('top-status');
       if (topStatus) topStatus.textContent = message || '';
+    }
+
+    function downloadQuestionsPdf(statusMessage) {
+      const link = document.createElement('a');
+      link.href = QUESTIONS_PDF_URL;
+      link.download = 'fagerh_questions_fagerh.pdf';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTopStatusMessage(statusMessage || 'Téléchargement du PDF des questions lancé.');
     }
 
     function generateResumeUuid() {
@@ -10546,10 +10557,14 @@
       if (topStatus) topStatus.textContent = "Maquette : export PDF simulé.";
     });
     document.getElementById('primary-export-questions-pdf-btn')?.addEventListener('click', () => {
-      if (topStatus) topStatus.textContent = "Maquette : export PDF des questions simulé.";
+      downloadQuestionsPdf('Téléchargement du PDF des questions lancé.');
     });
     document.getElementById('secondary-export-questions-pdf-btn')?.addEventListener('click', () => {
-      if (topStatus) topStatus.textContent = "Maquette : export PDF des questions conditionnelles simulé. Sélectionnez d'abord les prestations à l'étape 5 des étapes principales.";
+      if (!conditionalDefs.length) {
+        setTopStatusMessage("Sélectionnez d'abord les prestations à l'étape 5 des étapes principales pour débloquer les questions conditionnelles.");
+        return;
+      }
+      downloadQuestionsPdf('Téléchargement du PDF des questions conditionnelles lancé.');
     });
     document.getElementById('quick-finish-btn')?.addEventListener('click', () => {
       showStep(getFinalStepNumber());

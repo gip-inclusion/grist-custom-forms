@@ -25,6 +25,7 @@ load_dotenv()
 BASE_DIR = Path(__file__).parent
 FORMS_DIR = BASE_DIR / 'forms'
 ASSETS_DIR = BASE_DIR / 'assets'
+DOCS_DIR = BASE_DIR / 'docs'
 
 app = Flask(__name__)
 
@@ -769,6 +770,17 @@ def serve_form_file(form_id: str, filename: str):
     if not resolved:
         return jsonify({'error': 'File not found'}), 404
     return send_from_directory(FORMS_DIR / form_id, resolved)
+
+
+@app.route('/forms/fagerh/questions-pdf')
+def serve_fagerh_questions_pdf():
+    """Serve the reference PDF containing FAGERH questions."""
+    return send_from_directory(
+        DOCS_DIR,
+        'fagerh_questions_completes.pdf',
+        as_attachment=True,
+        download_name='fagerh_questions_fagerh.pdf',
+    )
 
 
 @app.route('/admin/<form_id>/')
