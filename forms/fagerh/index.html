@@ -227,6 +227,11 @@
       width: 100%;
       margin-top: 10px;
     }
+    .progress-card-note {
+      margin-top: 8px;
+      font-size: .84rem;
+      color: #5f7286;
+    }
     .toc-list {
       list-style: none;
       margin: 0;
@@ -2236,6 +2241,8 @@
         </div>
         <div id="secondary-completion-stats" class="progress-stats">0 / 0 sections terminées</div>
         <ul id="secondary-toc-list" class="toc-list"></ul>
+        <button type="button" id="secondary-export-questions-pdf-btn" class="progress-card-action">Exporter les questions en PDF</button>
+        <div class="progress-card-note">Pour télécharger les questions conditionnelles, sélectionnez d'abord les prestations à l'étape 5 des étapes principales.</div>
       </div>
       <div class="progress-card" id="conditional-blocks-card">
         <h2>Blocs de cette étape</h2>
@@ -10540,6 +10547,9 @@
     });
     document.getElementById('primary-export-questions-pdf-btn')?.addEventListener('click', () => {
       if (topStatus) topStatus.textContent = "Maquette : export PDF des questions simulé.";
+    });
+    document.getElementById('secondary-export-questions-pdf-btn')?.addEventListener('click', () => {
+      if (topStatus) topStatus.textContent = "Maquette : export PDF des questions conditionnelles simulé. Sélectionnez d'abord les prestations à l'étape 5 des étapes principales.";
     });
     document.getElementById('quick-finish-btn')?.addEventListener('click', () => {
       showStep(getFinalStepNumber());
