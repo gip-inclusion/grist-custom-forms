@@ -194,6 +194,24 @@
       background: #f1f5f9;
       border-color: #d2dbe5;
     }
+    .progress-count {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      border: 1px solid #d2dbe5;
+      background: #f1f5f9;
+      color: #4a5e74;
+    }
+    .progress-count.done {
+      color: #1f6d34;
+      background: #effaf2;
+      border-color: #8ecb9f;
+    }
+    .progress-count.pending {
+      color: #8a5100;
+      background: #fff2de;
+      border-color: #efc089;
+    }
     @media (max-width: 980px) {
       body { padding: 12px; }
       .kpis { grid-template-columns: 1fr; }
@@ -330,6 +348,12 @@
             };
             const mainTxt = `${qp.main.done}/${qp.main.total}`;
             const condTxt = `${qp.conditional.done}/${qp.conditional.total}`;
+            const mainClass = qp.main.total > 0 && qp.main.done === qp.main.total
+              ? 'progress-count done'
+              : (qp.main.done > 0 ? 'progress-count pending' : 'progress-count');
+            const condClass = qp.conditional.total > 0 && qp.conditional.done === qp.conditional.total
+              ? 'progress-count done'
+              : (qp.conditional.done > 0 ? 'progress-count pending' : 'progress-count');
             const doneMain = (qp.main.done_labels || []).map((x) => `Principal: ${x}`);
             const doneCond = (qp.conditional.done_labels || []).map((x) => `Conditionnel: ${x}`);
             const doneAll = [...doneMain, ...doneCond];
@@ -369,8 +393,8 @@
                 <td class="mono">${esc(r.finess_main)}</td>
                 <td>${referent || '-'}</td>
                 <td>${esc(r.validateur_email)}</td>
-                <td><strong>${esc(mainTxt)}</strong></td>
-                <td><strong>${esc(condTxt)}</strong></td>
+                <td><strong class="${mainClass}">${esc(mainTxt)}</strong></td>
+                <td><strong class="${condClass}">${esc(condTxt)}</strong></td>
                 <td class="col-detail">
                   <button type="button" class="detail-toggle" data-toggle-progress-row="${esc(rowKey)}">${toggleLabel}</button>
                 </td>

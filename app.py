@@ -30,6 +30,7 @@ app = Flask(__name__)
 
 GRIST_BASE_URL = os.environ.get('GRIST_BASE_URL', 'https://grist.numerique.gouv.fr')
 _TABLE_COLUMNS_CACHE: dict[tuple[str, str], set[str]] = {}
+WIZARD_STATE_KEY = '__wizard_v3_state'
 
 # Public mount for the daily capture tool.
 try:
@@ -209,6 +210,23 @@ def _has_any_number_data(data) -> bool:
         return False
 
 
+def _format_conditional_display_name(raw_name: str) -> str:
+    """Short admin-friendly label for conditional steps."""
+    raw = str(raw_name or '').strip()
+    if not raw:
+        return ''
+    parts = [part.strip() for part in raw.split(' - ') if part.strip()]
+    if not parts:
+        return raw
+    if parts[0] == 'Directes ORP CDAPH':
+        return 'Prestations directes: ' + ' > '.join(parts[1:]) if len(parts) > 1 else 'Prestations directes'
+    if parts[0] == 'Directes hors ORP CDAPH':
+        return 'Prestations directes sans ORP CDAPH: ' + ' > '.join(parts[1:]) if len(parts) > 1 else 'Prestations directes sans ORP CDAPH'
+    if parts[0] == 'Indirectes':
+        return 'Prestations indirectes: ' + ' > '.join(parts[1:]) if len(parts) > 1 else 'Prestations indirectes'
+    return raw
+
+
 def compute_quick_step_progress(fields: dict) -> dict:
     """
     Fast progress estimator by major sections.
@@ -253,65 +271,83 @@ def compute_quick_step_progress(fields: dict) -> dict:
         ('Contexte écologique', contexte_done),
     ]
 
-    # Conditional quick estimator (very lightweight).
+    # Conditional quick estimator.
     cond_expected_labels = []
     cond_done_labels = []
+    wizard_runtime = _details_get(details_json, (WIZARD_STATE_KEY, 'runtime'), {})
 
-    if _as_bool(fields.get('check_esrp')):
-        cond_expected_labels.append('Prestations totales ESRP')
-    if _as_bool(fields.get('check_espo')):
-        cond_expected_labels.append('Prestations totales ESPO')
-    if _as_bool(fields.get('check_ueros')):
-        cond_expected_labels.append('Prestations totales UEROS')
-    if _as_bool(fields.get('check_deac')):
-        cond_expected_labels.append('Prestations totales DEAc')
+    if isinstance(wizard_runtime, dict):
+        runtime_defs = wizard_runtime.get('conditionalDefs')
+        runtime_state = wizard_runtime.get('conditionalState')
+        if isinstance(runtime_defs, list) and isinstance(runtime_state, dict):
+            for item in runtime_defs:
+                if not isinstance(item, dict):
+                    continue
+                cond_id = str(item.get('id') or '').strip()
+                cond_name = _format_conditional_display_name(str(item.get('name') or '').strip())
+                if not cond_id or not cond_name:
+                    continue
+                cond_expected_labels.append(cond_name)
+                state = runtime_state.get(cond_id)
+                if isinstance(state, dict) and (_as_bool(state.get('done')) or _as_bool(state.get('__completed'))):
+                    cond_done_labels.append(cond_name)
 
-    prestations_json = _safe_json(fields.get('prestations_json'), {})
-    prestations_json_canonical = _details_get(details_json, ('prestations', 'conditional', 'state_by_key'), {})
-    if (not isinstance(prestations_json, dict) or not prestations_json) and isinstance(prestations_json_canonical, dict):
-        prestations_json = prestations_json_canonical
-    if isinstance(prestations_json, dict):
-        if _has_any_number_data(prestations_json.get('esrp')):
-            cond_done_labels.append('Prestations totales ESRP')
-        if _has_any_number_data(prestations_json.get('espo')):
-            cond_done_labels.append('Prestations totales ESPO')
-        if _has_any_number_data(prestations_json.get('ueros')):
-            cond_done_labels.append('Prestations totales UEROS')
-        if _has_any_number_data(prestations_json.get('deac')):
-            cond_done_labels.append('Prestations totales DEAc')
+    if not cond_expected_labels:
+        if _as_bool(fields.get('check_esrp')):
+            cond_expected_labels.append('Prestations totales ESRP')
+        if _as_bool(fields.get('check_espo')):
+            cond_expected_labels.append('Prestations totales ESPO')
+        if _as_bool(fields.get('check_ueros')):
+            cond_expected_labels.append('Prestations totales UEROS')
+        if _as_bool(fields.get('check_deac')):
+            cond_expected_labels.append('Prestations totales DEAc')
 
-    orp_map = {
-        'orp_pec': 'Prestation ORP: PEC',
-        'orp_autre_eval': "Prestation ORP: Autre dispositif d'évaluation",
-        'orp_orientation_espo': 'Prestation ORP: Orientation ESPO',
-        'orp_parcours_sociopro': 'Prestation ORP: Parcours socio-professionnel',
-        'orp_autre_parcours': 'Prestation ORP: Autre type de parcours',
-        'orp_parcours_qualif': 'Prestation ORP: Parcours certifiant',
-        'orp_remise_niveau': 'Prestation ORP: Remise à niveau',
-        'orp_formation_pro': 'Prestation ORP: Formation professionnalisante',
-        'orp_formation_certif': 'Prestation ORP: Formation certifiante',
-        'orp_formation_accomp_pro': 'Prestation ORP: Formation accompagnée pro',
-        'orp_formation_accomp_certif': 'Prestation ORP: Formation accompagnée certifiante',
-    }
-    selected_orp_keys = []
-    if isinstance(prestations_orp, dict):
-        for key, label in orp_map.items():
-            if _as_bool(prestations_orp.get(key)):
-                selected_orp_keys.append((key, label))
-                cond_expected_labels.append(label)
+        prestations_json = _safe_json(fields.get('prestations_json'), {})
+        prestations_json_canonical = _details_get(details_json, ('prestations', 'conditional', 'state_by_key'), {})
+        if (not isinstance(prestations_json, dict) or not prestations_json) and isinstance(prestations_json_canonical, dict):
+            prestations_json = prestations_json_canonical
+        if isinstance(prestations_json, dict):
+            if _has_any_number_data(prestations_json.get('esrp')):
+                cond_done_labels.append('Prestations totales ESRP')
+            if _has_any_number_data(prestations_json.get('espo')):
+                cond_done_labels.append('Prestations totales ESPO')
+            if _has_any_number_data(prestations_json.get('ueros')):
+                cond_done_labels.append('Prestations totales UEROS')
+            if _has_any_number_data(prestations_json.get('deac')):
+                cond_done_labels.append('Prestations totales DEAc')
 
-    if isinstance(details_json, dict):
-        for key, label in selected_orp_keys:
-            state = details_json.get(key, {})
-            if not isinstance(state, dict):
-                state = {}
-            # New canonical location (schema v2)
-            if not state:
-                canonical_state = _details_get(details_json, ('prestations', 'conditional', 'state_by_key', key), {})
-                if isinstance(canonical_state, dict):
-                    state = canonical_state
-            if isinstance(state, dict) and _as_bool(state.get('__completed')):
-                cond_done_labels.append(label)
+        orp_map = {
+            'orp_pec': 'Prestation ORP: PEC',
+            'orp_autre_eval': "Prestation ORP: Autre dispositif d'évaluation",
+            'orp_orientation_espo': 'Prestation ORP: Orientation ESPO',
+            'orp_parcours_sociopro': 'Prestation ORP: Parcours socio-professionnel',
+            'orp_autre_parcours': 'Prestation ORP: Autre type de parcours',
+            'orp_parcours_qualif': 'Prestation ORP: Parcours certifiant',
+            'orp_remise_niveau': 'Prestation ORP: Remise à niveau',
+            'orp_formation_pro': 'Prestation ORP: Formation professionnalisante',
+            'orp_formation_certif': 'Prestation ORP: Formation certifiante',
+            'orp_formation_accomp_pro': 'Prestation ORP: Formation accompagnée pro',
+            'orp_formation_accomp_certif': 'Prestation ORP: Formation accompagnée certifiante',
+        }
+        selected_orp_keys = []
+        if isinstance(prestations_orp, dict):
+            for key, label in orp_map.items():
+                if _as_bool(prestations_orp.get(key)):
+                    selected_orp_keys.append((key, label))
+                    cond_expected_labels.append(label)
+
+        if isinstance(details_json, dict):
+            for key, label in selected_orp_keys:
+                state = details_json.get(key, {})
+                if not isinstance(state, dict):
+                    state = {}
+                # New canonical location (schema v2)
+                if not state:
+                    canonical_state = _details_get(details_json, ('prestations', 'conditional', 'state_by_key', key), {})
+                    if isinstance(canonical_state, dict):
+                        state = canonical_state
+                if isinstance(state, dict) and _as_bool(state.get('__completed')):
+                    cond_done_labels.append(label)
 
     done_main = sum(1 for _, ok in steps if ok)
     total_main = len(steps)
