@@ -763,15 +763,6 @@ def serve_form(form_id: str):
     return send_from_directory(FORMS_DIR / form_id, 'index.html')
 
 
-@app.route('/forms/<form_id>/<path:filename>')
-def serve_form_file(form_id: str, filename: str):
-    """Serve extra files from a form folder (e.g. UI prototypes)."""
-    resolved = _resolve_form_path(form_id, filename)
-    if not resolved:
-        return jsonify({'error': 'File not found'}), 404
-    return send_from_directory(FORMS_DIR / form_id, resolved)
-
-
 @app.route('/forms/fagerh/questions-pdf')
 def serve_fagerh_questions_pdf():
     """Serve the reference PDF containing FAGERH questions."""
@@ -781,6 +772,15 @@ def serve_fagerh_questions_pdf():
         as_attachment=True,
         download_name='fagerh_questions_fagerh.pdf',
     )
+
+
+@app.route('/forms/<form_id>/<path:filename>')
+def serve_form_file(form_id: str, filename: str):
+    """Serve extra files from a form folder (e.g. UI prototypes)."""
+    resolved = _resolve_form_path(form_id, filename)
+    if not resolved:
+        return jsonify({'error': 'File not found'}), 404
+    return send_from_directory(FORMS_DIR / form_id, resolved)
 
 
 @app.route('/admin/<form_id>/')
