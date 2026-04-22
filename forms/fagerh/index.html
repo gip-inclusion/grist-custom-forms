@@ -7402,7 +7402,12 @@
     }
 
     function normalizeFinessLookupValue(value) {
-      return String(value || '').trim().toUpperCase();
+      const raw = String(value || '').trim();
+      const digits = raw.replace(/\D+/g, '');
+      if (digits && digits.length === raw.length) {
+        return digits.length === 8 ? digits.padStart(9, '0') : digits;
+      }
+      return raw.toUpperCase();
     }
 
     function normalizeSiretValue(value) {

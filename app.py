@@ -399,7 +399,11 @@ def _parse_response_json_safe(resp):
 
 def normalize_finess(value) -> str:
     """Normalize FINESS value for duplicate checks."""
-    return str(value or '').strip().upper()
+    raw = str(value or '').strip()
+    digits = ''.join(ch for ch in raw if ch.isdigit())
+    if digits and digits == raw:
+        return digits.zfill(9) if len(digits) == 8 else digits
+    return raw.upper()
 
 def normalize_email(value) -> str:
     """Normalize email value for lookup."""
