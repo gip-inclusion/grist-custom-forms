@@ -9984,6 +9984,201 @@
       setTopStatusMessage(statusMessage || 'Téléchargement du PDF des questions lancé.');
     }
 
+    function downloadBlob(blob, filename) {
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    function formatExportValue(value) {
+      if (value == null) return '';
+      if (typeof value === 'boolean') return value ? 'true' : 'false';
+      if (typeof value === 'object') {
+        try {
+          return JSON.stringify(value);
+        } catch {
+          return String(value);
+        }
+      }
+      return String(value);
+    }
+
+    function formatTimestampForFilename(date = new Date()) {
+      const pad = (n) => String(n).padStart(2, '0');
+      return [
+        date.getFullYear(),
+        pad(date.getMonth() + 1),
+        pad(date.getDate()),
+        '-',
+        pad(date.getHours()),
+        pad(date.getMinutes()),
+        pad(date.getSeconds()),
+      ].join('');
+    }
+
+    function buildCurrentExportPayload() {
+      const uuid = ensureResumeUuid();
+      const snapshot = serializeWizardSnapshot();
+      const fields = buildFieldsForSave(uuid, snapshot);
+      return {
+        exported_at: new Date().toISOString(),
+        uuid,
+        form_id: FORM_ID,
+        fields,
+      };
+    }
+
+    function buildCsvFromPayload(payload) {
+      const row = {
+        exported_at: payload.exported_at,
+        uuid: payload.uuid,
+        form_id: payload.form_id,
+        ...payload.fields,
+      };
+      const headers = Object.keys(row);
+      const escapeCsvCell = (value) => {
+        const text = formatExportValue(value);
+        return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+      };
+      return [
+        headers.join(','),
+        headers.map((key) => escapeCsvCell(row[key])).join(','),
+      ].join('\n');
+    }
+
+    function toPdfAscii(text) {
+      return String(text || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^\x20-\x7E]/g, ' ');
+    }
+
+    function wrapPdfLine(text, maxLen = 92) {
+      const source = toPdfAscii(text).replace(/\s+/g, ' ').trim();
+      if (!source) return [''];
+      const words = source.split(' ');
+      const lines = [];
+      let current = '';
+      words.forEach((word) => {
+        const next = current ? `${current} ${word}` : word;
+        if (next.length <= maxLen) {
+          current = next;
+        } else {
+          if (current) lines.push(current);
+          current = word.length <= maxLen ? word : word.slice(0, maxLen);
+        }
+      });
+      if (current) lines.push(current);
+      return lines;
+    }
+
+    function escapePdfText(text) {
+      return String(text || '')
+        .replace(/\\/g, '\\\\')
+        .replace(/\(/g, '\\(')
+        .replace(/\)/g, '\\)');
+    }
+
+    function buildSimplePdfBlob(lines) {
+      const pageHeight = 842;
+      const top = 800;
+      const bottom = 40;
+      const lineHeight = 14;
+      const linesPerPage = Math.max(1, Math.floor((top - bottom) / lineHeight));
+      const pages = [];
+      for (let i = 0; i < lines.length; i += linesPerPage) {
+        pages.push(lines.slice(i, i + linesPerPage));
+      }
+      if (!pages.length) pages.push(['Export FAGERH']);
+
+      const objects = [];
+      const addObject = (content) => {
+        objects.push(content);
+        return objects.length;
+      };
+
+      const fontId = addObject('<< /Type /Font /Subtype /Type1 /BaseFont /Courier >>');
+      const pageIds = [];
+      const contentIds = [];
+
+      pages.forEach((pageLines) => {
+        const streamLines = [
+          'BT',
+          '/F1 10 Tf',
+          `40 ${top} Td`,
+          '14 TL',
+        ];
+        pageLines.forEach((line, index) => {
+          const prefix = index === 0 ? '' : 'T* ';
+          streamLines.push(`${prefix}(${escapePdfText(line)}) Tj`);
+        });
+        streamLines.push('ET');
+        const stream = streamLines.join('\n');
+        const contentId = addObject(`<< /Length ${stream.length} >>\nstream\n${stream}\nendstream`);
+        contentIds.push(contentId);
+        pageIds.push(addObject(''));
+      });
+
+      const pagesId = addObject('');
+      pageIds.forEach((pageId, index) => {
+        objects[pageId - 1] = `<< /Type /Page /Parent ${pagesId} 0 R /MediaBox [0 0 595 ${pageHeight}] /Resources << /Font << /F1 ${fontId} 0 R >> >> /Contents ${contentIds[index]} 0 R >>`;
+      });
+      objects[pagesId - 1] = `<< /Type /Pages /Kids [${pageIds.map((id) => `${id} 0 R`).join(' ')}] /Count ${pageIds.length} >>`;
+      const catalogId = addObject(`<< /Type /Catalog /Pages ${pagesId} 0 R >>`);
+
+      let pdf = '%PDF-1.4\n';
+      const offsets = [0];
+      objects.forEach((obj, index) => {
+        offsets.push(pdf.length);
+        pdf += `${index + 1} 0 obj\n${obj}\nendobj\n`;
+      });
+      const xrefStart = pdf.length;
+      pdf += `xref\n0 ${objects.length + 1}\n`;
+      pdf += '0000000000 65535 f \n';
+      for (let i = 1; i < offsets.length; i += 1) {
+        pdf += `${String(offsets[i]).padStart(10, '0')} 00000 n \n`;
+      }
+      pdf += `trailer\n<< /Size ${objects.length + 1} /Root ${catalogId} 0 R >>\nstartxref\n${xrefStart}\n%%EOF`;
+      return new Blob([pdf], { type: 'application/pdf' });
+    }
+
+    async function exportCurrentSaisieAsCsv() {
+      const savePrereq = getSavePrerequisiteStatus();
+      if (!savePrereq.ok) throw new Error(savePrereq.message);
+      await saveWizardToServer();
+      const payload = buildCurrentExportPayload();
+      const csv = buildCsvFromPayload(payload);
+      downloadBlob(
+        new Blob([csv], { type: 'text/csv;charset=utf-8' }),
+        `fagerh_saisie_${payload.uuid}_${formatTimestampForFilename()}.csv`,
+      );
+    }
+
+    async function exportCurrentSaisieAsPdf() {
+      const savePrereq = getSavePrerequisiteStatus();
+      if (!savePrereq.ok) throw new Error(savePrereq.message);
+      await saveWizardToServer();
+      const payload = buildCurrentExportPayload();
+      const lines = [
+        'FAGERH - Export de la saisie',
+        `Date export : ${payload.exported_at}`,
+        `UUID : ${payload.uuid}`,
+        '',
+      ];
+      Object.entries(payload.fields).forEach(([key, value]) => {
+        wrapPdfLine(`${key}: ${formatExportValue(value)}`).forEach((line) => lines.push(line));
+      });
+      downloadBlob(
+        buildSimplePdfBlob(lines),
+        `fagerh_saisie_${payload.uuid}_${formatTimestampForFilename()}.pdf`,
+      );
+    }
+
     function generateResumeUuid() {
       if (window.crypto?.randomUUID) return window.crypto.randomUUID();
       const rand = Math.random().toString(36).slice(2, 10);
@@ -10557,11 +10752,23 @@
       event.preventDefault();
       recoverResumeByEmailAndFiness(identDuplicateEmailInput, identDuplicateFinessInput);
     });
-    document.getElementById('quick-export-csv-btn')?.addEventListener('click', () => {
-      if (topStatus) topStatus.textContent = "Maquette : export CSV simulé.";
+    document.getElementById('quick-export-csv-btn')?.addEventListener('click', async () => {
+      try {
+        setTopStatusMessage('Préparation de l’export CSV en cours...');
+        await exportCurrentSaisieAsCsv();
+        setTopStatusMessage('Export CSV téléchargé.');
+      } catch (err) {
+        setTopStatusMessage(`Erreur export CSV : ${err.message}`);
+      }
     });
-    document.getElementById('quick-export-pdf-btn')?.addEventListener('click', () => {
-      if (topStatus) topStatus.textContent = "Maquette : export PDF simulé.";
+    document.getElementById('quick-export-pdf-btn')?.addEventListener('click', async () => {
+      try {
+        setTopStatusMessage('Préparation de l’export PDF en cours...');
+        await exportCurrentSaisieAsPdf();
+        setTopStatusMessage('Export PDF téléchargé.');
+      } catch (err) {
+        setTopStatusMessage(`Erreur export PDF : ${err.message}`);
+      }
     });
     document.getElementById('primary-export-questions-pdf-btn')?.addEventListener('click', () => {
       downloadQuestionsPdf('Téléchargement du PDF des questions lancé.');
