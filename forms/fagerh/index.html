@@ -2396,10 +2396,10 @@
         <div class="box">
           <strong>Effectifs globaux par dispositif</strong>
           <div class="dispo-list">
-            <div class="dispo-line"><label class="chip"><input type="checkbox" data-dispo="esrp"> ESRP</label><input type="number" min="0" step="0.1" data-etp="esrp" placeholder="ETP ESRP"></div>
-            <div class="dispo-line"><label class="chip"><input type="checkbox" data-dispo="espo"> ESPO</label><input type="number" min="0" step="0.1" data-etp="espo" placeholder="ETP ESPO"></div>
-            <div class="dispo-line"><label class="chip"><input type="checkbox" data-dispo="ueros"> UEROS</label><input type="number" min="0" step="0.1" data-etp="ueros" placeholder="ETP UEROS"></div>
-            <div class="dispo-line" id="rh-deac-line" style="display:none;"><label class="chip">DEAc</label><span style="display:none;"><input type="checkbox" data-dispo="deac" id="rh-deac-dispo" aria-label="Activer DEAc"></span><input type="number" min="0" step="0.1" data-etp="deac" placeholder="ETP DEAc"></div>
+            <div class="dispo-line"><label class="chip"><input type="checkbox" data-dispo="esrp"> ESRP</label><input id="rh-etp-esrp" type="number" min="0" step="0.1" data-etp="esrp" placeholder="ETP ESRP"></div>
+            <div class="dispo-line"><label class="chip"><input type="checkbox" data-dispo="espo"> ESPO</label><input id="rh-etp-espo" type="number" min="0" step="0.1" data-etp="espo" placeholder="ETP ESPO"></div>
+            <div class="dispo-line"><label class="chip"><input type="checkbox" data-dispo="ueros"> UEROS</label><input id="rh-etp-ueros" type="number" min="0" step="0.1" data-etp="ueros" placeholder="ETP UEROS"></div>
+            <div class="dispo-line" id="rh-deac-line" style="display:none;"><label class="chip">DEAc</label><span style="display:none;"><input type="checkbox" data-dispo="deac" id="rh-deac-dispo" aria-label="Activer DEAc"></span><input id="rh-etp-deac" type="number" min="0" step="0.1" data-etp="deac" placeholder="ETP DEAc"></div>
           </div>
         </div>
         <div id="metier-section">
@@ -10316,6 +10316,15 @@
       });
     }
 
+    function restoreEtpValuesFromSavedFields(fields) {
+      ['esrp', 'espo', 'ueros', 'deac'].forEach((key) => {
+        const input = document.querySelector(`[data-etp="${key}"]`);
+        const savedValue = fields?.[`etp_${key}`];
+        if (!input || String(input.value || '').trim() !== '' || savedValue == null) return;
+        input.value = String(savedValue);
+      });
+    }
+
     function collectMetiersRows() {
       return Array.from(document.querySelectorAll('#metier-body tr')).map((tr) => ({
         metier: String(tr.dataset.metier || '').trim(),
@@ -10586,6 +10595,7 @@
 
       isHydratingFromSnapshot = true;
       applyControlsSnapshot(snapshot.controls || {});
+      restoreEtpValuesFromSavedFields(fields);
       restoreMetiersRows(snapshot.metiersRows || []);
       restoreWizardRuntime(snapshot.runtime || {});
       applyRhDeacQuestionState();
