@@ -62,6 +62,28 @@ class SaveRecordTest(unittest.TestCase):
             'error': 'Grist write returned success, but the questionnaire was not found after saving.',
         })
 
+    @patch.object(app.requests, 'post')
+    @patch.object(app, 'fetch_record_by_uuid')
+    def test_save_fails_when_grist_write_redirects(self, fetch_record_by_uuid, post):
+        post.return_value = Mock(
+            status_code=308,
+            headers={'Location': 'https://grist.example.test/api/records'},
+        )
+        fetch_record_by_uuid.return_value = (None, Mock(status_code=200))
+
+        response = self.client.post('/api/forms/fagerh/record', json={'fields': self.fields})
+
+        self.assertEqual(response.status_code, 502)
+        self.assertEqual(response.get_json(), {
+            'error': (
+                'Grist write endpoint redirected with HTTP 308. '
+                'Check GRIST_BASE_URL in production. '
+                'Redirect target: https://grist.example.test/api/records'
+            ),
+        })
+        post.assert_called_once()
+        self.assertFalse(post.call_args.kwargs['allow_redirects'])
+
 
 if __name__ == '__main__':
     unittest.main()

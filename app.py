@@ -410,6 +410,21 @@ def fetch_record_by_uuid(base_url: str, uuid: str, headers: dict):
     return payload['records'][0] if payload['records'] else None, resp
 
 
+def _grist_write_redirect_response(resp):
+    """Return a readable error when an upstream write endpoint redirects."""
+    if not 300 <= resp.status_code < 400:
+        return None
+
+    location = str(resp.headers.get('Location') or '').strip()
+    suffix = f' Redirect target: {location}' if location else ''
+    return jsonify({
+        'error': (
+            f'Grist write endpoint redirected with HTTP {resp.status_code}. '
+            f'Check GRIST_BASE_URL in production.{suffix}'
+        ),
+    }), 502
+
+
 def normalize_finess(value) -> str:
     """Normalize FINESS value for duplicate checks."""
     raw = str(value or '').strip()
@@ -565,11 +580,15 @@ def save_record(form_id: str):
         if record_id:
             # Update existing
             payload = {'records': [{'id': record_id, 'fields': filtered_fields}]}
-            resp = requests.patch(f"{base_url}/records", json=payload, headers=headers)
+            resp = requests.patch(f"{base_url}/records", json=payload, headers=headers, allow_redirects=False)
         else:
             # Create new
             payload = {'records': [{'fields': filtered_fields}]}
-            resp = requests.post(f"{base_url}/records", json=payload, headers=headers)
+            resp = requests.post(f"{base_url}/records", json=payload, headers=headers, allow_redirects=False)
+
+        redirect_error = _grist_write_redirect_response(resp)
+        if redirect_error:
+            return redirect_error
 
         if resp.status_code != 200:
             return jsonify(_parse_response_json_safe(resp)), resp.status_code
