@@ -4118,7 +4118,7 @@
         return formationSelectionBlock.done;
       }
       if (isParcoursConditionalStep(conditionalId)) {
-        // Parcours mobilisés: même logique de validation que les étapes ESRP.
+        return getParcoursVisibleBlocksDetails(state, conditionalId).every((block) => block.done);
       }
       if (isDirectSansOrpCadrageConditionalStep(conditionalId)) {
         const directSansOrpPecBlock = evaluateDirectSansOrpPecBlock(state, conditionalId);
@@ -4198,7 +4198,19 @@
         };
       }
       if (isParcoursConditionalStep(conditionalId)) {
-        // Parcours mobilisés: progression calculée bloc par bloc (comme ESRP).
+        const blocks = getParcoursVisibleBlocksDetails(state, conditionalId);
+        const emploiRow = getEffectiveDirectAvecOrpRow(state, conditionalId);
+        const touched = String(state?.preaccueilSansSuite || '').trim() !== ''
+          || String(state?.sorties || '').trim() !== ''
+          || String(state?.sortiesAvantTerme || '').trim() !== ''
+          || String(state?.journees || '').trim() !== ''
+          || String(state?.journeesTheoriques || '').trim() !== ''
+          || getEmploiRequiredFieldKeys(conditionalId).some((key) => isFilledNumberString(emploiRow[key]));
+        return {
+          done: blocks.filter((block) => block.done).length,
+          total: blocks.length,
+          touched,
+        };
       }
       if (isDirectSansOrpCadrageConditionalStep(conditionalId)) {
         const progress = getDirectSansOrpPecFieldProgress(state, conditionalId);
@@ -4685,6 +4697,47 @@
       return { done, total: keys.length, touched };
     }
 
+    function getParcoursVisibleBlocksDetails(state, conditionalId = currentConditionalId) {
+      const fileActive = Number(state.fileActive || 0);
+      const preaccueilSansSuiteFilled = isFilledNumberString(state.preaccueilSansSuite);
+      const sortiesTotalFilled = isFilledNumberString(state.sorties);
+      const sortiesAvantTermeFilled = isFilledNumberString(state.sortiesAvantTerme);
+      const sorties = getConditionalSortiesTotal(state, conditionalId);
+      const sortiesAvantTerme = toNum(state.sortiesAvantTerme);
+      const journeesFilled = isFilledNumberString(state.journees);
+      const journeesTheoriquesFilled = isFilledNumberString(state.journeesTheoriques);
+      const emploiKeys = getEmploiRequiredFieldKeys(conditionalId);
+      const emploiRow = getEffectiveDirectAvecOrpRow(state, conditionalId);
+      const emploiRules = evaluateEmploiBlockRules(emploiRow, conditionalId);
+      const rows = [{
+        key: 'fileactive',
+        label: 'File active',
+        done: fileActive >= 0
+          && preaccueilSansSuiteFilled
+          && sortiesTotalFilled
+          && sortiesAvantTermeFilled
+          && sortiesAvantTerme <= sorties
+          && sorties >= 0,
+      }, {
+        key: 'journees',
+        label: 'Journées',
+        done: journeesFilled
+          && Number(state.journees || 0) >= 0
+          && journeesTheoriquesFilled
+          && Number(state.journeesTheoriques || 0) >= 0,
+      }];
+      if (emploiKeys.length) {
+        rows.push({
+          key: 'suivi_emploi',
+          label: "Suivi vers l'emploi",
+          done: emploiKeys.every((key) => isFilledNumberString(emploiRow[key]))
+            && emploiRules.repondantsOk
+            && emploiRules.sansAccesOk,
+        });
+      }
+      return rows;
+    }
+
     function evaluateFormationSelectionBlock(state) {
       const rows = Array.isArray(state?.formationsSelection?.rows) ? state.formationsSelection.rows : [];
       const touched = rows.length > 0;
@@ -4876,34 +4929,7 @@
         }];
       }
       if (isParcoursConditionalStep(currentConditionalId)) {
-        const isPecStep = isPecOrpConditionalStep(currentConditionalId);
-        const fileActive = Number(state.fileActive || 0);
-        const preaccueilSansSuiteFilled = isFilledNumberString(state.preaccueilSansSuite);
-        const sortiesTotalFilled = isFilledNumberString(state.sorties);
-        const sortiesAvantTermeFilled = isFilledNumberString(state.sortiesAvantTerme);
-        const sorties = getConditionalSortiesTotal(state, currentConditionalId);
-        const sortiesAvantTerme = toNum(state.sortiesAvantTerme);
-        const sortiesSplitOk = sortiesAvantTerme <= sorties;
-        const journeesFilled = isFilledNumberString(state.journees);
-        const journees = Number(state.journees || 0);
-        const fileActiveBlockDone = isPecStep
-          ? evaluatePecFileActiveBlock(state).done
-          : (fileActive >= 0
-            && preaccueilSansSuiteFilled
-            && sortiesTotalFilled
-            && sortiesAvantTermeFilled
-            && sortiesSplitOk
-            && sorties >= 0);
-        const journeesBlockDone = isPecStep ? true : (journeesFilled && journees >= 0);
-      const emploiKeys = getEmploiRequiredFieldKeys(currentConditionalId);
-      const emploiRow = getEffectiveDirectAvecOrpRow(state, currentConditionalId);
-      const emploiDone = emploiKeys.length ? emploiKeys.every((key) => isFilledNumberString(emploiRow[key])) : false;
-        const rows = [{ key: 'fileactive', label: isPecStep ? 'File active' : 'File active', done: fileActiveBlockDone }];
-        const orienteursBlock = evaluateOrienteursBlock(state, currentConditionalId);
-        if (!isPecStep) rows.push({ key: 'journees', label: 'Journées', done: journeesBlockDone });
-        if (orienteursBlock.visible) rows.push({ key: 'orienteurs', label: 'Orienteurs', done: orienteursBlock.done });
-        if (emploiKeys.length) rows.push({ key: 'suivi_emploi', label: "Suivi vers l'emploi", done: emploiDone });
-        return rows;
+        return getParcoursVisibleBlocksDetails(state, currentConditionalId);
       }
       if (isDirectSansOrpCadrageConditionalStep(currentConditionalId)) {
         const directSansOrpPecBlock = evaluateDirectSansOrpPecBlock(state, currentConditionalId);
