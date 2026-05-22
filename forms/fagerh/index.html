@@ -3866,10 +3866,15 @@
       return n - 6;
     }
 
-    function ensureConditionalState(defs) {
+    function ensureConditionalState(defs, previousDefs = []) {
+      const previousStateByName = new Map(
+        (Array.isArray(previousDefs) ? previousDefs : [])
+          .map((def) => [String(def?.name || ''), conditionalState.get(def?.id)])
+          .filter(([name, state]) => name && state)
+      );
       const nextState = new Map();
       defs.forEach((def) => {
-        const prev = conditionalState.get(def.id);
+        const prev = conditionalState.get(def.id) || previousStateByName.get(String(def?.name || ''));
         nextState.set(def.id, prev || {
           done: false,
           visitedBlocks: [],
@@ -3932,8 +3937,9 @@
     }
 
     function syncConditionalDefinitions(defs) {
+      const previousDefs = conditionalDefs;
       conditionalDefs = defs;
-      ensureConditionalState(defs);
+      ensureConditionalState(defs, previousDefs);
       if (step > getTotalSteps()) step = getTotalSteps();
     }
 
@@ -4080,7 +4086,9 @@
         }
         const diff = sum - target;
         const calculable = target > 0;
-        const ok = calculable && Math.abs(diff) < 0.0001 && rulesOk;
+        const allowsMultipleAnswers = def.key === 'ressources_entree';
+        const sumOk = allowsMultipleAnswers ? diff >= -0.0001 : Math.abs(diff) < 0.0001;
+        const ok = calculable && sumOk && rulesOk;
         return { key: def.key, title: def.title, target, sum, diff, ok, calculable, rulesOk, ruleChecks };
       });
     }
@@ -4401,7 +4409,10 @@
     function evaluateHandicapMatrixBlock(state) {
       const rows = Array.isArray(state?.handicapMatrix) ? state.handicapMatrix : [];
       const target = getConditionalTarget(state);
-      const principalSum = rows.reduce((acc, row) => acc + toNum(row?.principal), 0);
+      const polyhandicapIndex = getHandicapTypes().indexOf('Polyhandicap');
+      const principalSum = rows.reduce((acc, row, index) => (
+        index === polyhandicapIndex ? acc : acc + toNum(row?.principal)
+      ), 0);
       const associeSum = rows.reduce((acc, row) => acc + toNum(row?.associe), 0);
       const principalDiff = principalSum - target;
       const associeDiff = associeSum - target;
@@ -4424,18 +4435,18 @@
         if (isAutreDispositifEvaluationConditionalStep(conditionalId)) totalKeys.push('autre');
         const detailKeys = ['readaptation_ueros', 'readaptation_espo', 'readaptation_esrp', 'readaptation_dfa'];
         const target = getConditionalTarget(state, conditionalId);
-        const sum = totalKeys.reduce((acc, key) => acc + toNum(bloc?.[key]), 0);
-        const diff = sum - target;
         const readaptationSum = detailKeys.reduce((acc, key) => acc + toNum(bloc?.[key]), 0);
-        const readaptationDiff = readaptationSum - toNum(bloc?.readaptation_professionnelle);
+        const sum = totalKeys.reduce((acc, key) => (
+          acc + (key === 'readaptation_professionnelle' ? readaptationSum : toNum(bloc?.[key]))
+        ), 0);
+        const diff = sum - target;
         const calculable = target > 0;
         const ok = calculable
-          && Math.abs(diff) < 0.0001
-          && Math.abs(readaptationDiff) < 0.0001;
+          && Math.abs(diff) < 0.0001;
         const touched = [...totalKeys, ...detailKeys].some((key) => isFilledNumberString(bloc[key]));
-        const done = [...totalKeys, ...detailKeys].every((key) => isFilledNumberString(bloc[key]))
-          && Math.abs(diff) < 0.0001
-          && Math.abs(readaptationDiff) < 0.0001;
+        const requiredKeys = [...totalKeys.filter((key) => key !== 'readaptation_professionnelle'), ...detailKeys];
+        const done = requiredKeys.every((key) => isFilledNumberString(bloc[key]))
+          && Math.abs(diff) < 0.0001;
         return { visible: true, done, touched, target, sum, diff, calculable, ok };
       }
       const numericKeys = [
@@ -5582,7 +5593,11 @@
       if (!isPecFlow && !isEsrpConditionalStep(currentConditionalId)) {
         preconisationsNumericKeys.splice(7, 0, 'formation_esrp_dfa');
       }
-      const preconisationsCasesCount = preconisationsNumericKeys.reduce((acc, key) => acc + toNum(precoBloc?.[key]), 0);
+      const pecReadaptationTotal = ['readaptation_ueros', 'readaptation_espo', 'readaptation_esrp', 'readaptation_dfa']
+        .reduce((acc, key) => acc + toNum(precoBloc?.[key]), 0);
+      const preconisationsCasesCount = preconisationsNumericKeys.reduce((acc, key) => (
+        acc + (isPecFlow && key === 'readaptation_professionnelle' ? pecReadaptationTotal : toNum(precoBloc?.[key]))
+      ), 0);
       directAvecOrp.row = getEffectiveDirectAvecOrpRow(state, currentConditionalId);
       const parcoursRow = directAvecOrp.row || {};
       const emploiReadonlyAttr = isEsrpStep ? 'readonly' : '';
@@ -6216,7 +6231,7 @@
             <div class="pec-preco-section">
               <div class="pec-preco-total-row">
                 <div class="cond-subgroup-title">Réadaptation professionnelle</div>
-                <div class="pec-preco-inline-input"><input class="cond-preco-input" data-preco-key="readaptation_professionnelle" type="number" min="0" step="1" value="${precoValue('readaptation_professionnelle')}"></div>
+                <div class="pec-preco-inline-input"><input class="cond-preco-input" data-preco-key="readaptation_professionnelle" type="number" min="0" step="1" value="${String(pecReadaptationTotal)}" readonly></div>
               </div>
               <div class="pec-preco-breakdown-label">dont :</div>
               <div class="ds-simple-participants-block">
@@ -7054,6 +7069,12 @@
         readaptation_esrp: String(conditionalCoherenceSections?.querySelector('.cond-preco-input[data-preco-key="readaptation_esrp"]')?.value || '').trim(),
         readaptation_dfa: String(conditionalCoherenceSections?.querySelector('.cond-preco-input[data-preco-key="readaptation_dfa"]')?.value || '').trim(),
       };
+      preconisationsBloc.readaptation_professionnelle = String(
+        toNum(preconisationsBloc.readaptation_ueros)
+        + toNum(preconisationsBloc.readaptation_espo)
+        + toNum(preconisationsBloc.readaptation_esrp)
+        + toNum(preconisationsBloc.readaptation_dfa)
+      );
       const orienteursBloc = {
         reseau_emploi: String(conditionalCoherenceSections?.querySelector('.cond-orienteur-input[data-orienteur-key="reseau_emploi"]')?.value || '').trim(),
         mdph: String(conditionalCoherenceSections?.querySelector('.cond-orienteur-input[data-orienteur-key="mdph"]')?.value || '').trim(),
