@@ -29,7 +29,7 @@ DOCS_DIR = BASE_DIR / 'docs'
 
 app = Flask(__name__)
 
-GRIST_BASE_URL = os.environ.get('GRIST_BASE_URL', 'https://grist.numerique.gouv.fr')
+GRIST_BASE_URL = os.environ.get('GRIST_BASE_URL', 'https://grist.numerique.gouv.fr').rstrip('/')
 _TABLE_COLUMNS_CACHE: dict[tuple[str, str], set[str]] = {}
 WIZARD_STATE_KEY = '__wizard_v3_state'
 
@@ -397,6 +397,19 @@ def _parse_response_json_safe(resp):
         }
 
 
+def fetch_record_by_uuid(base_url: str, uuid: str, headers: dict):
+    """Fetch a single record by UUID from Grist."""
+    filter_param = json.dumps({'uuid': [uuid]})
+    resp = requests.get(f"{base_url}/records", params={'filter': filter_param}, headers=headers)
+    if resp.status_code != 200:
+        return None, resp
+
+    payload = _parse_response_json_safe(resp)
+    if not isinstance(payload, dict) or not isinstance(payload.get('records'), list):
+        raise RuntimeError('Failed to decode Grist record lookup response.')
+    return payload['records'][0] if payload['records'] else None, resp
+
+
 def normalize_finess(value) -> str:
     """Normalize FINESS value for duplicate checks."""
     raw = str(value or '').strip()
@@ -525,16 +538,11 @@ def save_record(form_id: str):
         return jsonify({'error': "Table is missing required 'uuid' column"}), 500
 
     # Check if record exists
-    filter_param = f'{{"uuid":["{uuid}"]}}'
     try:
-        check_resp = requests.get(f"{base_url}/records", params={'filter': filter_param}, headers=headers)
+        existing_record, check_resp = fetch_record_by_uuid(base_url, uuid, headers)
         if check_resp.status_code != 200:
             return jsonify(_parse_response_json_safe(check_resp)), check_resp.status_code
-
-        existing = _parse_response_json_safe(check_resp)
-        if not isinstance(existing, dict) or 'records' not in existing:
-            return jsonify({'error': 'Failed to decode existing record check response.'}), 502
-        record_id = existing['records'][0]['id'] if existing.get('records') else None
+        record_id = existing_record.get('id') if isinstance(existing_record, dict) else None
     except Exception as e:
         return jsonify({'error': f'Failed to check existing record: {e}'}), 500
 
@@ -551,8 +559,9 @@ def save_record(form_id: str):
     except Exception as e:
         return jsonify({'error': f'Failed to validate FINESS uniqueness: {e}'}), 500
 
-    # Create or update
+    # Create or update, then re-read the UUID so callers never get a false success.
     try:
+        action = 'updated' if record_id else 'created'
         if record_id:
             # Update existing
             payload = {'records': [{'id': record_id, 'fields': filtered_fields}]}
@@ -562,7 +571,31 @@ def save_record(form_id: str):
             payload = {'records': [{'fields': filtered_fields}]}
             resp = requests.post(f"{base_url}/records", json=payload, headers=headers)
 
-        return jsonify(resp.json()), resp.status_code
+        if resp.status_code != 200:
+            return jsonify(_parse_response_json_safe(resp)), resp.status_code
+
+        saved_record, verify_resp = fetch_record_by_uuid(base_url, uuid, headers)
+        if verify_resp.status_code != 200:
+            return jsonify({
+                'error': f'Grist write returned success, but verification failed with HTTP {verify_resp.status_code}.',
+            }), 502
+        if not isinstance(saved_record, dict):
+            return jsonify({
+                'error': 'Grist write returned success, but the questionnaire was not found after saving.',
+            }), 502
+
+        saved_fields = saved_record.get('fields', {}) if isinstance(saved_record.get('fields'), dict) else {}
+        if str(saved_fields.get('uuid') or '') != str(uuid):
+            return jsonify({
+                'error': 'Grist write returned success, but the saved questionnaire UUID did not match.',
+            }), 502
+
+        return jsonify({
+            'ok': True,
+            'action': action,
+            'uuid': uuid,
+            'record_id': saved_record.get('id'),
+        }), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
