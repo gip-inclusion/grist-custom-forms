@@ -25,10 +25,10 @@ class SaveRecordTest(unittest.TestCase):
         self.addCleanup(self.columns_patch.stop)
         self.addCleanup(self.duplicates_patch.stop)
 
-    @patch.object(app.requests, 'post')
+    @patch.object(app, 'write_grist_records')
     @patch.object(app, 'fetch_record_by_uuid')
-    def test_save_returns_compact_success_after_uuid_verification(self, fetch_record_by_uuid, post):
-        post.return_value = Mock(status_code=200)
+    def test_save_returns_compact_success_after_uuid_verification(self, fetch_record_by_uuid, write_grist_records):
+        write_grist_records.return_value = Mock(status_code=200)
         lookup_response = Mock(status_code=200)
         fetch_record_by_uuid.side_effect = [
             (None, lookup_response),
@@ -45,10 +45,10 @@ class SaveRecordTest(unittest.TestCase):
             'record_id': 42,
         })
 
-    @patch.object(app.requests, 'post')
+    @patch.object(app, 'write_grist_records')
     @patch.object(app, 'fetch_record_by_uuid')
-    def test_save_fails_when_grist_success_cannot_be_verified(self, fetch_record_by_uuid, post):
-        post.return_value = Mock(status_code=200)
+    def test_save_fails_when_grist_success_cannot_be_verified(self, fetch_record_by_uuid, write_grist_records):
+        write_grist_records.return_value = Mock(status_code=200)
         lookup_response = Mock(status_code=200)
         fetch_record_by_uuid.side_effect = [
             (None, lookup_response),
@@ -62,10 +62,10 @@ class SaveRecordTest(unittest.TestCase):
             'error': 'Grist write returned success, but the questionnaire was not found after saving.',
         })
 
-    @patch.object(app.requests, 'post')
+    @patch.object(app, 'write_grist_records')
     @patch.object(app, 'fetch_record_by_uuid')
-    def test_save_fails_when_grist_write_redirects(self, fetch_record_by_uuid, post):
-        post.return_value = Mock(
+    def test_save_fails_when_grist_write_still_redirects(self, fetch_record_by_uuid, write_grist_records):
+        write_grist_records.return_value = Mock(
             status_code=308,
             url='https://old-grist.example.test/api/records',
             headers={'Location': 'https://grist.example.test/api/records'},
@@ -83,8 +83,31 @@ class SaveRecordTest(unittest.TestCase):
                 'Redirect target: https://grist.example.test/api/records'
             ),
         })
-        post.assert_called_once()
-        self.assertFalse(post.call_args.kwargs['allow_redirects'])
+        write_grist_records.assert_called_once()
+
+    @patch.object(app.requests, 'Session')
+    def test_grist_write_redirect_keeps_method_and_redirect_cookie_session(self, session_factory):
+        session = session_factory.return_value.__enter__.return_value
+        session.request.side_effect = [
+            Mock(
+                status_code=302,
+                headers={'Location': 'https://grist.example.test/api/records'},
+            ),
+            Mock(status_code=200, headers={}),
+        ]
+
+        response = app.write_grist_records(
+            'POST',
+            'https://grist.example.test/api/records',
+            {'records': [{'fields': self.fields}]},
+            {'Authorization': 'Bearer api-key'},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(session.request.call_count, 2)
+        for request_call in session.request.call_args_list:
+            self.assertEqual(request_call.args[0], 'POST')
+            self.assertFalse(request_call.kwargs['allow_redirects'])
 
 
 if __name__ == '__main__':

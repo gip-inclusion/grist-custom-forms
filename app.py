@@ -15,6 +15,7 @@ import os
 import json
 from functools import wraps
 from pathlib import Path
+from urllib.parse import urljoin
 from dotenv import load_dotenv
 import requests
 from flask import Flask, request, jsonify, redirect, send_from_directory, Response
@@ -427,6 +428,29 @@ def _grist_write_redirect_response(resp):
     }), 502
 
 
+def write_grist_records(method: str, url: str, payload: dict, headers: dict, max_redirects: int = 3):
+    """Follow Grist write redirects while preserving the HTTP method and cookies."""
+    current_url = url
+    with requests.Session() as session:
+        for _ in range(max_redirects + 1):
+            resp = session.request(
+                method,
+                current_url,
+                json=payload,
+                headers=headers,
+                allow_redirects=False,
+            )
+            if not 300 <= resp.status_code < 400:
+                return resp
+
+            location = str(resp.headers.get('Location') or '').strip()
+            if not location:
+                return resp
+            current_url = urljoin(current_url, location)
+
+    return resp
+
+
 def normalize_finess(value) -> str:
     """Normalize FINESS value for duplicate checks."""
     raw = str(value or '').strip()
@@ -582,11 +606,11 @@ def save_record(form_id: str):
         if record_id:
             # Update existing
             payload = {'records': [{'id': record_id, 'fields': filtered_fields}]}
-            resp = requests.patch(f"{base_url}/records", json=payload, headers=headers, allow_redirects=False)
+            resp = write_grist_records('PATCH', f"{base_url}/records", payload, headers)
         else:
             # Create new
             payload = {'records': [{'fields': filtered_fields}]}
-            resp = requests.post(f"{base_url}/records", json=payload, headers=headers, allow_redirects=False)
+            resp = write_grist_records('POST', f"{base_url}/records", payload, headers)
 
         redirect_error = _grist_write_redirect_response(resp)
         if redirect_error:
