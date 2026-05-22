@@ -67,6 +67,7 @@ class SaveRecordTest(unittest.TestCase):
     def test_save_fails_when_grist_write_redirects(self, fetch_record_by_uuid, post):
         post.return_value = Mock(
             status_code=308,
+            url='https://old-grist.example.test/api/records',
             headers={'Location': 'https://grist.example.test/api/records'},
         )
         fetch_record_by_uuid.return_value = (None, Mock(status_code=200))
@@ -78,6 +79,7 @@ class SaveRecordTest(unittest.TestCase):
             'error': (
                 'Grist write endpoint redirected with HTTP 308. '
                 'Check GRIST_BASE_URL in production. '
+                'Source URL: https://old-grist.example.test/api/records. '
                 'Redirect target: https://grist.example.test/api/records'
             ),
         })

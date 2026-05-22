@@ -415,12 +415,14 @@ def _grist_write_redirect_response(resp):
     if not 300 <= resp.status_code < 400:
         return None
 
+    source = str(getattr(resp, 'url', '') or '').strip()
     location = str(resp.headers.get('Location') or '').strip()
+    source_part = f' Source URL: {source}.' if source else ''
     suffix = f' Redirect target: {location}' if location else ''
     return jsonify({
         'error': (
             f'Grist write endpoint redirected with HTTP {resp.status_code}. '
-            f'Check GRIST_BASE_URL in production.{suffix}'
+            f'Check GRIST_BASE_URL in production.{source_part}{suffix}'
         ),
     }), 502
 
