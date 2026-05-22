@@ -6163,11 +6163,12 @@
               <div class="field field-radio-inline q35-sub-inline q35-places-inline"><div><label>Combien pour évolution du handicap</label></div><div><input class="cond-susp-input" data-susp-key="evolution_handicap" type="number" min="0" step="1" value="${String(suspBloc.raisons?.evolution_handicap || '')}"></div></div>
               <div class="field field-radio-inline q35-sub-inline q35-places-inline"><div><label>Combien pour évolution de la situation sociale et familiale</label></div><div><input class="cond-susp-input" data-susp-key="evolution_sociale" type="number" min="0" step="1" value="${String(suspBloc.raisons?.evolution_sociale || '')}"></div></div>
               <div class="field field-radio-inline q35-sub-inline q35-places-inline"><div><label>Combien parce que le parcours contractualisé inclut des périodes de suspension</label></div><div><input class="cond-susp-input" data-susp-key="parcours_suspendu" type="number" min="0" step="1" value="${String(suspBloc.raisons?.parcours_suspendu || '')}"></div></div>
-              <div class="field field-radio-inline q35-sub-inline q35-places-inline">
-                <div><label>Autres</label></div>
-                <div style="display:flex; gap:8px; justify-content:flex-end;">
-                  <input class="cond-susp-input" data-susp-key="autres_precision" type="text" placeholder="Précisez" value="${String(suspBloc.raisons?.autres_precision || '').replace(/"/g, '&quot;')}" style="max-width:240px;">
-                  <input class="cond-susp-input" data-susp-key="autres_nb" type="number" min="0" step="1" placeholder="Nombre" value="${String(suspBloc.raisons?.autres_nb || '')}" style="max-width:120px; text-align:center;">
+              <div class="ds-simple-section">
+                <p class="ds-simple-subtitle">Autres motifs de suspension</p>
+                <p class="hint" style="margin:0 0 8px 0;">L'effectif ci-dessous est compté dans le total. La précision sert uniquement à indiquer le motif correspondant.</p>
+                <div class="ds-simple-participants-block">
+                  <div class="field field-radio-inline q35-sub-inline q35-places-inline"><div><label>Effectif concerné</label></div><div><input class="cond-susp-input" data-susp-key="autres_nb" type="number" min="0" step="1" value="${String(suspBloc.raisons?.autres_nb || '')}"></div></div>
+                  <div class="field field-radio-inline q35-sub-inline q35-places-inline"><div><label>Motif à préciser</label></div><div><input class="cond-susp-input" data-susp-key="autres_precision" type="text" placeholder="Ex : motif non listé ci-dessus" value="${String(suspBloc.raisons?.autres_precision || '').replace(/"/g, '&quot;')}"></div></div>
                 </div>
               </div>
             </div>
@@ -6209,8 +6210,14 @@
                 <div class="field field-radio-inline q35-sub-inline q35-places-inline"><div><label>Atteinte de l'objectif</label></div><div><input class="cond-sorties-input" data-sorties-key="objectif" type="number" min="0" step="1" value="${String(sortiesBloc.raisons?.objectif || '')}"></div></div>
                 <div class="field field-radio-inline q35-sub-inline q35-places-inline"><div><label>Reprise d'emploi</label></div><div><input class="cond-sorties-input" data-sorties-key="reprise_emploi" type="number" min="0" step="1" value="${String(sortiesBloc.raisons?.reprise_emploi || sortiesBloc.raisons?.emploi || '')}"></div></div>
                 <div class="field field-radio-inline q35-sub-inline q35-places-inline"><div><label>Je ne sais pas</label></div><div><input class="cond-sorties-input" data-sorties-key="je_ne_sais_pas" type="number" min="0" step="1" value="${String(sortiesBloc.raisons?.je_ne_sais_pas || '')}"></div></div>
-                <div class="field field-radio-inline q35-sub-inline q35-places-inline"><div><label>Autres (à préciser) : effectif</label></div><div><input class="cond-sorties-input" data-sorties-key="autres_nb" type="number" min="0" step="1" value="${String(sortiesBloc.raisons?.autres_nb || '')}"></div></div>
-                <div class="field field-radio-inline q35-sub-inline q35-places-inline"><div><label>Autres (à préciser) : précisez</label></div><div><input class="cond-sorties-input" data-sorties-key="autres_precision" type="text" value="${String(sortiesBloc.raisons?.autres_precision || sortiesBloc.raisons?.autres || '').replace(/"/g, '&quot;')}"></div></div>
+                <div class="ds-simple-section">
+                  <p class="ds-simple-subtitle">Autres motifs de sortie</p>
+                  <p class="hint" style="margin:0 0 8px 0;">L'effectif ci-dessous est compté dans le total. La précision sert uniquement à indiquer le motif correspondant.</p>
+                  <div class="ds-simple-participants-block">
+                    <div class="field field-radio-inline q35-sub-inline q35-places-inline"><div><label>Effectif concerné</label></div><div><input class="cond-sorties-input" data-sorties-key="autres_nb" type="number" min="0" step="1" value="${String(sortiesBloc.raisons?.autres_nb || '')}"></div></div>
+                    <div class="field field-radio-inline q35-sub-inline q35-places-inline"><div><label>Motif à préciser</label></div><div><input class="cond-sorties-input" data-sorties-key="autres_precision" type="text" placeholder="Ex : motif non listé ci-dessus" value="${String(sortiesBloc.raisons?.autres_precision || sortiesBloc.raisons?.autres || '').replace(/"/g, '&quot;')}"></div></div>
+                  </div>
+                </div>
               </div>
               ${sortiesPrecisionHtml}
             </div>
@@ -6275,10 +6282,11 @@
               <div class="field field-radio-inline q35-sub-inline q35-places-inline"><div><label>Préconisations relatives aux soins</label></div><div><input class="cond-preco-input" data-preco-key="soins" type="number" min="0" step="1" value="${precoValue('soins')}"></div></div>
             </div>
 
-            <div class="cond-subgroup-title">Autres</div>
+            <div class="cond-subgroup-title">Autres préconisations</div>
+            <p class="hint" style="margin:0 0 8px 0;">L'effectif ci-dessous est compté dans le total. La précision sert uniquement à indiquer la préconisation correspondante.</p>
             <div class="ds-simple-participants-block">
-              <div class="field field-radio-inline q35-sub-inline q35-places-inline"><div><label>Précisez</label></div><div><input class="cond-preco-input" data-preco-key="autres_precision" type="text" value="${String(precoBloc.autres_precision || '').replace(/\"/g, '&quot;')}"></div></div>
-              <div class="field field-radio-inline q35-sub-inline q35-places-inline"><div><label>Effectif</label></div><div><input class="cond-preco-input" data-preco-key="autres" type="number" min="0" step="1" value="${precoValue('autres')}"></div></div>
+              <div class="field field-radio-inline q35-sub-inline q35-places-inline"><div><label>Effectif concerné</label></div><div><input class="cond-preco-input" data-preco-key="autres" type="number" min="0" step="1" value="${precoValue('autres')}"></div></div>
+              <div class="field field-radio-inline q35-sub-inline q35-places-inline"><div><label>Préconisation à préciser</label></div><div><input class="cond-preco-input" data-preco-key="autres_precision" type="text" placeholder="Ex : préconisation non listée ci-dessus" value="${String(precoBloc.autres_precision || '').replace(/\"/g, '&quot;')}"></div></div>
             </div>
             `}
           </div>
