@@ -3872,9 +3872,19 @@
           .map((def) => [String(def?.name || ''), conditionalState.get(def?.id)])
           .filter(([name, state]) => name && state)
       );
+      const previousNameById = new Map(
+        (Array.isArray(previousDefs) ? previousDefs : [])
+          .map((def) => [String(def?.id || ''), String(def?.name || '')])
+          .filter(([id]) => id)
+      );
       const nextState = new Map();
       defs.forEach((def) => {
-        const prev = conditionalState.get(def.id) || previousStateByName.get(String(def?.name || ''));
+        const defName = String(def?.name || '');
+        const previousNameForId = previousNameById.get(String(def?.id || ''));
+        const idStillMatchesDefinition = !previousNameForId || previousNameForId === defName;
+        // New selections insert steps and can shift generated IDs; names remain stable.
+        const prev = previousStateByName.get(defName)
+          || (idStillMatchesDefinition ? conditionalState.get(def.id) : null);
         nextState.set(def.id, prev || {
           done: false,
           visitedBlocks: [],
