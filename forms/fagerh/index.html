@@ -7325,6 +7325,13 @@
     const finessRecordBySource = new Map();
     const finessConfirmState = new Map();
     const finessSourceGroupBySource = new Map();
+    const finessAssociationGroups = new Map([
+      ['custom:esrp-limoges', ['870000346', '860015825', '860015833', '160017562', '160017570']],
+    ]);
+    const finessAssociationGroupByValue = new Map(
+      Array.from(finessAssociationGroups.entries())
+        .flatMap(([groupKey, values]) => values.map((value) => [value, groupKey])),
+    );
     const formationsReference = [];
     let formationsReferenceLoadPromise = null;
 
@@ -7479,19 +7486,36 @@
       return String(value || '').replace(/\D+/g, '').trim();
     }
 
+    function getConfiguredFinessGroupKey(record) {
+      const finessEt = normalizeFinessLookupValue(record?.finessEt || '');
+      return finessAssociationGroupByValue.get(finessEt) || '';
+    }
+
     function getSiblingGroupInfo(record) {
+      const configuredGroupKey = getConfiguredFinessGroupKey(record);
+      if (configuredGroupKey) {
+        const configuredValues = finessAssociationGroups.get(configuredGroupKey) || [];
+        return {
+          key: configuredGroupKey,
+          label: 'Rattachement établissement',
+          records: configuredValues.map((value) => finessReferenceByEt.get(value)).filter(Boolean),
+        };
+      }
       const siret = normalizeSiretValue(record?.siret);
       if (siret) {
         return {
           key: `siret:${siret}`,
           label: 'SIRET',
-          records: finessReferenceBySiret.get(siret) || [],
+          records: (finessReferenceBySiret.get(siret) || [])
+            .filter((item) => !getConfiguredFinessGroupKey(item)),
         };
       }
       return null;
     }
 
     function getEstablishmentKey(record) {
+      const configuredGroupKey = getConfiguredFinessGroupKey(record);
+      if (configuredGroupKey) return configuredGroupKey;
       const siret = normalizeSiretValue(record?.siret);
       if (siret) return `siret:${siret}`;
       const rs = String(record?.raisonSociale || '').trim().toLowerCase();
@@ -7873,6 +7897,7 @@
           ? [{ sourceFiness: group.sourceFiness || '', record: group.record }]
           : (group.sourceEntries || []);
         const sourceGroupKey = manual ? getEstablishmentKey(group.record) : String(group.groupKey || '');
+        const allowRepeatedDispos = finessAssociationGroups.has(sourceGroupKey);
         const siblingGroup = getSiblingGroupInfo(group.record);
         const inputValues = new Set(collectFinessInputs().map((input) => normalizeFinessLookupValue(input.value)).filter(Boolean));
         const sourceValuesInGroup = new Set(
@@ -7894,7 +7919,7 @@
           const src = String(sourceEntry.sourceFiness || '').trim();
           const inferred = inferDispoFromFinessRecord(sourceEntry.record);
           const usedByOthers = new Set(
-            allAutoSources
+            (allowRepeatedDispos ? [] : allAutoSources)
               .filter((other) => other !== src)
               .map((other) => String(finessDispoBySource.get(other) || '').trim())
               .filter(Boolean),
@@ -8818,7 +8843,16 @@
         && currentAutoFoundSources
           .filter((src) => finessConfirmState.get(src) === 'yes')
           .every((src) => String(finessDispoBySource.get(src) || '').trim() !== ''));
-      const assignUnique = noFinessMode ? true : (new Set(assignedValues).size === assignedValues.length);
+      const confirmedAutoSources = currentAutoFoundSources.filter((src) => finessConfirmState.get(src) === 'yes');
+      const configuredGroupKey = confirmedAutoSources.length
+        ? finessAssociationGroupByValue.get(normalizeFinessLookupValue(confirmedAutoSources[0])) || ''
+        : '';
+      const allowRepeatedAssignedDispos = !!configuredGroupKey
+        && finessAssociationGroups.has(configuredGroupKey)
+        && confirmedAutoSources.every((src) => finessAssociationGroupByValue.get(normalizeFinessLookupValue(src)) === configuredGroupKey)
+        && !hasManualResolved
+        && manualAssignedValues.length === 0;
+      const assignUnique = noFinessMode ? true : (allowRepeatedAssignedDispos || new Set(assignedValues).size === assignedValues.length);
       const next = document.getElementById('ident-next');
       const setFieldState = (input, state) => {
         if (!input) return;
