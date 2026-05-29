@@ -1833,6 +1833,7 @@
       background: #f7fbff;
     }
     .status.ok { border-color: #9bcaaa; color: var(--ok); background: #f1faf4; }
+    .status.warn { border-color: #e5c083; color: var(--warn); background: #fff8ec; }
     .status.err { border-color: #e6b0b0; color: var(--err); background: #fff4f4; }
     .status.kpi {
       font-weight: 700;
@@ -3192,6 +3193,8 @@
     const METIER_ETP_TOLERANCE = 0.05;
     let deacOnlyFlow = false;
     let metierStepSkipped = false;
+    let finalValidationRequested = false;
+    let finalValidationSaved = false;
     let conditionalDefs = [];
     const conditionalState = new Map();
     let currentConditionalId = '';
@@ -10030,7 +10033,7 @@
       }
     }
 
-    function refreshFinal() {
+    function getFinalValidationState() {
       const doneIdent = !document.getElementById('ident-next').disabled;
       const doneEtp = getEtpValidationState().valid;
       const targetMetiers = computeTargetEtpHorsDeac();
@@ -10038,24 +10041,69 @@
       const metierRows = metierEtpInputs.length;
       const metierSum = metierEtpInputs.reduce((s, i) => s + (Number(i.value || 0) || 0), 0);
       const doneMetiers = targetMetiers > 0 && metierRows > 0 && isMetierEtpCoherent(metierSum, targetMetiers);
-      const doneConditionals = conditionalDefs.every((def) => validateConditionalState(getConditionalStateById(def.id), def.id));
+      const prestationsState = getPrestationsState();
+      const prestationsOk = prestationsState.valid;
+      const conditionals = conditionalDefs.map((def) => {
+        const state = getConditionalStateById(def.id);
+        const progress = getConditionalBlocksProgress(state, def.id);
+        return {
+          ...def,
+          done: validateConditionalState(state, def.id),
+          progress,
+        };
+      });
+      const incompleteConditionals = conditionals.filter((row) => !row.done);
+      const doneConditionals = incompleteConditionals.length === 0;
+      const missing = [];
+      if (!doneIdent) missing.push('Identification');
+      if (!doneEtp) missing.push('Volet RH');
+      if (doneEtp && !doneMetiers && !metierStepSkipped && !isOnlyDeacScenario()) {
+        const detail = metierRows > 0
+          ? `cible ${targetMetiers.toFixed(1)} ETP, saisie ${metierSum.toFixed(1)} ETP`
+          : 'aucune ligne métier saisie';
+        missing.push(`Répartition des métiers (${detail})`);
+      }
+      if (!prestationsOk) {
+        const detail = Array.isArray(prestationsState.missing) && prestationsState.missing.length
+          ? ` : ${prestationsState.missing.join(' ; ')}`
+          : '';
+        missing.push(`Vos prestations${detail}`);
+      }
+      incompleteConditionals.forEach((row) => {
+        missing.push(`${formatConditionalDisplayName(row.name)} (${row.progress.done}/${row.progress.total})`);
+      });
+      const complete = doneIdent
+        && doneEtp
+        && (doneMetiers || metierStepSkipped || isOnlyDeacScenario())
+        && prestationsOk
+        && doneConditionals;
+      return { complete, doneIdent, doneEtp, doneMetiers, missing };
+    }
+
+    function refreshFinal() {
       const final = document.getElementById('final-status');
-      if (deacOnlyFlow && doneIdent && doneEtp) {
+      const finalState = getFinalValidationState();
+      if (deacOnlyFlow && finalState.doneIdent && finalState.doneEtp) {
         final.className = 'status ok';
         final.innerHTML = 'Vous avez terminé votre saisie. Voulez-vous envoyer votre formulaire ?<br><small>Cas spécifique : pour les DEAc seules les ETP sont demandées.</small>';
         if (fakeSubmitBtn) fakeSubmitBtn.textContent = 'Envoyer le formulaire';
         return;
       }
-      const prestationsOk = getPrestationsState().valid;
-      if (fakeSubmitBtn) fakeSubmitBtn.textContent = 'Valider le questionnaire';
-      if (doneIdent && doneEtp && (doneMetiers || metierStepSkipped) && prestationsOk && doneConditionals) {
+      if (fakeSubmitBtn) fakeSubmitBtn.textContent = finalState.complete ? 'Valider le questionnaire' : "Valider en l'état";
+      if (finalState.complete) {
         final.className = 'status ok';
-        final.textContent = doneMetiers
+        final.textContent = finalState.doneMetiers
           ? 'Tout est cohérent. Voulez-vous envoyer votre formulaire ?'
           : "Saisie partielle : l'étape Répartition métiers a été reportée. Voulez-vous envoyer votre formulaire ?";
       } else {
-        final.className = 'status err';
-        final.textContent = 'Certaines étapes ne sont pas complètes. Revenez corriger avant validation.';
+        final.className = 'status warn';
+        const items = finalState.missing.slice(0, 12).map((item) => `<li>${escapeHtmlText(item)}</li>`).join('');
+        const extra = finalState.missing.length > 12 ? `<li>... et ${finalState.missing.length - 12} autre(s) point(s)</li>` : '';
+        final.innerHTML = `
+          <strong>Certaines informations restent à compléter.</strong>
+          <div>Vous pouvez corriger ces points, ou valider le questionnaire en l'état si les données disponibles suffisent.</div>
+          <ul>${items}${extra}</ul>
+        `;
       }
     }
 
@@ -10628,7 +10676,7 @@
         q43_ei: String(document.getElementById('ctx-ei')?.value || '').trim(),
         q41_esat: String(document.getElementById('ctx-esat')?.value || '').trim(),
         q53_afpa: getCheckedRadioValue('ctx-q53'),
-        saisie_terminee: step === getFinalStepNumber() && !document.getElementById('fake-submit')?.disabled,
+        saisie_terminee: finalValidationSaved || finalValidationRequested,
       };
     }
 
@@ -10677,6 +10725,7 @@
       if (!snapshot || typeof snapshot !== 'object') return false;
 
       isHydratingFromSnapshot = true;
+      finalValidationSaved = fields?.saisie_terminee === true || String(fields?.saisie_terminee || '').toLowerCase() === 'true';
       applyControlsSnapshot(snapshot.controls || {});
       restoreEtpValuesFromSavedFields(fields);
       restoreMetiersRows(snapshot.metiersRows || []);
@@ -10698,13 +10747,18 @@
 
     document.getElementById('fake-submit').addEventListener('click', async () => {
       refreshFinal();
+      const finalState = getFinalValidationState();
       try {
+        finalValidationRequested = true;
         await saveWizardToServer();
-        setTopStatusMessage('Questionnaire enregistré et prêt pour la validation.');
-        alert('Validation réussie et sauvegardée.');
+        finalValidationSaved = true;
+        setTopStatusMessage(finalState.complete ? 'Questionnaire validé et sauvegardé.' : "Questionnaire validé en l'état et sauvegardé.");
+        alert(finalState.complete ? 'Validation réussie et sauvegardée.' : "Validation en l'état réussie et sauvegardée.");
       } catch (err) {
         setTopStatusMessage(`Erreur de sauvegarde: ${err.message}`);
         alert(`Erreur de sauvegarde: ${err.message}`);
+      } finally {
+        finalValidationRequested = false;
       }
     });
 
@@ -10896,7 +10950,8 @@
     });
     document.getElementById('quick-finish-btn')?.addEventListener('click', () => {
       showStep(getFinalStepNumber());
-      if (topStatus) topStatus.textContent = "Maquette : accès direct à l'étape de validation.";
+      const topStatus = document.getElementById('top-status');
+      if (topStatus) topStatus.textContent = "Vous pouvez vérifier puis valider votre saisie.";
     });
     primaryTocList?.addEventListener('click', (event) => {
       const btn = event.target.closest('[data-jump-step]');
