@@ -3189,6 +3189,7 @@
     const currentKpiSum = document.getElementById('current-kpi-sum');
     const currentKpiDiff = document.getElementById('current-kpi-diff');
     const currentKpiDiffPill = document.getElementById('current-kpi-diff-pill');
+    const METIER_ETP_TOLERANCE = 0.05;
     let deacOnlyFlow = false;
     let metierStepSkipped = false;
     let conditionalDefs = [];
@@ -9321,6 +9322,10 @@
       return Number.isInteger(rounded) ? String(rounded) : String(rounded.toFixed(1));
     }
 
+    function isMetierEtpCoherent(sum, target) {
+      return Math.abs(sum - target) <= METIER_ETP_TOLERANCE + Number.EPSILON;
+    }
+
     function syncMetierRowInternals(tr) {
       if (!tr) return;
       const modeEl = tr.querySelector('.metier-mode');
@@ -9637,7 +9642,7 @@
       const target = computeTargetEtpHorsDeac();
       const metierEtpInputs = Array.from(document.querySelectorAll('.metier-etp'));
       const sum = metierEtpInputs.reduce((s, i) => s + (Number(i.value || 0) || 0), 0);
-      return target > 0 && metierEtpInputs.length > 0 && Math.abs(sum - target) < 0.0001;
+      return target > 0 && metierEtpInputs.length > 0 && isMetierEtpCoherent(sum, target);
     }
 
     function validateMetiers() {
@@ -9673,7 +9678,7 @@
         });
       });
       const hasRows = etpInputs.length > 0;
-      const coherent = target > 0 ? Math.abs(sum - target) < 0.0001 : true;
+      const coherent = target > 0 ? isMetierEtpCoherent(sum, target) : true;
       const diff = sum - target;
 
       const status = document.getElementById('metier-status');
@@ -9683,7 +9688,7 @@
       const uerosVal = (document.querySelector('[data-dispo="ueros"]')?.checked ? Number(document.querySelector('[data-etp="ueros"]')?.value || 0) : 0);
       const espoVal = (document.querySelector('[data-dispo="espo"]')?.checked ? Number(document.querySelector('[data-etp="espo"]')?.value || 0) : 0);
       if (targetMsg) {
-        const diffClass = Math.abs(diff) < 0.0001 ? 'diff-ok' : 'diff-err';
+        const diffClass = isMetierEtpCoherent(sum, target) ? 'diff-ok' : 'diff-err';
         targetMsg.innerHTML = `
           <div class="kpi-line">
             <div class="kpi-cell">
@@ -9741,7 +9746,7 @@
       const metierEtpInputs = Array.from(document.querySelectorAll('.metier-etp'));
       const metierRows = metierEtpInputs.length;
       const metierSum = metierEtpInputs.reduce((s, i) => s + (Number(i.value || 0) || 0), 0);
-      const doneMetiers = targetMetiers > 0 && metierRows > 0 && Math.abs(metierSum - targetMetiers) < 0.0001;
+      const doneMetiers = targetMetiers > 0 && metierRows > 0 && isMetierEtpCoherent(metierSum, targetMetiers);
       const hasIdentPartial = (
         String(document.getElementById('es_nom')?.value || '').trim() !== '' ||
         String(document.getElementById('v_nom')?.value || '').trim() !== '' ||
@@ -10032,7 +10037,7 @@
       const metierEtpInputs = Array.from(document.querySelectorAll('.metier-etp'));
       const metierRows = metierEtpInputs.length;
       const metierSum = metierEtpInputs.reduce((s, i) => s + (Number(i.value || 0) || 0), 0);
-      const doneMetiers = targetMetiers > 0 && metierRows > 0 && Math.abs(metierSum - targetMetiers) < 0.0001;
+      const doneMetiers = targetMetiers > 0 && metierRows > 0 && isMetierEtpCoherent(metierSum, targetMetiers);
       const doneConditionals = conditionalDefs.every((def) => validateConditionalState(getConditionalStateById(def.id), def.id));
       const final = document.getElementById('final-status');
       if (deacOnlyFlow && doneIdent && doneEtp) {
