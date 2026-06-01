@@ -3624,6 +3624,7 @@
         emploi_accompagne: '',
         autres: '',
         autres_precision: '',
+        inconnu: '',
         droit_commun: '',
         sante_social: '',
         readaptation_professionnelle: '',
@@ -3801,7 +3802,8 @@
       return getHandicapTypes().map(() => ({ principal: '', associe: '' }));
     }
 
-    function makeCondId(name, index) {
+    function makeCondId(name) {
+      const raw = String(name || '');
       const base = String(name || '')
         .toLowerCase()
         .normalize('NFD')
@@ -3809,7 +3811,11 @@
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/(^-|-$)/g, '')
         .slice(0, 50) || 'conditionnelle';
-      return `${base}-${index + 1}`;
+      let hash = 0;
+      for (let i = 0; i < raw.length; i += 1) {
+        hash = ((hash << 5) - hash + raw.charCodeAt(i)) | 0;
+      }
+      return `${base}-${Math.abs(hash).toString(36)}`;
     }
 
     function formatConditionalDisplayName(name) {
@@ -4443,7 +4449,8 @@
       const principalDiff = principalSum - target;
       const associeDiff = associeSum - target;
       const principalOk = Math.abs(principalDiff) < 0.0001;
-      const associeOk = associeDiff <= 0.0001;
+      // Les handicaps associés peuvent être multiples ou rester vides ; ils ne bloquent pas la validation.
+      const associeOk = true;
       const touched = rows.some((row) => isFilledNumberString(row?.principal) || isFilledNumberString(row?.associe));
       const done = target > 0 && principalOk && associeOk;
       return { done, touched, target, principalSum, associeSum, principalDiff, associeDiff, principalOk, associeOk };
@@ -4457,7 +4464,7 @@
       if (!visible) return { visible: false, done: true, touched: false };
       const bloc = state?.preconisationsBloc || makeEmptyPreconisationsState();
       if (isPecFlow) {
-        const totalKeys = ['droit_commun', 'sante_social', 'readaptation_professionnelle'];
+        const totalKeys = ['droit_commun', 'sante_social', 'readaptation_professionnelle', 'inconnu'];
         if (isAutreDispositifEvaluationConditionalStep(conditionalId)) totalKeys.push('autre');
         const detailKeys = ['readaptation_ueros', 'readaptation_espo', 'readaptation_esrp', 'readaptation_dfa'];
         const target = getConditionalTarget(state, conditionalId);
@@ -4489,6 +4496,7 @@
         'soins',
         'emploi_accompagne',
         'autres',
+        'inconnu',
       ];
       if (!isEsrpConditionalStep(conditionalId)) {
         numericKeys.splice(7, 0, 'formation_esrp_dfa');
@@ -5626,6 +5634,7 @@
         'soins',
         'emploi_accompagne',
         'autres',
+        'inconnu',
       ];
       if (isPecFlow && isAutreDispositifEvaluationConditionalStep(currentConditionalId)) {
         preconisationsNumericKeys.push('autre');
@@ -6273,6 +6282,7 @@
               <div class="ds-simple-participants-block">
                 <div class="field field-radio-inline q35-sub-inline q35-places-inline"><div><label>Droit commun</label></div><div><input class="cond-preco-input" data-preco-key="droit_commun" type="number" min="0" step="1" value="${precoValue('droit_commun')}"></div></div>
                 <div class="field field-radio-inline q35-sub-inline q35-places-inline"><div><label>Santé / Social</label></div><div><input class="cond-preco-input" data-preco-key="sante_social" type="number" min="0" step="1" value="${precoValue('sante_social')}"></div></div>
+                <div class="field field-radio-inline q35-sub-inline q35-places-inline"><div><label>Situations inconnues</label></div><div><input class="cond-preco-input" data-preco-key="inconnu" type="number" min="0" step="1" value="${precoValue('inconnu')}"></div></div>
               </div>
             </div>
             <div class="pec-preco-section">
@@ -6327,6 +6337,7 @@
             <div class="ds-simple-participants-block">
               <div class="field field-radio-inline q35-sub-inline q35-places-inline"><div><label>Effectif concerné</label></div><div><input class="cond-preco-input" data-preco-key="autres" type="number" min="0" step="1" value="${precoValue('autres')}"></div></div>
               <div class="field field-radio-inline q35-sub-inline q35-places-inline"><div><label>Préconisation à préciser</label></div><div><input class="cond-preco-input" data-preco-key="autres_precision" type="text" placeholder="Ex : préconisation non listée ci-dessus" value="${String(precoBloc.autres_precision || '').replace(/\"/g, '&quot;')}"></div></div>
+              <div class="field field-radio-inline q35-sub-inline q35-places-inline"><div><label>Situations inconnues</label></div><div><input class="cond-preco-input" data-preco-key="inconnu" type="number" min="0" step="1" value="${precoValue('inconnu')}"></div></div>
             </div>
             `}
           </div>
@@ -7109,6 +7120,7 @@
         emploi_accompagne: String(conditionalCoherenceSections?.querySelector('.cond-preco-input[data-preco-key="emploi_accompagne"]')?.value || '').trim(),
         autres: String(conditionalCoherenceSections?.querySelector('.cond-preco-input[data-preco-key="autres"]')?.value || '').trim(),
         autres_precision: String(conditionalCoherenceSections?.querySelector('.cond-preco-input[data-preco-key="autres_precision"]')?.value || '').trim(),
+        inconnu: String(conditionalCoherenceSections?.querySelector('.cond-preco-input[data-preco-key="inconnu"]')?.value || '').trim(),
         droit_commun: String(conditionalCoherenceSections?.querySelector('.cond-preco-input[data-preco-key="droit_commun"]')?.value || '').trim(),
         sante_social: String(conditionalCoherenceSections?.querySelector('.cond-preco-input[data-preco-key="sante_social"]')?.value || '').trim(),
         readaptation_professionnelle: String(conditionalCoherenceSections?.querySelector('.cond-preco-input[data-preco-key="readaptation_professionnelle"]')?.value || '').trim(),
