@@ -13,12 +13,13 @@ Environment variables:
 
 import os
 import json
+from io import BytesIO
 from functools import wraps
 from pathlib import Path
 from urllib.parse import urljoin
 from dotenv import load_dotenv
 import requests
-from flask import Flask, request, jsonify, redirect, send_from_directory, Response
+from flask import Flask, request, jsonify, redirect, send_file, send_from_directory, Response
 from werkzeug.middleware.dispatcher import DispatcherMiddleware
 
 load_dotenv()
@@ -33,6 +34,16 @@ app = Flask(__name__)
 GRIST_BASE_URL = os.environ.get('GRIST_BASE_URL', 'https://grist.numerique.gouv.fr').rstrip('/')
 _TABLE_COLUMNS_CACHE: dict[tuple[str, str], set[str]] = {}
 WIZARD_STATE_KEY = '__wizard_v3_state'
+JSON_EXPORT_COLUMNS = {
+    'metiers_json',
+    'prestations_orp_json',
+    'prestations_indirectes_json',
+    'prestations_json',
+    'catalogue_formations_json',
+    'emploi_indicateurs_json',
+    'prestations_details_json',
+    'finess_json',
+}
 
 # Public mount for the daily capture tool.
 try:
@@ -227,6 +238,162 @@ def _format_conditional_display_name(raw_name: str) -> str:
     if parts[0] == 'Indirectes':
         return 'Prestations indirectes: ' + ' > '.join(parts[1:]) if len(parts) > 1 else 'Prestations indirectes'
     return raw
+
+
+def _xlsx_safe_value(value):
+    """Return a spreadsheet-friendly scalar without raw JSON objects."""
+    if value is None:
+        return ''
+    if isinstance(value, bool):
+        return 'Oui' if value else 'Non'
+    if isinstance(value, (int, float)):
+        return value
+    if isinstance(value, (dict, list)):
+        return json.dumps(value, ensure_ascii=False)
+    return str(value)
+
+
+def _flatten_for_xlsx(value, prefix=''):
+    """Flatten nested JSON as readable path/value rows."""
+    rows = []
+    if isinstance(value, dict):
+        if not value:
+            rows.append((prefix, ''))
+        for key, child in value.items():
+            path = f'{prefix}.{key}' if prefix else str(key)
+            rows.extend(_flatten_for_xlsx(child, path))
+    elif isinstance(value, list):
+        if not value:
+            rows.append((prefix, ''))
+        for idx, child in enumerate(value, start=1):
+            path = f'{prefix}[{idx}]' if prefix else f'[{idx}]'
+            rows.extend(_flatten_for_xlsx(child, path))
+    else:
+        rows.append((prefix, _xlsx_safe_value(value)))
+    return rows
+
+
+def _append_table(ws, headers, rows):
+    ws.append(headers)
+    for row in rows:
+        ws.append([_xlsx_safe_value(cell) for cell in row])
+    for cell in ws[1]:
+        cell.style = 'Headline 4'
+    ws.freeze_panes = 'A2'
+    for column_cells in ws.columns:
+        max_len = max(len(str(cell.value or '')) for cell in column_cells)
+        width = min(max(max_len + 2, 12), 80)
+        ws.column_dimensions[column_cells[0].column_letter].width = width
+
+
+def _new_sheet(workbook, title):
+    safe = ''.join(ch for ch in str(title or 'Feuille') if ch not in r'[]:*?/\\')[:31] or 'Feuille'
+    if safe in workbook.sheetnames:
+        base = safe[:27]
+        i = 2
+        while f'{base} {i}' in workbook.sheetnames:
+            i += 1
+        safe = f'{base} {i}'
+    return workbook.create_sheet(safe)
+
+
+def build_readable_xlsx(payload: dict) -> BytesIO:
+    """Build a human-readable workbook from the current form payload, leaving Grist JSON intact."""
+    from openpyxl import Workbook
+
+    fields = payload.get('fields') if isinstance(payload, dict) else {}
+    fields = fields if isinstance(fields, dict) else {}
+
+    wb = Workbook()
+    wb.remove(wb.active)
+
+    summary_rows = [
+        ('Date export', payload.get('exported_at', '')),
+        ('UUID', payload.get('uuid', fields.get('uuid', ''))),
+        ('Formulaire', payload.get('form_id', '')),
+    ]
+    for key in sorted(fields):
+        if key in JSON_EXPORT_COLUMNS:
+            continue
+        summary_rows.append((key, fields.get(key)))
+    _append_table(_new_sheet(wb, 'Synthese'), ['Champ', 'Valeur'], summary_rows)
+
+    metiers = _safe_json(fields.get('metiers_json'), [])
+    if isinstance(metiers, list):
+        rows = [
+            (
+                item.get('metier', ''),
+                item.get('mode', ''),
+                item.get('etp', ''),
+                item.get('etpCdi', ''),
+                item.get('etpCdd', ''),
+            )
+            for item in metiers
+            if isinstance(item, dict)
+        ]
+        _append_table(_new_sheet(wb, 'Metiers'), ['Métier', 'Mode', 'ETP', 'ETP CDI', 'ETP CDD'], rows)
+
+    formations = _safe_json(fields.get('catalogue_formations_json'), [])
+    if isinstance(formations, list):
+        rows = [
+            (
+                item.get('nom', ''),
+                item.get('niveau', ''),
+                item.get('secteur', ''),
+                item.get('nb', ''),
+            )
+            for item in formations
+            if isinstance(item, dict)
+        ]
+        _append_table(_new_sheet(wb, 'Formations'), ['Formation', 'Niveau', 'Secteur', 'Nombre'], rows)
+
+    prestations = _safe_json(fields.get('prestations_json'), {})
+    prestation_rows = []
+    if isinstance(prestations, dict):
+        for section_key, section in prestations.items():
+            if not isinstance(section, dict):
+                continue
+            label = _format_conditional_display_name(section_key)
+            prestation_rows.append((label, 'done', section.get('done', '')))
+            for path, value in _flatten_for_xlsx(section):
+                if path in {'done'}:
+                    continue
+                prestation_rows.append((label, path, value))
+    _append_table(_new_sheet(wb, 'Prestations'), ['Section', 'Champ', 'Valeur'], prestation_rows)
+
+    details = _details_payload(fields)
+    wizard = details.get(WIZARD_STATE_KEY) if isinstance(details, dict) else {}
+    runtime = wizard.get('runtime') if isinstance(wizard, dict) else {}
+    conditional_defs = runtime.get('conditionalDefs') if isinstance(runtime, dict) else []
+    conditional_state = runtime.get('conditionalState') if isinstance(runtime, dict) else {}
+    conditional_rows = []
+    if isinstance(conditional_defs, list) and isinstance(conditional_state, dict):
+        for item in conditional_defs:
+            if not isinstance(item, dict):
+                continue
+            cond_id = str(item.get('id') or '')
+            name = _format_conditional_display_name(item.get('name') or cond_id)
+            state = conditional_state.get(cond_id, {})
+            if not isinstance(state, dict):
+                continue
+            conditional_rows.append((name, 'done', state.get('done', '')))
+            for path, value in _flatten_for_xlsx(state):
+                if path == 'done':
+                    continue
+                conditional_rows.append((name, path, value))
+    _append_table(_new_sheet(wb, 'Etapes conditionnelles'), ['Étape', 'Champ', 'Valeur'], conditional_rows)
+
+    selection_rows = []
+    for column in ['prestations_orp_json', 'prestations_indirectes_json', 'finess_json']:
+        parsed = _safe_json(fields.get(column), {})
+        for path, value in _flatten_for_xlsx(parsed, column):
+            selection_rows.append((path, value))
+    _append_table(_new_sheet(wb, 'Selections'), ['Champ', 'Valeur'], selection_rows)
+
+    out = BytesIO()
+    wb.save(out)
+    out.seek(0)
+    return out
 
 
 def compute_quick_step_progress(fields: dict) -> dict:
@@ -643,6 +810,27 @@ def save_record(form_id: str):
         }), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/forms/<form_id>/export-readable-xlsx', methods=['POST'])
+def export_readable_xlsx(form_id: str):
+    """Generate a human-readable Excel export from a form payload without changing Grist storage."""
+    data = request.get_json()
+    if not isinstance(data, dict):
+        return jsonify({'error': 'Invalid request body'}), 400
+    try:
+        xlsx = build_readable_xlsx(data)
+    except Exception as e:
+        return jsonify({'error': f'Failed to build readable Excel export: {e}'}), 500
+
+    uuid = str(data.get('uuid') or (data.get('fields') or {}).get('uuid') or 'saisie').strip() or 'saisie'
+    filename = f'fagerh_saisie_lisible_{uuid}.xlsx'
+    return send_file(
+        xlsx,
+        mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        as_attachment=True,
+        download_name=filename,
+    )
 
 
 @app.route('/api/forms/<form_id>/check-finess', methods=['POST'])

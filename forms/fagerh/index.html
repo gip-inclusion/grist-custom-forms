@@ -2185,6 +2185,7 @@
         <button type="button" id="quick-save-btn" class="primary">Enregistrer</button>
         <button type="button" id="quick-recover-btn">Reprendre la saisie</button>
         <button type="button" id="quick-export-csv-btn">Exporter en CSV</button>
+        <button type="button" id="quick-export-xlsx-btn">Exporter en Excel lisible</button>
         <button type="button" id="quick-export-pdf-btn">Exporter ma saisie en PDF</button>
         <span class="spacer"></span>
         <button type="button" id="quick-finish-btn">J'ai terminé ma saisie</button>
@@ -10323,6 +10324,31 @@
       );
     }
 
+    async function exportCurrentSaisieAsReadableXlsx() {
+      const savePrereq = getSavePrerequisiteStatus();
+      if (!savePrereq.ok) throw new Error(savePrereq.message);
+      await saveWizardToServer();
+      const payload = buildCurrentExportPayload();
+      const response = await fetch(`/api/forms/${FORM_ID}/export-readable-xlsx`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' },
+        body: JSON.stringify(payload),
+      });
+      if (!response.ok) {
+        let message = `Échec export Excel (HTTP ${response.status})`;
+        try {
+          const errorPayload = await response.json();
+          if (errorPayload?.error) message = String(errorPayload.error);
+        } catch {}
+        throw new Error(message);
+      }
+      const blob = await response.blob();
+      downloadBlob(
+        blob,
+        `fagerh_saisie_lisible_${payload.uuid}_${formatTimestampForFilename()}.xlsx`,
+      );
+    }
+
     async function exportCurrentSaisieAsPdf() {
       const savePrereq = getSavePrerequisiteStatus();
       if (!savePrereq.ok) throw new Error(savePrereq.message);
@@ -10939,6 +10965,15 @@
         setTopStatusMessage('Export CSV téléchargé.');
       } catch (err) {
         setTopStatusMessage(`Erreur export CSV : ${err.message}`);
+      }
+    });
+    document.getElementById('quick-export-xlsx-btn')?.addEventListener('click', async () => {
+      try {
+        setTopStatusMessage('Préparation de l’export Excel lisible en cours...');
+        await exportCurrentSaisieAsReadableXlsx();
+        setTopStatusMessage('Export Excel lisible téléchargé.');
+      } catch (err) {
+        setTopStatusMessage(`Erreur export Excel : ${err.message}`);
       }
     });
     document.getElementById('quick-export-pdf-btn')?.addEventListener('click', async () => {
