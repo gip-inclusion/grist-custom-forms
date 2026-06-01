@@ -44,6 +44,113 @@ JSON_EXPORT_COLUMNS = {
     'prestations_details_json',
     'finess_json',
 }
+FIELD_LABELS = {
+    'uuid': 'Identifiant de reprise',
+    'es_nom': "Nom de l'établissement",
+    'es_departement': 'Département',
+    'finess_main': 'FINESS principal',
+    'validateur_nom': 'Nom du validateur',
+    'validateur_prenom': 'Prénom du validateur',
+    'validateur_email': 'Email du validateur',
+    'saisie_terminee': 'Saisie terminée',
+    'check_esrp': 'Dispositif ESRP',
+    'check_espo': 'Dispositif ESPO',
+    'check_ueros': 'Dispositif UEROS',
+    'check_deac': 'Dispositif DEAc',
+    'etp_esrp': 'ETP ESRP',
+    'etp_espo': 'ETP ESPO',
+    'etp_ueros': 'ETP UEROS',
+    'etp_deac': 'ETP DEAc',
+    'q32_implantation': "Contexte social - Zone d'implantation",
+    'q33_transports': 'Contexte social - Transports',
+    'q33_pmr': 'Contexte social - Accessibilité PMR',
+    'q33_alternatif': 'Contexte social - Transport alternatif',
+    'q34_prefecture': 'Contexte social - Préfecture',
+    'q35_hebergement': 'Contexte social - Hébergement',
+    'q35_places': 'Contexte social - Nombre de places',
+    'q35_weekend': 'Contexte social - Hébergement le week-end',
+    'q36_restaurant': 'Contexte social - Restauration',
+    'q37_cuisine': 'Contexte social - Cuisine',
+    'q38_dui': 'Contexte social - DUI',
+    'q40_remuneration': 'Contexte social - Rémunération',
+    'q40_operateur': 'Contexte social - Opérateur rémunération',
+    'autre_dispositif_eval': "Autre dispositif d'évaluation",
+    'autre_dispositif_eval_avec_orp_cdaph': "Autre dispositif d'évaluation avec ORP CDAPH",
+    'autre_dispositif_eval_sans_orp_cdaph': "Autre dispositif d'évaluation sans ORP CDAPH",
+}
+COH_LABELS = {
+    'genre': ('Genre', ['Hommes', 'Femmes', 'Autre']),
+    'age': ('Âge', ['16-17 ans', '18-19 ans', '20-24 ans', '25-29 ans', '30-34 ans', '35-39 ans', '40-44 ans', '45-49 ans', '50-54 ans', '55-59 ans', '60 ans et +', 'Je ne sais pas']),
+    'niveau_entree': ("Niveau de formation à l'entrée", ['Niveau 2 (CEP, sans formation)', 'Niveau 3 (CAP, BEP)', 'Niveau 4 (Bac, Bac pro)', 'Niveau 5 (Bac +2, BTS)', 'Niveau 6 (Bac +3, Bac +4)', 'Niveau 7 (Bac +5)', 'Je ne sais pas']),
+    'situation_entree': ("Situation à l'entrée", ['En emploi du secteur privé', 'Dont entreprises adaptées', 'Dont alternance (secteur privé)', 'En emploi secteur public', 'FPT', 'Dont contractuels (FPT)', 'Dont alternance (FPT)', 'FPH', 'Dont contractuels (FPH)', 'Dont alternance (FPH)', 'FPE', 'Dont contractuels (FPE)', 'Dont alternance (FPE)', 'En activité non salariée', "Travailleurs d'ESAT", "Sans emploi depuis moins d'1 an", 'Sans emploi depuis 1 à 2 ans', 'Sans emploi depuis 2 ans ou plus', "N'avaient jamais travaillé", 'En formation', 'Je ne sais pas']),
+    'ressources_entree': ("Ressources à l'entrée", ['Salaire', 'AAH', 'Allocations chômage', 'RSA', 'Indemnités Journalières', 'Rentes AT/MP / Pension invalidité', 'Autres', 'Aucune', 'Je ne sais pas']),
+    'pathologies': ('Pathologies', ['1 pathologie', '2 pathologies', '3 pathologies et plus', 'Non connu']),
+    'origine_handicap': ('Origine du handicap', ['Congénitale', 'Maladie', 'Accident de vie privée', 'Accident travail / Pro', 'Maladie professionnelle', 'Autres', 'Non connue']),
+    'lesion_origine': ('Origine de la lésion cérébrale (UEROS)', ['Traumatisme crânien', 'AVC', 'Tumeur cérébrale', 'Epilepsie', 'Autres pathologies neuro', 'Non connue']),
+}
+HANDICAP_TYPES = [
+    'Déficiences intellectuelles',
+    'Autisme et autres TED',
+    'Troubles psychiques',
+    'Troubles langage/apprentissages',
+    'Déficiences auditives',
+    'Déficiences visuelles',
+    'Déficiences motrices',
+    'Déficiences métaboliques/nutritionnelles',
+    'Cérébro-lésions',
+    'Polyhandicap',
+    'TCC (comportement/com.)',
+    'Diagnostics en cours',
+    'Autres types de déficiences',
+    'Je ne sais pas',
+]
+EXPORT_KEY_LABELS = {
+    'done': 'Statut complété',
+    'fileActive': 'File active',
+    'preaccueilSansSuite': 'Pré-accueils sans suite',
+    'sortiesAvantTerme': 'Sorties définitives avant le terme de la prestation',
+    'sortiesTerme': 'Sorties au terme de la prestation',
+    'sorties': 'Sorties définitives en 2025',
+    'journees': 'Journées réalisées',
+    'journeesTheoriques': 'Journées théoriques',
+    'enabled': 'Activé',
+    'beneficiaires': 'Nombre de personnes bénéficiaires',
+    'discontinue_personnes': 'Nombre de personnes accompagnées en discontinue',
+    'presentiel_total': 'Présentiel - total',
+    'presentiel_complet': 'Présentiel - temps complet',
+    'presentiel_partiel': 'Présentiel - temps partiel',
+    'hybride_total': 'Hybride - total',
+    'hybride_complet': 'Hybride - temps complet',
+    'hybride_partiel': 'Hybride - temps partiel',
+    'distanciel_total': 'Distanciel - total',
+    'distanciel_complet': 'Distanciel - temps complet',
+    'distanciel_partiel': 'Distanciel - temps partiel',
+    'hors_murs_personnes': 'Hors les murs - personnes accompagnées',
+    'hors_murs_journees': 'Hors les murs - journées',
+    'hebergees_personnes': 'Hébergement - personnes hébergées',
+    'hebergees_journees': 'Hébergement - journées',
+    'hebergees_nuitees': 'Hébergement - nuitées',
+    'activites_intermediaires_site': 'Activité intermédiaire - sur site',
+    'activites_intermediaires_ambulatoire': 'Activité intermédiaire - en ambulatoire',
+    'activites_sortie_parcours_site': 'Suite de parcours - sur site',
+    'activites_sortie_parcours_ambulatoire': 'Suite de parcours - en ambulatoire',
+    'droit_commun': 'Droit commun',
+    'sante_social': 'Santé / Social',
+    'readaptation_professionnelle': 'Réadaptation professionnelle',
+    'readaptation_ueros': 'Réadaptation professionnelle - UEROS',
+    'readaptation_espo': 'Réadaptation professionnelle - ESPO',
+    'readaptation_esrp': 'Réadaptation professionnelle - ESRP',
+    'readaptation_dfa': 'Réadaptation professionnelle - DFA',
+    'inconnu': 'Situations inconnues',
+    'autre': 'Autre préconisation',
+    'autres': 'Autres',
+    'autres_precision': 'Précision',
+    'je_ne_sais_pas': 'Je ne sais pas',
+    'dept': 'Département',
+    'count': 'Effectif',
+    'principal': 'Principal',
+    'associe': 'Associé',
+}
 
 # Public mount for the daily capture tool.
 try:
@@ -240,6 +347,103 @@ def _format_conditional_display_name(raw_name: str) -> str:
     return raw
 
 
+def _split_export_path(path: str) -> list[str]:
+    """Split flattened paths while keeping list indexes with their segment."""
+    return [part for part in str(path or '').split('.') if part]
+
+
+def _array_index(segment: str) -> tuple[str, int | None]:
+    if '[' not in segment or not segment.endswith(']'):
+        return segment, None
+    name, _, raw_index = segment.partition('[')
+    try:
+        return name, int(raw_index[:-1]) - 1
+    except Exception:
+        return name, None
+
+
+def humanize_export_field(key: str) -> str:
+    """Label top-level Grist/export fields with user-facing wording where known."""
+    raw = str(key or '')
+    if raw in FIELD_LABELS:
+        return FIELD_LABELS[raw]
+    if raw.startswith('q') and '_' in raw:
+        return raw.replace('_', ' ').upper()
+    return raw.replace('_', ' ')
+
+
+def humanize_export_path(path: str) -> str:
+    """Turn flattened JSON paths into labels close to the form wording."""
+    raw = str(path or '').strip()
+    if not raw:
+        return ''
+    parts = _split_export_path(raw)
+    if not parts:
+        return humanize_export_field(raw)
+
+    if parts[0] == 'coh' and len(parts) >= 2:
+        block_key, index = _array_index(parts[1])
+        title, labels = COH_LABELS.get(block_key, (humanize_export_field(block_key), []))
+        if index is not None and 0 <= index < len(labels):
+            return f'{title} - {labels[index]}'
+        return title
+
+    first_name, first_index = _array_index(parts[0])
+
+    if first_name == 'geoRows' and len(parts) >= 2:
+        _, index = _array_index(parts[0])
+        suffix = EXPORT_KEY_LABELS.get(parts[1], humanize_export_field(parts[1]))
+        prefix = f'Géographie ligne {index + 1}' if index is not None else 'Géographie'
+        return f'{prefix} - {suffix}'
+
+    if first_name == 'handicapMatrix' and len(parts) >= 2:
+        handicap = HANDICAP_TYPES[first_index] if first_index is not None and 0 <= first_index < len(HANDICAP_TYPES) else 'Type de handicap'
+        col = EXPORT_KEY_LABELS.get(parts[1], humanize_export_field(parts[1]))
+        return f'Type de handicap principal et associé - {handicap} - {col}'
+
+    if parts[0] in {'directAvecOrp', 'directSansOrp', 'indirect', 'pecFileActive', 'preconisationsBloc', 'sortiesBloc', 'suspensionsBloc', 'orienteursBloc', 'formationsSelection'}:
+        group_labels = {
+            'directAvecOrp': 'Prestations directes avec ORP CDAPH',
+            'directSansOrp': 'Prestations directes sans ORP CDAPH',
+            'indirect': 'Prestations indirectes',
+            'pecFileActive': 'File active PEC',
+            'preconisationsBloc': 'Préconisations lors de la sortie définitive',
+            'sortiesBloc': 'Sortie définitive avant le terme de la prestation',
+            'suspensionsBloc': 'Suspensions',
+            'orienteursBloc': 'Orienteurs',
+            'formationsSelection': 'Sélection des formations',
+        }
+        cleaned = []
+        for part in parts[1:]:
+            name, index = _array_index(part)
+            if name in {'row', 'rows', 'raisons'}:
+                continue
+            label = EXPORT_KEY_LABELS.get(name, humanize_export_field(name))
+            if index is not None:
+                label = f'{label} {index + 1}'
+            cleaned.append(label)
+        return ' - '.join([group_labels[parts[0]], *cleaned])
+
+    if len(parts) == 1:
+        name, index = _array_index(parts[0])
+        label = EXPORT_KEY_LABELS.get(name, humanize_export_field(name))
+        return f'{label} {index + 1}' if index is not None else label
+
+    return ' - '.join(EXPORT_KEY_LABELS.get(_array_index(part)[0], humanize_export_field(_array_index(part)[0])) for part in parts)
+
+
+def should_skip_readable_export_path(path: str) -> bool:
+    """Hide internal navigation/state fields that are not useful in a user-readable export."""
+    first = _array_index(_split_export_path(path)[0])[0] if _split_export_path(path) else ''
+    return first in {
+        'visitedBlocks',
+        'currentConditionalId',
+        'focusedConditionalStepId',
+        'focusedConditionalBlockKey',
+        'autoCollapsePrimaryAfterPrestations',
+    }
+
+
 def _xlsx_safe_value(value):
     """Return a spreadsheet-friendly scalar without raw JSON objects."""
     if value is None:
@@ -315,7 +519,7 @@ def build_readable_xlsx(payload: dict) -> BytesIO:
     for key in sorted(fields):
         if key in JSON_EXPORT_COLUMNS:
             continue
-        summary_rows.append((key, fields.get(key)))
+        summary_rows.append((humanize_export_field(key), fields.get(key)))
     _append_table(_new_sheet(wb, 'Synthese'), ['Champ', 'Valeur'], summary_rows)
 
     metiers = _safe_json(fields.get('metiers_json'), [])
@@ -354,11 +558,11 @@ def build_readable_xlsx(payload: dict) -> BytesIO:
             if not isinstance(section, dict):
                 continue
             label = _format_conditional_display_name(section_key)
-            prestation_rows.append((label, 'done', section.get('done', '')))
+            prestation_rows.append((label, humanize_export_path('done'), section.get('done', '')))
             for path, value in _flatten_for_xlsx(section):
-                if path in {'done'}:
+                if path in {'done'} or should_skip_readable_export_path(path):
                     continue
-                prestation_rows.append((label, path, value))
+                prestation_rows.append((label, humanize_export_path(path), value))
     _append_table(_new_sheet(wb, 'Prestations'), ['Section', 'Champ', 'Valeur'], prestation_rows)
 
     details = _details_payload(fields)
@@ -376,18 +580,18 @@ def build_readable_xlsx(payload: dict) -> BytesIO:
             state = conditional_state.get(cond_id, {})
             if not isinstance(state, dict):
                 continue
-            conditional_rows.append((name, 'done', state.get('done', '')))
+            conditional_rows.append((name, humanize_export_path('done'), state.get('done', '')))
             for path, value in _flatten_for_xlsx(state):
-                if path == 'done':
+                if path == 'done' or should_skip_readable_export_path(path):
                     continue
-                conditional_rows.append((name, path, value))
+                conditional_rows.append((name, humanize_export_path(path), value))
     _append_table(_new_sheet(wb, 'Etapes conditionnelles'), ['Étape', 'Champ', 'Valeur'], conditional_rows)
 
     selection_rows = []
     for column in ['prestations_orp_json', 'prestations_indirectes_json', 'finess_json']:
         parsed = _safe_json(fields.get(column), {})
         for path, value in _flatten_for_xlsx(parsed, column):
-            selection_rows.append((path, value))
+            selection_rows.append((humanize_export_path(path), value))
     _append_table(_new_sheet(wb, 'Selections'), ['Champ', 'Valeur'], selection_rows)
 
     out = BytesIO()
