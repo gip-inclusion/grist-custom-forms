@@ -14,6 +14,8 @@ Environment variables:
 import os
 import json
 import time
+from collections import Counter, defaultdict
+from datetime import datetime
 from io import BytesIO
 from functools import wraps
 from pathlib import Path
@@ -35,6 +37,60 @@ app = Flask(__name__)
 GRIST_BASE_URL = os.environ.get('GRIST_BASE_URL', 'https://grist.numerique.gouv.fr').rstrip('/')
 _TABLE_COLUMNS_CACHE: dict[tuple[str, str], dict[str, object]] = {}
 _TABLE_COLUMNS_CACHE_TTL_SECONDS = 60
+EURES_CANDIDATS_TABLE = 'Candidats'
+EURES_BESOINS_TABLE = 'Besoins_Employeurs'
+EURES_MATCHINGS_TABLE = 'Matchings'
+EURES_STATS_TABLE_DEFAULT = 'Pilotage_EURES_Mensuel'
+EURES_MATCHING_FIELDS = {
+    'besoin_id',
+    'candidat_id',
+    'score',
+    'score_metier',
+    'score_langues',
+    'score_mobilite',
+    'score_disponibilite',
+    'score_salaire',
+    'statut',
+    'raisons',
+    'points_faibles',
+    'date_calcul',
+}
+EURES_SECTOR_CANONICAL_MAP = {
+    'vente': 'vente',
+    'commerce': 'vente',
+    'sales': 'vente',
+    'retail': 'vente',
+    'nettoyage': 'nettoyage',
+    'entretien': 'nettoyage',
+    'cleaning': 'nettoyage',
+    'maintenance': 'nettoyage',
+    'hôtellerie': 'hotellerie',
+    'hotellerie': 'hotellerie',
+    'restauration': 'hotellerie',
+    'hospitality': 'hotellerie',
+    'catering': 'hotellerie',
+    'agriculture': 'agriculture',
+    'récolte': 'agriculture',
+    'recolte': 'agriculture',
+    'harvesting': 'agriculture',
+    'polyvalent': 'polyvalent',
+    'multi': 'polyvalent',
+    'accessible rapidement': 'polyvalent',
+}
+EURES_CANDIDAT_SECTOR_SALARY_FIELDS = {
+    'vente': ('tally_q20_salary_type', 'tally_q20_salary_min'),
+    'nettoyage': ('tally_q22_salary_type', 'tally_q22_salary_min'),
+    'hotellerie': ('tally_q25_salary_type', 'tally_q25_salary_min'),
+    'agriculture': ('tally_q27_salary_type', 'tally_q27_salary_min'),
+    'polyvalent': ('tally_q29_salary_type', 'tally_q29_salary_min'),
+}
+EURES_EMPLOYEUR_SECTOR_SALARY_FIELDS = {
+    'vente': ('tally_q10_salary_type', 'tally_q10_salary_min', 'tally_q10_salary_max'),
+    'nettoyage': ('tally_q11_salary_type', 'tally_q11_salary_min', 'tally_q11_salary_max'),
+    'hotellerie': ('tally_q12_salary_type', 'tally_q12_salary_min', 'tally_q12_salary_max'),
+    'agriculture': ('tally_q13_salary_type', 'tally_q13_salary_min', 'tally_q13_salary_max'),
+    'polyvalent': ('tally_q14_salary_type', 'tally_q14_salary_min', 'tally_q14_salary_max'),
+}
 WIZARD_STATE_KEY = '__wizard_v3_state'
 JSON_EXPORT_COLUMNS = {
     'metiers_json',
@@ -246,6 +302,19 @@ def get_form_config(form_id: str, role: str | None = None) -> dict:
     }
 
 
+def get_eures_stats_config() -> dict | None:
+    """Get configuration for the optional EURES monthly stats table."""
+    base = get_form_config('eures-beta', 'candidate') or get_form_config('eures-beta')
+    if not base:
+        return None
+
+    return {
+        'doc_id': base['doc_id'],
+        'table_id': os.environ.get('GRIST_TABLE_EURES_BETA_STATS', EURES_STATS_TABLE_DEFAULT),
+        'api_key': base.get('api_key'),
+    }
+
+
 def get_table_columns(config: dict, headers: dict) -> set[str]:
     """Fetch and cache table column ids to avoid sending unknown fields to Grist."""
     cache_key = (str(config.get('doc_id') or ''), str(config.get('table_id') or ''))
@@ -269,6 +338,34 @@ def get_table_columns(config: dict, headers: dict) -> set[str]:
         'loaded_at': now,
     }
     return columns
+
+
+def ensure_table_columns(config: dict, columns: set[str], headers: dict):
+    """Create missing text columns in a Grist table, then refresh cache."""
+    if not columns:
+        return
+    existing = get_table_columns(config, headers)
+    missing = sorted(col for col in columns if col not in existing)
+    if not missing:
+        return
+
+    url = f"{GRIST_BASE_URL}/api/docs/{config['doc_id']}/tables/{config['table_id']}/columns"
+    payload = {
+        'columns': [
+            {
+                'id': column_id,
+                'fields': {'label': column_id},
+                'type': 'Text',
+            }
+            for column_id in missing
+        ]
+    }
+    resp = requests.post(url, json=payload, headers=headers)
+    if resp.status_code != 200:
+        raise RuntimeError(f'Failed to create columns in {config["table_id"]}: HTTP {resp.status_code} - {resp.text}')
+
+    cache_key = (str(config.get('doc_id') or ''), str(config.get('table_id') or ''))
+    _TABLE_COLUMNS_CACHE.pop(cache_key, None)
 
 
 def _as_bool(value) -> bool:
@@ -846,6 +943,531 @@ def write_grist_records(method: str, url: str, payload: dict, headers: dict, max
     return resp
 
 
+def fetch_table_records(doc_id: str, table_id: str, headers: dict, limit: int = 5000):
+    """Read records from a Grist table."""
+    url = f"{GRIST_BASE_URL}/api/docs/{doc_id}/tables/{table_id}/records"
+    resp = requests.get(url, params={'limit': limit}, headers=headers)
+    if resp.status_code != 200:
+        raise RuntimeError(f'Failed to read {table_id}: HTTP {resp.status_code} - {resp.text}')
+    payload = _parse_response_json_safe(resp)
+    return payload.get('records', []) if isinstance(payload, dict) else []
+
+
+def _month_key(value) -> str | None:
+    """Extract YYYY-MM from common timestamp/date values."""
+    txt = str(value or '').strip()
+    if len(txt) >= 7 and txt[4] == '-':
+        return txt[:7]
+    for fmt in (
+        '%Y-%m-%dT%H:%M:%S.%fZ',
+        '%Y-%m-%dT%H:%M:%SZ',
+        '%Y-%m-%d',
+        '%Y/%m/%d',
+        '%d/%m/%Y',
+    ):
+        try:
+            return datetime.strptime(txt, fmt).strftime('%Y-%m')
+        except Exception:
+            continue
+    return None
+
+
+def _split_multi_value(value) -> list[str]:
+    if value is None:
+        return []
+    if isinstance(value, list):
+        raw_items = value
+    else:
+        raw_items = str(value).split('|')
+    return [str(item).strip() for item in raw_items if str(item).strip()]
+
+
+def _counter_to_rows(counter: Counter, minimum_public_count: int = 5) -> list[dict]:
+    """Convert a counter to public rows while masking very small categories."""
+    visible: list[dict] = []
+    hidden_total = 0
+    for label, count in sorted(counter.items(), key=lambda item: (-item[1], str(item[0]).lower())):
+        if count < minimum_public_count:
+            hidden_total += count
+        else:
+            visible.append({'label': label, 'count': count})
+    if hidden_total:
+        visible.append({'label': 'Autres', 'count': hidden_total})
+    return visible
+
+
+def _safe_int(value) -> int:
+    try:
+        return int(float(value or 0))
+    except Exception:
+        return 0
+
+
+def build_eures_public_stats() -> dict:
+    """Build a public, non-nominative stats payload for EURES beta."""
+    candidate_config = get_form_config('eures-beta', 'candidate')
+    employer_config = get_form_config('eures-beta', 'employer')
+    if not candidate_config or not employer_config:
+        raise RuntimeError('EURES beta candidate/employer Grist configuration is incomplete.')
+
+    candidate_headers = {'Accept': 'application/json'}
+    if candidate_config.get('api_key'):
+        candidate_headers['Authorization'] = f"Bearer {candidate_config['api_key']}"
+
+    employer_headers = {'Accept': 'application/json'}
+    if employer_config.get('api_key'):
+        employer_headers['Authorization'] = f"Bearer {employer_config['api_key']}"
+
+    candidats = fetch_table_records(candidate_config['doc_id'], EURES_CANDIDATS_TABLE, candidate_headers)
+    besoins = fetch_table_records(employer_config['doc_id'], EURES_BESOINS_TABLE, employer_headers)
+    matchings = fetch_table_records(candidate_config['doc_id'], EURES_MATCHINGS_TABLE, candidate_headers)
+
+    monthly: dict[str, dict[str, int | str]] = defaultdict(lambda: {
+        'mois': '',
+        'candidats': 0,
+        'besoins_employeurs': 0,
+        'matchings': 0,
+        'candidats_contactes': 0,
+        'candidatures_transmises_employeur': 0,
+        'embauches': 0,
+    })
+
+    candidats_par_pays = Counter()
+    besoins_par_pays = Counter()
+    secteurs = Counter()
+    mobilite_candidats = Counter()
+    matchings_par_statut = Counter()
+
+    for rec in candidats:
+        fields = rec.get('fields', {}) if isinstance(rec, dict) else {}
+        month = _month_key(fields.get('tally_submitted_at'))
+        if month:
+            monthly[month]['mois'] = month
+            monthly[month]['candidats'] += 1
+        for label in _split_multi_value(fields.get('pays')):
+            candidats_par_pays[label] += 1
+        for label in _split_multi_value(fields.get('metier')):
+            secteurs[label] += 1
+        for label in _split_multi_value(fields.get('mobilite')):
+            mobilite_candidats[label] += 1
+
+    for rec in besoins:
+        fields = rec.get('fields', {}) if isinstance(rec, dict) else {}
+        month = _month_key(fields.get('tally_submitted_at'))
+        if month:
+            monthly[month]['mois'] = month
+            monthly[month]['besoins_employeurs'] += 1
+        for label in _split_multi_value(fields.get('pays') or fields.get('pays_normalise')):
+            besoins_par_pays[label] += 1
+        for label in _split_multi_value(fields.get('poste')):
+            secteurs[label] += 1
+
+    for rec in matchings:
+        fields = rec.get('fields', {}) if isinstance(rec, dict) else {}
+        month = _month_key(fields.get('date_calcul'))
+        if month:
+            monthly[month]['mois'] = month
+            monthly[month]['matchings'] += 1
+        status = str(fields.get('statut') or '').strip()
+        if status:
+            matchings_par_statut[status] += 1
+
+    manual_stats_available = False
+    stats_config = get_eures_stats_config()
+    if stats_config:
+        stats_headers = {'Accept': 'application/json'}
+        if stats_config.get('api_key'):
+            stats_headers['Authorization'] = f"Bearer {stats_config['api_key']}"
+        try:
+            manual_rows = fetch_table_records(stats_config['doc_id'], stats_config['table_id'], stats_headers)
+            manual_stats_available = True
+        except Exception:
+            manual_rows = []
+        for rec in manual_rows:
+            fields = rec.get('fields', {}) if isinstance(rec, dict) else {}
+            month = _month_key(fields.get('mois'))
+            if not month:
+                continue
+            monthly[month]['mois'] = month
+            monthly[month]['candidats_contactes'] += _safe_int(fields.get('candidats_contactes'))
+            monthly[month]['candidatures_transmises_employeur'] += _safe_int(fields.get('candidatures_transmises_employeur'))
+            monthly[month]['embauches'] += _safe_int(fields.get('embauches'))
+
+    monthly_rows = [row for _, row in sorted(monthly.items()) if row.get('mois')]
+
+    totals = {
+        'candidats': len(candidats),
+        'besoins_employeurs': len(besoins),
+        'matchings': len(matchings),
+        'candidats_contactes': sum(int(row['candidats_contactes']) for row in monthly_rows),
+        'candidatures_transmises_employeur': sum(int(row['candidatures_transmises_employeur']) for row in monthly_rows),
+        'embauches': sum(int(row['embauches']) for row in monthly_rows),
+    }
+
+    return {
+        'ok': True,
+        'generated_at': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()),
+        'manual_stats_table': {
+            'configured': manual_stats_available,
+            'table_id': stats_config['table_id'] if stats_config else None,
+        },
+        'totals': totals,
+        'monthly': monthly_rows,
+        'breakdowns': {
+            'candidats_par_pays': _counter_to_rows(candidats_par_pays),
+            'besoins_par_pays': _counter_to_rows(besoins_par_pays),
+            'secteurs': _counter_to_rows(secteurs),
+            'mobilite_candidats': _counter_to_rows(mobilite_candidats),
+            'matchings_par_statut': _counter_to_rows(matchings_par_statut),
+        },
+    }
+
+
+def fetch_matching_record(doc_id: str, besoin_id: str, candidat_id: str, headers: dict):
+    """Read one matching by besoin_id/candidat_id pair."""
+    url = f"{GRIST_BASE_URL}/api/docs/{doc_id}/tables/{EURES_MATCHINGS_TABLE}/records"
+    filter_param = json.dumps({'besoin_id': [besoin_id], 'candidat_id': [candidat_id]})
+    resp = requests.get(url, params={'filter': filter_param}, headers=headers)
+    if resp.status_code != 200:
+        raise RuntimeError(f'Failed to read Matchings: HTTP {resp.status_code} - {resp.text}')
+    payload = _parse_response_json_safe(resp)
+    records = payload.get('records', []) if isinstance(payload, dict) else []
+    return records[0] if records else None
+
+
+def upsert_matching_record(doc_id: str, fields: dict, headers: dict):
+    """Create or update a matching record from besoin_id/candidat_id."""
+    besoin_id = str(fields.get('besoin_id') or '').strip()
+    candidat_id = str(fields.get('candidat_id') or '').strip()
+    if not besoin_id or not candidat_id:
+        raise RuntimeError('Missing besoin_id or candidat_id for matching upsert.')
+
+    table_config = {'doc_id': doc_id, 'table_id': EURES_MATCHINGS_TABLE}
+    ensure_table_columns(table_config, set(fields.keys()) & EURES_MATCHING_FIELDS, headers)
+    allowed_columns = get_table_columns(table_config, headers)
+    filtered_fields = {k: v for k, v in fields.items() if k in allowed_columns}
+    existing = fetch_matching_record(doc_id, besoin_id, candidat_id, headers)
+    base_url = f"{GRIST_BASE_URL}/api/docs/{doc_id}/tables/{EURES_MATCHINGS_TABLE}/records"
+
+    if existing:
+        payload = {'records': [{'id': existing['id'], 'fields': filtered_fields}]}
+        resp = write_grist_records('PATCH', base_url, payload, headers)
+    else:
+        payload = {'records': [{'fields': filtered_fields}]}
+        resp = write_grist_records('POST', base_url, payload, headers)
+
+    if resp.status_code != 200:
+        raise RuntimeError(f'Failed to write Matchings: HTTP {resp.status_code} - {resp.text}')
+    return resp
+
+
+def eures_normalize_text(value) -> str:
+    return str(value or '').strip().lower()
+
+
+def eures_canonical_sector(value: str) -> str:
+    value_l = eures_normalize_text(value)
+    for token, sector in EURES_SECTOR_CANONICAL_MAP.items():
+        if token in value_l:
+            return sector
+    return ''
+
+
+def eures_candidate_sectors(value: str) -> set[str]:
+    value_l = eures_normalize_text(value)
+    return {sector for token, sector in EURES_SECTOR_CANONICAL_MAP.items() if token in value_l}
+
+
+def eures_parse_language_requirements(value: str) -> dict[str, int]:
+    levels = {
+        'pas nécessaire': 0,
+        'pas necessaire': 0,
+        'not necessary': 0,
+        'communication professionelle': 2,
+        'communication professionnelle': 2,
+        'professional communication': 2,
+        'pouvoir communiquer dans la langue locale': 2,
+        'très important au quotidien': 3,
+        'tres important au quotidien': 3,
+        'very important on a daily basis': 3,
+    }
+    result: dict[str, int] = {}
+    for part in str(value or '').split('|'):
+        if ':' not in part:
+            continue
+        lang, raw_level = part.split(':', 1)
+        lang_key = eures_normalize_text(lang)
+        level_text = eures_normalize_text(raw_level)
+        score = next((v for k, v in levels.items() if k in level_text), None)
+        if score is not None:
+            result[lang_key] = score
+    return result
+
+
+def eures_parse_candidate_languages(value: str) -> dict[str, int]:
+    levels = {
+        'je ne la pratique pas': 0,
+        'i do not speak it': 0,
+        "j'utilise un outil de traduction si nécessaire": 0,
+        "j'utilise un outil de traduction si necessaire": 0,
+        'translation tool': 0,
+        'je peux communiquer simplement': 2,
+        "je peux échanger à l'oral": 2,
+        "je peux echanger a l'oral": 2,
+        'simple communication': 2,
+        'je peux travailler avec cette langue': 3,
+        'langue maternelle': 4,
+        'native': 4,
+    }
+    result: dict[str, int] = {}
+    for part in str(value or '').split('|'):
+        if ':' not in part:
+            continue
+        lang, raw_level = part.split(':', 1)
+        lang_key = eures_normalize_text(lang)
+        level_text = eures_normalize_text(raw_level)
+        matched = [v for k, v in levels.items() if k in level_text]
+        if matched:
+            result[lang_key] = max(matched)
+    return result
+
+
+def eures_availability_rank(value: str) -> int | None:
+    value_l = eures_normalize_text(value)
+    ordered = [
+        ('dès que possible', 0),
+        ('des que possible', 0),
+        ('dans les prochains jours', 1),
+        ('dans les prochaines semaines', 2),
+        ('dans 1 à 3 mois', 3),
+        ('dans 1 a 3 mois', 3),
+        ('je ne sais pas encore', 4),
+    ]
+    for token, rank in ordered:
+        if token in value_l:
+            return rank
+    return None
+
+
+def eures_to_float(value):
+    if value in (None, '', 0, '0'):
+        return None
+    try:
+        return float(value)
+    except Exception:
+        return None
+
+
+def eures_score_sector_fit(expected: str, actual: str) -> tuple[int, str]:
+    expected_sector = eures_canonical_sector(expected)
+    candidate_sectors = eures_candidate_sectors(actual)
+    if not expected_sector:
+        return 0, 'metier: secteur employeur absent'
+    if not candidate_sectors:
+        return 0, 'metier: secteur candidat absent'
+    if expected_sector in candidate_sectors:
+        if len(candidate_sectors) == 1:
+            return 30, f'metier: secteur exact ({expected_sector})'
+        return 20, f'metier: secteur present ({expected_sector})'
+    return 0, f'metier: secteur non aligne ({expected_sector})'
+
+
+def eures_score_languages(expected: str, actual: str) -> tuple[int, str]:
+    expected_map = eures_parse_language_requirements(expected)
+    actual_map = eures_parse_candidate_languages(actual)
+    scored = {lang: lvl for lang, lvl in expected_map.items() if lvl > 0}
+    if not scored or not actual_map:
+        return 0, 'langues: information manquante'
+    matched = []
+    strong = 0
+    partial = 0
+    for lang, required_level in scored.items():
+        candidate_level = actual_map.get(lang)
+        if candidate_level is None:
+            continue
+        if candidate_level >= required_level:
+            strong += 1
+            matched.append(lang)
+        elif candidate_level >= 2 and candidate_level + 1 >= required_level:
+            partial += 1
+            matched.append(f'{lang} (partiel)')
+    ratio = (strong + 0.5 * partial) / max(len(scored), 1)
+    points = round(25 * ratio)
+    if points > 0:
+        return points, 'langues: ' + ', '.join(matched)
+    return 0, 'langues: aucune correspondance'
+
+
+def eures_score_location(besoin_pays: str, candidat_pays: str, mobilite: str) -> tuple[int, str]:
+    besoin_pays_l = eures_normalize_text(besoin_pays)
+    candidat_pays_l = eures_normalize_text(candidat_pays)
+    mobilite_l = eures_normalize_text(mobilite)
+    if besoin_pays_l and candidat_pays_l and (besoin_pays_l == candidat_pays_l or besoin_pays_l in candidat_pays_l):
+        return 15, 'pays/mobilite: meme pays'
+    if besoin_pays_l and mobilite_l and besoin_pays_l in mobilite_l:
+        return 15, 'pays/mobilite: pays souhaite explicite'
+    if mobilite_l and any(token in mobilite_l for token in ('transfrontali', 'expatriation', 'pays souhaités', 'pays souhaites')):
+        return 10, 'pays/mobilite: mobilite declaree'
+    return 0, 'pays/mobilite: contrainte geographique'
+
+
+def eures_score_availability(date_debut: str, disponibilite: str) -> tuple[int, str]:
+    disponibilite_l = str(disponibilite or '').strip()
+    if not disponibilite_l:
+        return 0, 'disponibilite: information manquante'
+    besoin_rank = eures_availability_rank(date_debut)
+    candidat_rank = eures_availability_rank(disponibilite)
+    if besoin_rank is not None and candidat_rank is not None:
+        if candidat_rank <= besoin_rank:
+            return 15, 'disponibilite: date compatible'
+        if candidat_rank == besoin_rank + 1:
+            return 9, 'disponibilite: leger decalage'
+        return 0, 'disponibilite: delai trop long'
+    if eures_normalize_text(date_debut) and eures_normalize_text(date_debut) in eures_normalize_text(disponibilite):
+        return 15, 'disponibilite: date compatible'
+    return 7, 'disponibilite: verification manuelle recommandee'
+
+
+def eures_candidate_salary_expectation(secteur: str, fields: dict):
+    salary_fields = EURES_CANDIDAT_SECTOR_SALARY_FIELDS.get(secteur)
+    if not salary_fields:
+        return None
+    type_field, min_field = salary_fields
+    salary_type = str(fields.get(type_field) or '').strip()
+    salary_min = eures_to_float(fields.get(min_field))
+    if salary_min is None:
+        return None
+    return salary_type, salary_min
+
+
+def eures_employer_salary_offer(secteur: str, fields: dict):
+    salary_fields = EURES_EMPLOYEUR_SECTOR_SALARY_FIELDS.get(secteur)
+    if not salary_fields:
+        return None
+    type_field, min_field, max_field = salary_fields
+    salary_type = str(fields.get(type_field) or '').strip()
+    salary_min = eures_to_float(fields.get(min_field))
+    salary_max = eures_to_float(fields.get(max_field))
+    if salary_min is None and salary_max is None:
+        return None
+    return salary_type, salary_min, salary_max
+
+
+def eures_score_salary(secteur: str, candidat_fields: dict, besoin_fields: dict) -> tuple[int, str]:
+    if not secteur:
+        return 0, 'salaire: secteur indetermine'
+    candidat_salary = eures_candidate_salary_expectation(secteur, candidat_fields)
+    employeur_salary = eures_employer_salary_offer(secteur, besoin_fields)
+    if candidat_salary is None or employeur_salary is None:
+        return 6, 'salaire: donnees absentes, verification manuelle'
+    _, candidat_min = candidat_salary
+    _, employeur_min, employeur_max = employeur_salary
+    if employeur_max and candidat_min <= employeur_max:
+        if employeur_min and candidat_min < employeur_min:
+            return 12, 'salaire: attente sous la fourchette proposee'
+        return 15, 'salaire: compatible'
+    if employeur_min and candidat_min <= employeur_min * 1.1:
+        return 8, 'salaire: ecart limite'
+    return 0, 'salaire: attente superieure au salaire propose'
+
+
+def eures_matching_status(score: int) -> str:
+    if score >= 75:
+        return 'auto_envoyable'
+    if score >= 55:
+        return 'a_valider'
+    return 'a_ecarter'
+
+
+def compute_eures_matching(besoin_fields: dict, candidat_fields: dict) -> dict:
+    """Compute a matching payload for one candidate/employer pair."""
+    besoin_country = besoin_fields.get('pays_normalise') or besoin_fields.get('pays') or ''
+    candidat_country = candidat_fields.get('pays_normalise') or candidat_fields.get('pays') or ''
+    secteur = eures_canonical_sector(str(besoin_fields.get('poste') or ''))
+
+    score_metier, raison_metier = eures_score_sector_fit(
+        str(besoin_fields.get('poste') or ''),
+        str(candidat_fields.get('metier') or ''),
+    )
+    score_langues, raison_langues = eures_score_languages(
+        str(besoin_fields.get('langues_requises') or ''),
+        str(candidat_fields.get('langues') or ''),
+    )
+    score_mobilite, raison_mobilite = eures_score_location(
+        str(besoin_country),
+        str(candidat_country),
+        str(candidat_fields.get('mobilite') or ''),
+    )
+    score_disponibilite, raison_disponibilite = eures_score_availability(
+        str(besoin_fields.get('date_debut') or ''),
+        str(candidat_fields.get('disponibilite') or ''),
+    )
+    score_salaire, raison_salaire = eures_score_salary(secteur, candidat_fields, besoin_fields)
+
+    reasons = []
+    weaknesses = []
+    for points, text in [
+        (score_metier, raison_metier),
+        (score_langues, raison_langues),
+        (score_mobilite, raison_mobilite),
+        (score_disponibilite, raison_disponibilite),
+        (score_salaire, raison_salaire),
+    ]:
+        (reasons if points else weaknesses).append(text)
+
+    score = score_metier + score_langues + score_mobilite + score_disponibilite + score_salaire
+    return {
+        'score': score,
+        'score_metier': score_metier,
+        'score_langues': score_langues,
+        'score_mobilite': score_mobilite,
+        'score_disponibilite': score_disponibilite,
+        'score_salaire': score_salaire,
+        'statut': eures_matching_status(score),
+        'raisons': ' | '.join(reasons),
+        'points_faibles': ' | '.join(weaknesses),
+        'date_calcul': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()),
+    }
+
+
+def run_eures_matching_for_saved_record(form_id: str, role: str, saved_record: dict, config: dict, headers: dict):
+    """Compute matchings for one newly saved EURES beta record and write them to Matchings."""
+    if form_id != 'eures-beta':
+        return {'processed': False, 'reason': 'unsupported_form'}
+    if role not in {'candidate', 'employer'}:
+        return {'processed': False, 'reason': 'unsupported_role'}
+
+    all_candidats = fetch_table_records(config['doc_id'], EURES_CANDIDATS_TABLE, headers)
+    all_besoins = fetch_table_records(config['doc_id'], EURES_BESOINS_TABLE, headers)
+    saved_fields = saved_record.get('fields', {}) if isinstance(saved_record.get('fields'), dict) else {}
+
+    writes = 0
+    if role == 'candidate':
+        for besoin in all_besoins:
+            besoin_fields = besoin.get('fields', {}) if isinstance(besoin.get('fields'), dict) else {}
+            candidat_id = str(saved_fields.get('id_tally') or saved_fields.get('uuid') or '')
+            besoin_id = str(besoin_fields.get('id_tally') or besoin_fields.get('uuid') or '')
+            if not candidat_id or not besoin_id:
+                continue
+            matching = compute_eures_matching(besoin_fields, saved_fields)
+            payload = {'besoin_id': besoin_id, 'candidat_id': candidat_id, **matching}
+            upsert_matching_record(config['doc_id'], payload, headers)
+            writes += 1
+    else:
+        for candidat in all_candidats:
+            candidat_fields = candidat.get('fields', {}) if isinstance(candidat.get('fields'), dict) else {}
+            candidat_id = str(candidat_fields.get('id_tally') or candidat_fields.get('uuid') or '')
+            besoin_id = str(saved_fields.get('id_tally') or saved_fields.get('uuid') or '')
+            if not candidat_id or not besoin_id:
+                continue
+            matching = compute_eures_matching(saved_fields, candidat_fields)
+            payload = {'besoin_id': besoin_id, 'candidat_id': candidat_id, **matching}
+            upsert_matching_record(config['doc_id'], payload, headers)
+            writes += 1
+
+    return {'processed': True, 'writes': writes, 'role': role}
+
+
 def normalize_finess(value) -> str:
     """Normalize FINESS value for duplicate checks."""
     raw = str(value or '').strip()
@@ -1041,12 +1663,23 @@ def save_record(form_id: str):
                 'error': f'Grist write returned success, but the saved questionnaire {record_key} did not match.',
             }), 502
 
+        matching_result = None
+        if form_id == 'eures-beta':
+            matching_result = run_eures_matching_for_saved_record(
+                form_id=form_id,
+                role=str(fields.get('flow_role') or ''),
+                saved_record=saved_record,
+                config=config,
+                headers=headers,
+            )
+
         return jsonify({
             'ok': True,
             'action': action,
             'uuid': uuid,
             'record_key': record_key,
             'record_id': saved_record.get('id'),
+            'matching': matching_result,
         }), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -1252,6 +1885,18 @@ def admin_overview(form_id: str):
         },
         'rows': rows,
     }), 200
+
+
+@app.route('/api/forms/<form_id>/public-stats', methods=['GET'])
+def public_stats(form_id: str):
+    """Public aggregated stats page data."""
+    if form_id != 'eures-beta':
+        return jsonify({'error': f'Unknown public stats form: {form_id}'}), 404
+
+    try:
+        return jsonify(build_eures_public_stats()), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 
 @app.route('/health')

@@ -11,6 +11,7 @@ const copy = {
       navHome: "Accueil",
       navCandidate: "Candidat",
       navEmployer: "Employeur",
+      navStats: "Statistiques",
       langLabel: "Langue",
       footer: "Prototype de démarrage pour tester l’inscription, le matching et l’envoi structuré vers GRIST.",
       ctaStartCandidate: "Commencer côté candidat",
@@ -204,6 +205,46 @@ const copy = {
         criticalCriteria: ["Disponibilité rapide", "Expérience métier", "Langue orale", "Autonomie", "Mobilité"]
       },
       helper: "Vous pourrez enrichir ensuite le scoring avec les exigences fines par métier et les validations humaines."
+    },
+    statPage: {
+      eyebrow: "Données publiques agrégées",
+      title: "Statistiques publiques EURES beta",
+      lede: "Cette page présente des indicateurs agrégés et non nominatifs sur l’activité du projet EURES beta.",
+      updatedPrefix: "Dernière mise à jour",
+      methodology: "Les chiffres affichés proviennent des tables Grist du projet. Les données personnelles, identifiants et contenus libres ne sont jamais affichés.",
+      manualNote: "Les indicateurs de contact, de transmission et d’embauche peuvent être complétés manuellement dans la table mensuelle de pilotage.",
+      manualMissing: "La table mensuelle de pilotage n’est pas encore configurée. Les indicateurs saisis à la main restent donc à zéro.",
+      keyFiguresTitle: "Chiffres clés",
+      monthlyTitle: "Suivi mensuel",
+      monthlyLead: "Les volumes automatiques sont calculés à partir des dates d’enregistrement. Les suivis métier peuvent être complétés mois par mois.",
+      breakdownsTitle: "Répartitions",
+      totals: {
+        candidats: "Candidatures reçues",
+        besoins_employeurs: "Besoins employeurs reçus",
+        matchings: "Matchings calculés",
+        candidats_contactes: "Candidats contactés",
+        candidatures_transmises_employeur: "Candidatures transmises",
+        embauches: "Embauches"
+      },
+      monthlyColumns: {
+        mois: "Mois",
+        candidats: "Candidatures",
+        besoins_employeurs: "Besoins employeurs",
+        matchings: "Matchings",
+        candidats_contactes: "Candidats contactés",
+        candidatures_transmises_employeur: "Candidatures transmises",
+        embauches: "Embauches"
+      },
+      breakdownLabels: {
+        candidats_par_pays: "Candidatures par pays visé",
+        besoins_par_pays: "Besoins employeurs par pays",
+        secteurs: "Secteurs",
+        mobilite_candidats: "Mobilité des candidats",
+        matchings_par_statut: "Statuts de matching"
+      },
+      emptyBreakdown: "Aucune donnée exploitable pour le moment.",
+      loading: "Chargement des statistiques...",
+      error: "Impossible de charger les statistiques pour le moment."
     }
   },
   en: {
@@ -213,6 +254,7 @@ const copy = {
       navHome: "Home",
       navCandidate: "Candidate",
       navEmployer: "Employer",
+      navStats: "Stats",
       langLabel: "Language",
       footer: "Starter prototype to test sign-up, matching and structured delivery into GRIST.",
       ctaStartCandidate: "Start as candidate",
@@ -406,6 +448,46 @@ const copy = {
         criticalCriteria: ["Fast availability", "Sector experience", "Spoken language", "Autonomy", "Mobility"]
       },
       helper: "You can extend the scoring later with detailed requirements per sector and human validation."
+    },
+    statPage: {
+      eyebrow: "Public aggregated data",
+      title: "EURES beta public stats",
+      lede: "This page shows aggregated, non-identifying indicators about EURES beta activity.",
+      updatedPrefix: "Last updated",
+      methodology: "Figures come from the project's Grist tables. Personal data, identifiers and free text are never displayed.",
+      manualNote: "Contact, transmission and hiring indicators can be completed manually in the monthly steering table.",
+      manualMissing: "The monthly steering table is not configured yet. Manually entered indicators therefore remain at zero.",
+      keyFiguresTitle: "Key figures",
+      monthlyTitle: "Monthly tracking",
+      monthlyLead: "Automatic volumes are calculated from submission dates. Operational follow-up can then be completed month by month.",
+      breakdownsTitle: "Breakdowns",
+      totals: {
+        candidats: "Candidate submissions",
+        besoins_employeurs: "Employer needs",
+        matchings: "Computed matchings",
+        candidats_contactes: "Candidates contacted",
+        candidatures_transmises_employeur: "Applications transmitted",
+        embauches: "Hires"
+      },
+      monthlyColumns: {
+        mois: "Month",
+        candidats: "Candidates",
+        besoins_employeurs: "Employer needs",
+        matchings: "Matchings",
+        candidats_contactes: "Candidates contacted",
+        candidatures_transmises_employeur: "Applications transmitted",
+        embauches: "Hires"
+      },
+      breakdownLabels: {
+        candidats_par_pays: "Candidates by target country",
+        besoins_par_pays: "Employer needs by country",
+        secteurs: "Sectors",
+        mobilite_candidats: "Candidate mobility",
+        matchings_par_statut: "Matching statuses"
+      },
+      emptyBreakdown: "No usable data yet.",
+      loading: "Loading statistics...",
+      error: "Unable to load statistics right now."
     }
   },
   de: {
@@ -415,6 +497,7 @@ const copy = {
       navHome: "Start",
       navCandidate: "Kandidaten",
       navEmployer: "Arbeitgeber",
+      navStats: "Statistik",
       langLabel: "Sprache",
       footer: "Startprototyp zum Testen von Erfassung, Matching und strukturierter Übergabe an GRIST.",
       ctaStartCandidate: "Als Kandidat starten",
@@ -608,6 +691,46 @@ const copy = {
         criticalCriteria: ["Schnelle Verfügbarkeit", "Branchenerfahrung", "Gesprochene Sprache", "Selbstständigkeit", "Mobilität"]
       },
       helper: "Später kann das Scoring um feinere Kriterien je Branche und menschliche Validierung ergänzt werden."
+    },
+    statPage: {
+      eyebrow: "Öffentliche aggregierte Daten",
+      title: "Öffentliche EURES-beta-Statistiken",
+      lede: "Diese Seite zeigt aggregierte und nicht personenbezogene Kennzahlen zur Aktivität von EURES beta.",
+      updatedPrefix: "Letzte Aktualisierung",
+      methodology: "Die Zahlen stammen aus den Grist-Tabellen des Projekts. Personendaten, Kennungen und freie Texte werden nie angezeigt.",
+      manualNote: "Kontakt-, Übermittlungs- und Einstellungsindikatoren können in der monatlichen Steuerungstabelle manuell ergänzt werden.",
+      manualMissing: "Die monatliche Steuerungstabelle ist noch nicht konfiguriert. Manuell gepflegte Kennzahlen bleiben daher auf null.",
+      keyFiguresTitle: "Kennzahlen",
+      monthlyTitle: "Monatliche Entwicklung",
+      monthlyLead: "Automatische Volumen werden aus den Einreichungsdaten berechnet. Die operative Nachverfolgung kann dann monatlich ergänzt werden.",
+      breakdownsTitle: "Verteilungen",
+      totals: {
+        candidats: "Kandidaten-Eingänge",
+        besoins_employeurs: "Arbeitgeberbedarfe",
+        matchings: "Berechnete Matchings",
+        candidats_contactes: "Kontaktierte Kandidaten",
+        candidatures_transmises_employeur: "Übermittelte Bewerbungen",
+        embauches: "Einstellungen"
+      },
+      monthlyColumns: {
+        mois: "Monat",
+        candidats: "Kandidaten",
+        besoins_employeurs: "Arbeitgeberbedarfe",
+        matchings: "Matchings",
+        candidats_contactes: "Kontaktierte Kandidaten",
+        candidatures_transmises_employeur: "Übermittelte Bewerbungen",
+        embauches: "Einstellungen"
+      },
+      breakdownLabels: {
+        candidats_par_pays: "Kandidaten nach Zielland",
+        besoins_par_pays: "Arbeitgeberbedarfe nach Land",
+        secteurs: "Sektoren",
+        mobilite_candidats: "Mobilität der Kandidaten",
+        matchings_par_statut: "Matching-Status"
+      },
+      emptyBreakdown: "Noch keine auswertbaren Daten.",
+      loading: "Statistiken werden geladen...",
+      error: "Die Statistiken können derzeit nicht geladen werden."
     }
   }
 };
@@ -1567,6 +1690,7 @@ function pageUrl(page, lang) {
     home: `${BASE_PATH}/`,
     "candidate-landing": `${BASE_PATH}/candidate`,
     "employer-landing": `${BASE_PATH}/employer`,
+    stat: `${BASE_PATH}/stat`,
     "candidate-questionnaire": `${BASE_PATH}/questionnaire-candidate`,
     "employer-questionnaire": `${BASE_PATH}/questionnaire-employer`
   };
@@ -1588,6 +1712,7 @@ function nav(page, lang, t) {
             <a class="nav-pill" href="${pageUrl("home", lang)}">${t.common.navHome}</a>
             <a class="nav-pill" href="${pageUrl("candidate-landing", lang)}">${t.common.navCandidate}</a>
             <a class="nav-pill" href="${pageUrl("employer-landing", lang)}">${t.common.navEmployer}</a>
+            <a class="nav-pill" href="${pageUrl("stat", lang)}">${t.common.navStats}</a>
           </div>
           <div class="lang-switch" aria-label="${t.common.langLabel}">
             ${LANGS.map((choice) => `
@@ -1606,6 +1731,165 @@ function footer(t) {
 
 function list(items) {
   return `<ul>${items.map((item) => `<li>${item}</li>`).join("")}</ul>`;
+}
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function formatTimestamp(value, lang) {
+  if (!value) return "n/a";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return escapeHtml(value);
+  return new Intl.DateTimeFormat(lang, {
+    year: "numeric",
+    month: "short",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit"
+  }).format(date);
+}
+
+function formatMonth(value, lang) {
+  if (!value || !/^\d{4}-\d{2}$/.test(value)) return escapeHtml(value || "");
+  const date = new Date(`${value}-01T00:00:00Z`);
+  return new Intl.DateTimeFormat(lang, {
+    year: "numeric",
+    month: "long"
+  }).format(date);
+}
+
+function renderBreakdownList(rows, emptyLabel) {
+  if (!Array.isArray(rows) || rows.length === 0) {
+    return `<p>${emptyLabel}</p>`;
+  }
+  const max = Math.max(...rows.map((row) => Number(row.count || 0)), 1);
+  return `
+    <div class="breakdown-list">
+      ${rows.map((row) => {
+        const count = Number(row.count || 0);
+        const width = Math.max(8, Math.round((count / max) * 100));
+        return `
+          <div class="breakdown-row">
+            <div class="breakdown-head">
+              <span>${escapeHtml(row.label)}</span>
+              <strong>${count}</strong>
+            </div>
+            <div class="breakdown-bar"><span style="width:${width}%"></span></div>
+          </div>
+        `;
+      }).join("")}
+    </div>
+  `;
+}
+
+function statTemplate(lang, t, data) {
+  const totals = data?.totals || {};
+  const monthly = Array.isArray(data?.monthly) ? data.monthly : [];
+  const breakdowns = data?.breakdowns || {};
+  const manualConfigured = Boolean(data?.manual_stats_table?.configured);
+  const totalCards = Object.entries(t.statPage.totals).map(([key, label]) => `
+    <article class="stat-card kpi-card">
+      <p>${label}</p>
+      <strong>${Number(totals[key] || 0).toLocaleString(lang)}</strong>
+    </article>
+  `).join("");
+
+  const breakdownPanels = Object.entries(t.statPage.breakdownLabels).map(([key, label]) => `
+    <article class="panel breakdown-panel">
+      <h2>${label}</h2>
+      ${renderBreakdownList(breakdowns[key], t.statPage.emptyBreakdown)}
+    </article>
+  `).join("");
+
+  return `
+    ${nav("stat", lang, t)}
+    <main>
+      <section class="hero">
+        <div class="shell hero-grid">
+          <article class="hero-card hero">
+            <div class="eyebrow">${t.statPage.eyebrow}</div>
+            <h1>${t.statPage.title}</h1>
+            <p class="lede">${t.statPage.lede}</p>
+            <div class="stat-meta">
+              <div><strong>${t.statPage.updatedPrefix}:</strong> ${formatTimestamp(data?.generated_at, lang)}</div>
+              <div>${t.statPage.methodology}</div>
+              <div>${manualConfigured ? t.statPage.manualNote : t.statPage.manualMissing}</div>
+            </div>
+          </article>
+          <aside class="story-card">
+            <h2>${t.statPage.keyFiguresTitle}</h2>
+            <p>${t.statPage.monthlyLead}</p>
+          </aside>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="shell">
+          <div class="panel"><h2>${t.statPage.keyFiguresTitle}</h2></div>
+          <div class="stats-grid" style="margin-top: 1rem;">
+            ${totalCards}
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="shell">
+          <div class="panel">
+            <h2>${t.statPage.monthlyTitle}</h2>
+            <p>${t.statPage.monthlyLead}</p>
+          </div>
+          <div class="table-wrap">
+            <table class="stats-table">
+              <thead>
+                <tr>
+                  ${Object.values(t.statPage.monthlyColumns).map((label) => `<th>${label}</th>`).join("")}
+                </tr>
+              </thead>
+              <tbody>
+                ${monthly.map((row) => `
+                  <tr>
+                    <th>${formatMonth(row.mois, lang)}</th>
+                    <td>${Number(row.candidats || 0).toLocaleString(lang)}</td>
+                    <td>${Number(row.besoins_employeurs || 0).toLocaleString(lang)}</td>
+                    <td>${Number(row.matchings || 0).toLocaleString(lang)}</td>
+                    <td>${Number(row.candidats_contactes || 0).toLocaleString(lang)}</td>
+                    <td>${Number(row.candidatures_transmises_employeur || 0).toLocaleString(lang)}</td>
+                    <td>${Number(row.embauches || 0).toLocaleString(lang)}</td>
+                  </tr>
+                `).join("")}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="shell">
+          <div class="panel"><h2>${t.statPage.breakdownsTitle}</h2></div>
+          <div class="dashboard-grid" style="margin-top: 1rem;">
+            ${breakdownPanels}
+          </div>
+        </div>
+      </section>
+    </main>
+    ${footer(t)}
+  `;
+}
+
+async function loadPublicStats() {
+  const response = await fetch(`/api/forms/${FORM_ID}/public-stats`, {
+    headers: { Accept: "application/json" }
+  });
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}`);
+  }
+  return response.json();
 }
 
 function homeTemplate(lang, t) {
@@ -3322,6 +3606,34 @@ function render() {
 
   if (page === "home") {
     root.innerHTML = homeTemplate(lang, t);
+    return;
+  }
+
+  if (page === "stat") {
+    root.innerHTML = `
+      ${nav("stat", lang, t)}
+      <main class="section">
+        <div class="shell">
+          <div class="panel"><p>${t.statPage.loading}</p></div>
+        </div>
+      </main>
+      ${footer(t)}
+    `;
+    loadPublicStats()
+      .then((data) => {
+        root.innerHTML = statTemplate(lang, t, data);
+      })
+      .catch(() => {
+        root.innerHTML = `
+          ${nav("stat", lang, t)}
+          <main class="section">
+            <div class="shell">
+              <div class="panel"><p>${t.statPage.error}</p></div>
+            </div>
+          </main>
+          ${footer(t)}
+        `;
+      });
     return;
   }
 
