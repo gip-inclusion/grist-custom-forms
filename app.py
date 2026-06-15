@@ -13,6 +13,7 @@ Environment variables:
 
 import os
 import json
+import time
 from io import BytesIO
 from functools import wraps
 from pathlib import Path
@@ -32,7 +33,8 @@ DOCS_DIR = BASE_DIR / 'docs'
 app = Flask(__name__)
 
 GRIST_BASE_URL = os.environ.get('GRIST_BASE_URL', 'https://grist.numerique.gouv.fr').rstrip('/')
-_TABLE_COLUMNS_CACHE: dict[tuple[str, str], set[str]] = {}
+_TABLE_COLUMNS_CACHE: dict[tuple[str, str], dict[str, object]] = {}
+_TABLE_COLUMNS_CACHE_TTL_SECONDS = 60
 WIZARD_STATE_KEY = '__wizard_v3_state'
 JSON_EXPORT_COLUMNS = {
     'metiers_json',
@@ -247,8 +249,10 @@ def get_form_config(form_id: str, role: str | None = None) -> dict:
 def get_table_columns(config: dict, headers: dict) -> set[str]:
     """Fetch and cache table column ids to avoid sending unknown fields to Grist."""
     cache_key = (str(config.get('doc_id') or ''), str(config.get('table_id') or ''))
-    if cache_key in _TABLE_COLUMNS_CACHE:
-        return _TABLE_COLUMNS_CACHE[cache_key]
+    cached = _TABLE_COLUMNS_CACHE.get(cache_key)
+    now = time.time()
+    if cached and (now - float(cached.get('loaded_at', 0))) < _TABLE_COLUMNS_CACHE_TTL_SECONDS:
+        return set(cached.get('columns', set()))
 
     url = f"{GRIST_BASE_URL}/api/docs/{config['doc_id']}/tables/{config['table_id']}/columns"
     resp = requests.get(url, headers=headers)
@@ -260,7 +264,10 @@ def get_table_columns(config: dict, headers: dict) -> set[str]:
         col_id = (col or {}).get('id')
         if col_id:
             columns.add(str(col_id))
-    _TABLE_COLUMNS_CACHE[cache_key] = columns
+    _TABLE_COLUMNS_CACHE[cache_key] = {
+        'columns': columns,
+        'loaded_at': now,
+    }
     return columns
 
 
