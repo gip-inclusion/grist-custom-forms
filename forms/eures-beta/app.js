@@ -2174,8 +2174,10 @@ function employerTallyQuestionnaireTemplate(lang, t) {
           <form class="questionnaire-form" id="employer-tally-form" data-role="employer">
             <section class="form-section">
               <h3>${content.sections.need}</h3>
-              <p class="mini-note">${content.introNote}</p>
-              <p class="mini-note">${content.introNote2}</p>
+              <div class="section-intro">
+                <p class="mini-note">${content.introNote}</p>
+                <p class="mini-note">${content.introNote2}</p>
+              </div>
               <fieldset class="fieldset">
                 <legend>${content.questions.q01}</legend>
                 ${choicePills("tally_q01", content.sectorsOptions)}
@@ -2203,6 +2205,9 @@ function employerTallyQuestionnaireTemplate(lang, t) {
 
             <section class="form-section">
               <h3>${content.sections.conditions}</h3>
+              <div class="section-intro">
+                <p class="mini-note">Décrivez ici les profils que vous pouvez accueillir, les aides éventuelles à l’arrivée et les critères qui comptent vraiment pour vous.</p>
+              </div>
               <fieldset class="fieldset">
                 <legend>${content.questions.q07}</legend>
                 ${choicePills("tally_q07", content.optionGroups.q07)}
@@ -2236,6 +2241,9 @@ function employerTallyQuestionnaireTemplate(lang, t) {
 
             <section class="form-section">
               <h3>${content.sections.contact}</h3>
+              <div class="section-intro">
+                <p class="mini-note">Ces informations nous permettent de vous recontacter rapidement si des profils semblent compatibles avec votre besoin.</p>
+              </div>
               <div class="form-grid">
                 <label class="field">
                   <span>${content.questions.q16}</span>
