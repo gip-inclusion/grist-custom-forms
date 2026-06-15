@@ -694,7 +694,7 @@ const candidateTallyCopy = {
     sidebarAfterText: "Si votre profil semble correspondre à un besoin en cours, il pourra être étudié pour une mise en relation. Si ce n’est pas encore le bon moment, vos réponses nous aident aussi à mieux préparer les prochaines opportunités.",
     sidebarResumeTitle: "Reprendre plus tard",
     sidebarResumeText: "Un identifiant est conservé pour retrouver votre progression si besoin.",
-    salaryExpectationIntro: "Vous pouvez indiquer ici votre attente salariale pour ce métier. Cela nous aide à éviter de vous proposer des pistes qui ne correspondent pas à vos conditions.",
+    salaryExpectationIntro: "Indiquez ici votre attente salariale pour ce métier, en euros, en précisant s'il s'agit d'un montant brut ou net.",
     fileNote: "Le nom du fichier sera enregistré. Le fichier lui-même n’est pas encore stocké côté plateforme.",
     consentText: "J’accepte que mes réponses soient utilisées par les équipes et partenaires EURES dans le cadre de l’accompagnement à la mobilité professionnelle et des mises en relation proposées. Vos données seront utilisées uniquement dans le cadre de votre accompagnement et conformément à la réglementation européenne sur la protection des données (RGPD).",
     rankingError: "Chaque priorité d'expatriation doit avoir un rang unique de 1 à 7.",
@@ -764,8 +764,7 @@ const candidateTallyCopy = {
       q28: "Avez-vous une expérience professionnelle dans le secteur de l'agriculture et de la récolte?",
       q30: "Avez-vous une expérience professionnelle ?",
       salaryType: "Sous quelle forme pensez-vous à votre salaire ?",
-      salaryMin: "Quel est le minimum que vous souhaiteriez pour ce métier ?",
-      salaryNote: "Précision éventuelle",
+      salaryMin: "Quel est le minimum que vous souhaiteriez pour ce métier, en euros bruts ou nets ?",
       firstName: "Prénom",
       lastName: "Nom",
       email: "Adresse e-mail",
@@ -789,8 +788,7 @@ const candidateTallyCopy = {
     salaryUnits: ["Par heure", "Par mois", "Par an"],
     salaryFields: {
       type: "Sous quelle forme pensez-vous à votre salaire ?",
-      min: "Quel est le minimum que vous souhaiteriez pour ce métier ?",
-      note: "Précision éventuelle"
+      min: "Quel est le minimum que vous souhaiteriez pour ce métier, en euros bruts ou nets ?"
     },
     sectorTitles: {
       vente: "Vente et commerce",
@@ -895,7 +893,7 @@ const candidateTallyCopy = {
     sidebarAfterText: "If your profile seems to match an active need, it may be reviewed for a possible introduction. If the timing is not right yet, your answers still help us prepare upcoming opportunities better.",
     sidebarResumeTitle: "Continue later",
     sidebarResumeText: "An identifier is kept so your progress can be found again if needed.",
-    salaryExpectationIntro: "You can indicate here your salary expectations for this role. This helps us avoid suggesting opportunities that do not match your conditions.",
+    salaryExpectationIntro: "Indicate your salary expectation for this role here, in euros, and specify whether it is gross or net.",
     fileNote: "The file name will be recorded. The file itself is not yet stored on the platform.",
     consentText: "I agree that my answers may be used by EURES teams and partners for professional mobility support and the proposed introductions. Your data will only be used for your support and in accordance with European data protection rules (GDPR).",
     rankingError: "Each relocation priority must have a unique rank from 1 to 7.",
@@ -965,8 +963,7 @@ const candidateTallyCopy = {
       q28: "Do you have work experience in agriculture and harvesting?",
       q30: "Do you have work experience?",
       salaryType: "How do you think about your salary?",
-      salaryMin: "What is the minimum you would like for this role?",
-      salaryNote: "Additional details",
+      salaryMin: "What is the minimum you would like for this role, in gross or net euros?",
       firstName: "First name",
       lastName: "Last name",
       email: "Email address",
@@ -990,8 +987,7 @@ const candidateTallyCopy = {
     salaryUnits: ["Per hour", "Per month", "Per year"],
     salaryFields: {
       type: "How do you think about your salary?",
-      min: "What is the minimum you would like for this role?",
-      note: "Additional details"
+      min: "What is the minimum you would like for this role, in gross or net euros?"
     },
     sectorTitles: {
       vente: "Sales and retail",
@@ -1036,7 +1032,7 @@ const candidateTallyCopy = {
     sidebarAfterText: "Wenn Ihr Profil zu einem aktuellen Bedarf zu passen scheint, kann es für eine mögliche Vermittlung geprüft werden. Wenn der Zeitpunkt noch nicht passt, helfen uns Ihre Antworten trotzdem dabei, kommende Chancen besser vorzubereiten.",
     sidebarResumeTitle: "Später fortsetzen",
     sidebarResumeText: "Eine Kennung wird gespeichert, damit Ihr Fortschritt bei Bedarf wiedergefunden werden kann.",
-    salaryExpectationIntro: "Hier können Sie Ihre Gehaltserwartung für diesen Beruf angeben. So vermeiden wir Vorschläge, die nicht zu Ihren Bedingungen passen.",
+    salaryExpectationIntro: "Geben Sie hier Ihre Gehaltserwartung für diesen Beruf in Euro an und präzisieren Sie, ob es sich um einen Brutto- oder Nettobetrag handelt.",
     fileNote: "Der Dateiname wird gespeichert. Die Datei selbst wird derzeit noch nicht auf der Plattform gespeichert.",
     consentText: "Ich stimme zu, dass meine Antworten von EURES-Teams und Partnern für die Begleitung der beruflichen Mobilität und die vorgeschlagenen Vermittlungen verwendet werden dürfen. Ihre Daten werden nur im Rahmen Ihrer Begleitung und gemäß den europäischen Datenschutzvorschriften (DSGVO) verwendet.",
     rankingError: "Jede Umzugspriorität muss einen eindeutigen Rang von 1 bis 7 haben.",
@@ -1106,8 +1102,7 @@ const candidateTallyCopy = {
       q28: "Haben Sie Berufserfahrung in Landwirtschaft und Ernte?",
       q30: "Haben Sie Berufserfahrung?",
       salaryType: "In welcher Form denken Sie an Ihr Gehalt?",
-      salaryMin: "Was ist das Minimum, das Sie für diesen Beruf erwarten würden?",
-      salaryNote: "Zusätzliche Angaben",
+      salaryMin: "Was ist das Minimum, das Sie für diesen Beruf in Euro brutto oder netto erwarten würden?",
       firstName: "Vorname",
       lastName: "Nachname",
       email: "E-Mail-Adresse",
@@ -1131,8 +1126,7 @@ const candidateTallyCopy = {
     salaryUnits: ["Pro Stunde", "Pro Monat", "Pro Jahr"],
     salaryFields: {
       type: "In welcher Form denken Sie an Ihr Gehalt?",
-      min: "Was ist das Minimum, das Sie für diesen Beruf erwarten würden?",
-      note: "Zusätzliche Angaben"
+      min: "Was ist das Minimum, das Sie für diesen Beruf in Euro brutto oder netto erwarten würden?"
     },
     sectorTitles: {
       vente: "Verkauf und Handel",
@@ -1273,7 +1267,7 @@ const employerTallyCopy = {
     sidebarAfterText: "Si des profils semblent correspondre, votre besoin peut être repris pour une mise en relation. Sinon, les réponses servent déjà à mieux structurer les prochains recrutements.",
     sidebarResumeTitle: "Reprendre plus tard",
     sidebarResumeText: "Un identifiant est conservé pour retrouver votre progression si besoin.",
-    salaryOfferIntro: "Vous pouvez indiquer ici le salaire proposé pour ce métier. Cela aidera ensuite le matching à mieux comparer les attentes et les offres.",
+    salaryOfferIntro: "Indiquez ici le salaire proposé pour ce métier, en euros, en précisant s'il s'agit d'un montant brut ou net.",
     introNote: "Ce formulaire prend 2 à 3 minutes et s’adresse aux employeurs ayant des besoins de recrutement ouverts à la mobilité européenne et aux recrutements hors frontières.",
     introNote2: "Nous travaillons actuellement sur quelques métiers prioritaires, afin de tester le service sur des cas concrets.",
     sections: {
@@ -1305,9 +1299,8 @@ const employerTallyCopy = {
       q19: "Téléphone",
       q20: "Lieux de travail",
       salaryType: "Sous quelle forme exprimez-vous le salaire proposé ?",
-      salaryMin: "Montant minimum proposé",
-      salaryMax: "Montant maximum proposé",
-      salaryNote: "Précision éventuelle",
+      salaryMin: "Montant minimum proposé, en euros bruts ou nets",
+      salaryMax: "Montant maximum proposé, en euros bruts ou nets",
       q21Title: "Protection des données",
       q21Text: "Les informations transmises permettront à l’équipe EURES beta de mieux comprendre votre besoin de recrutement et les conditions proposées afin d’identifier des profils susceptibles de correspondre.",
       q21Text2: "Si des profils compatibles avec votre recherche sont identifiés, vous pourrez être recontacté prochainement.",
@@ -1328,9 +1321,8 @@ const employerTallyCopy = {
     salaryUnits: ["Par heure", "Par mois", "Par an"],
     salaryFields: {
       type: "Sous quelle forme exprimez-vous le salaire proposé ?",
-      min: "Montant minimum proposé",
-      max: "Montant maximum proposé",
-      note: "Précision éventuelle"
+      min: "Montant minimum proposé, en euros bruts ou nets",
+      max: "Montant maximum proposé, en euros bruts ou nets"
     },
     sectorTitles: {
       tally_q10: "Vente et commerce",
@@ -1356,7 +1348,7 @@ const employerTallyCopy = {
     sidebarAfterText: "If some profiles seem compatible, your need can be used for an introduction. Otherwise, the answers already help us structure future recruitments better.",
     sidebarResumeTitle: "Continue later",
     sidebarResumeText: "An identifier is kept so your progress can be found again if needed.",
-    salaryOfferIntro: "You can indicate here the salary offered for this role. This will help matching compare expectations and offers more accurately later.",
+    salaryOfferIntro: "Indicate the salary offered for this role here, in euros, and specify whether it is gross or net.",
     introNote: "This form takes 2 to 3 minutes and is intended for employers with hiring needs open to European mobility and cross-border recruitment.",
     introNote2: "We are currently working on a few priority occupations in order to test the service on concrete cases.",
     sections: {
@@ -1388,9 +1380,8 @@ const employerTallyCopy = {
       q19: "Phone",
       q20: "Work locations",
       salaryType: "How do you express the salary offered?",
-      salaryMin: "Minimum amount offered",
-      salaryMax: "Maximum amount offered",
-      salaryNote: "Additional details",
+      salaryMin: "Minimum amount offered, in gross or net euros",
+      salaryMax: "Maximum amount offered, in gross or net euros",
       q21Title: "Data protection",
       q21Text: "The information provided will allow the EURES beta team to better understand your hiring need and the conditions offered in order to identify profiles that may match.",
       q21Text2: "If profiles compatible with your search are identified, you may be contacted again soon.",
@@ -1413,9 +1404,8 @@ const employerTallyCopy = {
     salaryUnits: ["Per hour", "Per month", "Per year"],
     salaryFields: {
       type: "How do you express the salary offered?",
-      min: "Minimum amount offered",
-      max: "Maximum amount offered",
-      note: "Additional details"
+      min: "Minimum amount offered, in gross or net euros",
+      max: "Maximum amount offered, in gross or net euros"
     },
     sectorTitles: {
       tally_q10: "Sales and retail",
@@ -1448,7 +1438,7 @@ const employerTallyCopy = {
     sidebarAfterText: "Wenn einige Profile kompatibel erscheinen, kann Ihr Bedarf für eine Vermittlung genutzt werden. Andernfalls helfen die Antworten bereits dabei, künftige Einstellungen besser zu strukturieren.",
     sidebarResumeTitle: "Später fortsetzen",
     sidebarResumeText: "Eine Kennung wird gespeichert, damit Ihr Fortschritt bei Bedarf wiedergefunden werden kann.",
-    salaryOfferIntro: "Hier können Sie das für diesen Beruf angebotene Gehalt angeben. Das hilft dem Matching später dabei, Erwartungen und Angebote besser zu vergleichen.",
+    salaryOfferIntro: "Geben Sie hier das für diesen Beruf angebotene Gehalt in Euro an und präzisieren Sie, ob es sich um einen Brutto- oder Nettobetrag handelt.",
     introNote: "Dieses Formular dauert 2 bis 3 Minuten und richtet sich an Arbeitgeber mit Personalbedarf, der für europäische Mobilität und grenzüberschreitende Rekrutierung offen ist.",
     introNote2: "Wir arbeiten derzeit an einigen prioritären Berufen, um den Dienst an konkreten Fällen zu testen.",
     sections: {
@@ -1480,9 +1470,8 @@ const employerTallyCopy = {
       q19: "Telefon",
       q20: "Arbeitsorte",
       salaryType: "In welcher Form geben Sie das angebotene Gehalt an?",
-      salaryMin: "Angebotener Mindestbetrag",
-      salaryMax: "Angebotener Höchstbetrag",
-      salaryNote: "Zusätzliche Angaben",
+      salaryMin: "Angebotener Mindestbetrag in Euro brutto oder netto",
+      salaryMax: "Angebotener Höchstbetrag in Euro brutto oder netto",
       q21Title: "Datenschutz",
       q21Text: "Die übermittelten Informationen ermöglichen es dem EURES-beta-Team, Ihren Personalbedarf und die angebotenen Bedingungen besser zu verstehen, um Profile zu identifizieren, die passen könnten.",
       q21Text2: "Wenn mit Ihrer Suche kompatible Profile identifiziert werden, können Sie in Kürze erneut kontaktiert werden.",
@@ -1505,9 +1494,8 @@ const employerTallyCopy = {
     salaryUnits: ["Pro Stunde", "Pro Monat", "Pro Jahr"],
     salaryFields: {
       type: "In welcher Form geben Sie das angebotene Gehalt an?",
-      min: "Angebotener Mindestbetrag",
-      max: "Angebotener Höchstbetrag",
-      note: "Zusätzliche Angaben"
+      min: "Angebotener Mindestbetrag in Euro brutto oder netto",
+      max: "Angebotener Höchstbetrag in Euro brutto oder netto"
     },
     sectorTitles: {
       tally_q10: "Verkauf und Handel",
@@ -1844,7 +1832,7 @@ function radioPills(name, options) {
   `;
 }
 
-function matrixQuestion(title, rows, columns, hint = "") {
+function matrixQuestion(title, rows, columns, hint = "", inputType = "checkbox") {
   return `
     <div class="field">
       <span>${title}</span>
@@ -1868,7 +1856,7 @@ function matrixQuestion(title, rows, columns, hint = "") {
                   const item = typeof column === "string" ? { value: column, label: column } : column;
                   return `
                   <td>
-                    <input type="checkbox" name="${row.field}" value="${item.value}">
+                    <input type="${inputType}" name="${row.field}" value="${item.value}">
                   </td>
                 `;
                 }).join("")}
@@ -1918,10 +1906,6 @@ function salaryExpectationFields(baseName, content) {
         <input type="number" name="${baseName}_salary_min" min="0" step="0.01">
       </label>
     </div>
-    <label class="field">
-      <span>${content.salaryFields.note}</span>
-      <input type="text" name="${baseName}_salary_note">
-    </label>
   `;
 }
 
@@ -1944,10 +1928,6 @@ function salaryOfferFields(baseName, content) {
         <input type="number" name="${baseName}_salary_max" min="0" step="0.01">
       </label>
     </div>
-    <label class="field">
-      <span>${content.salaryFields.note}</span>
-      <input type="text" name="${baseName}_salary_note">
-    </label>
   `;
 }
 
@@ -2023,7 +2003,8 @@ function candidateTallyQuestionnaireTemplate(lang, t) {
                 content.questions.q10,
                 content.documentsRows,
                 content.documentsColumns,
-                content.questions.q10Hint
+                content.questions.q10Hint,
+                "radio"
               )}
               <div class="field" data-condition="show-lu-social">
                 <span>${content.questions.q11}</span>
@@ -2058,7 +2039,7 @@ function candidateTallyQuestionnaireTemplate(lang, t) {
 
             <section class="form-section">
               <h3>${content.professionalTitle}</h3>
-              ${matrixQuestion(content.questions.q18, content.languageRows, content.languageColumns)}
+              ${matrixQuestion(content.questions.q18, content.languageRows, content.languageColumns, "", "radio")}
               <fieldset class="fieldset">
                 <legend>${content.questions.q19}</legend>
                 ${choicePills("tally_q19", content.sectorsOptions)}
@@ -2301,17 +2282,19 @@ function employerTallyQuestionnaireTemplate(lang, t) {
                 <legend>${content.questions.q01}</legend>
                 ${choicePills("tally_q01", content.sectorsOptions)}
               </fieldset>
-              ${matrixQuestion(content.questions.q02, content.languageRows, content.languageColumns, content.questions.q02Hint)}
-              <div class="form-grid">
-                <div class="field">
-                  <span>${content.questions.q03}</span>
-                  ${radioPills("tally_q03", content.optionGroups.q03)}
-                </div>
-                <div class="field">
-                  <span>${content.questions.q04}</span>
-                  ${radioPills("tally_q04", content.optionGroups.q04)}
-                </div>
+              ${matrixQuestion(content.questions.q02, content.languageRows, content.languageColumns, content.questions.q02Hint, "radio")}
+              <div class="field">
+                <span>${content.questions.q03}</span>
+                ${radioPills("tally_q03", content.optionGroups.q03)}
               </div>
+              <div class="field">
+                <span>${content.questions.q04}</span>
+                ${radioPills("tally_q04", content.optionGroups.q04)}
+              </div>
+              <label class="field">
+                <span>${content.questions.q20}</span>
+                <input type="text" name="tally_q20" required>
+              </label>
               <fieldset class="fieldset">
                 <legend>${content.questions.q05}</legend>
                 ${choicePills("tally_q05", content.optionGroups.q05)}
@@ -2382,10 +2365,6 @@ function employerTallyQuestionnaireTemplate(lang, t) {
                   <input type="tel" name="tally_q19" required>
                 </label>
               </div>
-              <label class="field">
-                <span>${content.questions.q20}</span>
-                <input type="text" name="tally_q20" required>
-              </label>
             </section>
 
             <section class="form-section">
