@@ -221,18 +221,26 @@ def admin_required(fn):
     return wrapper
 
 
-def get_form_config(form_id: str) -> dict:
+def get_form_config(form_id: str, role: str | None = None) -> dict:
     """Get configuration for a form from environment variables."""
-    form_id_upper = form_id.upper()
+    form_id_upper = form_id.replace('-', '_').upper()
+    role_upper = (role or '').strip().replace('-', '_').upper()
 
-    doc_id = os.environ.get(f'GRIST_DOC_{form_id_upper}')
+    def _env_with_role(base: str) -> str | None:
+        if role_upper:
+            value = os.environ.get(f'{base}_{form_id_upper}_{role_upper}')
+            if value:
+                return value
+        return os.environ.get(f'{base}_{form_id_upper}')
+
+    doc_id = _env_with_role('GRIST_DOC')
     if not doc_id:
         return None
 
     return {
         'doc_id': doc_id,
-        'table_id': os.environ.get(f'GRIST_TABLE_{form_id_upper}', 'Reponses'),
-        'api_key': os.environ.get(f'GRIST_API_KEY_{form_id_upper}') or os.environ.get('GRIST_API_KEY'),
+        'table_id': _env_with_role('GRIST_TABLE') or 'Reponses',
+        'api_key': _env_with_role('GRIST_API_KEY') or os.environ.get('GRIST_API_KEY'),
     }
 
 
@@ -769,9 +777,9 @@ def _parse_response_json_safe(resp):
         }
 
 
-def fetch_record_by_uuid(base_url: str, uuid: str, headers: dict):
-    """Fetch a single record by UUID from Grist."""
-    filter_param = json.dumps({'uuid': [uuid]})
+def fetch_record_by_field(base_url: str, field_name: str, value: str, headers: dict):
+    """Fetch a single record by a unique field from Grist."""
+    filter_param = json.dumps({field_name: [value]})
     resp = requests.get(f"{base_url}/records", params={'filter': filter_param}, headers=headers)
     if resp.status_code != 200:
         return None, resp
@@ -780,6 +788,15 @@ def fetch_record_by_uuid(base_url: str, uuid: str, headers: dict):
     if not isinstance(payload, dict) or not isinstance(payload.get('records'), list):
         raise RuntimeError('Failed to decode Grist record lookup response.')
     return payload['records'][0] if payload['records'] else None, resp
+
+
+def resolve_record_key(allowed_columns: set[str]) -> str | None:
+    """Pick the unique key used to upsert records for a target table."""
+    if 'uuid' in allowed_columns:
+        return 'uuid'
+    if 'id_tally' in allowed_columns:
+        return 'id_tally'
+    return None
 
 
 def _grist_write_redirect_response(resp):
@@ -886,8 +903,8 @@ def find_duplicate_finess(config: dict, current_uuid: str, finess_values: set, h
 
 @app.route('/api/forms/<form_id>/record', methods=['GET'])
 def get_record(form_id: str):
-    """Fetch a record by UUID."""
-    config = get_form_config(form_id)
+    """Fetch a record by UUID or table-specific identifier."""
+    config = get_form_config(form_id, request.args.get('flow_role'))
     if not config:
         return jsonify({'error': f'Unknown form: {form_id}'}), 404
 
@@ -905,7 +922,15 @@ def get_record(form_id: str):
         headers['Authorization'] = f"Bearer {config['api_key']}"
 
     try:
-        resp = requests.get(url, params={'filter': filter_param}, headers=headers)
+        allowed_columns = get_table_columns(config, headers)
+        record_key = resolve_record_key(allowed_columns)
+        if not record_key:
+            return jsonify({'error': 'Target table has no supported record key (uuid or id_tally).'}), 500
+        resp = requests.get(
+            url,
+            params={'filter': json.dumps({record_key: [uuid]})},
+            headers=headers,
+        )
         return jsonify(resp.json()), resp.status_code
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -914,13 +939,6 @@ def get_record(form_id: str):
 @app.route('/api/forms/<form_id>/record', methods=['POST'])
 def save_record(form_id: str):
     """Create or update a record."""
-    config = get_form_config(form_id)
-    if not config:
-        return jsonify({'error': f'Unknown form: {form_id}'}), 404
-
-    if not config['api_key']:
-        return jsonify({'error': 'API key not configured for this form'}), 500
-
     data = request.get_json()
     if not data or 'fields' not in data:
         return jsonify({'error': 'Invalid request body'}), 400
@@ -928,9 +946,15 @@ def save_record(form_id: str):
     fields = data['fields']
     if not isinstance(fields, dict):
         return jsonify({'error': 'Invalid fields payload'}), 400
-    uuid = fields.get('uuid')
+    config = get_form_config(form_id, fields.get('flow_role'))
+    if not config:
+        return jsonify({'error': f'Unknown form: {form_id}'}), 404
+
+    if not config['api_key']:
+        return jsonify({'error': 'API key not configured for this form'}), 500
+    uuid = fields.get('uuid') or fields.get('id_tally')
     if not uuid:
-        return jsonify({'error': 'UUID required in fields'}), 400
+        return jsonify({'error': 'UUID or id_tally required in fields'}), 400
 
     base_url = f"{GRIST_BASE_URL}/api/docs/{config['doc_id']}/tables/{config['table_id']}"
     headers = {
@@ -943,15 +967,19 @@ def save_record(form_id: str):
     try:
         allowed_columns = get_table_columns(config, headers)
         filtered_fields = {k: v for k, v in fields.items() if str(k) in allowed_columns}
+        record_key = resolve_record_key(allowed_columns)
     except Exception as e:
         return jsonify({'error': f'Failed to fetch Grist table columns: {e}'}), 500
 
-    if 'uuid' not in filtered_fields:
-        return jsonify({'error': "Table is missing required 'uuid' column"}), 500
+    if not record_key:
+        return jsonify({'error': "Table is missing a supported unique key column ('uuid' or 'id_tally')"}), 500
+
+    if record_key not in filtered_fields:
+        filtered_fields[record_key] = uuid
 
     # Check if record exists
     try:
-        existing_record, check_resp = fetch_record_by_uuid(base_url, uuid, headers)
+        existing_record, check_resp = fetch_record_by_field(base_url, record_key, filtered_fields[record_key], headers)
         if check_resp.status_code != 200:
             return jsonify(_parse_response_json_safe(check_resp)), check_resp.status_code
         record_id = existing_record.get('id') if isinstance(existing_record, dict) else None
@@ -990,7 +1018,7 @@ def save_record(form_id: str):
         if resp.status_code != 200:
             return jsonify(_parse_response_json_safe(resp)), resp.status_code
 
-        saved_record, verify_resp = fetch_record_by_uuid(base_url, uuid, headers)
+        saved_record, verify_resp = fetch_record_by_field(base_url, record_key, filtered_fields[record_key], headers)
         if verify_resp.status_code != 200:
             return jsonify({
                 'error': f'Grist write returned success, but verification failed with HTTP {verify_resp.status_code}.',
@@ -1001,15 +1029,16 @@ def save_record(form_id: str):
             }), 502
 
         saved_fields = saved_record.get('fields', {}) if isinstance(saved_record.get('fields'), dict) else {}
-        if str(saved_fields.get('uuid') or '') != str(uuid):
+        if str(saved_fields.get(record_key) or '') != str(filtered_fields[record_key]):
             return jsonify({
-                'error': 'Grist write returned success, but the saved questionnaire UUID did not match.',
+                'error': f'Grist write returned success, but the saved questionnaire {record_key} did not match.',
             }), 502
 
         return jsonify({
             'ok': True,
             'action': action,
             'uuid': uuid,
+            'record_key': record_key,
             'record_id': saved_record.get('id'),
         }), 200
     except Exception as e:
