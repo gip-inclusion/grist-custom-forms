@@ -333,6 +333,14 @@ def get_eures_matching_config() -> dict | None:
     }
 
 
+def get_brevo_config() -> dict:
+    return {
+        'api_key': os.environ.get('BREVO_API_KEY', '').strip(),
+        'from_email': os.environ.get('BREVO_FROM_EMAIL', '').strip(),
+        'from_name': os.environ.get('BREVO_FROM_NAME', 'EURES beta').strip() or 'EURES beta',
+    }
+
+
 def get_table_columns(config: dict, headers: dict) -> set[str]:
     """Fetch and cache table column ids to avoid sending unknown fields to Grist."""
     cache_key = (str(config.get('doc_id') or ''), str(config.get('table_id') or ''))
@@ -1566,6 +1574,122 @@ def _split_matching_text(value: str) -> list[str]:
     return [part.strip() for part in str(value or '').split('|') if part.strip()]
 
 
+def _extract_employer_contact_email(contact_value: str) -> str:
+    raw = str(contact_value or '').strip()
+    if '@' not in raw:
+        return ''
+    if '|' in raw:
+        for part in [p.strip() for p in raw.split('|') if p.strip()]:
+            if '@' in part:
+                return part
+    return raw
+
+
+def build_brevo_matching_email(row: dict) -> tuple[str, str, str]:
+    """Build recipient, subject and text body for one accepted matching."""
+    candidat = row.get('candidat', {}) if isinstance(row.get('candidat'), dict) else {}
+    employeur = row.get('employeur', {}) if isinstance(row.get('employeur'), dict) else {}
+    recipient = _extract_employer_contact_email(employeur.get('contact', ''))
+    if not recipient:
+        raise RuntimeError('Employer contact email is missing for accepted matching.')
+
+    score = row.get('score', 0)
+    poste = employeur.get('poste', '') or 'Poste non renseigné'
+    subject = f"[EURES beta] Candidature transmise - score {score} - {poste}"
+
+    reasons = row.get('raisons', [])
+    weaknesses = row.get('points_faibles', [])
+    if not isinstance(reasons, list):
+        reasons = _split_matching_text(reasons)
+    if not isinstance(weaknesses, list):
+        weaknesses = _split_matching_text(weaknesses)
+
+    reasons_block = '\n'.join(f"- {item}" for item in reasons) if reasons else "- Aucun point fort détaillé"
+    weaknesses_block = '\n'.join(f"- {item}" for item in weaknesses) if weaknesses else "- Aucun point faible majeur détecté"
+
+    body = (
+        "Bonjour,\n\n"
+        "Un matching EURES beta a été validé.\n\n"
+        f"Statut : {row.get('scoring_status', '')}\n"
+        f"Score global : {score} / 100\n\n"
+        "Détail du score\n"
+        f"- Métier : {row.get('score_metier', 0)} / 30\n"
+        f"- Langues : {row.get('score_langues', 0)} / 25\n"
+        f"- Mobilité : {row.get('score_mobilite', 0)} / 15\n"
+        f"- Disponibilité : {row.get('score_disponibilite', 0)} / 15\n"
+        f"- Salaire : {row.get('score_salaire', 0)} / 15\n\n"
+        "Candidat\n"
+        f"- Nom : {candidat.get('nom', '-')}\n"
+        f"- Email : {candidat.get('email', '-')}\n"
+        f"- Pays : {candidat.get('pays', '-')}\n"
+        f"- Secteurs / métiers : {candidat.get('metier', '-')}\n"
+        f"- Langues : {candidat.get('langues', '-')}\n"
+        f"- Mobilité : {candidat.get('mobilite', '-')}\n"
+        f"- Disponibilité : {candidat.get('disponibilite', '-')}\n\n"
+        "Employeur\n"
+        f"- Entreprise : {employeur.get('employeur', '-')}\n"
+        f"- Contact : {employeur.get('contact', '-')}\n"
+        f"- Pays / lieu : {employeur.get('pays', '-')}\n"
+        f"- Poste : {employeur.get('poste', '-')}\n"
+        f"- Date de début : {employeur.get('date_debut', '-')}\n"
+        f"- Langues requises : {employeur.get('langues_requises', '-')}\n\n"
+        "Points forts\n"
+        f"{reasons_block}\n\n"
+        "Points faibles\n"
+        f"{weaknesses_block}\n\n"
+        "Références internes\n"
+        f"- besoin_id : {row.get('besoin_id', '-')}\n"
+        f"- candidat_id : {row.get('candidat_id', '-')}\n\n"
+        "------------------------------\n"
+        "MESSAGE TRANSFÉRABLE À L’EMPLOYEUR\n"
+        "------------------------------\n\n"
+        "Bonjour,\n\n"
+        "Nous vous transmettons une candidature pouvant correspondre à votre besoin de recrutement.\n\n"
+        "Candidat\n"
+        f"- Nom : {candidat.get('nom', '-')}\n"
+        f"- Email : {candidat.get('email', '-')}\n"
+        f"- Pays de résidence : {candidat.get('pays', '-')}\n"
+        f"- Secteurs / métiers : {candidat.get('metier', '-')}\n"
+        f"- Langues : {candidat.get('langues', '-')}\n"
+        f"- Mobilité : {candidat.get('mobilite', '-')}\n"
+        f"- Disponibilité : {candidat.get('disponibilite', '-')}\n\n"
+        "Si ce profil vous intéresse, nous pouvons poursuivre la mise en relation.\n\n"
+        "Cordialement,\n"
+        "EURES beta\n"
+    )
+    return recipient, subject, body
+
+
+def send_brevo_transactional_email(to_email: str, subject: str, body: str):
+    """Send one transactional email via Brevo."""
+    brevo = get_brevo_config()
+    if not brevo['api_key'] or not brevo['from_email']:
+        raise RuntimeError('Brevo configuration is incomplete.')
+
+    payload = {
+        'sender': {
+            'email': brevo['from_email'],
+            'name': brevo['from_name'],
+        },
+        'to': [{'email': to_email}],
+        'subject': subject,
+        'textContent': body,
+    }
+    resp = requests.post(
+        'https://api.brevo.com/v3/smtp/email',
+        headers={
+            'accept': 'application/json',
+            'content-type': 'application/json',
+            'api-key': brevo['api_key'],
+        },
+        json=payload,
+        timeout=30,
+    )
+    if resp.status_code not in {200, 201, 202}:
+        raise RuntimeError(f'Brevo send failed: HTTP {resp.status_code} - {resp.text}')
+    return _parse_response_json_safe(resp)
+
+
 def list_eures_admin_matchings(status: str = 'all') -> list[dict]:
     """Return matchings joined with candidate/employer info for the admin UI."""
     config = get_eures_matching_config()
@@ -2146,6 +2270,22 @@ def admin_eures_matching_decision(form_id: str, record_id: int):
 
         updated = fetch_record_by_id(config['doc_id'], EURES_MATCHINGS_TABLE, record_id, headers)
         updated_fields = updated.get('fields', {}) if isinstance(updated, dict) else {}
+        brevo_result = None
+        if decision == 'accepted':
+            matching_rows = list_eures_admin_matchings(status='all')
+            matching_row = next((row for row in matching_rows if int(row.get('record_id') or 0) == record_id), None)
+            if not matching_row:
+                raise RuntimeError('Accepted matching could not be reloaded for email delivery.')
+            to_email, subject, body = build_brevo_matching_email(matching_row)
+            brevo_result = send_brevo_transactional_email(to_email, subject, body)
+            app.logger.info(
+                'EURES accepted matching email sent',
+                extra={
+                    'form_id': form_id,
+                    'record_id': record_id,
+                    'to_email': to_email,
+                },
+            )
         return jsonify({
             'ok': True,
             'record_id': record_id,
@@ -2153,6 +2293,8 @@ def admin_eures_matching_decision(form_id: str, record_id: int):
             'admin_decision_at': updated_fields.get('admin_decision_at', decision_fields['admin_decision_at']),
             'admin_decision_by': updated_fields.get('admin_decision_by', decided_by),
             'admin_decision_note': updated_fields.get('admin_decision_note', note),
+            'email_sent': decision == 'accepted',
+            'email_result': brevo_result,
         }), 200
     except Exception as e:
         app.logger.exception('EURES matching decision update failed')
