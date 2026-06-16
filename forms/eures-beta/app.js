@@ -224,6 +224,8 @@ const copy = {
         matchings: "Matchings calculés",
         candidats_contactes: "Candidats contactés",
         candidatures_transmises_employeur: "Candidatures transmises",
+        employeurs_qui_contactent: "Employeurs qui contactent",
+        employeurs_qui_ne_contactent_pas: "Employeurs qui ne contactent pas",
         embauches: "Embauches"
       },
       monthlyColumns: {
@@ -233,6 +235,8 @@ const copy = {
         matchings: "Matchings",
         candidats_contactes: "Candidats contactés",
         candidatures_transmises_employeur: "Candidatures transmises",
+        employeurs_qui_contactent: "Vont contacter",
+        employeurs_qui_ne_contactent_pas: "Ne contacteront pas",
         embauches: "Embauches"
       },
       breakdownLabels: {
@@ -240,7 +244,8 @@ const copy = {
         besoins_par_pays: "Besoins employeurs par pays",
         secteurs: "Secteurs",
         mobilite_candidats: "Mobilité des candidats",
-        matchings_par_statut: "Statuts de matching"
+        matchings_par_statut: "Statuts de matching",
+        retours_employeurs: "Retours employeurs"
       },
       emptyBreakdown: "Aucune donnée exploitable pour le moment.",
       loading: "Chargement des statistiques...",
@@ -467,6 +472,8 @@ const copy = {
         matchings: "Computed matchings",
         candidats_contactes: "Candidates contacted",
         candidatures_transmises_employeur: "Applications transmitted",
+        employeurs_qui_contactent: "Employers who will contact",
+        employeurs_qui_ne_contactent_pas: "Employers who will not contact",
         embauches: "Hires"
       },
       monthlyColumns: {
@@ -476,6 +483,8 @@ const copy = {
         matchings: "Matchings",
         candidats_contactes: "Candidates contacted",
         candidatures_transmises_employeur: "Applications transmitted",
+        employeurs_qui_contactent: "Will contact",
+        employeurs_qui_ne_contactent_pas: "Will not contact",
         embauches: "Hires"
       },
       breakdownLabels: {
@@ -483,7 +492,8 @@ const copy = {
         besoins_par_pays: "Employer needs by country",
         secteurs: "Sectors",
         mobilite_candidats: "Candidate mobility",
-        matchings_par_statut: "Matching statuses"
+        matchings_par_statut: "Matching statuses",
+        retours_employeurs: "Employer feedback"
       },
       emptyBreakdown: "No usable data yet.",
       loading: "Loading statistics...",
@@ -710,6 +720,8 @@ const copy = {
         matchings: "Berechnete Matchings",
         candidats_contactes: "Kontaktierte Kandidaten",
         candidatures_transmises_employeur: "Übermittelte Bewerbungen",
+        employeurs_qui_contactent: "Arbeitgeber mit Kontaktaufnahme",
+        employeurs_qui_ne_contactent_pas: "Arbeitgeber ohne Kontaktaufnahme",
         embauches: "Einstellungen"
       },
       monthlyColumns: {
@@ -719,6 +731,8 @@ const copy = {
         matchings: "Matchings",
         candidats_contactes: "Kontaktierte Kandidaten",
         candidatures_transmises_employeur: "Übermittelte Bewerbungen",
+        employeurs_qui_contactent: "Werden kontaktieren",
+        employeurs_qui_ne_contactent_pas: "Werden nicht kontaktieren",
         embauches: "Einstellungen"
       },
       breakdownLabels: {
@@ -726,7 +740,8 @@ const copy = {
         besoins_par_pays: "Arbeitgeberbedarfe nach Land",
         secteurs: "Sektoren",
         mobilite_candidats: "Mobilität der Kandidaten",
-        matchings_par_statut: "Matching-Status"
+        matchings_par_statut: "Matching-Status",
+        retours_employeurs: "Arbeitgeber-Rückmeldungen"
       },
       emptyBreakdown: "Noch keine auswertbaren Daten.",
       loading: "Statistiken werden geladen...",
@@ -1793,6 +1808,7 @@ function statTemplate(lang, t, data) {
   const monthly = Array.isArray(data?.monthly) ? data.monthly : [];
   const breakdowns = data?.breakdowns || {};
   const manualConfigured = Boolean(data?.manual_stats_table?.configured);
+  const monthlyColumnKeys = Object.keys(t.statPage.monthlyColumns);
   const totalCards = Object.entries(t.statPage.totals).map(([key, label]) => `
     <article class="stat-card kpi-card">
       <p>${label}</p>
@@ -1857,13 +1873,9 @@ function statTemplate(lang, t, data) {
               <tbody>
                 ${monthly.map((row) => `
                   <tr>
-                    <th>${formatMonth(row.mois, lang)}</th>
-                    <td>${Number(row.candidats || 0).toLocaleString(lang)}</td>
-                    <td>${Number(row.besoins_employeurs || 0).toLocaleString(lang)}</td>
-                    <td>${Number(row.matchings || 0).toLocaleString(lang)}</td>
-                    <td>${Number(row.candidats_contactes || 0).toLocaleString(lang)}</td>
-                    <td>${Number(row.candidatures_transmises_employeur || 0).toLocaleString(lang)}</td>
-                    <td>${Number(row.embauches || 0).toLocaleString(lang)}</td>
+                    ${monthlyColumnKeys.map((key, index) => index === 0
+                      ? `<th>${formatMonth(row[key], lang)}</th>`
+                      : `<td>${Number(row[key] || 0).toLocaleString(lang)}</td>`).join("")}
                   </tr>
                 `).join("")}
               </tbody>

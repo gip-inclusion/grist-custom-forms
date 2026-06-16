@@ -1065,6 +1065,12 @@ def _public_breakdown_label(kind: str, label: str) -> str:
                 return f'Experience dans : {raw_value}'
         return cleaned[:1].upper() + cleaned[1:]
 
+    if kind == 'retours_employeurs':
+        return {
+            'contact': 'Va contacter',
+            'not_contact': 'Ne contactera pas',
+        }.get(lowered, cleaned[:1].upper() + cleaned[1:])
+
     return cleaned
 
 
@@ -1121,6 +1127,8 @@ def build_eures_public_stats() -> dict:
         'matchings': 0,
         'candidats_contactes': 0,
         'candidatures_transmises_employeur': 0,
+        'employeurs_qui_contactent': 0,
+        'employeurs_qui_ne_contactent_pas': 0,
         'embauches': 0,
     })
 
@@ -1129,6 +1137,7 @@ def build_eures_public_stats() -> dict:
     secteurs = Counter()
     mobilite_candidats = Counter()
     matchings_par_statut = Counter()
+    retours_employeurs = Counter()
 
     for rec in candidats:
         fields = rec.get('fields', {}) if isinstance(rec, dict) else {}
@@ -1163,6 +1172,16 @@ def build_eures_public_stats() -> dict:
         status = str(fields.get('statut') or '').strip()
         if status:
             _add_public_counter(matchings_par_statut, 'matchings_par_statut', status)
+        employer_response = str(fields.get('employer_response') or '').strip().lower()
+        if employer_response:
+            _add_public_counter(retours_employeurs, 'retours_employeurs', employer_response)
+            response_month = _month_key(fields.get('employer_response_at'))
+            if response_month:
+                monthly[response_month]['mois'] = response_month
+                if employer_response == 'contact':
+                    monthly[response_month]['employeurs_qui_contactent'] += 1
+                elif employer_response == 'not_contact':
+                    monthly[response_month]['employeurs_qui_ne_contactent_pas'] += 1
 
     manual_stats_available = False
     stats_config = get_eures_stats_config()
@@ -1193,6 +1212,8 @@ def build_eures_public_stats() -> dict:
         'matchings': len(matchings),
         'candidats_contactes': sum(int(row['candidats_contactes']) for row in monthly_rows),
         'candidatures_transmises_employeur': sum(int(row['candidatures_transmises_employeur']) for row in monthly_rows),
+        'employeurs_qui_contactent': sum(int(row['employeurs_qui_contactent']) for row in monthly_rows),
+        'employeurs_qui_ne_contactent_pas': sum(int(row['employeurs_qui_ne_contactent_pas']) for row in monthly_rows),
         'embauches': sum(int(row['embauches']) for row in monthly_rows),
     }
 
@@ -1211,6 +1232,7 @@ def build_eures_public_stats() -> dict:
             'secteurs': _counter_to_rows(secteurs),
             'mobilite_candidats': _counter_to_rows(mobilite_candidats),
             'matchings_par_statut': _counter_to_rows(matchings_par_statut),
+            'retours_employeurs': _counter_to_rows(retours_employeurs, minimum_public_count=1),
         },
     }
 

@@ -198,6 +198,18 @@
       border-color: #95bae7;
     }
 
+    .pill.response-yes {
+      background: #ebf8ef;
+      color: #19663c;
+      border-color: #90c8a6;
+    }
+
+    .pill.response-no {
+      background: #fff4e8;
+      color: #8d5311;
+      border-color: #e7bc77;
+    }
+
     .summary-score {
       min-width: 200px;
       display: grid;
@@ -490,6 +502,12 @@
       return "pending";
     }
 
+    function employerResponseLabel(status) {
+      if (status === "contact") return "va contacter";
+      if (status === "not_contact") return "ne contactera pas";
+      return "aucun retour employeur";
+    }
+
     function normalizeText(value) {
       return String(value || "").toLowerCase();
     }
@@ -533,6 +551,9 @@
         const decisionMeta = row.admin_decision_at
           ? `<div class="decision-meta">Dernière décision : <strong>${esc(adminStatusLabel(row.admin_status))}</strong><br>Par : ${esc(row.admin_decision_by || "-")}<br>Le : ${esc(row.admin_decision_at || "-")}<br>Note : ${esc(row.admin_decision_note || "-")}</div>`
           : "";
+        const employerMeta = row.employer_response
+          ? `<div class="decision-meta">Retour employeur : <strong>${esc(employerResponseLabel(row.employer_response))}</strong><br>Le : ${esc(row.employer_response_at || "-")}</div>`
+          : `<div class="decision-meta">Retour employeur : <strong>aucun retour</strong></div>`;
 
         return `
           <article class="matching-card" data-record-id="${esc(row.record_id)}">
@@ -543,6 +564,7 @@
                 <div class="summary-tags">
                   <span class="pill ${esc(row.admin_status)}">Décision admin : ${esc(adminStatusLabel(row.admin_status))}</span>
                   <span class="pill ${row.scoring_status === "auto_envoyable" ? "auto" : "pending"}">Statut scoring : ${esc(scoreStatusLabel(row))}</span>
+                  <span class="pill ${row.employer_response === "contact" ? "response-yes" : row.employer_response === "not_contact" ? "response-no" : ""}">Employeur : ${esc(employerResponseLabel(row.employer_response))}</span>
                   <span class="pill">besoin_id : ${esc(row.besoin_id)}</span>
                   <span class="pill">candidat_id : ${esc(row.candidat_id)}</span>
                 </div>
@@ -618,6 +640,7 @@
                   <button class="btn-refuse" type="button" data-action="refused">Enregistrer comme refusé</button>
                 </div>
                 ${decisionMeta}
+                ${employerMeta}
               </section>
             </div>
           </article>
