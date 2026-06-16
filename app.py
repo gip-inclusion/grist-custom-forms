@@ -1068,6 +1068,12 @@ def _public_breakdown_label(kind: str, label: str) -> str:
                 return raw_value
             if prefix_l in {'pays souhaités', 'pays souhaites'}:
                 return f'Pays vises : {raw_value}'
+        return cleaned[:1].upper() + cleaned[1:]
+
+    if kind == 'experience_internationale_candidats':
+        if ':' in cleaned:
+            prefix, raw_value = [part.strip() for part in cleaned.split(':', 1)]
+            prefix_l = prefix.lower()
             if prefix_l in {'expérience pays', 'experience pays'}:
                 return f'Experience dans : {raw_value}'
         return cleaned[:1].upper() + cleaned[1:]
@@ -1119,10 +1125,8 @@ def _eures_public_mobility_labels(value) -> list[str]:
                     label = item
                 elif prefix.lower() in {'pays souhaités', 'pays souhaites'}:
                     label = f'Pays vises : {item}'
-                elif prefix.lower() in {'expérience pays', 'experience pays'}:
-                    label = f'Experience dans : {item}'
                 else:
-                    label = f'{prefix}: {item}'
+                    continue
                 if label and label not in seen:
                     seen.add(label)
                     labels.append(label)
@@ -1131,6 +1135,26 @@ def _eures_public_mobility_labels(value) -> list[str]:
                 if item and item not in seen:
                     seen.add(item)
                     labels.append(item)
+    return labels
+
+
+def _eures_public_experience_labels(value) -> list[str]:
+    labels: list[str] = []
+    seen: set[str] = set()
+    for part in _split_multi_value(value):
+        if ':' not in part:
+            continue
+        prefix, raw_values = [chunk.strip() for chunk in part.split(':', 1)]
+        if prefix.lower() not in {'expérience pays', 'experience pays'}:
+            continue
+        values = [item.strip() for item in raw_values.split(',') if item.strip()]
+        if not values:
+            values = [raw_values.strip()] if raw_values.strip() else []
+        for item in values:
+            label = f'Experience dans : {item}'
+            if label and label not in seen:
+                seen.add(label)
+                labels.append(label)
     return labels
 
 
@@ -1177,6 +1201,7 @@ def build_eures_public_stats() -> dict:
     besoins_par_pays = Counter()
     secteurs = Counter()
     mobilite_candidats = Counter()
+    experience_internationale_candidats = Counter()
     matchings_par_statut = Counter()
     retours_employeurs = Counter()
 
@@ -1192,6 +1217,8 @@ def build_eures_public_stats() -> dict:
             _add_public_counter(secteurs, 'secteurs', label)
         for label in _eures_public_mobility_labels(fields.get('mobilite')):
             _add_public_counter(mobilite_candidats, 'mobilite_candidats', label)
+        for label in _eures_public_experience_labels(fields.get('mobilite')):
+            _add_public_counter(experience_internationale_candidats, 'experience_internationale_candidats', label)
 
     for rec in besoins:
         fields = rec.get('fields', {}) if isinstance(rec, dict) else {}
@@ -1280,6 +1307,7 @@ def build_eures_public_stats() -> dict:
             'besoins_par_pays': _counter_to_rows(besoins_par_pays),
             'secteurs': _counter_to_rows(secteurs),
             'mobilite_candidats': _counter_to_rows(mobilite_candidats),
+            'experience_internationale_candidats': _counter_to_rows(experience_internationale_candidats),
             'matchings_par_statut': _counter_to_rows(matchings_par_statut),
             'retours_employeurs': _counter_to_rows(retours_employeurs),
         },

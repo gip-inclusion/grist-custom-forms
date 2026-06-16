@@ -246,6 +246,7 @@ const copy = {
         besoins_par_pays: "Besoins employeurs par pays",
         secteurs: "Secteurs",
         mobilite_candidats: "Mobilité des candidats",
+        experience_internationale_candidats: "Expérience internationale des candidats",
         matchings_par_statut: "Statuts de matching",
         retours_employeurs: "Retours employeurs"
       },
@@ -496,6 +497,7 @@ const copy = {
         besoins_par_pays: "Employer needs by country",
         secteurs: "Sectors",
         mobilite_candidats: "Candidate mobility",
+        experience_internationale_candidats: "Candidates' international experience",
         matchings_par_statut: "Matching statuses",
         retours_employeurs: "Employer feedback"
       },
@@ -746,6 +748,7 @@ const copy = {
         besoins_par_pays: "Arbeitgeberbedarfe nach Land",
         secteurs: "Sektoren",
         mobilite_candidats: "Mobilität der Kandidaten",
+        experience_internationale_candidats: "Internationale Erfahrung der Kandidaten",
         matchings_par_statut: "Matching-Status",
         retours_employeurs: "Arbeitgeber-Rückmeldungen"
       },
