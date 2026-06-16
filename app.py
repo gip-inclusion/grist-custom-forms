@@ -62,9 +62,18 @@ EURES_MATCHING_ADMIN_FIELDS = {
     'admin_decision_at',
     'admin_decision_by',
     'admin_decision_note',
+    'workflow_status',
+    'workflow_status_updated_at',
+    'workflow_status_updated_by',
+    'sent_to_employer_at',
+    'sent_to_employer_by',
     'employer_response',
     'employer_response_at',
     'employer_response_source',
+    'mise_en_relation_at',
+    'mise_en_relation_by',
+    'embauche_confirmee_at',
+    'embauche_confirmee_by',
 }
 EURES_SECTOR_CANONICAL_MAP = {
     'vente': 'vente',
@@ -351,6 +360,78 @@ def get_brevo_config() -> dict:
         'from_email': os.environ.get('BREVO_FROM_EMAIL', '').strip(),
         'from_name': os.environ.get('BREVO_FROM_NAME', 'EURES beta').strip() or 'EURES beta',
     }
+
+
+def _now_iso_utc() -> str:
+    return datetime.utcnow().isoformat() + 'Z'
+
+
+def _initial_matching_workflow_status(scoring_status: str) -> str:
+    return 'a_valider_admin' if str(scoring_status or '').strip().lower() in {'a_valider', 'auto_envoyable'} else 'calcule'
+
+
+def _matching_workflow_status(fields: dict) -> str:
+    current = str((fields or {}).get('workflow_status') or '').strip().lower()
+    if current:
+        return current
+    if (fields or {}).get('embauche_confirmee_at'):
+        return 'embauche_confirmee'
+    if (fields or {}).get('mise_en_relation_at'):
+        return 'mise_en_relation_faite'
+    employer_response = str((fields or {}).get('employer_response') or '').strip().lower()
+    if employer_response == 'contact':
+        return 'accepte_employeur'
+    if employer_response == 'not_contact':
+        return 'refuse_employeur'
+    if (fields or {}).get('sent_to_employer_at'):
+        return 'envoye_employeur'
+    admin_status = str((fields or {}).get('admin_status') or '').strip().lower()
+    if admin_status == 'accepted':
+        return 'envoye_employeur'
+    if admin_status == 'refused':
+        return 'refuse_admin'
+    return _initial_matching_workflow_status((fields or {}).get('statut', ''))
+
+
+def _matching_workflow_update_fields(target_status: str, actor: str) -> dict:
+    now = _now_iso_utc()
+    fields = {
+        'workflow_status': target_status,
+        'workflow_status_updated_at': now,
+        'workflow_status_updated_by': actor,
+    }
+    if target_status == 'envoye_employeur':
+        fields['sent_to_employer_at'] = now
+        fields['sent_to_employer_by'] = actor
+    elif target_status == 'accepte_employeur':
+        fields['employer_response'] = 'contact'
+        fields['employer_response_at'] = now
+        fields['employer_response_source'] = 'email_cta'
+    elif target_status == 'refuse_employeur':
+        fields['employer_response'] = 'not_contact'
+        fields['employer_response_at'] = now
+        fields['employer_response_source'] = 'email_cta'
+    elif target_status == 'mise_en_relation_faite':
+        fields['mise_en_relation_at'] = now
+        fields['mise_en_relation_by'] = actor
+    elif target_status == 'embauche_confirmee':
+        fields['embauche_confirmee_at'] = now
+        fields['embauche_confirmee_by'] = actor
+    return fields
+
+
+def _matching_workflow_label(status: str) -> str:
+    return {
+        'calcule': 'calculé',
+        'a_valider_admin': 'à valider',
+        'refuse_admin': 'refus admin',
+        'valide_admin': 'validé admin',
+        'envoye_employeur': 'envoyé employeur',
+        'accepte_employeur': 'accepté employeur',
+        'refuse_employeur': 'refusé employeur',
+        'mise_en_relation_faite': 'mise en relation faite',
+        'embauche_confirmee': 'embauche confirmée',
+    }.get(str(status or '').strip().lower(), str(status or '').strip() or 'inconnu')
 
 
 def get_eures_mail_signature_name() -> str:
@@ -1055,9 +1136,15 @@ def _public_breakdown_label(kind: str, label: str) -> str:
 
     if kind == 'matchings_par_statut':
         return {
-            'a_ecarter': 'A ecarter',
-            'a_valider': 'A valider',
-            'auto_envoyable': 'Auto-envoyable',
+            'calcule': 'Calcule',
+            'a_valider_admin': 'A valider admin',
+            'refuse_admin': 'Refuse admin',
+            'valide_admin': 'Valide admin',
+            'envoye_employeur': 'Envoye employeur',
+            'accepte_employeur': 'Accepte employeur',
+            'refuse_employeur': 'Refuse employeur',
+            'mise_en_relation_faite': 'Mise en relation faite',
+            'embauche_confirmee': 'Embauche confirmee',
         }.get(lowered, cleaned[:1].upper() + cleaned[1:])
 
     if kind == 'mobilite_candidats':
@@ -1234,18 +1321,39 @@ def build_eures_public_stats() -> dict:
         if month:
             monthly[month]['mois'] = month
             monthly[month]['matchings'] += 1
-        status = str(fields.get('statut') or '').strip()
-        if status:
-            _add_public_counter(matchings_par_statut, 'matchings_par_statut', status)
+        workflow_status = _matching_workflow_status(fields)
+        if workflow_status:
+            _add_public_counter(matchings_par_statut, 'matchings_par_statut', workflow_status)
 
-        admin_status = str(fields.get('admin_status') or '').strip().lower()
-        employer_response = str(fields.get('employer_response') or '').strip().lower()
-        if admin_status == 'accepted':
-            response_bucket = employer_response if employer_response in {'contact', 'not_contact'} else 'no_response'
+        sent_month = _month_key(fields.get('sent_to_employer_at'))
+        if sent_month:
+            monthly[sent_month]['mois'] = sent_month
+            monthly[sent_month]['candidatures_transmises_employeur'] += 1
+
+        relation_month = _month_key(fields.get('mise_en_relation_at'))
+        if relation_month:
+            monthly[relation_month]['mois'] = relation_month
+            monthly[relation_month]['candidats_contactes'] += 1
+
+        hire_month = _month_key(fields.get('embauche_confirmee_at'))
+        if hire_month:
+            monthly[hire_month]['mois'] = hire_month
+            monthly[hire_month]['embauches'] += 1
+
+        response_bucket = None
+        response_month = None
+        if workflow_status in {'accepte_employeur', 'mise_en_relation_faite', 'embauche_confirmee'}:
+            response_bucket = 'contact'
+            response_month = _month_key(fields.get('employer_response_at') or fields.get('mise_en_relation_at') or fields.get('embauche_confirmee_at'))
+        elif workflow_status == 'refuse_employeur':
+            response_bucket = 'not_contact'
+            response_month = _month_key(fields.get('employer_response_at'))
+        elif workflow_status == 'envoye_employeur':
+            response_bucket = 'no_response'
+            response_month = sent_month
+
+        if response_bucket:
             _add_public_counter(retours_employeurs, 'retours_employeurs', response_bucket)
-            response_month = _month_key(
-                fields.get('employer_response_at') if response_bucket != 'no_response' else fields.get('admin_decision_at')
-            )
             if response_month:
                 monthly[response_month]['mois'] = response_month
                 if response_bucket == 'contact':
@@ -1272,9 +1380,9 @@ def build_eures_public_stats() -> dict:
             if not month:
                 continue
             monthly[month]['mois'] = month
-            monthly[month]['candidats_contactes'] += _safe_int(fields.get('candidats_contactes'))
-            monthly[month]['candidatures_transmises_employeur'] += _safe_int(fields.get('candidatures_transmises_employeur'))
-            monthly[month]['embauches'] += _safe_int(fields.get('embauches'))
+            monthly[month]['candidats_contactes'] += 0
+            monthly[month]['candidatures_transmises_employeur'] += 0
+            monthly[month]['embauches'] += 0
 
     monthly_rows = [row for _, row in sorted(monthly.items()) if row.get('mois')]
 
@@ -1331,9 +1439,21 @@ def upsert_matching_record(doc_id: str, fields: dict, headers: dict):
 
     table_config = {'doc_id': doc_id, 'table_id': EURES_MATCHINGS_TABLE}
     ensure_table_columns(table_config, set(fields.keys()) & (EURES_MATCHING_FIELDS | EURES_MATCHING_ADMIN_FIELDS), headers)
-    allowed_columns = get_table_columns(table_config, headers)
-    filtered_fields = {k: v for k, v in fields.items() if k in allowed_columns}
     existing = fetch_matching_record(doc_id, besoin_id, candidat_id, headers)
+    merged_fields = dict(fields)
+    if existing and isinstance(existing, dict):
+        existing_fields = existing.get('fields', {}) if isinstance(existing.get('fields'), dict) else {}
+        for key in EURES_MATCHING_ADMIN_FIELDS:
+            if key not in merged_fields and key in existing_fields:
+                merged_fields[key] = existing_fields.get(key)
+        if not merged_fields.get('workflow_status'):
+            merged_fields['workflow_status'] = _matching_workflow_status(existing_fields)
+    else:
+        merged_fields.setdefault('workflow_status', _initial_matching_workflow_status(fields.get('statut', '')))
+
+    ensure_table_columns(table_config, set(merged_fields.keys()) & (EURES_MATCHING_FIELDS | EURES_MATCHING_ADMIN_FIELDS), headers)
+    allowed_columns = get_table_columns(table_config, headers)
+    filtered_fields = {k: v for k, v in merged_fields.items() if k in allowed_columns}
     base_url = f"{GRIST_BASE_URL}/api/docs/{doc_id}/tables/{EURES_MATCHINGS_TABLE}/records"
 
     if existing:
@@ -1694,6 +1814,23 @@ def _eures_admin_status(fields: dict) -> str:
     return 'pending'
 
 
+def _eures_workflow_transition_allowed(current_status: str, target_status: str) -> bool:
+    allowed = {
+        'calcule': {'a_valider_admin', 'refuse_admin'},
+        'a_valider_admin': {'valide_admin', 'refuse_admin'},
+        'valide_admin': {'envoye_employeur', 'refuse_admin'},
+        'envoye_employeur': {'accepte_employeur', 'refuse_employeur', 'mise_en_relation_faite'},
+        'accepte_employeur': {'mise_en_relation_faite', 'embauche_confirmee'},
+        'mise_en_relation_faite': {'embauche_confirmee'},
+        'refuse_employeur': set(),
+        'refuse_admin': set(),
+        'embauche_confirmee': set(),
+    }
+    if current_status == target_status:
+        return True
+    return target_status in allowed.get(current_status, set())
+
+
 def _split_matching_text(value: str) -> list[str]:
     return [part.strip() for part in str(value or '').split('|') if part.strip()]
 
@@ -1974,6 +2111,7 @@ def list_eures_admin_matchings(status: str = 'all') -> list[dict]:
             'score': _safe_int(fields.get('score')),
             'scoring_status': scoring_status,
             'admin_status': admin_status,
+            'workflow_status': _matching_workflow_status(fields),
             'score_metier': _safe_int(fields.get('score_metier')),
             'score_langues': _safe_int(fields.get('score_langues')),
             'score_mobilite': _safe_int(fields.get('score_mobilite')),
@@ -1985,8 +2123,16 @@ def list_eures_admin_matchings(status: str = 'all') -> list[dict]:
             'admin_decision_at': fields.get('admin_decision_at', ''),
             'admin_decision_by': fields.get('admin_decision_by', ''),
             'admin_decision_note': fields.get('admin_decision_note', ''),
+            'workflow_status_updated_at': fields.get('workflow_status_updated_at', ''),
+            'workflow_status_updated_by': fields.get('workflow_status_updated_by', ''),
+            'sent_to_employer_at': fields.get('sent_to_employer_at', ''),
+            'sent_to_employer_by': fields.get('sent_to_employer_by', ''),
             'employer_response': fields.get('employer_response', ''),
             'employer_response_at': fields.get('employer_response_at', ''),
+            'mise_en_relation_at': fields.get('mise_en_relation_at', ''),
+            'mise_en_relation_by': fields.get('mise_en_relation_by', ''),
+            'embauche_confirmee_at': fields.get('embauche_confirmee_at', ''),
+            'embauche_confirmee_by': fields.get('embauche_confirmee_by', ''),
             'candidat': {
                 'nom': candidat.get('nom', ''),
                 'email': candidat.get('email', ''),
@@ -2486,15 +2632,20 @@ def admin_eures_matching_decision(form_id: str, record_id: int):
         existing = fetch_record_by_id(config['doc_id'], EURES_MATCHINGS_TABLE, record_id, headers)
         if not existing:
             return jsonify({'error': 'Matching not found'}), 404
+        existing_fields = existing.get('fields', {}) if isinstance(existing.get('fields'), dict) else {}
 
         auth = request.authorization
         decided_by = auth.username if auth and auth.username else 'admin'
         decision_fields = {
             'admin_status': decision,
-            'admin_decision_at': datetime.utcnow().isoformat() + 'Z',
+            'admin_decision_at': _now_iso_utc(),
             'admin_decision_by': decided_by,
             'admin_decision_note': note,
         }
+        if decision == 'accepted':
+            decision_fields.update(_matching_workflow_update_fields('valide_admin', decided_by))
+        else:
+            decision_fields.update(_matching_workflow_update_fields('refuse_admin', decided_by))
         update_matching_record_by_id(config['doc_id'], record_id, decision_fields, headers)
 
         app.logger.info(
@@ -2517,6 +2668,12 @@ def admin_eures_matching_decision(form_id: str, record_id: int):
                 raise RuntimeError('Accepted matching could not be reloaded for email delivery.')
             to_email, subject, text_body, html_body = build_brevo_matching_email(matching_row)
             brevo_result = send_brevo_transactional_email(to_email, subject, text_body, html_body)
+            update_matching_record_by_id(
+                config['doc_id'],
+                record_id,
+                _matching_workflow_update_fields('envoye_employeur', decided_by),
+                headers,
+            )
             app.logger.info(
                 'EURES accepted matching email sent',
                 extra={
@@ -2537,6 +2694,58 @@ def admin_eures_matching_decision(form_id: str, record_id: int):
         }), 200
     except Exception as e:
         app.logger.exception('EURES matching decision update failed')
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/forms/<form_id>/admin/matchings/<int:record_id>/workflow', methods=['POST'])
+@admin_required
+def admin_eures_matching_workflow(form_id: str, record_id: int):
+    """Admin API: advance one matching in the business workflow."""
+    if form_id != 'eures-beta':
+        return jsonify({'error': f'Unknown admin matching form: {form_id}'}), 404
+
+    data = request.get_json() or {}
+    target_status = str(data.get('workflow_status') or '').strip().lower()
+    note = str(data.get('note') or '').strip()
+    allowed_targets = {'mise_en_relation_faite', 'embauche_confirmee', 'envoye_employeur'}
+    if target_status not in allowed_targets:
+        return jsonify({'error': 'Unsupported workflow status'}), 400
+
+    config = get_eures_matching_config()
+    if not config:
+        return jsonify({'error': 'EURES beta matching configuration is incomplete.'}), 500
+
+    headers = _eures_admin_headers(config)
+    try:
+        existing = fetch_record_by_id(config['doc_id'], EURES_MATCHINGS_TABLE, record_id, headers)
+        if not existing:
+            return jsonify({'error': 'Matching not found'}), 404
+        existing_fields = existing.get('fields', {}) if isinstance(existing.get('fields'), dict) else {}
+        current_status = _matching_workflow_status(existing_fields)
+        if not _eures_workflow_transition_allowed(current_status, target_status):
+            return jsonify({
+                'error': f'Transition impossible: {current_status} -> {target_status}',
+            }), 400
+
+        auth = request.authorization
+        actor = auth.username if auth and auth.username else 'admin'
+        update_fields = _matching_workflow_update_fields(target_status, actor)
+        if note:
+            previous_note = str(existing_fields.get('admin_decision_note') or '').strip()
+            update_fields['admin_decision_note'] = f'{previous_note}\n{note}'.strip() if previous_note else note
+        update_matching_record_by_id(config['doc_id'], record_id, update_fields, headers)
+        updated = fetch_record_by_id(config['doc_id'], EURES_MATCHINGS_TABLE, record_id, headers)
+        updated_fields = updated.get('fields', {}) if isinstance(updated, dict) else {}
+        return jsonify({
+            'ok': True,
+            'record_id': record_id,
+            'workflow_status': _matching_workflow_status(updated_fields),
+            'workflow_label': _matching_workflow_label(_matching_workflow_status(updated_fields)),
+            'workflow_status_updated_at': updated_fields.get('workflow_status_updated_at', ''),
+            'workflow_status_updated_by': updated_fields.get('workflow_status_updated_by', actor),
+        }), 200
+    except Exception as e:
+        app.logger.exception('EURES matching workflow update failed')
         return jsonify({'error': str(e)}), 500
 
 
@@ -2566,11 +2775,10 @@ def eures_matching_feedback():
 
     headers = _eures_admin_headers(config)
     response_label = 'je vais le contacter' if response_code == 'contact' else 'je ne vais pas le contacter'
-    update_fields = {
-        'employer_response': response_code,
-        'employer_response_at': datetime.utcnow().isoformat() + 'Z',
-        'employer_response_source': 'email_cta',
-    }
+    update_fields = _matching_workflow_update_fields(
+        'accepte_employeur' if response_code == 'contact' else 'refuse_employeur',
+        'employer_email_link',
+    )
 
     try:
         update_matching_record_by_id(config['doc_id'], record_id, update_fields, headers)

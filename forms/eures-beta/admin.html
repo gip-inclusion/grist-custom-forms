@@ -508,6 +508,19 @@
       return "aucun retour employeur";
     }
 
+    function workflowStatusLabel(status) {
+      if (status === "calcule") return "calculé";
+      if (status === "a_valider_admin") return "à valider";
+      if (status === "refuse_admin") return "refus admin";
+      if (status === "valide_admin") return "validé admin";
+      if (status === "envoye_employeur") return "envoyé employeur";
+      if (status === "accepte_employeur") return "accepté employeur";
+      if (status === "refuse_employeur") return "refusé employeur";
+      if (status === "mise_en_relation_faite") return "mise en relation faite";
+      if (status === "embauche_confirmee") return "embauche confirmée";
+      return status || "inconnu";
+    }
+
     function normalizeText(value) {
       return String(value || "").toLowerCase();
     }
@@ -554,6 +567,7 @@
         const employerMeta = row.employer_response
           ? `<div class="decision-meta">Retour employeur : <strong>${esc(employerResponseLabel(row.employer_response))}</strong><br>Le : ${esc(row.employer_response_at || "-")}</div>`
           : `<div class="decision-meta">Retour employeur : <strong>aucun retour</strong></div>`;
+        const workflowMeta = `<div class="decision-meta">Workflow : <strong>${esc(workflowStatusLabel(row.workflow_status))}</strong><br>Maj : ${esc(row.workflow_status_updated_at || "-")}<br>Par : ${esc(row.workflow_status_updated_by || "-")}</div>`;
 
         return `
           <article class="matching-card" data-record-id="${esc(row.record_id)}">
@@ -562,6 +576,7 @@
                 <h2>${esc(row.employeur?.poste || "Poste non renseigné")} · ${esc(row.candidat?.nom || "Candidat non renseigné")}</h2>
                 <p>${esc(row.employeur?.employeur || "Entreprise non renseignée")} · ${esc(row.employeur?.pays || "Lieu non renseigné")}</p>
                 <div class="summary-tags">
+                  <span class="pill">Workflow : ${esc(workflowStatusLabel(row.workflow_status))}</span>
                   <span class="pill ${esc(row.admin_status)}">Décision admin : ${esc(adminStatusLabel(row.admin_status))}</span>
                   <span class="pill ${row.scoring_status === "auto_envoyable" ? "auto" : "pending"}">Statut scoring : ${esc(scoreStatusLabel(row))}</span>
                   <span class="pill ${row.employer_response === "contact" ? "response-yes" : row.employer_response === "not_contact" ? "response-no" : ""}">Employeur : ${esc(employerResponseLabel(row.employer_response))}</span>
@@ -638,8 +653,11 @@
                 <div class="hero-actions">
                   <button class="btn-neutral" type="button" data-action="accepted">Enregistrer comme accepté</button>
                   <button class="btn-refuse" type="button" data-action="refused">Enregistrer comme refusé</button>
+                  <button class="btn-neutral" type="button" data-workflow="mise_en_relation_faite">Mise en relation faite</button>
+                  <button class="btn-neutral" type="button" data-workflow="embauche_confirmee">Embauche confirmée</button>
                 </div>
                 ${decisionMeta}
+                ${workflowMeta}
                 ${employerMeta}
               </section>
             </div>
@@ -655,6 +673,16 @@
           const note = document.getElementById(`note-${recordId}`)?.value || "";
           if (!recordId || !decision) return;
           await submitDecision(recordId, decision, note);
+        });
+      }
+      for (const button of list.querySelectorAll("[data-workflow]")) {
+        button.addEventListener("click", async (event) => {
+          const card = event.currentTarget.closest(".matching-card");
+          const recordId = card?.dataset.recordId;
+          const workflowStatus = event.currentTarget.dataset.workflow;
+          const note = document.getElementById(`note-${recordId}`)?.value || "";
+          if (!recordId || !workflowStatus) return;
+          await submitWorkflow(recordId, workflowStatus, note);
         });
       }
     }
@@ -707,6 +735,29 @@
           throw new Error(payload.error || `Erreur API (${response.status})`);
         }
         setStatus(`Décision enregistrée : ${decision}.`);
+        await loadMatchings();
+      } catch (error) {
+        setStatus(`Erreur : ${error.message || "mise à jour impossible"}`);
+      }
+    }
+
+    async function submitWorkflow(recordId, workflowStatus, note) {
+      setStatus(`Mise à jour du workflow ${workflowStatus}...`);
+      try {
+        const response = await fetch(apiUrl(`/admin/matchings/${recordId}/workflow`), {
+          method: "POST",
+          credentials: "same-origin",
+          headers: {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+          },
+          body: JSON.stringify({ workflow_status: workflowStatus, note }),
+        });
+        const payload = await response.json();
+        if (!response.ok || !payload.ok) {
+          throw new Error(payload.error || `Erreur API (${response.status})`);
+        }
+        setStatus(`Workflow enregistré : ${workflowStatusLabel(payload.workflow_status)}.`);
         await loadMatchings();
       } catch (error) {
         setStatus(`Erreur : ${error.message || "mise à jour impossible"}`);
