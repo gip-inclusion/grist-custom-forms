@@ -1115,6 +1115,53 @@ def _month_key(value) -> str | None:
     return None
 
 
+def _parse_datetime(value) -> datetime | None:
+    txt = str(value or '').strip()
+    if not txt:
+        return None
+    try:
+        return datetime.fromisoformat(txt.replace('Z', '+00:00'))
+    except Exception:
+        pass
+    for fmt in (
+        '%Y-%m-%dT%H:%M:%S.%fZ',
+        '%Y-%m-%dT%H:%M:%SZ',
+        '%Y-%m-%d',
+    ):
+        try:
+            return datetime.strptime(txt, fmt)
+        except Exception:
+            continue
+    return None
+
+
+def _duration_hours(start_value, end_value) -> float | None:
+    start = _parse_datetime(start_value)
+    end = _parse_datetime(end_value)
+    if not start or not end:
+        return None
+    delta_seconds = (end - start).total_seconds()
+    if delta_seconds < 0:
+        return None
+    return delta_seconds / 3600.0
+
+
+def _duration_summary(values: list[float]) -> dict:
+    ordered = sorted(v for v in values if v is not None)
+    if not ordered:
+        return {'count': 0, 'avg_hours': None, 'median_hours': None, 'min_hours': None, 'max_hours': None}
+    count = len(ordered)
+    middle = count // 2
+    median = ordered[middle] if count % 2 else (ordered[middle - 1] + ordered[middle]) / 2.0
+    return {
+        'count': count,
+        'avg_hours': round(sum(ordered) / count, 1),
+        'median_hours': round(median, 1),
+        'min_hours': round(ordered[0], 1),
+        'max_hours': round(ordered[-1], 1),
+    }
+
+
 def _split_multi_value(value) -> list[str]:
     if value is None:
         return []
@@ -1290,6 +1337,13 @@ def build_eures_public_stats() -> dict:
     experience_internationale_candidats = Counter()
     matchings_par_statut = Counter()
     retours_employeurs = Counter()
+    delays = {
+        'calcul_to_admin': [],
+        'admin_to_send': [],
+        'send_to_employer_response': [],
+        'response_to_relation': [],
+        'relation_to_hire': [],
+    }
 
     for rec in candidats:
         fields = rec.get('fields', {}) if isinstance(rec, dict) else {}
@@ -1363,6 +1417,22 @@ def build_eures_public_stats() -> dict:
                 else:
                     monthly[response_month]['contacts_sans_reponse_employeur'] += 1
 
+        duration = _duration_hours(fields.get('date_calcul'), fields.get('admin_decision_at'))
+        if duration is not None:
+            delays['calcul_to_admin'].append(duration)
+        duration = _duration_hours(fields.get('admin_decision_at'), fields.get('sent_to_employer_at'))
+        if duration is not None:
+            delays['admin_to_send'].append(duration)
+        duration = _duration_hours(fields.get('sent_to_employer_at'), fields.get('employer_response_at'))
+        if duration is not None:
+            delays['send_to_employer_response'].append(duration)
+        duration = _duration_hours(fields.get('employer_response_at'), fields.get('mise_en_relation_at'))
+        if duration is not None:
+            delays['response_to_relation'].append(duration)
+        duration = _duration_hours(fields.get('mise_en_relation_at'), fields.get('embauche_confirmee_at'))
+        if duration is not None:
+            delays['relation_to_hire'].append(duration)
+
     manual_stats_available = False
     stats_config = get_eures_stats_config()
     if stats_config:
@@ -1406,6 +1476,13 @@ def build_eures_public_stats() -> dict:
             'table_id': stats_config['table_id'] if stats_config else None,
         },
         'totals': totals,
+        'durations': {
+            'calcul_to_admin': _duration_summary(delays['calcul_to_admin']),
+            'admin_to_send': _duration_summary(delays['admin_to_send']),
+            'send_to_employer_response': _duration_summary(delays['send_to_employer_response']),
+            'response_to_relation': _duration_summary(delays['response_to_relation']),
+            'relation_to_hire': _duration_summary(delays['relation_to_hire']),
+        },
         'monthly': monthly_rows,
         'breakdowns': {
             'besoins_par_pays': _counter_to_rows(besoins_par_pays),

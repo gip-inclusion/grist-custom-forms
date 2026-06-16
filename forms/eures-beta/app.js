@@ -218,6 +218,10 @@ const copy = {
       monthlyTitle: "Suivi mensuel",
       monthlyLead: "Les volumes automatiques sont calculés à partir des dates d’enregistrement. Les suivis métier peuvent être complétés mois par mois.",
       breakdownsTitle: "Répartitions",
+      durationsTitle: "Délais de traitement",
+      hoursUnit: "h",
+      daysUnit: "j",
+      noDurationData: "n/a",
       totals: {
         candidats: "Candidatures reçues",
         besoins_employeurs: "Besoins employeurs reçus",
@@ -248,6 +252,20 @@ const copy = {
         experience_internationale_candidats: "Expérience internationale des candidats",
         matchings_par_statut: "Statuts de matching",
         retours_employeurs: "Retours employeurs"
+      },
+      durationLabels: {
+        calcul_to_admin: "Calcul → décision admin",
+        admin_to_send: "Décision admin → envoi employeur",
+        send_to_employer_response: "Envoi employeur → réponse employeur",
+        response_to_relation: "Réponse employeur → mise en relation",
+        relation_to_hire: "Mise en relation → embauche"
+      },
+      durationMetrics: {
+        count: "Dossiers mesurés",
+        avg: "Délai moyen",
+        median: "Délai médian",
+        min: "Minimum",
+        max: "Maximum"
       },
       emptyBreakdown: "Aucune donnée exploitable pour le moment.",
       loading: "Chargement des statistiques...",
@@ -468,6 +486,10 @@ const copy = {
       monthlyTitle: "Monthly tracking",
       monthlyLead: "Automatic volumes are calculated from submission dates. Operational follow-up can then be completed month by month.",
       breakdownsTitle: "Breakdowns",
+      durationsTitle: "Processing times",
+      hoursUnit: "h",
+      daysUnit: "d",
+      noDurationData: "n/a",
       totals: {
         candidats: "Candidate submissions",
         besoins_employeurs: "Employer needs",
@@ -498,6 +520,20 @@ const copy = {
         experience_internationale_candidats: "Candidates' international experience",
         matchings_par_statut: "Matching statuses",
         retours_employeurs: "Employer feedback"
+      },
+      durationLabels: {
+        calcul_to_admin: "Scoring → admin decision",
+        admin_to_send: "Admin decision → employer send",
+        send_to_employer_response: "Employer send → employer response",
+        response_to_relation: "Employer response → introduction",
+        relation_to_hire: "Introduction → hire"
+      },
+      durationMetrics: {
+        count: "Measured cases",
+        avg: "Average",
+        median: "Median",
+        min: "Minimum",
+        max: "Maximum"
       },
       emptyBreakdown: "No usable data yet.",
       loading: "Loading statistics...",
@@ -718,6 +754,10 @@ const copy = {
       monthlyTitle: "Monatliche Entwicklung",
       monthlyLead: "Automatische Volumen werden aus den Einreichungsdaten berechnet. Die operative Nachverfolgung kann dann monatlich ergänzt werden.",
       breakdownsTitle: "Verteilungen",
+      durationsTitle: "Bearbeitungszeiten",
+      hoursUnit: "Std.",
+      daysUnit: "Tg.",
+      noDurationData: "k. A.",
       totals: {
         candidats: "Kandidaten-Eingänge",
         besoins_employeurs: "Arbeitgeberbedarfe",
@@ -748,6 +788,20 @@ const copy = {
         experience_internationale_candidats: "Internationale Erfahrung der Kandidaten",
         matchings_par_statut: "Matching-Status",
         retours_employeurs: "Arbeitgeber-Rückmeldungen"
+      },
+      durationLabels: {
+        calcul_to_admin: "Berechnung → Admin-Entscheidung",
+        admin_to_send: "Admin-Entscheidung → Versand Arbeitgeber",
+        send_to_employer_response: "Versand Arbeitgeber → Antwort Arbeitgeber",
+        response_to_relation: "Arbeitgeberantwort → Kontaktaufnahme",
+        relation_to_hire: "Kontaktaufnahme → Einstellung"
+      },
+      durationMetrics: {
+        count: "Gemessene Fälle",
+        avg: "Durchschnitt",
+        median: "Median",
+        min: "Minimum",
+        max: "Maximum"
       },
       emptyBreakdown: "Noch keine auswertbaren Daten.",
       loading: "Statistiken werden geladen...",
@@ -1809,10 +1863,20 @@ function renderBreakdownList(rows, emptyLabel) {
   `;
 }
 
+function formatDurationHours(value, lang, t) {
+  const hours = Number(value);
+  if (!Number.isFinite(hours)) return t.statPage.noDurationData;
+  if (hours >= 48) {
+    return `${(hours / 24).toLocaleString(lang, { maximumFractionDigits: 1 })} ${t.statPage.daysUnit}`;
+  }
+  return `${hours.toLocaleString(lang, { maximumFractionDigits: 1 })} ${t.statPage.hoursUnit}`;
+}
+
 function statTemplate(lang, t, data) {
   const totals = data?.totals || {};
   const monthly = Array.isArray(data?.monthly) ? data.monthly : [];
   const breakdowns = data?.breakdowns || {};
+  const durations = data?.durations || {};
   const manualConfigured = Boolean(data?.manual_stats_table?.configured);
   const monthlyColumnKeys = Object.keys(t.statPage.monthlyColumns);
   const totalCards = Object.entries(t.statPage.totals).map(([key, label]) => `
@@ -1828,6 +1892,22 @@ function statTemplate(lang, t, data) {
       ${renderBreakdownList(breakdowns[key], t.statPage.emptyBreakdown)}
     </article>
   `).join("");
+
+  const durationPanels = Object.entries(t.statPage.durationLabels).map(([key, label]) => {
+    const row = durations[key] || {};
+    return `
+      <article class="panel breakdown-panel">
+        <h2>${label}</h2>
+        <div class="breakdown-list">
+          <div class="breakdown-row"><div class="breakdown-head"><span>${t.statPage.durationMetrics.count}</span><strong>${Number(row.count || 0).toLocaleString(lang)}</strong></div></div>
+          <div class="breakdown-row"><div class="breakdown-head"><span>${t.statPage.durationMetrics.avg}</span><strong>${formatDurationHours(row.avg_hours, lang, t)}</strong></div></div>
+          <div class="breakdown-row"><div class="breakdown-head"><span>${t.statPage.durationMetrics.median}</span><strong>${formatDurationHours(row.median_hours, lang, t)}</strong></div></div>
+          <div class="breakdown-row"><div class="breakdown-head"><span>${t.statPage.durationMetrics.min}</span><strong>${formatDurationHours(row.min_hours, lang, t)}</strong></div></div>
+          <div class="breakdown-row"><div class="breakdown-head"><span>${t.statPage.durationMetrics.max}</span><strong>${formatDurationHours(row.max_hours, lang, t)}</strong></div></div>
+        </div>
+      </article>
+    `;
+  }).join("");
 
   return `
     ${nav("stat", lang, t)}
@@ -1895,6 +1975,15 @@ function statTemplate(lang, t, data) {
           <div class="panel"><h2>${t.statPage.breakdownsTitle}</h2></div>
           <div class="dashboard-grid" style="margin-top: 1rem;">
             ${breakdownPanels}
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="shell">
+          <div class="panel"><h2>${t.statPage.durationsTitle}</h2></div>
+          <div class="dashboard-grid" style="margin-top: 1rem;">
+            ${durationPanels}
           </div>
         </div>
       </section>
