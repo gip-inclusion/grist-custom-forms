@@ -14,6 +14,7 @@ Environment variables:
 import os
 import json
 import time
+from html import escape
 from collections import Counter, defaultdict
 from datetime import datetime
 from io import BytesIO
@@ -1585,82 +1586,155 @@ def _extract_employer_contact_email(contact_value: str) -> str:
     return raw
 
 
-def build_brevo_matching_email(row: dict) -> tuple[str, str, str]:
-    """Build recipient, subject and text body for one accepted matching."""
+def _format_email_multiline(value: str) -> str:
+    text = str(value or '').strip()
+    if not text:
+        return 'Non renseigné'
+    return '<br>'.join(escape(part.strip()) for part in text.split('|') if part.strip()) or escape(text)
+
+
+def build_brevo_matching_email(row: dict) -> tuple[str, str, str, str]:
+    """Build recipient, subject, text body and HTML body for one accepted matching."""
     candidat = row.get('candidat', {}) if isinstance(row.get('candidat'), dict) else {}
     employeur = row.get('employeur', {}) if isinstance(row.get('employeur'), dict) else {}
     recipient = _extract_employer_contact_email(employeur.get('contact', ''))
     if not recipient:
         raise RuntimeError('Employer contact email is missing for accepted matching.')
 
-    score = row.get('score', 0)
     poste = employeur.get('poste', '') or 'Poste non renseigné'
-    subject = f"[EURES beta] Candidature transmise - score {score} - {poste}"
+    employeur_name = employeur.get('employeur', '') or 'votre structure'
+    subject = f"[EURES beta] Proposition de candidature pour votre besoin - {poste}"
 
     reasons = row.get('raisons', [])
-    weaknesses = row.get('points_faibles', [])
     if not isinstance(reasons, list):
         reasons = _split_matching_text(reasons)
-    if not isinstance(weaknesses, list):
-        weaknesses = _split_matching_text(weaknesses)
 
-    reasons_block = '\n'.join(f"- {item}" for item in reasons) if reasons else "- Aucun point fort détaillé"
-    weaknesses_block = '\n'.join(f"- {item}" for item in weaknesses) if weaknesses else "- Aucun point faible majeur détecté"
+    reasons_text = '\n'.join(f"- {item}" for item in reasons) if reasons else "- Profil cohérent avec votre besoin"
+    reasons_html = ''.join(
+        f"<li style=\"margin:0 0 8px;\">{escape(item)}</li>" for item in reasons
+    ) or "<li style=\"margin:0 0 8px;\">Profil cohérent avec votre besoin</li>"
 
-    body = (
-        "Bonjour,\n\n"
-        "Un matching EURES beta a été validé.\n\n"
-        f"Statut : {row.get('scoring_status', '')}\n"
-        f"Score global : {score} / 100\n\n"
-        "Détail du score\n"
-        f"- Métier : {row.get('score_metier', 0)} / 30\n"
-        f"- Langues : {row.get('score_langues', 0)} / 25\n"
-        f"- Mobilité : {row.get('score_mobilite', 0)} / 15\n"
-        f"- Disponibilité : {row.get('score_disponibilite', 0)} / 15\n"
-        f"- Salaire : {row.get('score_salaire', 0)} / 15\n\n"
-        "Candidat\n"
-        f"- Nom : {candidat.get('nom', '-')}\n"
-        f"- Email : {candidat.get('email', '-')}\n"
-        f"- Pays : {candidat.get('pays', '-')}\n"
-        f"- Secteurs / métiers : {candidat.get('metier', '-')}\n"
-        f"- Langues : {candidat.get('langues', '-')}\n"
-        f"- Mobilité : {candidat.get('mobilite', '-')}\n"
-        f"- Disponibilité : {candidat.get('disponibilite', '-')}\n\n"
-        "Employeur\n"
-        f"- Entreprise : {employeur.get('employeur', '-')}\n"
-        f"- Contact : {employeur.get('contact', '-')}\n"
-        f"- Pays / lieu : {employeur.get('pays', '-')}\n"
-        f"- Poste : {employeur.get('poste', '-')}\n"
-        f"- Date de début : {employeur.get('date_debut', '-')}\n"
-        f"- Langues requises : {employeur.get('langues_requises', '-')}\n\n"
-        "Points forts\n"
-        f"{reasons_block}\n\n"
-        "Points faibles\n"
-        f"{weaknesses_block}\n\n"
-        "Références internes\n"
-        f"- besoin_id : {row.get('besoin_id', '-')}\n"
-        f"- candidat_id : {row.get('candidat_id', '-')}\n\n"
-        "------------------------------\n"
-        "MESSAGE TRANSFÉRABLE À L’EMPLOYEUR\n"
-        "------------------------------\n\n"
-        "Bonjour,\n\n"
-        "Nous vous transmettons une candidature pouvant correspondre à votre besoin de recrutement.\n\n"
-        "Candidat\n"
-        f"- Nom : {candidat.get('nom', '-')}\n"
-        f"- Email : {candidat.get('email', '-')}\n"
-        f"- Pays de résidence : {candidat.get('pays', '-')}\n"
-        f"- Secteurs / métiers : {candidat.get('metier', '-')}\n"
-        f"- Langues : {candidat.get('langues', '-')}\n"
-        f"- Mobilité : {candidat.get('mobilite', '-')}\n"
-        f"- Disponibilité : {candidat.get('disponibilite', '-')}\n\n"
-        "Si ce profil vous intéresse, nous pouvons poursuivre la mise en relation.\n\n"
+    candidate_name = str(candidat.get('nom') or 'Profil candidat')
+    body_text = (
+        f"Bonjour,\n\n"
+        f"Nous vous proposons un profil susceptible de correspondre à votre besoin de recrutement pour le poste : {poste}.\n\n"
+        f"Entreprise : {employeur_name}\n"
+        f"Poste recherché : {poste}\n"
+        f"Date de début souhaitée : {employeur.get('date_debut', 'Non renseignée')}\n\n"
+        f"Candidat\n"
+        f"- Nom : {candidate_name}\n"
+        f"- Email : {candidat.get('email', 'Non renseigné')}\n"
+        f"- Pays de résidence : {candidat.get('pays', 'Non renseigné')}\n"
+        f"- Métier / secteur : {candidat.get('metier', 'Non renseigné')}\n"
+        f"- Compétences : {candidat.get('competences', 'Non renseigné')}\n"
+        f"- Langues : {candidat.get('langues', 'Non renseigné')}\n"
+        f"- Mobilité : {candidat.get('mobilite', 'Non renseigné')}\n"
+        f"- Disponibilité : {candidat.get('disponibilite', 'Non renseigné')}\n\n"
+        f"Pourquoi ce profil a été retenu\n"
+        f"{reasons_text}\n\n"
+        "Si ce profil vous intéresse, vous pouvez répondre directement à cet email afin que nous poursuivions la mise en relation.\n\n"
         "Cordialement,\n"
-        "EURES beta\n"
+        "L'équipe EURES beta\n"
     )
-    return recipient, subject, body
+
+    body_html = f"""
+<!doctype html>
+<html lang="fr">
+  <body style="margin:0;padding:0;background:#f4efe6;font-family:Georgia,'Times New Roman',serif;color:#1f1f1f;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f4efe6;padding:24px 12px;">
+      <tr>
+        <td align="center">
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:720px;background:#fffdf9;border:1px solid #e7dcc7;border-radius:18px;overflow:hidden;">
+            <tr>
+              <td style="padding:28px 32px;background:linear-gradient(135deg,#103a2b 0%,#1f5a45 100%);color:#ffffff;">
+                <div style="font-size:13px;letter-spacing:1.6px;text-transform:uppercase;opacity:0.82;">EURES beta</div>
+                <h1 style="margin:10px 0 0;font-size:30px;line-height:1.2;font-weight:700;">Proposition de candidature</h1>
+                <p style="margin:12px 0 0;font-size:16px;line-height:1.6;max-width:560px;">
+                  Nous vous transmettons un profil pouvant correspondre à votre besoin de recrutement pour le poste de
+                  <strong>{escape(poste)}</strong>.
+                </p>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:28px 32px 12px;">
+                <p style="margin:0 0 18px;font-size:16px;line-height:1.7;">
+                  Bonjour,
+                </p>
+                <p style="margin:0 0 22px;font-size:16px;line-height:1.7;">
+                  Après analyse de votre besoin, nous avons identifié un profil candidat qui nous semble pertinent pour
+                  <strong>{escape(employeur_name)}</strong>.
+                </p>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:0 32px 28px;">
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                  <tr>
+                    <td valign="top" width="50%" style="padding:0 10px 0 0;">
+                      <div style="height:100%;background:#f8f4ec;border:1px solid #eadfcb;border-radius:14px;padding:20px;">
+                        <div style="font-size:12px;letter-spacing:1.3px;text-transform:uppercase;color:#6a5a42;margin-bottom:10px;">Votre besoin</div>
+                        <h2 style="margin:0 0 14px;font-size:22px;line-height:1.3;color:#103a2b;">{escape(poste)}</h2>
+                        <p style="margin:0 0 10px;font-size:15px;line-height:1.6;"><strong>Entreprise :</strong><br>{escape(employeur_name)}</p>
+                        <p style="margin:0 0 10px;font-size:15px;line-height:1.6;"><strong>Lieu / pays :</strong><br>{escape(str(employeur.get('pays') or 'Non renseigné'))}</p>
+                        <p style="margin:0 0 10px;font-size:15px;line-height:1.6;"><strong>Langues attendues :</strong><br>{_format_email_multiline(employeur.get('langues_requises', ''))}</p>
+                        <p style="margin:0;font-size:15px;line-height:1.6;"><strong>Date de début :</strong><br>{escape(str(employeur.get('date_debut') or 'Non renseignée'))}</p>
+                      </div>
+                    </td>
+                    <td valign="top" width="50%" style="padding:0 0 0 10px;">
+                      <div style="height:100%;background:#fffaf2;border:1px solid #eadfcb;border-radius:14px;padding:20px;">
+                        <div style="font-size:12px;letter-spacing:1.3px;text-transform:uppercase;color:#6a5a42;margin-bottom:10px;">Profil proposé</div>
+                        <h2 style="margin:0 0 14px;font-size:22px;line-height:1.3;color:#103a2b;">{escape(candidate_name)}</h2>
+                        <p style="margin:0 0 10px;font-size:15px;line-height:1.6;"><strong>Email :</strong><br>{escape(str(candidat.get('email') or 'Non renseigné'))}</p>
+                        <p style="margin:0 0 10px;font-size:15px;line-height:1.6;"><strong>Pays de résidence :</strong><br>{escape(str(candidat.get('pays') or 'Non renseigné'))}</p>
+                        <p style="margin:0 0 10px;font-size:15px;line-height:1.6;"><strong>Métier / secteur :</strong><br>{_format_email_multiline(candidat.get('metier', ''))}</p>
+                        <p style="margin:0 0 10px;font-size:15px;line-height:1.6;"><strong>Langues :</strong><br>{_format_email_multiline(candidat.get('langues', ''))}</p>
+                        <p style="margin:0 0 10px;font-size:15px;line-height:1.6;"><strong>Mobilité :</strong><br>{_format_email_multiline(candidat.get('mobilite', ''))}</p>
+                        <p style="margin:0;font-size:15px;line-height:1.6;"><strong>Disponibilité :</strong><br>{_format_email_multiline(candidat.get('disponibilite', ''))}</p>
+                      </div>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:0 32px 12px;">
+                <div style="background:#fbf7ef;border-left:4px solid #c6932d;border-radius:12px;padding:18px 20px;">
+                  <div style="font-size:12px;letter-spacing:1.3px;text-transform:uppercase;color:#7a6232;margin-bottom:10px;">Pourquoi ce profil</div>
+                  <ul style="margin:0;padding-left:20px;font-size:15px;line-height:1.7;">
+                    {reasons_html}
+                  </ul>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:12px 32px 0;">
+                <div style="background:#103a2b;border-radius:14px;padding:22px;color:#ffffff;">
+                  <p style="margin:0 0 10px;font-size:17px;line-height:1.6;"><strong>Suite proposée</strong></p>
+                  <p style="margin:0;font-size:15px;line-height:1.7;">
+                    Si ce profil retient votre attention, vous pouvez répondre directement à cet email. Nous organiserons ensuite la mise en relation.
+                  </p>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:24px 32px 32px;">
+                <p style="margin:0;font-size:15px;line-height:1.7;">
+                  Cordialement,<br>
+                  <strong>L'équipe EURES beta</strong>
+                </p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
+""".strip()
+    return recipient, subject, body_text, body_html
 
 
-def send_brevo_transactional_email(to_email: str, subject: str, body: str):
+def send_brevo_transactional_email(to_email: str, subject: str, text_body: str, html_body: str):
     """Send one transactional email via Brevo."""
     brevo = get_brevo_config()
     if not brevo['api_key'] or not brevo['from_email']:
@@ -1673,7 +1747,8 @@ def send_brevo_transactional_email(to_email: str, subject: str, body: str):
         },
         'to': [{'email': to_email}],
         'subject': subject,
-        'textContent': body,
+        'textContent': text_body,
+        'htmlContent': html_body,
     }
     resp = requests.post(
         'https://api.brevo.com/v3/smtp/email',
@@ -2276,8 +2351,8 @@ def admin_eures_matching_decision(form_id: str, record_id: int):
             matching_row = next((row for row in matching_rows if int(row.get('record_id') or 0) == record_id), None)
             if not matching_row:
                 raise RuntimeError('Accepted matching could not be reloaded for email delivery.')
-            to_email, subject, body = build_brevo_matching_email(matching_row)
-            brevo_result = send_brevo_transactional_email(to_email, subject, body)
+            to_email, subject, text_body, html_body = build_brevo_matching_email(matching_row)
+            brevo_result = send_brevo_transactional_email(to_email, subject, text_body, html_body)
             app.logger.info(
                 'EURES accepted matching email sent',
                 extra={
