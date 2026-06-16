@@ -1075,18 +1075,12 @@ def _public_breakdown_label(kind: str, label: str) -> str:
     return cleaned
 
 
-def _counter_to_rows(counter: Counter, minimum_public_count: int = 5) -> list[dict]:
-    """Convert a counter to public rows while masking very small categories."""
-    visible: list[dict] = []
-    hidden_total = 0
-    for label, count in sorted(counter.items(), key=lambda item: (-item[1], str(item[0]).lower())):
-        if count < minimum_public_count:
-            hidden_total += count
-        else:
-            visible.append({'label': label, 'count': count})
-    if hidden_total:
-        visible.append({'label': 'Autres', 'count': hidden_total})
-    return visible
+def _counter_to_rows(counter: Counter) -> list[dict]:
+    """Convert a counter to public rows without collapsing categories."""
+    return [
+        {'label': label, 'count': count}
+        for label, count in sorted(counter.items(), key=lambda item: (-item[1], str(item[0]).lower()))
+    ]
 
 
 def _add_public_counter(counter: Counter, kind: str, raw_label: str):
@@ -1242,7 +1236,7 @@ def build_eures_public_stats() -> dict:
             'secteurs': _counter_to_rows(secteurs),
             'mobilite_candidats': _counter_to_rows(mobilite_candidats),
             'matchings_par_statut': _counter_to_rows(matchings_par_statut),
-            'retours_employeurs': _counter_to_rows(retours_employeurs, minimum_public_count=1),
+            'retours_employeurs': _counter_to_rows(retours_employeurs),
         },
     }
 
