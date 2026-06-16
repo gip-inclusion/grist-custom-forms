@@ -55,6 +55,12 @@ EURES_MATCHING_FIELDS = {
     'points_faibles',
     'date_calcul',
 }
+EURES_MATCHING_ADMIN_FIELDS = {
+    'admin_status',
+    'admin_decision_at',
+    'admin_decision_by',
+    'admin_decision_note',
+}
 EURES_SECTOR_CANONICAL_MAP = {
     'vente': 'vente',
     'commerce': 'vente',
@@ -311,6 +317,18 @@ def get_eures_stats_config() -> dict | None:
     return {
         'doc_id': base['doc_id'],
         'table_id': os.environ.get('GRIST_TABLE_EURES_BETA_STATS', EURES_STATS_TABLE_DEFAULT),
+        'api_key': base.get('api_key'),
+    }
+
+
+def get_eures_matching_config() -> dict | None:
+    """Get configuration for EURES beta matching tables."""
+    base = get_form_config('eures-beta', 'candidate') or get_form_config('eures-beta')
+    if not base:
+        return None
+    return {
+        'doc_id': base['doc_id'],
+        'table_id': EURES_MATCHINGS_TABLE,
         'api_key': base.get('api_key'),
     }
 
@@ -1180,7 +1198,7 @@ def upsert_matching_record(doc_id: str, fields: dict, headers: dict):
         raise RuntimeError('Missing besoin_id or candidat_id for matching upsert.')
 
     table_config = {'doc_id': doc_id, 'table_id': EURES_MATCHINGS_TABLE}
-    ensure_table_columns(table_config, set(fields.keys()) & EURES_MATCHING_FIELDS, headers)
+    ensure_table_columns(table_config, set(fields.keys()) & (EURES_MATCHING_FIELDS | EURES_MATCHING_ADMIN_FIELDS), headers)
     allowed_columns = get_table_columns(table_config, headers)
     filtered_fields = {k: v for k, v in fields.items() if k in allowed_columns}
     existing = fetch_matching_record(doc_id, besoin_id, candidat_id, headers)
@@ -1196,6 +1214,31 @@ def upsert_matching_record(doc_id: str, fields: dict, headers: dict):
     if resp.status_code != 200:
         raise RuntimeError(f'Failed to write Matchings: HTTP {resp.status_code} - {resp.text}')
     return resp
+
+
+def update_matching_record_by_id(doc_id: str, record_id: int, fields: dict, headers: dict):
+    """Patch a matching record by Grist record id."""
+    table_config = {'doc_id': doc_id, 'table_id': EURES_MATCHINGS_TABLE}
+    ensure_table_columns(table_config, set(fields.keys()) & (EURES_MATCHING_FIELDS | EURES_MATCHING_ADMIN_FIELDS), headers)
+    allowed_columns = get_table_columns(table_config, headers)
+    filtered_fields = {k: v for k, v in fields.items() if k in allowed_columns}
+    base_url = f"{GRIST_BASE_URL}/api/docs/{doc_id}/tables/{EURES_MATCHINGS_TABLE}/records"
+    payload = {'records': [{'id': record_id, 'fields': filtered_fields}]}
+    resp = write_grist_records('PATCH', base_url, payload, headers)
+    if resp.status_code != 200:
+        raise RuntimeError(f'Failed to update Matchings: HTTP {resp.status_code} - {resp.text}')
+    return resp
+
+
+def fetch_record_by_id(doc_id: str, table_id: str, record_id: int, headers: dict):
+    """Read one Grist record by numeric id."""
+    url = f"{GRIST_BASE_URL}/api/docs/{doc_id}/tables/{table_id}/records"
+    resp = requests.get(url, params={'filter': json.dumps({'id': [record_id]})}, headers=headers)
+    if resp.status_code != 200:
+        raise RuntimeError(f'Failed to read {table_id}: HTTP {resp.status_code} - {resp.text}')
+    payload = _parse_response_json_safe(resp)
+    records = payload.get('records', []) if isinstance(payload, dict) else []
+    return records[0] if records else None
 
 
 def eures_normalize_text(value) -> str:
@@ -1503,6 +1546,110 @@ def run_eures_matching_for_saved_record(form_id: str, role: str, saved_record: d
             writes += 1
 
     return {'processed': True, 'writes': writes, 'role': role}
+
+
+def _eures_admin_headers(config: dict) -> dict:
+    headers = {'Accept': 'application/json'}
+    if config.get('api_key'):
+        headers['Authorization'] = f"Bearer {config['api_key']}"
+    return headers
+
+
+def _eures_admin_status(fields: dict) -> str:
+    status = str((fields or {}).get('admin_status') or '').strip().lower()
+    if status in {'accepted', 'refused', 'pending'}:
+        return status
+    return 'pending'
+
+
+def _split_matching_text(value: str) -> list[str]:
+    return [part.strip() for part in str(value or '').split('|') if part.strip()]
+
+
+def list_eures_admin_matchings(status: str = 'all') -> list[dict]:
+    """Return matchings joined with candidate/employer info for the admin UI."""
+    config = get_eures_matching_config()
+    candidate_config = get_form_config('eures-beta', 'candidate')
+    employer_config = get_form_config('eures-beta', 'employer')
+    if not config or not candidate_config or not employer_config:
+        raise RuntimeError('EURES beta Grist configuration is incomplete.')
+
+    headers = _eures_admin_headers(config)
+    candidate_headers = _eures_admin_headers(candidate_config)
+    employer_headers = _eures_admin_headers(employer_config)
+
+    matchings = fetch_table_records(config['doc_id'], EURES_MATCHINGS_TABLE, headers)
+    candidats = fetch_table_records(candidate_config['doc_id'], EURES_CANDIDATS_TABLE, candidate_headers)
+    besoins = fetch_table_records(employer_config['doc_id'], EURES_BESOINS_TABLE, employer_headers)
+
+    candidats_by_id = {
+        str((rec.get('fields') or {}).get('id_tally') or (rec.get('fields') or {}).get('uuid') or ''): rec.get('fields', {})
+        for rec in candidats if isinstance(rec, dict)
+    }
+    besoins_by_id = {
+        str((rec.get('fields') or {}).get('id_tally') or (rec.get('fields') or {}).get('uuid') or ''): rec.get('fields', {})
+        for rec in besoins if isinstance(rec, dict)
+    }
+
+    rows = []
+    for rec in matchings:
+        fields = rec.get('fields', {}) if isinstance(rec, dict) else {}
+        if not fields:
+            continue
+        scoring_status = str(fields.get('statut') or '').strip().lower()
+        admin_status = _eures_admin_status(fields)
+        if scoring_status not in {'a_valider', 'auto_envoyable'} and admin_status == 'pending':
+            continue
+        if status in {'pending', 'accepted', 'refused'} and admin_status != status:
+            continue
+
+        besoin_id = str(fields.get('besoin_id') or '')
+        candidat_id = str(fields.get('candidat_id') or '')
+        candidat = candidats_by_id.get(candidat_id, {})
+        besoin = besoins_by_id.get(besoin_id, {})
+
+        rows.append({
+            'record_id': rec.get('id'),
+            'besoin_id': besoin_id,
+            'candidat_id': candidat_id,
+            'score': _safe_int(fields.get('score')),
+            'scoring_status': scoring_status,
+            'admin_status': admin_status,
+            'score_metier': _safe_int(fields.get('score_metier')),
+            'score_langues': _safe_int(fields.get('score_langues')),
+            'score_mobilite': _safe_int(fields.get('score_mobilite')),
+            'score_disponibilite': _safe_int(fields.get('score_disponibilite')),
+            'score_salaire': _safe_int(fields.get('score_salaire')),
+            'raisons': _split_matching_text(fields.get('raisons')),
+            'points_faibles': _split_matching_text(fields.get('points_faibles')),
+            'date_calcul': fields.get('date_calcul', ''),
+            'admin_decision_at': fields.get('admin_decision_at', ''),
+            'admin_decision_by': fields.get('admin_decision_by', ''),
+            'admin_decision_note': fields.get('admin_decision_note', ''),
+            'candidat': {
+                'nom': candidat.get('nom', ''),
+                'email': candidat.get('email', ''),
+                'pays': candidat.get('pays', ''),
+                'metier': candidat.get('metier', ''),
+                'langues': candidat.get('langues', ''),
+                'mobilite': candidat.get('mobilite', ''),
+                'disponibilite': candidat.get('disponibilite', ''),
+                'competences': candidat.get('competences', ''),
+            },
+            'employeur': {
+                'employeur': besoin.get('employeur', ''),
+                'contact': besoin.get('contact', ''),
+                'pays': besoin.get('pays', ''),
+                'poste': besoin.get('poste', ''),
+                'langues_requises': besoin.get('langues_requises', ''),
+                'date_debut': besoin.get('date_debut', ''),
+                'competences_clefs': besoin.get('competences_clefs', ''),
+                'contraintes_travail': besoin.get('contraintes_travail', ''),
+            },
+        })
+
+    rows.sort(key=lambda row: (row['admin_status'] != 'pending', -row['score'], -(int(row['record_id'] or 0))))
+    return rows
 
 
 def normalize_finess(value) -> str:
@@ -1922,6 +2069,94 @@ def admin_overview(form_id: str):
         },
         'rows': rows,
     }), 200
+
+
+@app.route('/api/forms/<form_id>/admin/matchings', methods=['GET'])
+@admin_required
+def admin_eures_matchings(form_id: str):
+    """Admin API: list matchings for EURES beta review."""
+    if form_id != 'eures-beta':
+        return jsonify({'error': f'Unknown admin matching form: {form_id}'}), 404
+
+    status = str(request.args.get('status', 'all') or 'all').strip().lower()
+    if status not in {'all', 'pending', 'accepted', 'refused'}:
+        return jsonify({'error': 'Invalid status filter'}), 400
+
+    try:
+        rows = list_eures_admin_matchings(status=status)
+        stats = Counter(row['admin_status'] for row in rows)
+        return jsonify({
+            'ok': True,
+            'form_id': form_id,
+            'stats': {
+                'total': len(rows),
+                'pending': stats.get('pending', 0),
+                'accepted': stats.get('accepted', 0),
+                'refused': stats.get('refused', 0),
+            },
+            'rows': rows,
+        }), 200
+    except Exception as e:
+        app.logger.exception('EURES admin matchings list failed')
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/forms/<form_id>/admin/matchings/<int:record_id>/decision', methods=['POST'])
+@admin_required
+def admin_eures_matching_decision(form_id: str, record_id: int):
+    """Admin API: accept or refuse one matching."""
+    if form_id != 'eures-beta':
+        return jsonify({'error': f'Unknown admin matching form: {form_id}'}), 404
+
+    data = request.get_json() or {}
+    decision = str(data.get('decision') or '').strip().lower()
+    note = str(data.get('note') or '').strip()
+    if decision not in {'accepted', 'refused'}:
+        return jsonify({'error': 'Decision must be accepted or refused'}), 400
+
+    config = get_eures_matching_config()
+    if not config:
+        return jsonify({'error': 'EURES beta matching configuration is incomplete.'}), 500
+
+    headers = _eures_admin_headers(config)
+    try:
+        existing = fetch_record_by_id(config['doc_id'], EURES_MATCHINGS_TABLE, record_id, headers)
+        if not existing:
+            return jsonify({'error': 'Matching not found'}), 404
+
+        auth = request.authorization
+        decided_by = auth.username if auth and auth.username else 'admin'
+        decision_fields = {
+            'admin_status': decision,
+            'admin_decision_at': datetime.utcnow().isoformat() + 'Z',
+            'admin_decision_by': decided_by,
+            'admin_decision_note': note,
+        }
+        update_matching_record_by_id(config['doc_id'], record_id, decision_fields, headers)
+
+        app.logger.info(
+            'EURES matching decision saved',
+            extra={
+                'form_id': form_id,
+                'record_id': record_id,
+                'decision': decision,
+                'decided_by': decided_by,
+            },
+        )
+
+        updated = fetch_record_by_id(config['doc_id'], EURES_MATCHINGS_TABLE, record_id, headers)
+        updated_fields = updated.get('fields', {}) if isinstance(updated, dict) else {}
+        return jsonify({
+            'ok': True,
+            'record_id': record_id,
+            'admin_status': updated_fields.get('admin_status', decision),
+            'admin_decision_at': updated_fields.get('admin_decision_at', decision_fields['admin_decision_at']),
+            'admin_decision_by': updated_fields.get('admin_decision_by', decided_by),
+            'admin_decision_note': updated_fields.get('admin_decision_note', note),
+        }), 200
+    except Exception as e:
+        app.logger.exception('EURES matching decision update failed')
+        return jsonify({'error': str(e)}), 500
 
 
 @app.route('/api/forms/<form_id>/public-stats', methods=['GET'])

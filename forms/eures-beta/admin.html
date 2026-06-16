@@ -1,0 +1,699 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>EURES beta admin matchings</title>
+  <link rel="stylesheet" href="/forms/eures-beta/site.css">
+  <style>
+    .admin-shell {
+      width: min(1360px, calc(100% - 2rem));
+      margin: 0 auto;
+      padding: 1rem 0 2rem;
+    }
+
+    .admin-top {
+      display: grid;
+      gap: 1rem;
+    }
+
+    .admin-card {
+      border: 1px solid var(--line);
+      background: var(--panel);
+      backdrop-filter: blur(12px);
+      box-shadow: var(--shadow);
+      border-radius: 24px;
+      padding: 1.2rem;
+    }
+
+    .admin-head h1 {
+      margin: 0 0 0.5rem;
+      font-size: clamp(2rem, 4vw, 3.2rem);
+      line-height: 0.95;
+      letter-spacing: -0.04em;
+    }
+
+    .admin-head p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .kpis {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 0.9rem;
+    }
+
+    .kpi {
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.85);
+      padding: 1rem;
+    }
+
+    .kpi-label {
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .kpi-value {
+      margin-top: 0.35rem;
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--accent-strong);
+    }
+
+    .toolbar {
+      display: grid;
+      grid-template-columns: 220px minmax(0, 1fr) auto;
+      gap: 0.8rem;
+      align-items: center;
+    }
+
+    .toolbar select,
+    .toolbar input,
+    .toolbar button,
+    .decision-actions button,
+    .notes-box textarea,
+    .notes-box button {
+      font: inherit;
+    }
+
+    .toolbar select,
+    .toolbar input,
+    .notes-box textarea {
+      width: 100%;
+      min-height: 48px;
+      border-radius: 16px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.9);
+      color: var(--text);
+      padding: 0.8rem 1rem;
+    }
+
+    .toolbar button,
+    .decision-actions button,
+    .notes-box button {
+      min-height: 48px;
+      border: 1px solid transparent;
+      border-radius: 999px;
+      padding: 0.8rem 1.1rem;
+      cursor: pointer;
+      transition: transform 120ms ease, background 120ms ease, border-color 120ms ease;
+    }
+
+    .toolbar button:hover,
+    .decision-actions button:hover,
+    .notes-box button:hover {
+      transform: translateY(-1px);
+    }
+
+    .toolbar button {
+      background: var(--accent);
+      color: white;
+    }
+
+    .status-line {
+      color: var(--muted);
+      font-size: 0.92rem;
+      min-height: 1.2rem;
+    }
+
+    .matching-list {
+      display: grid;
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .matching-card {
+      border: 1px solid var(--line);
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      border-radius: 28px;
+      overflow: hidden;
+    }
+
+    .matching-summary {
+      display: grid;
+      grid-template-columns: minmax(0, 1.5fr) auto;
+      gap: 1rem;
+      padding: 1.2rem 1.2rem 1rem;
+      border-bottom: 1px solid var(--line);
+      background: linear-gradient(180deg, rgba(220, 233, 255, 0.8), rgba(255, 255, 255, 0.75));
+    }
+
+    .matching-summary h2 {
+      margin: 0 0 0.4rem;
+      font-size: 1.35rem;
+    }
+
+    .matching-summary p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .summary-tags,
+    .detail-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 0.8rem;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.4rem 0.75rem;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.85);
+      font-size: 0.84rem;
+      font-weight: 700;
+    }
+
+    .pill.pending {
+      background: #fff1dd;
+      color: #8d5311;
+      border-color: #eec17d;
+    }
+
+    .pill.accepted {
+      background: #ebf8ef;
+      color: #19663c;
+      border-color: #90c8a6;
+    }
+
+    .pill.refused {
+      background: #fdebea;
+      color: #8a2f2f;
+      border-color: #e0a4a4;
+    }
+
+    .pill.auto {
+      background: #e8f3ff;
+      color: #0d4a8f;
+      border-color: #95bae7;
+    }
+
+    .summary-score {
+      min-width: 200px;
+      display: grid;
+      gap: 0.7rem;
+      align-content: start;
+      justify-items: end;
+    }
+
+    .score-box {
+      min-width: 180px;
+      border-radius: 20px;
+      padding: 1rem;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.9);
+      text-align: right;
+    }
+
+    .score-box strong {
+      display: block;
+      font-size: 2rem;
+      line-height: 1;
+      color: var(--accent-strong);
+    }
+
+    .score-box span {
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .decision-actions {
+      display: flex;
+      gap: 0.6rem;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .btn-accept {
+      background: var(--success);
+      color: white;
+    }
+
+    .btn-refuse {
+      background: #fff4f4;
+      color: var(--danger);
+      border-color: #d8a4a4 !important;
+    }
+
+    .btn-neutral {
+      background: rgba(255, 255, 255, 0.84);
+      color: var(--text);
+      border-color: var(--line) !important;
+    }
+
+    .matching-body {
+      display: grid;
+      gap: 1rem;
+      padding: 1.2rem;
+    }
+
+    .compare-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 1rem;
+    }
+
+    .compare-card {
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      padding: 1rem;
+      background: rgba(255, 255, 255, 0.88);
+    }
+
+    .compare-card h3 {
+      margin: 0 0 0.9rem;
+      font-size: 1.15rem;
+    }
+
+    .detail-list {
+      display: grid;
+      gap: 0.7rem;
+    }
+
+    .detail-row {
+      display: grid;
+      grid-template-columns: 150px minmax(0, 1fr);
+      gap: 0.8rem;
+      align-items: start;
+    }
+
+    .detail-row dt {
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .detail-row dd {
+      margin: 0;
+      line-height: 1.5;
+    }
+
+    .subscores-grid {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 0.8rem;
+    }
+
+    .subscore-card {
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.84);
+      padding: 0.9rem;
+    }
+
+    .subscore-card strong {
+      display: block;
+      font-size: 1.4rem;
+      line-height: 1;
+      margin-bottom: 0.35rem;
+      color: var(--accent-strong);
+    }
+
+    .subscore-card span {
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .notes-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 1rem;
+    }
+
+    .notes-box {
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      padding: 1rem;
+      background: rgba(255, 255, 255, 0.84);
+    }
+
+    .notes-box h4 {
+      margin: 0 0 0.8rem;
+      font-size: 1rem;
+    }
+
+    .notes-box ul {
+      margin: 0;
+      padding-left: 1.1rem;
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    .notes-box textarea {
+      min-height: 110px;
+      resize: vertical;
+      margin-top: 0.25rem;
+    }
+
+    .decision-meta {
+      margin-top: 0.8rem;
+      color: var(--muted);
+      font-size: 0.9rem;
+      line-height: 1.5;
+    }
+
+    .empty-state {
+      padding: 2rem;
+      text-align: center;
+      color: var(--muted);
+      border: 1px dashed var(--line);
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.7);
+    }
+
+    @media (max-width: 1100px) {
+      .kpis,
+      .subscores-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .compare-grid,
+      .notes-grid,
+      .matching-summary {
+        grid-template-columns: 1fr;
+      }
+
+      .summary-score,
+      .decision-actions {
+        justify-items: start;
+        justify-content: flex-start;
+      }
+    }
+
+    @media (max-width: 760px) {
+      .admin-shell {
+        width: min(100% - 1rem, 1360px);
+      }
+
+      .kpis,
+      .subscores-grid,
+      .toolbar {
+        grid-template-columns: 1fr;
+      }
+
+      .detail-row {
+        grid-template-columns: 1fr;
+        gap: 0.25rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="admin-shell">
+    <section class="admin-card admin-head">
+      <h1>Admin EURES beta</h1>
+      <p>Valider les matchings entre candidats et entreprises. Les cartes ci-dessous montrent le candidat et le besoin employeur en vis-à-vis, avec le détail des sous-scores et les motifs de décision.</p>
+    </section>
+
+    <section class="admin-top">
+      <div class="admin-card">
+        <div class="kpis">
+          <div class="kpi">
+            <div class="kpi-label">Total affiché</div>
+            <div class="kpi-value" id="kpi-total">0</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-label">À valider</div>
+            <div class="kpi-value" id="kpi-pending">0</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-label">Acceptés</div>
+            <div class="kpi-value" id="kpi-accepted">0</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-label">Refusés</div>
+            <div class="kpi-value" id="kpi-refused">0</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="admin-card">
+        <div class="toolbar">
+          <select id="filter-status">
+            <option value="pending">À valider</option>
+            <option value="all">Tous</option>
+            <option value="accepted">Acceptés</option>
+            <option value="refused">Refusés</option>
+          </select>
+          <input id="filter-search" type="search" placeholder="Rechercher un nom, une entreprise, un poste, un email">
+          <button id="reload-btn" type="button">Rafraîchir</button>
+        </div>
+        <div class="status-line" id="status-line">Chargement...</div>
+      </div>
+    </section>
+
+    <section class="matching-list" id="matching-list"></section>
+  </div>
+
+  <script>
+    const state = {
+      rows: [],
+      loading: false,
+    };
+
+    function esc(value) {
+      return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function apiUrl(path) {
+      return `/api/forms/eures-beta${path}`;
+    }
+
+    function setStatus(message) {
+      document.getElementById("status-line").textContent = message;
+    }
+
+    function scoreStatusLabel(row) {
+      if (row.scoring_status === "auto_envoyable") return "auto";
+      if (row.scoring_status === "a_valider") return "à valider";
+      if (row.scoring_status === "a_ecarter") return "à écarter";
+      return row.scoring_status || "inconnu";
+    }
+
+    function adminStatusLabel(status) {
+      if (status === "accepted") return "accepté";
+      if (status === "refused") return "refusé";
+      return "pending";
+    }
+
+    function normalizeText(value) {
+      return String(value || "").toLowerCase();
+    }
+
+    function matchesSearch(row, search) {
+      if (!search) return true;
+      const haystack = [
+        row.candidat?.nom,
+        row.candidat?.email,
+        row.candidat?.metier,
+        row.employeur?.employeur,
+        row.employeur?.contact,
+        row.employeur?.poste,
+        row.employeur?.pays,
+        row.besoin_id,
+        row.candidat_id,
+      ].map(normalizeText).join(" ");
+      return haystack.includes(search);
+    }
+
+    function bulletList(items, emptyLabel) {
+      if (!Array.isArray(items) || items.length === 0) {
+        return `<ul><li>${esc(emptyLabel)}</li></ul>`;
+      }
+      return `<ul>${items.map((item) => `<li>${esc(item)}</li>`).join("")}</ul>`;
+    }
+
+    function renderRows() {
+      const list = document.getElementById("matching-list");
+      const search = normalizeText(document.getElementById("filter-search").value.trim());
+      const filtered = state.rows.filter((row) => matchesSearch(row, search));
+
+      if (!filtered.length) {
+        list.innerHTML = `<div class="empty-state">Aucun matching ne correspond aux filtres actuels.</div>`;
+        return;
+      }
+
+      list.innerHTML = filtered.map((row) => {
+        const reasonsHtml = bulletList(row.raisons, "Aucun point fort détaillé");
+        const weaknessesHtml = bulletList(row.points_faibles, "Aucun point faible majeur détecté");
+        const decisionMeta = row.admin_decision_at
+          ? `<div class="decision-meta">Dernière décision : <strong>${esc(adminStatusLabel(row.admin_status))}</strong><br>Par : ${esc(row.admin_decision_by || "-")}<br>Le : ${esc(row.admin_decision_at || "-")}<br>Note : ${esc(row.admin_decision_note || "-")}</div>`
+          : "";
+
+        return `
+          <article class="matching-card" data-record-id="${esc(row.record_id)}">
+            <div class="matching-summary">
+              <div>
+                <h2>${esc(row.employeur?.poste || "Poste non renseigné")} · ${esc(row.candidat?.nom || "Candidat non renseigné")}</h2>
+                <p>${esc(row.employeur?.employeur || "Entreprise non renseignée")} · ${esc(row.employeur?.pays || "Lieu non renseigné")}</p>
+                <div class="summary-tags">
+                  <span class="pill ${esc(row.admin_status)}">Décision admin : ${esc(adminStatusLabel(row.admin_status))}</span>
+                  <span class="pill ${row.scoring_status === "auto_envoyable" ? "auto" : "pending"}">Statut scoring : ${esc(scoreStatusLabel(row))}</span>
+                  <span class="pill">besoin_id : ${esc(row.besoin_id)}</span>
+                  <span class="pill">candidat_id : ${esc(row.candidat_id)}</span>
+                </div>
+              </div>
+
+              <div class="summary-score">
+                <div class="score-box">
+                  <strong>${esc(row.score)}</strong>
+                  <span>score global / 100</span>
+                </div>
+                <div class="decision-actions">
+                  <button class="btn-accept" type="button" data-action="accepted">Accepter</button>
+                  <button class="btn-refuse" type="button" data-action="refused">Refuser</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="matching-body">
+              <div class="compare-grid">
+                <section class="compare-card">
+                  <h3>Candidat</h3>
+                  <dl class="detail-list">
+                    <div class="detail-row"><dt>Nom</dt><dd>${esc(row.candidat?.nom || "-")}</dd></div>
+                    <div class="detail-row"><dt>Email</dt><dd>${esc(row.candidat?.email || "-")}</dd></div>
+                    <div class="detail-row"><dt>Pays</dt><dd>${esc(row.candidat?.pays || "-")}</dd></div>
+                    <div class="detail-row"><dt>Métiers</dt><dd>${esc(row.candidat?.metier || "-")}</dd></div>
+                    <div class="detail-row"><dt>Compétences</dt><dd>${esc(row.candidat?.competences || "-")}</dd></div>
+                    <div class="detail-row"><dt>Langues</dt><dd>${esc(row.candidat?.langues || "-")}</dd></div>
+                    <div class="detail-row"><dt>Mobilité</dt><dd>${esc(row.candidat?.mobilite || "-")}</dd></div>
+                    <div class="detail-row"><dt>Disponibilité</dt><dd>${esc(row.candidat?.disponibilite || "-")}</dd></div>
+                  </dl>
+                </section>
+
+                <section class="compare-card">
+                  <h3>Employeur / besoin</h3>
+                  <dl class="detail-list">
+                    <div class="detail-row"><dt>Entreprise</dt><dd>${esc(row.employeur?.employeur || "-")}</dd></div>
+                    <div class="detail-row"><dt>Contact</dt><dd>${esc(row.employeur?.contact || "-")}</dd></div>
+                    <div class="detail-row"><dt>Pays / lieu</dt><dd>${esc(row.employeur?.pays || "-")}</dd></div>
+                    <div class="detail-row"><dt>Poste</dt><dd>${esc(row.employeur?.poste || "-")}</dd></div>
+                    <div class="detail-row"><dt>Compétences clés</dt><dd>${esc(row.employeur?.competences_clefs || "-")}</dd></div>
+                    <div class="detail-row"><dt>Langues requises</dt><dd>${esc(row.employeur?.langues_requises || "-")}</dd></div>
+                    <div class="detail-row"><dt>Date de début</dt><dd>${esc(row.employeur?.date_debut || "-")}</dd></div>
+                    <div class="detail-row"><dt>Contraintes</dt><dd>${esc(row.employeur?.contraintes_travail || "-")}</dd></div>
+                  </dl>
+                </section>
+              </div>
+
+              <section class="subscores-grid">
+                <div class="subscore-card"><strong>${esc(row.score_metier)}</strong><span>Métier / 30</span></div>
+                <div class="subscore-card"><strong>${esc(row.score_langues)}</strong><span>Langues / 25</span></div>
+                <div class="subscore-card"><strong>${esc(row.score_mobilite)}</strong><span>Mobilité / 15</span></div>
+                <div class="subscore-card"><strong>${esc(row.score_disponibilite)}</strong><span>Disponibilité / 15</span></div>
+                <div class="subscore-card"><strong>${esc(row.score_salaire)}</strong><span>Salaire / 15</span></div>
+              </section>
+
+              <div class="notes-grid">
+                <section class="notes-box">
+                  <h4>Points forts</h4>
+                  ${reasonsHtml}
+                </section>
+                <section class="notes-box">
+                  <h4>Points faibles</h4>
+                  ${weaknessesHtml}
+                </section>
+              </div>
+
+              <section class="notes-box">
+                <h4>Note de décision</h4>
+                <textarea id="note-${esc(row.record_id)}" placeholder="Ajouter une note de validation ou de refus...">${esc(row.admin_decision_note || "")}</textarea>
+                <div class="hero-actions">
+                  <button class="btn-neutral" type="button" data-action="accepted">Enregistrer comme accepté</button>
+                  <button class="btn-refuse" type="button" data-action="refused">Enregistrer comme refusé</button>
+                </div>
+                ${decisionMeta}
+              </section>
+            </div>
+          </article>
+        `;
+      }).join("");
+
+      for (const button of list.querySelectorAll("[data-action]")) {
+        button.addEventListener("click", async (event) => {
+          const card = event.currentTarget.closest(".matching-card");
+          const recordId = card?.dataset.recordId;
+          const decision = event.currentTarget.dataset.action;
+          const note = document.getElementById(`note-${recordId}`)?.value || "";
+          if (!recordId || !decision) return;
+          await submitDecision(recordId, decision, note);
+        });
+      }
+    }
+
+    async function loadMatchings() {
+      if (state.loading) return;
+      state.loading = true;
+      setStatus("Chargement des matchings...");
+
+      const status = document.getElementById("filter-status").value;
+      const url = new URL(apiUrl("/admin/matchings"), window.location.origin);
+      if (status) url.searchParams.set("status", status);
+
+      try {
+        const response = await fetch(url.toString(), { credentials: "same-origin" });
+        const payload = await response.json();
+        if (!response.ok || !payload.ok) {
+          throw new Error(payload.error || `Erreur API (${response.status})`);
+        }
+
+        state.rows = Array.isArray(payload.rows) ? payload.rows : [];
+        document.getElementById("kpi-total").textContent = payload.stats?.total ?? 0;
+        document.getElementById("kpi-pending").textContent = payload.stats?.pending ?? 0;
+        document.getElementById("kpi-accepted").textContent = payload.stats?.accepted ?? 0;
+        document.getElementById("kpi-refused").textContent = payload.stats?.refused ?? 0;
+        renderRows();
+        setStatus(`${state.rows.length} matching(s) chargés.`);
+      } catch (error) {
+        document.getElementById("matching-list").innerHTML = `<div class="empty-state">${esc(error.message || "Erreur de chargement")}</div>`;
+        setStatus(`Erreur : ${error.message || "chargement impossible"}`);
+      } finally {
+        state.loading = false;
+      }
+    }
+
+    async function submitDecision(recordId, decision, note) {
+      setStatus(`Enregistrement de la décision ${decision}...`);
+      try {
+        const response = await fetch(apiUrl(`/admin/matchings/${recordId}/decision`), {
+          method: "POST",
+          credentials: "same-origin",
+          headers: {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+          },
+          body: JSON.stringify({ decision, note }),
+        });
+        const payload = await response.json();
+        if (!response.ok || !payload.ok) {
+          throw new Error(payload.error || `Erreur API (${response.status})`);
+        }
+        setStatus(`Décision enregistrée : ${decision}.`);
+        await loadMatchings();
+      } catch (error) {
+        setStatus(`Erreur : ${error.message || "mise à jour impossible"}`);
+      }
+    }
+
+    document.getElementById("reload-btn").addEventListener("click", loadMatchings);
+    document.getElementById("filter-status").addEventListener("change", loadMatchings);
+    document.getElementById("filter-search").addEventListener("input", renderRows);
+    loadMatchings();
+  </script>
+</body>
+</html>
