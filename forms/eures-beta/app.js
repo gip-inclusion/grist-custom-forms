@@ -242,7 +242,6 @@ const copy = {
         embauches: "Embauches"
       },
       breakdownLabels: {
-        candidats_par_pays: "Candidatures par pays visé",
         besoins_par_pays: "Besoins employeurs par pays",
         secteurs: "Secteurs",
         mobilite_candidats: "Mobilité des candidats",
@@ -493,7 +492,6 @@ const copy = {
         embauches: "Hires"
       },
       breakdownLabels: {
-        candidats_par_pays: "Candidates by target country",
         besoins_par_pays: "Employer needs by country",
         secteurs: "Sectors",
         mobilite_candidats: "Candidate mobility",
@@ -744,7 +742,6 @@ const copy = {
         embauches: "Einstellungen"
       },
       breakdownLabels: {
-        candidats_par_pays: "Kandidaten nach Zielland",
         besoins_par_pays: "Arbeitgeberbedarfe nach Land",
         secteurs: "Sektoren",
         mobilite_candidats: "Mobilität der Kandidaten",

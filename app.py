@@ -1197,7 +1197,6 @@ def build_eures_public_stats() -> dict:
         'embauches': 0,
     })
 
-    candidats_par_pays = Counter()
     besoins_par_pays = Counter()
     secteurs = Counter()
     mobilite_candidats = Counter()
@@ -1211,8 +1210,6 @@ def build_eures_public_stats() -> dict:
         if month:
             monthly[month]['mois'] = month
             monthly[month]['candidats'] += 1
-        for label in _split_multi_value(fields.get('pays')):
-            _add_public_counter(candidats_par_pays, 'candidats_par_pays', label)
         for label in _eures_public_sector_labels(fields.get('metier')):
             _add_public_counter(secteurs, 'secteurs', label)
         for label in _eures_public_mobility_labels(fields.get('mobilite')):
@@ -1226,7 +1223,7 @@ def build_eures_public_stats() -> dict:
         if month:
             monthly[month]['mois'] = month
             monthly[month]['besoins_employeurs'] += 1
-        for label in _split_multi_value(fields.get('pays') or fields.get('pays_normalise')):
+        for label in _split_multi_value(fields.get('pays_normalise')):
             _add_public_counter(besoins_par_pays, 'besoins_par_pays', label)
         for label in _eures_public_sector_labels(fields.get('poste')):
             _add_public_counter(secteurs, 'secteurs', label)
@@ -1303,7 +1300,6 @@ def build_eures_public_stats() -> dict:
         'totals': totals,
         'monthly': monthly_rows,
         'breakdowns': {
-            'candidats_par_pays': _counter_to_rows(candidats_par_pays),
             'besoins_par_pays': _counter_to_rows(besoins_par_pays),
             'secteurs': _counter_to_rows(secteurs),
             'mobilite_candidats': _counter_to_rows(mobilite_candidats),
