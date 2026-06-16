@@ -102,6 +102,13 @@ EURES_EMPLOYEUR_SECTOR_SALARY_FIELDS = {
     'agriculture': ('tally_q13_salary_type', 'tally_q13_salary_min', 'tally_q13_salary_max'),
     'polyvalent': ('tally_q14_salary_type', 'tally_q14_salary_min', 'tally_q14_salary_max'),
 }
+EURES_PUBLIC_SECTOR_LABELS = {
+    'vente': 'Vente et commerce',
+    'nettoyage': 'Nettoyage et entretien',
+    'hotellerie': 'Hôtellerie et restauration',
+    'agriculture': 'Agriculture et récolte',
+    'polyvalent': 'Missions polyvalentes',
+}
 WIZARD_STATE_KEY = '__wizard_v3_state'
 JSON_EXPORT_COLUMNS = {
     'metiers_json',
@@ -1089,6 +1096,44 @@ def _add_public_counter(counter: Counter, kind: str, raw_label: str):
         counter[public_label] += 1
 
 
+def _eures_public_sector_labels(value) -> list[str]:
+    sectors = eures_candidate_sectors(str(value or ''))
+    return [
+        EURES_PUBLIC_SECTOR_LABELS[sector]
+        for sector in EURES_PUBLIC_SECTOR_LABELS
+        if sector in sectors
+    ]
+
+
+def _eures_public_mobility_labels(value) -> list[str]:
+    labels: list[str] = []
+    seen: set[str] = set()
+    for part in _split_multi_value(value):
+        if ':' in part:
+            prefix, raw_values = [chunk.strip() for chunk in part.split(':', 1)]
+            values = [item.strip() for item in raw_values.split(',') if item.strip()]
+            if not values:
+                values = [raw_values.strip()] if raw_values.strip() else []
+            for item in values:
+                if prefix.lower() == 'type':
+                    label = item
+                elif prefix.lower() in {'pays souhaités', 'pays souhaites'}:
+                    label = f'Pays vises : {item}'
+                elif prefix.lower() in {'expérience pays', 'experience pays'}:
+                    label = f'Experience dans : {item}'
+                else:
+                    label = f'{prefix}: {item}'
+                if label and label not in seen:
+                    seen.add(label)
+                    labels.append(label)
+        else:
+            for item in [chunk.strip() for chunk in str(part).split(',') if chunk.strip()]:
+                if item and item not in seen:
+                    seen.add(item)
+                    labels.append(item)
+    return labels
+
+
 def _safe_int(value) -> int:
     try:
         return int(float(value or 0))
@@ -1143,9 +1188,9 @@ def build_eures_public_stats() -> dict:
             monthly[month]['candidats'] += 1
         for label in _split_multi_value(fields.get('pays')):
             _add_public_counter(candidats_par_pays, 'candidats_par_pays', label)
-        for label in _split_multi_value(fields.get('metier')):
+        for label in _eures_public_sector_labels(fields.get('metier')):
             _add_public_counter(secteurs, 'secteurs', label)
-        for label in _split_multi_value(fields.get('mobilite')):
+        for label in _eures_public_mobility_labels(fields.get('mobilite')):
             _add_public_counter(mobilite_candidats, 'mobilite_candidats', label)
 
     for rec in besoins:
@@ -1156,7 +1201,7 @@ def build_eures_public_stats() -> dict:
             monthly[month]['besoins_employeurs'] += 1
         for label in _split_multi_value(fields.get('pays') or fields.get('pays_normalise')):
             _add_public_counter(besoins_par_pays, 'besoins_par_pays', label)
-        for label in _split_multi_value(fields.get('poste')):
+        for label in _eures_public_sector_labels(fields.get('poste')):
             _add_public_counter(secteurs, 'secteurs', label)
 
     for rec in matchings:
