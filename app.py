@@ -21,6 +21,7 @@ from io import BytesIO
 from functools import wraps
 from pathlib import Path
 from urllib.parse import urljoin
+from itsdangerous import BadSignature, URLSafeSerializer
 from dotenv import load_dotenv
 import requests
 from flask import Flask, request, jsonify, redirect, send_file, send_from_directory, Response
@@ -61,6 +62,9 @@ EURES_MATCHING_ADMIN_FIELDS = {
     'admin_decision_at',
     'admin_decision_by',
     'admin_decision_note',
+    'employer_response',
+    'employer_response_at',
+    'employer_response_source',
 }
 EURES_SECTOR_CANONICAL_MAP = {
     'vente': 'vente',
@@ -340,6 +344,30 @@ def get_brevo_config() -> dict:
         'from_email': os.environ.get('BREVO_FROM_EMAIL', '').strip(),
         'from_name': os.environ.get('BREVO_FROM_NAME', 'EURES beta').strip() or 'EURES beta',
     }
+
+
+def get_eures_mail_signature_name() -> str:
+    return os.environ.get('EURES_SIGNATURE_NAME', 'Eric Barthélémy').strip() or 'Eric Barthélémy'
+
+
+def get_public_app_base_url() -> str:
+    configured = os.environ.get('PUBLIC_APP_BASE_URL', '').strip()
+    if configured:
+        return configured.rstrip('/')
+    if request and request.url_root:
+        return request.url_root.rstrip('/')
+    return 'https://eures-beta.osc-fr1.scalingo.io'
+
+
+def get_eures_email_action_serializer() -> URLSafeSerializer:
+    secret = (
+        os.environ.get('EURES_EMAIL_ACTION_SECRET', '').strip()
+        or os.environ.get('ADMIN_PASSWORD', '').strip()
+        or os.environ.get('BREVO_API_KEY', '').strip()
+    )
+    if not secret:
+        raise RuntimeError('Missing EURES email action secret configuration.')
+    return URLSafeSerializer(secret_key=secret, salt='eures-email-action')
 
 
 def get_table_columns(config: dict, headers: dict) -> set[str]:
@@ -1593,6 +1621,14 @@ def _format_email_multiline(value: str) -> str:
     return '<br>'.join(escape(part.strip()) for part in text.split('|') if part.strip()) or escape(text)
 
 
+def _build_eures_feedback_url(record_id: int, response: str) -> str:
+    token = get_eures_email_action_serializer().dumps({
+        'record_id': int(record_id),
+        'response': response,
+    })
+    return f"{get_public_app_base_url()}/eures-beta/matching-feedback?token={token}"
+
+
 def build_brevo_matching_email(row: dict) -> tuple[str, str, str, str]:
     """Build recipient, subject, text body and HTML body for one accepted matching."""
     candidat = row.get('candidat', {}) if isinstance(row.get('candidat'), dict) else {}
@@ -1615,6 +1651,11 @@ def build_brevo_matching_email(row: dict) -> tuple[str, str, str, str]:
     ) or "<li style=\"margin:0 0 8px;\">Profil cohérent avec votre besoin</li>"
 
     candidate_name = str(candidat.get('nom') or 'Profil candidat')
+    candidate_phone = str(candidat.get('telephone') or 'Non renseigné')
+    candidate_city = str(candidat.get('ville') or 'Non renseignée')
+    signature_name = get_eures_mail_signature_name()
+    contact_yes_url = _build_eures_feedback_url(int(row.get('record_id') or 0), 'contact')
+    contact_no_url = _build_eures_feedback_url(int(row.get('record_id') or 0), 'not_contact')
     body_text = (
         f"Bonjour,\n\n"
         f"Nous vous proposons un profil susceptible de correspondre à votre besoin de recrutement pour le poste : {poste}.\n\n"
@@ -1624,6 +1665,8 @@ def build_brevo_matching_email(row: dict) -> tuple[str, str, str, str]:
         f"Candidat\n"
         f"- Nom : {candidate_name}\n"
         f"- Email : {candidat.get('email', 'Non renseigné')}\n"
+        f"- Téléphone : {candidate_phone}\n"
+        f"- Ville actuelle : {candidate_city}\n"
         f"- Pays de résidence : {candidat.get('pays', 'Non renseigné')}\n"
         f"- Métier / secteur : {candidat.get('metier', 'Non renseigné')}\n"
         f"- Compétences : {candidat.get('competences', 'Non renseigné')}\n"
@@ -1632,9 +1675,13 @@ def build_brevo_matching_email(row: dict) -> tuple[str, str, str, str]:
         f"- Disponibilité : {candidat.get('disponibilite', 'Non renseigné')}\n\n"
         f"Pourquoi ce profil a été retenu\n"
         f"{reasons_text}\n\n"
-        "Si ce profil vous intéresse, vous pouvez répondre directement à cet email afin que nous poursuivions la mise en relation.\n\n"
+        "Actions rapides\n"
+        f"- Je vais le contacter : {contact_yes_url}\n"
+        f"- Je ne vais pas le contacter : {contact_no_url}\n\n"
+        "Vous pouvez aussi répondre directement à cet email afin que nous poursuivions la mise en relation.\n\n"
         "Cordialement,\n"
-        "L'équipe EURES beta\n"
+        f"{signature_name}\n"
+        "EURES beta\n"
     )
 
     body_html = f"""
@@ -1685,6 +1732,8 @@ def build_brevo_matching_email(row: dict) -> tuple[str, str, str, str]:
                         <div style="font-size:12px;letter-spacing:1.3px;text-transform:uppercase;color:#6a5a42;margin-bottom:10px;">Profil proposé</div>
                         <h2 style="margin:0 0 14px;font-size:22px;line-height:1.3;color:#103a2b;">{escape(candidate_name)}</h2>
                         <p style="margin:0 0 10px;font-size:15px;line-height:1.6;"><strong>Email :</strong><br>{escape(str(candidat.get('email') or 'Non renseigné'))}</p>
+                        <p style="margin:0 0 10px;font-size:15px;line-height:1.6;"><strong>Téléphone :</strong><br>{escape(candidate_phone)}</p>
+                        <p style="margin:0 0 10px;font-size:15px;line-height:1.6;"><strong>Ville actuelle :</strong><br>{escape(candidate_city)}</p>
                         <p style="margin:0 0 10px;font-size:15px;line-height:1.6;"><strong>Pays de résidence :</strong><br>{escape(str(candidat.get('pays') or 'Non renseigné'))}</p>
                         <p style="margin:0 0 10px;font-size:15px;line-height:1.6;"><strong>Métier / secteur :</strong><br>{_format_email_multiline(candidat.get('metier', ''))}</p>
                         <p style="margin:0 0 10px;font-size:15px;line-height:1.6;"><strong>Langues :</strong><br>{_format_email_multiline(candidat.get('langues', ''))}</p>
@@ -1711,7 +1760,22 @@ def build_brevo_matching_email(row: dict) -> tuple[str, str, str, str]:
                 <div style="background:#103a2b;border-radius:14px;padding:22px;color:#ffffff;">
                   <p style="margin:0 0 10px;font-size:17px;line-height:1.6;"><strong>Suite proposée</strong></p>
                   <p style="margin:0;font-size:15px;line-height:1.7;">
-                    Si ce profil retient votre attention, vous pouvez répondre directement à cet email. Nous organiserons ensuite la mise en relation.
+                    Si ce profil retient votre attention, vous pouvez le contacter directement ou nous répondre par email.
+                  </p>
+                  <table role="presentation" cellspacing="0" cellpadding="0" style="margin-top:18px;">
+                    <tr>
+                      <td style="padding:0 12px 12px 0;">
+                        <a href="{escape(contact_yes_url)}" style="display:inline-block;padding:12px 18px;border-radius:999px;background:#f2c04c;color:#173a2a;text-decoration:none;font-size:14px;font-weight:700;">Je vais le contacter</a>
+                      </td>
+                      <td style="padding:0 0 12px 0;">
+                        <a href="{escape(contact_no_url)}" style="display:inline-block;padding:12px 18px;border-radius:999px;background:#ffffff;color:#173a2a;text-decoration:none;font-size:14px;font-weight:700;">Je ne vais pas le contacter</a>
+                      </td>
+                    </tr>
+                  </table>
+                  <p style="margin:4px 0 0;font-size:14px;line-height:1.7;color:#e6efe9;">
+                    Coordonnées directes du candidat : {escape(str(candidat.get('email') or 'Non renseigné'))}
+                    {' - ' if candidate_phone and candidate_phone != 'Non renseigné' else ''}
+                    {escape(candidate_phone) if candidate_phone and candidate_phone != 'Non renseigné' else ''}
                   </p>
                 </div>
               </td>
@@ -1720,7 +1784,8 @@ def build_brevo_matching_email(row: dict) -> tuple[str, str, str, str]:
               <td style="padding:24px 32px 32px;">
                 <p style="margin:0;font-size:15px;line-height:1.7;">
                   Cordialement,<br>
-                  <strong>L'équipe EURES beta</strong>
+                  <strong>{escape(signature_name)}</strong><br>
+                  EURES beta
                 </p>
               </td>
             </tr>
@@ -1825,9 +1890,13 @@ def list_eures_admin_matchings(status: str = 'all') -> list[dict]:
             'admin_decision_at': fields.get('admin_decision_at', ''),
             'admin_decision_by': fields.get('admin_decision_by', ''),
             'admin_decision_note': fields.get('admin_decision_note', ''),
+            'employer_response': fields.get('employer_response', ''),
+            'employer_response_at': fields.get('employer_response_at', ''),
             'candidat': {
                 'nom': candidat.get('nom', ''),
                 'email': candidat.get('email', ''),
+                'telephone': candidat.get('telephone', ''),
+                'ville': candidat.get('ville', ''),
                 'pays': candidat.get('pays', ''),
                 'metier': candidat.get('metier', ''),
                 'langues': candidat.get('langues', ''),
@@ -2374,6 +2443,81 @@ def admin_eures_matching_decision(form_id: str, record_id: int):
     except Exception as e:
         app.logger.exception('EURES matching decision update failed')
         return jsonify({'error': str(e)}), 500
+
+
+@app.route('/eures-beta/matching-feedback', methods=['GET'])
+def eures_matching_feedback():
+    """Record employer feedback from email CTA links."""
+    token = str(request.args.get('token') or '').strip()
+    if not token:
+        return Response('Lien invalide : token manquant.', status=400, mimetype='text/plain')
+
+    try:
+        payload = get_eures_email_action_serializer().loads(token)
+    except BadSignature:
+        return Response('Lien invalide ou expiré.', status=400, mimetype='text/plain')
+    except Exception as e:
+        app.logger.exception('EURES feedback token decode failed')
+        return Response(f'Erreur de lecture du lien : {e}', status=500, mimetype='text/plain')
+
+    record_id = int(payload.get('record_id') or 0)
+    response_code = str(payload.get('response') or '').strip().lower()
+    if not record_id or response_code not in {'contact', 'not_contact'}:
+        return Response('Lien invalide : données incomplètes.', status=400, mimetype='text/plain')
+
+    config = get_eures_matching_config()
+    if not config:
+        return Response('Configuration EURES incomplète.', status=500, mimetype='text/plain')
+
+    headers = _eures_admin_headers(config)
+    response_label = 'je vais le contacter' if response_code == 'contact' else 'je ne vais pas le contacter'
+    update_fields = {
+        'employer_response': response_code,
+        'employer_response_at': datetime.utcnow().isoformat() + 'Z',
+        'employer_response_source': 'email_cta',
+    }
+
+    try:
+        update_matching_record_by_id(config['doc_id'], record_id, update_fields, headers)
+        app.logger.info(
+            'EURES employer response recorded',
+            extra={
+                'record_id': record_id,
+                'response': response_code,
+            },
+        )
+    except Exception as e:
+        app.logger.exception('EURES employer response update failed')
+        return Response(f'Erreur lors de l’enregistrement de votre réponse : {e}', status=500, mimetype='text/plain')
+
+    html = f"""<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>EURES beta - Réponse enregistrée</title>
+  </head>
+  <body style="margin:0;background:#f4efe6;font-family:Georgia,'Times New Roman',serif;color:#1f1f1f;">
+    <div style="max-width:720px;margin:32px auto;padding:0 16px;">
+      <div style="background:#fffdf9;border:1px solid #e7dcc7;border-radius:18px;overflow:hidden;">
+        <div style="padding:28px 32px;background:linear-gradient(135deg,#103a2b 0%,#1f5a45 100%);color:#fff;">
+          <div style="font-size:13px;letter-spacing:1.4px;text-transform:uppercase;opacity:0.82;">EURES beta</div>
+          <h1 style="margin:10px 0 0;font-size:30px;line-height:1.2;">Réponse enregistrée</h1>
+        </div>
+        <div style="padding:28px 32px;">
+          <p style="margin:0 0 16px;font-size:17px;line-height:1.7;">
+            Merci. Votre réponse a bien été enregistrée :
+            <strong>{escape(response_label)}</strong>.
+          </p>
+          <p style="margin:0;font-size:15px;line-height:1.7;">
+            Si besoin, vous pouvez aussi répondre directement à l’email reçu.
+          </p>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>"""
+    return Response(html, status=200, mimetype='text/html')
 
 
 @app.route('/api/forms/<form_id>/public-stats', methods=['GET'])
