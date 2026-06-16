@@ -1067,8 +1067,9 @@ def _public_breakdown_label(kind: str, label: str) -> str:
 
     if kind == 'retours_employeurs':
         return {
-            'contact': 'Va contacter',
-            'not_contact': 'Ne contactera pas',
+            'contact': 'Accepté par employeur',
+            'not_contact': 'Refusé par employeur',
+            'no_response': 'Sans réponse',
         }.get(lowered, cleaned[:1].upper() + cleaned[1:])
 
     return cleaned
@@ -1127,8 +1128,9 @@ def build_eures_public_stats() -> dict:
         'matchings': 0,
         'candidats_contactes': 0,
         'candidatures_transmises_employeur': 0,
-        'employeurs_qui_contactent': 0,
-        'employeurs_qui_ne_contactent_pas': 0,
+        'contacts_acceptes_employeur': 0,
+        'contacts_refuses_employeur': 0,
+        'contacts_sans_reponse_employeur': 0,
         'embauches': 0,
     })
 
@@ -1172,16 +1174,23 @@ def build_eures_public_stats() -> dict:
         status = str(fields.get('statut') or '').strip()
         if status:
             _add_public_counter(matchings_par_statut, 'matchings_par_statut', status)
+
+        admin_status = str(fields.get('admin_status') or '').strip().lower()
         employer_response = str(fields.get('employer_response') or '').strip().lower()
-        if employer_response:
-            _add_public_counter(retours_employeurs, 'retours_employeurs', employer_response)
-            response_month = _month_key(fields.get('employer_response_at'))
+        if admin_status == 'accepted':
+            response_bucket = employer_response if employer_response in {'contact', 'not_contact'} else 'no_response'
+            _add_public_counter(retours_employeurs, 'retours_employeurs', response_bucket)
+            response_month = _month_key(
+                fields.get('employer_response_at') if response_bucket != 'no_response' else fields.get('admin_decision_at')
+            )
             if response_month:
                 monthly[response_month]['mois'] = response_month
-                if employer_response == 'contact':
-                    monthly[response_month]['employeurs_qui_contactent'] += 1
-                elif employer_response == 'not_contact':
-                    monthly[response_month]['employeurs_qui_ne_contactent_pas'] += 1
+                if response_bucket == 'contact':
+                    monthly[response_month]['contacts_acceptes_employeur'] += 1
+                elif response_bucket == 'not_contact':
+                    monthly[response_month]['contacts_refuses_employeur'] += 1
+                else:
+                    monthly[response_month]['contacts_sans_reponse_employeur'] += 1
 
     manual_stats_available = False
     stats_config = get_eures_stats_config()
@@ -1212,8 +1221,9 @@ def build_eures_public_stats() -> dict:
         'matchings': len(matchings),
         'candidats_contactes': sum(int(row['candidats_contactes']) for row in monthly_rows),
         'candidatures_transmises_employeur': sum(int(row['candidatures_transmises_employeur']) for row in monthly_rows),
-        'employeurs_qui_contactent': sum(int(row['employeurs_qui_contactent']) for row in monthly_rows),
-        'employeurs_qui_ne_contactent_pas': sum(int(row['employeurs_qui_ne_contactent_pas']) for row in monthly_rows),
+        'contacts_acceptes_employeur': sum(int(row['contacts_acceptes_employeur']) for row in monthly_rows),
+        'contacts_refuses_employeur': sum(int(row['contacts_refuses_employeur']) for row in monthly_rows),
+        'contacts_sans_reponse_employeur': sum(int(row['contacts_sans_reponse_employeur']) for row in monthly_rows),
         'embauches': sum(int(row['embauches']) for row in monthly_rows),
     }
 

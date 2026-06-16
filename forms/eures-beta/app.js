@@ -224,8 +224,9 @@ const copy = {
         matchings: "Matchings calculés",
         candidats_contactes: "Candidats contactés",
         candidatures_transmises_employeur: "Candidatures transmises",
-        employeurs_qui_contactent: "Employeurs qui contactent",
-        employeurs_qui_ne_contactent_pas: "Employeurs qui ne contactent pas",
+        contacts_acceptes_employeur: "Contacts acceptés par employeur",
+        contacts_refuses_employeur: "Contacts refusés par employeur",
+        contacts_sans_reponse_employeur: "Contacts sans réponse employeur",
         embauches: "Embauches"
       },
       monthlyColumns: {
@@ -235,8 +236,9 @@ const copy = {
         matchings: "Matchings",
         candidats_contactes: "Candidats contactés",
         candidatures_transmises_employeur: "Candidatures transmises",
-        employeurs_qui_contactent: "Vont contacter",
-        employeurs_qui_ne_contactent_pas: "Ne contacteront pas",
+        contacts_acceptes_employeur: "Acceptés",
+        contacts_refuses_employeur: "Refusés",
+        contacts_sans_reponse_employeur: "Sans réponse",
         embauches: "Embauches"
       },
       breakdownLabels: {
@@ -472,8 +474,9 @@ const copy = {
         matchings: "Computed matchings",
         candidats_contactes: "Candidates contacted",
         candidatures_transmises_employeur: "Applications transmitted",
-        employeurs_qui_contactent: "Employers who will contact",
-        employeurs_qui_ne_contactent_pas: "Employers who will not contact",
+        contacts_acceptes_employeur: "Employer-accepted contacts",
+        contacts_refuses_employeur: "Employer refusals",
+        contacts_sans_reponse_employeur: "No employer response",
         embauches: "Hires"
       },
       monthlyColumns: {
@@ -483,8 +486,9 @@ const copy = {
         matchings: "Matchings",
         candidats_contactes: "Candidates contacted",
         candidatures_transmises_employeur: "Applications transmitted",
-        employeurs_qui_contactent: "Will contact",
-        employeurs_qui_ne_contactent_pas: "Will not contact",
+        contacts_acceptes_employeur: "Accepted",
+        contacts_refuses_employeur: "Refused",
+        contacts_sans_reponse_employeur: "No response",
         embauches: "Hires"
       },
       breakdownLabels: {
@@ -720,8 +724,9 @@ const copy = {
         matchings: "Berechnete Matchings",
         candidats_contactes: "Kontaktierte Kandidaten",
         candidatures_transmises_employeur: "Übermittelte Bewerbungen",
-        employeurs_qui_contactent: "Arbeitgeber mit Kontaktaufnahme",
-        employeurs_qui_ne_contactent_pas: "Arbeitgeber ohne Kontaktaufnahme",
+        contacts_acceptes_employeur: "Vom Arbeitgeber akzeptierte Kontakte",
+        contacts_refuses_employeur: "Vom Arbeitgeber abgelehnte Kontakte",
+        contacts_sans_reponse_employeur: "Kontakte ohne Arbeitgeberantwort",
         embauches: "Einstellungen"
       },
       monthlyColumns: {
@@ -731,8 +736,9 @@ const copy = {
         matchings: "Matchings",
         candidats_contactes: "Kontaktierte Kandidaten",
         candidatures_transmises_employeur: "Übermittelte Bewerbungen",
-        employeurs_qui_contactent: "Werden kontaktieren",
-        employeurs_qui_ne_contactent_pas: "Werden nicht kontaktieren",
+        contacts_acceptes_employeur: "Akzeptiert",
+        contacts_refuses_employeur: "Abgelehnt",
+        contacts_sans_reponse_employeur: "Ohne Antwort",
         embauches: "Einstellungen"
       },
       breakdownLabels: {
