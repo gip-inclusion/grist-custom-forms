@@ -1816,8 +1816,11 @@ function statTemplate(lang, t, data) {
             <div class="eyebrow">${t.statPage.eyebrow}</div>
             <h1>${t.statPage.title}</h1>
             <p class="lede">${t.statPage.lede}</p>
+            <div class="updated-card">
+              <span class="updated-label">${t.statPage.updatedPrefix}</span>
+              <strong>${formatTimestamp(data?.generated_at, lang)}</strong>
+            </div>
             <div class="stat-meta">
-              <div><strong>${t.statPage.updatedPrefix}:</strong> ${formatTimestamp(data?.generated_at, lang)}</div>
               <div>${t.statPage.methodology}</div>
               <div>${manualConfigured ? t.statPage.manualNote : t.statPage.manualMissing}</div>
             </div>

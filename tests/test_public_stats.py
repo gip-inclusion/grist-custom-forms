@@ -8,6 +8,12 @@ class PublicStatsTest(unittest.TestCase):
     def setUp(self):
         self.client = app.app.test_client()
 
+    def test_public_breakdown_label_normalizes_raw_values(self):
+        self.assertEqual(app._public_breakdown_label('matchings_par_statut', 'a_valider'), 'A valider')
+        self.assertEqual(app._public_breakdown_label('mobilite_candidats', 'type: Transfrontalière'), 'Transfrontalière')
+        self.assertEqual(app._public_breakdown_label('mobilite_candidats', 'pays souhaités: Luxembourg'), 'Pays vises : Luxembourg')
+        self.assertEqual(app._public_breakdown_label('mobilite_candidats', 'expérience pays: Luxembourg'), 'Experience dans : Luxembourg')
+
     @patch.object(app, 'fetch_table_records')
     @patch.object(app, 'get_eures_stats_config')
     @patch.object(app, 'get_form_config')

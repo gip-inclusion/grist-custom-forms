@@ -283,6 +283,30 @@ textarea {
   line-height: 1.5;
 }
 
+.updated-card {
+  margin-top: 1.25rem;
+  display: inline-flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.9rem 1rem;
+  border-radius: 18px;
+  border: 1px solid rgba(0, 68, 148, 0.16);
+  background: linear-gradient(180deg, rgba(220, 233, 255, 0.95), rgba(255, 255, 255, 0.9));
+  box-shadow: 0 12px 28px rgba(34, 58, 94, 0.08);
+}
+
+.updated-label {
+  font-size: 0.82rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--accent-strong);
+}
+
+.updated-card strong {
+  font-size: 1.15rem;
+  line-height: 1.2;
+}
+
 .table-wrap {
   margin-top: 1rem;
   overflow-x: auto;

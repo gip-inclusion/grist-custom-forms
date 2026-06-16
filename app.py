@@ -982,6 +982,37 @@ def _split_multi_value(value) -> list[str]:
     return [str(item).strip() for item in raw_items if str(item).strip()]
 
 
+def _clean_public_label(label: str) -> str:
+    return ' '.join(str(label or '').strip().split())
+
+
+def _public_breakdown_label(kind: str, label: str) -> str:
+    """Normalize raw stored values into cleaner public labels."""
+    cleaned = _clean_public_label(label)
+    lowered = cleaned.lower()
+
+    if kind == 'matchings_par_statut':
+        return {
+            'a_ecarter': 'A ecarter',
+            'a_valider': 'A valider',
+            'auto_envoyable': 'Auto-envoyable',
+        }.get(lowered, cleaned[:1].upper() + cleaned[1:])
+
+    if kind == 'mobilite_candidats':
+        if ':' in cleaned:
+            prefix, raw_value = [part.strip() for part in cleaned.split(':', 1)]
+            prefix_l = prefix.lower()
+            if prefix_l == 'type':
+                return raw_value
+            if prefix_l in {'pays souhaités', 'pays souhaites'}:
+                return f'Pays vises : {raw_value}'
+            if prefix_l in {'expérience pays', 'experience pays'}:
+                return f'Experience dans : {raw_value}'
+        return cleaned[:1].upper() + cleaned[1:]
+
+    return cleaned
+
+
 def _counter_to_rows(counter: Counter, minimum_public_count: int = 5) -> list[dict]:
     """Convert a counter to public rows while masking very small categories."""
     visible: list[dict] = []
@@ -994,6 +1025,12 @@ def _counter_to_rows(counter: Counter, minimum_public_count: int = 5) -> list[di
     if hidden_total:
         visible.append({'label': 'Autres', 'count': hidden_total})
     return visible
+
+
+def _add_public_counter(counter: Counter, kind: str, raw_label: str):
+    public_label = _public_breakdown_label(kind, raw_label)
+    if public_label:
+        counter[public_label] += 1
 
 
 def _safe_int(value) -> int:
@@ -1045,11 +1082,11 @@ def build_eures_public_stats() -> dict:
             monthly[month]['mois'] = month
             monthly[month]['candidats'] += 1
         for label in _split_multi_value(fields.get('pays')):
-            candidats_par_pays[label] += 1
+            _add_public_counter(candidats_par_pays, 'candidats_par_pays', label)
         for label in _split_multi_value(fields.get('metier')):
-            secteurs[label] += 1
+            _add_public_counter(secteurs, 'secteurs', label)
         for label in _split_multi_value(fields.get('mobilite')):
-            mobilite_candidats[label] += 1
+            _add_public_counter(mobilite_candidats, 'mobilite_candidats', label)
 
     for rec in besoins:
         fields = rec.get('fields', {}) if isinstance(rec, dict) else {}
@@ -1058,9 +1095,9 @@ def build_eures_public_stats() -> dict:
             monthly[month]['mois'] = month
             monthly[month]['besoins_employeurs'] += 1
         for label in _split_multi_value(fields.get('pays') or fields.get('pays_normalise')):
-            besoins_par_pays[label] += 1
+            _add_public_counter(besoins_par_pays, 'besoins_par_pays', label)
         for label in _split_multi_value(fields.get('poste')):
-            secteurs[label] += 1
+            _add_public_counter(secteurs, 'secteurs', label)
 
     for rec in matchings:
         fields = rec.get('fields', {}) if isinstance(rec, dict) else {}
@@ -1070,7 +1107,7 @@ def build_eures_public_stats() -> dict:
             monthly[month]['matchings'] += 1
         status = str(fields.get('statut') or '').strip()
         if status:
-            matchings_par_statut[status] += 1
+            _add_public_counter(matchings_par_statut, 'matchings_par_statut', status)
 
     manual_stats_available = False
     stats_config = get_eures_stats_config()
