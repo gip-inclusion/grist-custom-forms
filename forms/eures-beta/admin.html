@@ -532,6 +532,72 @@
       margin-top: 1rem;
     }
 
+    .send-panel {
+      display: grid;
+      gap: 0.9rem;
+    }
+
+    .send-panel-head {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.9rem;
+    }
+
+    .send-panel-count strong {
+      display: block;
+      font-size: 1.9rem;
+      line-height: 1;
+      color: var(--accent-strong);
+    }
+
+    .send-panel-count span {
+      display: block;
+      margin-top: 0.35rem;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    .selection-list {
+      display: grid;
+      gap: 0.65rem;
+    }
+
+    .selection-row {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      gap: 0.8rem;
+      align-items: center;
+      padding: 0.8rem 0.9rem;
+      border-radius: 16px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.88);
+    }
+
+    .selection-row input {
+      width: 1.1rem;
+      height: 1.1rem;
+      margin: 0;
+    }
+
+    .selection-main {
+      min-width: 0;
+      display: grid;
+      gap: 0.2rem;
+    }
+
+    .selection-main strong {
+      font-size: 0.98rem;
+      line-height: 1.35;
+    }
+
+    .selection-main span {
+      color: var(--muted);
+      line-height: 1.45;
+      word-break: break-word;
+    }
+
     .invitation-card {
       border: 1px solid var(--line);
       border-radius: 22px;
@@ -702,6 +768,26 @@
             </div>
           </div>
 
+          <div class="admin-card send-panel">
+            <div class="send-panel-head">
+              <div class="send-panel-count">
+                <strong id="pending-send-count">0</strong>
+                <span id="pending-send-label">invitation à envoyer</span>
+              </div>
+              <div class="inline-actions">
+                <button id="send-pending-btn" type="button">Envoyer toutes les invitations en attente</button>
+                <button class="btn-secondary" id="toggle-selection-btn" type="button">Sélectionner des invitations</button>
+              </div>
+            </div>
+            <div id="selection-panel" hidden>
+              <div class="selection-list" id="selection-list"></div>
+              <div class="inline-actions" style="margin-top: 0.2rem;">
+                <button id="send-selected-btn" type="button">Envoyer la sélection</button>
+                <button class="btn-secondary" id="cancel-selection-btn" type="button">Annuler la sélection</button>
+              </div>
+            </div>
+          </div>
+
           <div class="admin-card invitation-layout">
             <div>
               <div class="section-title">Ajouter une invitation unitaire</div>
@@ -767,7 +853,6 @@
                 <textarea id="csv-text" placeholder="Collez ici le contenu CSV si besoin"></textarea>
                 <div class="inline-actions">
                   <button id="csv-import-btn" type="button">Importer le CSV</button>
-                  <button class="btn-secondary" id="send-pending-btn" type="button">Envoyer toutes les invitations en attente</button>
                 </div>
                 <p class="help-text">Colonnes recommandées : <code>role,email,first_name,last_name,company_name,language,source,external_ref,notes</code></p>
                 <pre class="code-block" id="csv-example">role,email,first_name,last_name,company_name,language,source,external_ref,notes
@@ -844,6 +929,8 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
       invitations: {
         rows: [],
         loading: false,
+        selectionMode: false,
+        selectedIds: [],
       },
       matchings: {
         rows: [],
@@ -950,6 +1037,63 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
       document.getElementById("invite-kpi-received").textContent = stats.questionnaire_recu ?? 0;
     }
 
+    function pendingInvitationRows() {
+      return state.invitations.rows.filter((row) => row.invitation_status === "invitation_a_envoyer");
+    }
+
+    function updatePendingSendPanel() {
+      const pendingRows = pendingInvitationRows();
+      const count = pendingRows.length;
+      document.getElementById("pending-send-count").textContent = count;
+      document.getElementById("pending-send-label").textContent = count > 1
+        ? "invitations à envoyer"
+        : "invitation à envoyer";
+      document.getElementById("send-pending-btn").disabled = count === 0;
+      document.getElementById("toggle-selection-btn").disabled = count === 0;
+
+      const panel = document.getElementById("selection-panel");
+      const list = document.getElementById("selection-list");
+      panel.hidden = !state.invitations.selectionMode || count === 0;
+      if (!state.invitations.selectionMode || count === 0) {
+        list.innerHTML = "";
+        return;
+      }
+
+      list.innerHTML = pendingRows.map((row) => {
+        const name = row.role === "employer"
+          ? (row.company_name || [row.first_name, row.last_name].filter(Boolean).join(" ") || row.email || "Employeur")
+          : ([row.first_name, row.last_name].filter(Boolean).join(" ") || row.email || "Candidat");
+        const type = row.role === "employer" ? "Employeur" : "Candidat";
+        const checked = state.invitations.selectedIds.includes(Number(row.record_id)) ? "checked" : "";
+        return `
+          <label class="selection-row">
+            <input type="checkbox" value="${esc(row.record_id)}" ${checked}>
+            <span class="selection-main">
+              <strong>${esc(name)}</strong>
+              <span>${esc(type)} · ${esc(row.email || "-")}</span>
+            </span>
+          </label>
+        `;
+      }).join("");
+
+      for (const input of list.querySelectorAll('input[type="checkbox"]')) {
+        input.addEventListener("change", (event) => {
+          const recordId = Number(event.currentTarget.value || 0);
+          if (!recordId) return;
+          if (event.currentTarget.checked) {
+            if (!state.invitations.selectedIds.includes(recordId)) {
+              state.invitations.selectedIds.push(recordId);
+            }
+          } else {
+            state.invitations.selectedIds = state.invitations.selectedIds.filter((value) => value !== recordId);
+          }
+          document.getElementById("send-selected-btn").disabled = state.invitations.selectedIds.length === 0;
+        });
+      }
+
+      document.getElementById("send-selected-btn").disabled = state.invitations.selectedIds.length === 0;
+    }
+
     function renderInvitations() {
       const list = document.getElementById("invitation-list");
       const search = normalizeText(document.getElementById("invite-filter-search").value.trim());
@@ -1019,20 +1163,10 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
               </div>
             </div>
             ${row.invite_link ? `<pre class="code-block">${esc(row.invite_link)}</pre>` : ""}
-            <div class="inline-actions">
-              <button type="button" data-send-record="${esc(row.record_id)}">Envoyer cette invitation</button>
-            </div>
           </article>
         `;
       }).join("");
-
-      for (const button of list.querySelectorAll("[data-send-record]")) {
-        button.addEventListener("click", async (event) => {
-          const recordId = Number(event.currentTarget.dataset.sendRecord || 0);
-          if (!recordId) return;
-          await sendInvitations([recordId]);
-        });
-      }
+      updatePendingSendPanel();
     }
 
     async function loadInvitations() {
@@ -1051,6 +1185,9 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
           throw new Error(payload.error || `Erreur API (${response.status})`);
         }
         state.invitations.rows = Array.isArray(payload.rows) ? payload.rows : [];
+        state.invitations.selectedIds = state.invitations.selectedIds.filter((recordId) =>
+          state.invitations.rows.some((row) => Number(row.record_id) === Number(recordId) && row.invitation_status === "invitation_a_envoyer")
+        );
         updateInvitationKpis(payload.stats || {});
         renderInvitations();
         setStatus("invite-status-line", `${state.invitations.rows.length} invitation(s) chargée(s).`);
@@ -1381,6 +1518,25 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
     });
     document.getElementById("send-pending-btn").addEventListener("click", async () => {
       await sendInvitations([]);
+    });
+    document.getElementById("toggle-selection-btn").addEventListener("click", () => {
+      state.invitations.selectionMode = true;
+      state.invitations.selectedIds = [];
+      updatePendingSendPanel();
+    });
+    document.getElementById("cancel-selection-btn").addEventListener("click", () => {
+      state.invitations.selectionMode = false;
+      state.invitations.selectedIds = [];
+      updatePendingSendPanel();
+    });
+    document.getElementById("send-selected-btn").addEventListener("click", async () => {
+      if (!state.invitations.selectedIds.length) {
+        setStatus("invite-status-line", "Erreur : aucune invitation sélectionnée.");
+        return;
+      }
+      await sendInvitations(state.invitations.selectedIds);
+      state.invitations.selectionMode = false;
+      state.invitations.selectedIds = [];
     });
     document.getElementById("csv-file").addEventListener("change", async (event) => {
       const file = event.target.files && event.target.files[0];
