@@ -325,13 +325,13 @@ const copy = {
   en: {
     common: {
       brandTitle: "EURES beta",
-      brandSubtitle: "Cross-border mobility, matching and follow-up",
+      brandSubtitle: "Cross-border mobility, matching and support",
       navHome: "Home",
       navCandidate: "Candidate",
       navEmployer: "Employer",
       navStats: "Stats",
       langLabel: "Language",
-      footer: "Starter prototype to test sign-up, matching and structured delivery into GRIST.",
+      footer: "EURES beta experiment to support professional mobility and recruitment across the Greater Region.",
       ctaStartCandidate: "Start as candidate",
       ctaStartEmployer: "Start as employer",
       ctaBackHome: "Back to home",
@@ -359,45 +359,57 @@ const copy = {
       questionnaireNote: "This questionnaire is intentionally compact for the first version. It follows the logic of the reference Tally forms without copying them in full."
     },
     home: {
-      eyebrow: "Test a practical service in the Greater Region",
-      title: "Connect mobile workers with job opportunities that stay off their radar.",
-      lede: "EURES beta addresses a simple issue: the labour market is cross-border, while job search and hiring remain largely national. The service aims to capture intent, structure needs and send the right opportunities faster.",
-      storyTitle: "Starting point",
-      storyText: "People who already worked in Luxembourg, Germany or a neighbouring country often look first in their country of residence. At the same time, employers have real hiring needs but struggle to reach these mobile profiles.",
+      eyebrow: "An experiment in the Greater Region",
+      title: "Making recruitment and professional mobility easier across the Greater Region",
+      lede: "EURES beta is testing a new way to bring together employers' needs and candidates' mobility plans in a cross-border economic area.",
+      storyTitle: "A cross-border labour market that remains fragmented",
+      storyText: "The labour market goes beyond national borders, yet recruitment and job search are still largely organised country by country.\n\nThe project aims to better identify needs, mobility intentions and opportunities in order to support more relevant and faster introductions.\n\nAcross the Greater Region, several hundred thousand people already work beyond national borders. Even so, job offers and applications still circulate with difficulty between countries.\n\nSome employers face recruitment difficulties, while candidates open to mobility do not always spot the opportunities that could match them.",
       stats: [
         ["280,000", "cross-border workers commute daily within the Greater Region."],
         ["40–50k", "people with cross-border experience may be looking for work."],
         ["15,000+", "vacancies remain open in the same labour basin."]
       ],
-      tracksTitle: "Two entry points, one matching engine",
-      candidateTitle: "Candidate flow",
-      candidateText: "Capture mobility plans, target sectors, languages, availability and concrete signals that make matching faster.",
-      employerTitle: "Employer flow",
-      employerText: "Capture hiring demand, languages, work constraints, relocation support and the employer’s strongest criteria.",
-      principlesTitle: "Product principles",
+      tracksTitle: "Two complementary paths",
+      candidateTitle: "Candidate path",
+      candidateText: "The service helps better understand mobility plans, skills, languages and preferences so that relevant opportunities can be identified more easily.",
+      employerTitle: "Employer path",
+      employerText: "The service helps clarify recruitment needs and better take account of key constraints and criteria in order to support introductions.",
+      principlesTitle: "An experiment focused on real uses",
       principles: [
-        ["Simple first", "A lightweight multilingual first flow that can be used immediately."],
-        ["Useful data", "Structured answers that feed GRIST and prepare matching scoring."],
-        ["Human validation", "If the score is weak or ambiguous, an EURES operator can review the match."]
+        ["Test quickly", "A first lightweight multilingual service helps collect real needs and observe how people use it."],
+        ["Build knowledge", "The information collected helps progressively improve the understanding of candidate and employer needs."],
+        ["Combine automation and human expertise", "The project explores different forms of assistance while keeping room for human intervention when needed."]
+      ],
+      perspectivesTitle: "Perspectives",
+      perspectivesBullets: [
+        "Opening up to other countries in the Greater Region.",
+        "Adding new sectors of activity.",
+        "Continuous improvement of user journeys.",
+        "Development of follow-up and support tools.",
+        "Scaling up the service based on lessons learned from the first tests."
       ]
     },
     candidateLanding: {
-      kicker: "Candidate flow",
-      title: "A simple questionnaire to explore mobility opportunities in Europe.",
-      lede: "This approach is for people who may consider European professional mobility, either as cross-border commuting or relocation. In simple terms: working in a neighbouring country while staying at home, or moving to live and work in another European country.",
+      kicker: "Candidate path",
+      title: "Explore new professional opportunities in Europe",
+      lede: "Answer a few questions to help us better understand your profile and your mobility plans.",
       messageTitle: "Why fill in this questionnaire?",
-      messageIntro: "This questionnaire helps us quickly understand whether your profile may match opportunities linked to European mobility.",
+      messageIntro: "If some opportunities match your experience, skills and preferences, we may help make introductions with employers who are recruiting.",
       messageBody: [
-        "At the moment, the test mainly involves companies based in Luxembourg, within a cross-border or broader European mobility framework.",
-        "This is a practical test phase: we try something real, we see what works, and then we improve it.",
-        "In other words, the service is not final yet, but it is already used to identify real opportunities for people ready to move within Europe."
+        "In just a few minutes, you can tell us more about your occupation or experience, the languages you speak, your availability, your mobility plans and the conditions that matter to you.",
+        "Whether you want to work in Luxembourg, in a neighbouring country or consider a professional experience elsewhere in Europe, this service helps identify possibilities that fit your situation.",
+        "This information helps us better identify the opportunities that may interest you."
       ],
-      messageHighlight: "You answer once, and it helps us see whether some current or upcoming European mobility opportunities may fit you.",
-      messageOutcome: "The service will then expand to other employers in Germany, Belgium and France, as well as more job families.",
-      signatureTitle: "At the moment, the first tests mainly cover:",
-      signatureName: "Luxembourg",
-      signatureRole: "and several hiring sectors",
+      messageHighlight: "You answer once, and your profile can then be considered for different opportunities.",
+      benefitsTitle: "What the service can bring you",
+      benefits: [
+        "Discover more opportunities.",
+        "Be connected with employers.",
+        "Access a wider labour market.",
+        "Build your mobility project progressively."
+      ],
       bulletsTitle: "Jobs currently tested with employers in Luxembourg",
+      bulletsLead: "The first tests currently focus on several recruiting sectors, especially with employers based in Luxembourg.",
       bullets: [
         "Retail and sales",
         "Cleaning and maintenance",
@@ -405,10 +417,16 @@ const copy = {
         "Agriculture and harvesting",
         "Flexible jobs and roles accessible quickly"
       ],
-      sideTitle: "Who are we?",
-      sideText: "EURES is the European employment cooperation network. It supports recruitment and professional opportunities across Europe, especially for cross-border mobility where candidates and vacancies often miss each other.",
+      sideTitle: "About EURES",
+      sideText: "EURES is the European employment cooperation network. It supports professional mobility and helps recruitment across European countries.",
       disclaimerTitle: "What happens next",
-      disclaimerText: "If your profile matches ongoing needs, it may be reviewed for a possible introduction. Over time, more companies, more countries and more job families will be added.",
+      disclaimerText: "The goal is to help you discover professional opportunities that match your profile and your mobility plans.",
+      processBullets: [
+        "1. Review of the profile.",
+        "2. Search for compatible opportunities.",
+        "3. Suggested introductions when needs match.",
+        "4. Progressive expansion of the service with more employers, countries and occupations."
+      ],
       tags: ["EURES", "France Travail", "European Union", "Luxembourg", "Retail & sales"],
       logos: {
         eures: {
@@ -426,22 +444,26 @@ const copy = {
       }
     },
     employerLanding: {
-      kicker: "Employer flow",
-      title: "A simple questionnaire to surface your hiring needs in European mobility.",
-      lede: "This approach is for employers who can recruit beyond their local market, either cross-border or with candidates coming from another European country. The goal is simple: understand your need more clearly so we can identify matching profiles faster.",
+      kicker: "Employer path",
+      title: "Recruit more easily thanks to European mobility",
+      lede: "Describe your recruitment need in just a few minutes and let us identify candidates who may match your search, including beyond your local labour market.",
       messageTitle: "Why fill in this questionnaire?",
-      messageIntro: "This questionnaire helps us understand your hiring need, the role context and the conditions you offer.",
+      messageIntro: "This service is for employers recruiting across borders or willing to welcome candidates coming from other European countries.",
       messageBody: [
-        "At the moment, the experiment is first being carried out with companies based in Luxembourg, on concrete recruitments that can sometimes be difficult to fill.",
-        "We are in a very practical testing phase: we look at what really helps suitable profiles emerge, then we improve the service.",
-        "In simple terms, you describe your need once, and this helps us spot applications that may be compatible more effectively."
+        "The questionnaire helps us better understand the role, the skills required, the useful languages, the conditions offered and any needs related to mobility.",
+        "Our goal is to help you access a wider pool of candidates and support introductions when some vacancies are difficult to fill.",
+        "The more precise your need is, the better we can identify compatible profiles."
       ],
-      messageHighlight: "The point is not to waste your time with one more form. The point is to qualify your need better so future introductions are easier.",
-      messageOutcome: "The service will gradually open up to other employers in Germany, Belgium and France, as well as to more occupations.",
-      signatureTitle: "At the moment, the first tests mainly concern:",
-      signatureName: "Luxembourg-based employers",
-      signatureRole: "and several sectors that are hiring",
-      bulletsTitle: "What we will qualify",
+      messageHighlight: "This service is designed to save you time and help you widen your search for candidates when recruitment becomes more difficult.",
+      benefitsTitle: "What the service can bring you",
+      benefits: [
+        "Access a wider pool of candidates.",
+        "Save time.",
+        "Improve the quality of introductions.",
+        "Be supported in a European recruitment approach."
+      ],
+      bulletsTitle: "Sectors especially concerned",
+      bulletsLead: "The service is especially useful when some recruitments are difficult or when needs are seasonal or recurrent.",
       bullets: [
         "Sales and retail",
         "Cleaning and maintenance",
@@ -449,10 +471,16 @@ const copy = {
         "Agriculture and harvesting",
         "Versatile jobs and roles accessible quickly"
       ],
-      sideTitle: "What this changes for you",
-      sideText: "You clarify the type of recruitment, the useful languages, the job constraints, the expected level and any arrival support. This allows us to compare employer needs and candidate expectations more seriously.",
+      sideTitle: "A simple and useful service",
+      sideText: "You describe your need once. We then rely on this information to look for profiles that may match and to facilitate exchanges when relevant.",
       disclaimerTitle: "What happens next",
-      disclaimerText: "If some profiles appear compatible with your search, your need can be taken up for an introduction. And if the need is not yet clear enough, the questionnaire already helps us prepare the next recruitments better.",
+      disclaimerText: "The goal is not to make you fill in one more form, but to help you find the candidates you need more easily.",
+      processBullets: [
+        "1. Review of the need.",
+        "2. Search for compatible profiles.",
+        "3. Suggested introductions when candidates match.",
+        "4. Progressive improvement of the service."
+      ],
       tags: ["EURES", "France Travail", "European Union", "Luxembourg", "Recruitment"]
     },
     candidateQuestionnaire: {
@@ -621,7 +649,7 @@ const copy = {
       navEmployer: "Arbeitgeber",
       navStats: "Statistik",
       langLabel: "Sprache",
-      footer: "Startprototyp zum Testen von Erfassung, Matching und strukturierter Übergabe an GRIST.",
+      footer: "EURES-beta-Experiment zur Unterstützung beruflicher Mobilität und Rekrutierung in der Großregion.",
       ctaStartCandidate: "Als Kandidat starten",
       ctaStartEmployer: "Als Arbeitgeber starten",
       ctaBackHome: "Zur Startseite",
@@ -649,45 +677,57 @@ const copy = {
       questionnaireNote: "Dieser Fragebogen ist für die erste Version bewusst kompakt. Er orientiert sich an den vorhandenen Tally-Formularen, ohne sie vollständig zu kopieren."
     },
     home: {
-      eyebrow: "Einen konkreten Dienst in der Großregion testen",
-      title: "Mobile Arbeitskräfte mit Stellen verbinden, die heute unter dem Radar bleiben.",
-      lede: "EURES beta adressiert ein einfaches Problem: Der Arbeitsmarkt ist grenzüberschreitend, Stellensuche und Rekrutierung bleiben aber weitgehend national. Der Dienst soll Absichten erfassen, Bedarfe strukturieren und passende Chancen schneller zuspielen.",
-      storyTitle: "Ausgangspunkt",
-      storyText: "Menschen, die bereits in Luxemburg, Deutschland oder einem Nachbarland gearbeitet haben, suchen oft zuerst im Wohnland. Gleichzeitig haben Arbeitgeber echte Bedarfe, erreichen diese mobilen Profile aber nur schwer.",
+      eyebrow: "Ein Experiment in der Großregion",
+      title: "Rekrutierung und berufliche Mobilität in der Großregion erleichtern",
+      lede: "EURES beta erprobt einen neuen Weg, um den Bedarf von Arbeitgebern und die Mobilitätspläne von Kandidatinnen und Kandidaten in einem grenzüberschreitenden Wirtschaftsraum besser zusammenzubringen.",
+      storyTitle: "Ein grenzüberschreitender Arbeitsmarkt, der noch immer fragmentiert ist",
+      storyText: "Der Arbeitsmarkt geht über nationale Grenzen hinaus, doch Stellensuche und Rekrutierung sind noch immer weitgehend von Land zu Land organisiert.\n\nDas Projekt soll Bedarfe, Mobilitätsabsichten und Chancen besser sichtbar machen, um passendere und schnellere Vermittlungen zu ermöglichen.\n\nIn der Großregion arbeiten bereits mehrere hunderttausend Menschen jenseits nationaler Grenzen. Trotzdem zirkulieren Stellenangebote und Bewerbungen noch immer nur schwer zwischen den Ländern.\n\nEinige Arbeitgeber haben Rekrutierungsschwierigkeiten, während mobilitätsbereite Kandidatinnen und Kandidaten passende Chancen nicht immer erkennen.",
       stats: [
         ["280.000", "Grenzpendler bewegen sich täglich in der Großregion."],
         ["40–50 Tsd.", "Menschen mit grenzüberschreitender Erfahrung könnten Arbeit suchen."],
         ["15.000+", "offene Stellen bleiben im selben Arbeitsraum unbesetzt."]
       ],
-      tracksTitle: "Zwei Einstiege, ein Matching-Motor",
-      candidateTitle: "Kandidatenweg",
-      candidateText: "Mobilitätspläne, Zielbranchen, Sprachen, Verfügbarkeit und konkrete Matching-Signale erfassen.",
-      employerTitle: "Arbeitgeberweg",
-      employerText: "Personalbedarf, Sprachen, Rahmenbedingungen, Unterstützung bei Ankunft und starke Kriterien erfassen.",
-      principlesTitle: "Produktprinzipien",
+      tracksTitle: "Zwei ergänzende Wege",
+      candidateTitle: "Kandidatenpfad",
+      candidateText: "Der Dienst hilft dabei, Mobilitätspläne, Kompetenzen, Sprachen und Präferenzen besser zu verstehen, damit passende Chancen leichter erkannt werden können.",
+      employerTitle: "Arbeitgeberpfad",
+      employerText: "Der Dienst hilft dabei, Personalbedarfe zu präzisieren und wichtige Rahmenbedingungen und Kriterien besser zu berücksichtigen, um Vermittlungen zu erleichtern.",
+      principlesTitle: "Ein Experiment mit Fokus auf reale Nutzung",
       principles: [
-        ["Einfach starten", "Ein leichtgewichtiger mehrsprachiger Erstfluss, sofort nutzbar."],
-        ["Nützliche Daten", "Strukturierte Antworten für GRIST und den späteren Matching-Score."],
-        ["Menschliche Prüfung", "Bei schwachem oder unklarem Score prüft ein EURES-Mitarbeiter."]
+        ["Schnell testen", "Ein erster leichter und mehrsprachiger Dienst hilft dabei, reale Bedarfe zu sammeln und Nutzungen zu beobachten."],
+        ["Wissen aufbauen", "Die gesammelten Informationen helfen dabei, das Verständnis der Bedarfe von Kandidatinnen, Kandidaten und Arbeitgebern schrittweise zu verbessern."],
+        ["Automatisierung und menschliche Expertise verbinden", "Das Projekt erprobt verschiedene Formen der Unterstützung und lässt zugleich Raum für menschliches Eingreifen, wenn es nötig ist."]
+      ],
+      perspectivesTitle: "Perspektiven",
+      perspectivesBullets: [
+        "Öffnung für weitere Länder der Großregion.",
+        "Einbeziehung neuer Tätigkeitsbereiche.",
+        "Kontinuierliche Verbesserung der Nutzerwege.",
+        "Entwicklung von Werkzeugen für Begleitung und Nachverfolgung.",
+        "Schrittweise Skalierung auf Basis der Erkenntnisse aus den ersten Tests."
       ]
     },
     candidateLanding: {
-      kicker: "Kandidatenweg",
-      title: "Ein kurzer Fragebogen, um berufliche Mobilitätschancen in Europa zu erkunden.",
-      lede: "Dieses Angebot richtet sich an Menschen, die berufliche Mobilität in Europa in Betracht ziehen, entweder grenzüberschreitend oder durch einen Umzug. Einfach gesagt: in einem Nachbarland arbeiten und zu Hause wohnen bleiben, oder in ein anderes europäisches Land ziehen und dort arbeiten.",
+      kicker: "Kandidatenpfad",
+      title: "Neue berufliche Chancen in Europa entdecken",
+      lede: "Beantworten Sie einige Fragen, damit wir Ihr Profil und Ihre Mobilitätspläne besser verstehen können.",
       messageTitle: "Warum diesen Fragebogen ausfüllen?",
-      messageIntro: "Der Fragebogen hilft uns, schneller zu erkennen, ob Ihr Profil zu Chancen im Rahmen europäischer Mobilität passen könnte.",
+      messageIntro: "Wenn einige Chancen zu Ihrer Erfahrung, Ihren Kompetenzen und Ihren Präferenzen passen, können wir Vermittlungen mit rekrutierenden Arbeitgebern erleichtern.",
       messageBody: [
-        "Im Moment wird vor allem mit Unternehmen in Luxemburg getestet, in einem grenzüberschreitenden oder breiteren europäischen Mobilitätsrahmen.",
-        "Das ist eine ganz praktische Testphase: Wir probieren etwas Reales aus, schauen, was funktioniert, und verbessern es danach.",
-        "Mit anderen Worten: Der Dienst ist noch nicht fertig, wird aber bereits genutzt, um echte Chancen für Menschen sichtbar zu machen, die sich in Europa beruflich bewegen möchten."
+        "In wenigen Minuten können Sie Ihren Beruf oder Ihre Erfahrung, die von Ihnen gesprochenen Sprachen, Ihre Verfügbarkeit, Ihr Mobilitätsprojekt und die für Sie wichtigen Bedingungen genauer beschreiben.",
+        "Ob Sie in Luxemburg, in einem Nachbarland oder anderswo in Europa arbeiten möchten: Dieser Dienst hilft dabei, Möglichkeiten zu erkennen, die zu Ihrer Situation passen.",
+        "Diese Informationen helfen uns, die Chancen besser zu identifizieren, die für Sie interessant sein könnten."
       ],
-      messageHighlight: "Sie antworten einmal, und das hilft uns zu sehen, ob aktuelle oder kommende Chancen der europäischen Mobilität zu Ihnen passen könnten.",
-      messageOutcome: "Der Dienst soll danach auf weitere Arbeitgeber in Deutschland, Belgien und Frankreich sowie auf weitere Berufe ausgeweitet werden.",
-      signatureTitle: "Die ersten Tests betreffen im Moment vor allem:",
-      signatureName: "Luxemburg",
-      signatureRole: "und mehrere Branchen mit Personalbedarf",
+      messageHighlight: "Sie antworten nur einmal, und Ihr Profil kann anschließend für verschiedene Chancen berücksichtigt werden.",
+      benefitsTitle: "Was Ihnen der Dienst bringen kann",
+      benefits: [
+        "Mehr Chancen entdecken.",
+        "Mit Arbeitgebern in Kontakt kommen.",
+        "Zugang zu einem größeren Arbeitsmarkt erhalten.",
+        "Ihr Mobilitätsprojekt schrittweise aufbauen."
+      ],
       bulletsTitle: "Berufe, die aktuell mit Arbeitgebern in Luxemburg getestet werden",
+      bulletsLead: "Die ersten Tests betreffen mehrere rekrutierende Bereiche, insbesondere mit Arbeitgebern in Luxemburg.",
       bullets: [
         "Verkauf und Handel",
         "Reinigung und Instandhaltung",
@@ -695,10 +735,16 @@ const copy = {
         "Landwirtschaft und Ernte",
         "Vielseitige Tätigkeiten und Jobs mit schnellem Einstieg"
       ],
-      sideTitle: "Wer sind wir?",
-      sideText: "EURES ist das europäische Kooperationsnetzwerk für Beschäftigung. Es erleichtert Rekrutierung und berufliche Chancen in Europa, insbesondere in grenzüberschreitenden Arbeitsmärkten.",
+      sideTitle: "Über EURES",
+      sideText: "EURES ist das europäische Kooperationsnetzwerk für Beschäftigung. Es unterstützt berufliche Mobilität und erleichtert Rekrutierungen zwischen europäischen Ländern.",
       disclaimerTitle: "Wie es danach weitergeht",
-      disclaimerText: "Wenn Ihr Profil zu laufenden Bedarfen passt, kann es für eine mögliche Vermittlung berücksichtigt werden. Mit der Zeit kommen weitere Unternehmen, weitere Länder und weitere Berufe hinzu.",
+      disclaimerText: "Ziel ist es, Ihnen berufliche Chancen sichtbar zu machen, die zu Ihrem Profil und Ihrem Mobilitätsprojekt passen.",
+      processBullets: [
+        "1. Prüfung des Profils.",
+        "2. Suche nach passenden Chancen.",
+        "3. Vorschläge für Vermittlungen, wenn Bedarfe passen.",
+        "4. Schrittweise Erweiterung des Dienstes um mehr Arbeitgeber, Länder und Berufe."
+      ],
       tags: ["EURES", "France Travail", "Europäische Union", "Luxemburg", "Verkauf & Handel"],
       logos: {
         eures: {
@@ -716,22 +762,26 @@ const copy = {
       }
     },
     employerLanding: {
-      kicker: "Arbeitgeberweg",
-      title: "Ein einfacher Fragebogen, um Ihren Personalbedarf in der europäischen Mobilität sichtbar zu machen.",
-      lede: "Dieses Angebot richtet sich an Arbeitgeber, die über ihren lokalen Markt hinaus rekrutieren können, grenzüberschreitend oder mit Kandidaten aus einem anderen europäischen Land. Das Ziel ist einfach: Ihren Bedarf klarer verstehen, um schneller passende Profile zu erkennen.",
+      kicker: "Arbeitgeberpfad",
+      title: "Einfacher rekrutieren dank europäischer Mobilität",
+      lede: "Beschreiben Sie Ihren Rekrutierungsbedarf in wenigen Minuten und lassen Sie uns Kandidatinnen und Kandidaten identifizieren, die zu Ihrer Suche passen könnten, auch über Ihren lokalen Markt hinaus.",
       messageTitle: "Warum diesen Fragebogen ausfüllen?",
-      messageIntro: "Dieser Fragebogen hilft uns, Ihren Personalbedarf, den Kontext der Stelle und die angebotenen Bedingungen besser zu verstehen.",
+      messageIntro: "Dieser Dienst richtet sich an Arbeitgeber, die grenzüberschreitend rekrutieren oder offen für Kandidatinnen und Kandidaten aus anderen europäischen Ländern sind.",
       messageBody: [
-        "Zurzeit wird die Erprobung zunächst mit Unternehmen in Luxemburg durchgeführt, bei konkreten Einstellungen, die manchmal schwer zu besetzen sind.",
-        "Wir befinden uns in einer sehr praktischen Testphase: Wir schauen, was wirklich hilft, passende Profile sichtbar zu machen, und verbessern den Dienst danach.",
-        "Einfach gesagt: Sie beschreiben Ihren Bedarf einmal, und das hilft uns, kompatible Bewerbungen besser zu erkennen."
+        "Der Fragebogen hilft dabei, die Stelle, die gesuchten Kompetenzen, die nützlichen Sprachen, die angebotenen Bedingungen und eventuelle mobilitätsbezogene Bedarfe besser zu verstehen.",
+        "Unser Ziel ist es, Ihnen Zugang zu einem größeren Bewerberpool zu geben und Vermittlungen zu erleichtern, wenn Stellen schwer zu besetzen sind.",
+        "Je präziser Ihr Bedarf beschrieben ist, desto besser können wir passende Profile identifizieren."
       ],
-      messageHighlight: "Es geht nicht darum, Ihnen ein weiteres Formular aufzubürden. Es geht darum, Ihren Bedarf besser zu qualifizieren, damit spätere Vermittlungen einfacher werden.",
-      messageOutcome: "Der Dienst wird schrittweise auch für andere Arbeitgeber in Deutschland, Belgien und Frankreich sowie für weitere Berufe geöffnet.",
-      signatureTitle: "Die ersten Tests betreffen im Moment vor allem:",
-      signatureName: "Arbeitgeber in Luxemburg",
-      signatureRole: "und mehrere Branchen mit Personalbedarf",
-      bulletsTitle: "Was wir qualifizieren",
+      messageHighlight: "Dieser Dienst soll Ihnen Zeit sparen und helfen, Ihre Kandidatensuche zu erweitern, wenn Rekrutierung schwieriger wird.",
+      benefitsTitle: "Was Ihnen der Dienst bringen kann",
+      benefits: [
+        "Zugang zu einem größeren Kandidatenpool.",
+        "Zeit sparen.",
+        "Die Qualität der Vermittlungen verbessern.",
+        "Unterstützung bei einem europäischen Rekrutierungsansatz erhalten."
+      ],
+      bulletsTitle: "Besonders betroffene Bereiche",
+      bulletsLead: "Der Dienst ist besonders nützlich, wenn Rekrutierungen schwierig sind oder wenn Bedarfe saisonal oder wiederkehrend sind.",
       bullets: [
         "Verkauf und Handel",
         "Reinigung und Instandhaltung",
@@ -739,10 +789,16 @@ const copy = {
         "Landwirtschaft und Ernte",
         "Vielseitige Tätigkeiten und Jobs mit schnellem Einstieg"
       ],
-      sideTitle: "Was das für Sie verändert",
-      sideText: "Sie präzisieren die Art der Rekrutierung, die nützlichen Sprachen, die Rahmenbedingungen der Stelle, das erwartete Niveau und mögliche Unterstützung bei der Ankunft. So können wir Arbeitgeberbedarfe und Kandidatenerwartungen fundierter vergleichen.",
+      sideTitle: "Ein einfacher und nützlicher Dienst",
+      sideText: "Sie beschreiben Ihren Bedarf einmal. Auf dieser Grundlage suchen wir anschließend nach Profilen, die passen könnten, und erleichtern bei Bedarf den Austausch.",
       disclaimerTitle: "Wie es danach weitergeht",
-      disclaimerText: "Wenn einige Profile mit Ihrer Suche vereinbar erscheinen, kann Ihr Bedarf für eine Vermittlung aufgegriffen werden. Und wenn der Bedarf noch nicht klar genug ist, hilft uns der Fragebogen bereits dabei, die nächsten Einstellungen besser vorzubereiten.",
+      disclaimerText: "Ziel ist nicht, Ihnen ein zusätzliches Formular aufzuerlegen, sondern Ihnen zu helfen, die benötigten Kandidatinnen und Kandidaten leichter zu finden.",
+      processBullets: [
+        "1. Prüfung des Bedarfs.",
+        "2. Suche nach passenden Profilen.",
+        "3. Vorschläge für Vermittlungen, wenn Kandidatinnen und Kandidaten passen.",
+        "4. Schrittweise Verbesserung des Dienstes."
+      ],
       tags: ["EURES", "France Travail", "Europäische Union", "Luxemburg", "Rekrutierung"]
     },
     candidateQuestionnaire: {
