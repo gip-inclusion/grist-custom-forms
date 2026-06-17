@@ -13,7 +13,7 @@ const copy = {
       navEmployer: "Employeur",
       navStats: "Statistiques",
       langLabel: "Langue",
-      footer: "Prototype de démarrage pour tester l’inscription, le matching et l’envoi structuré vers GRIST.",
+      footer: "Expérimentation EURES beta pour faciliter la mobilité professionnelle et les recrutements dans la Grande Région.",
       ctaStartCandidate: "Commencer côté candidat",
       ctaStartEmployer: "Commencer côté employeur",
       ctaBackHome: "Retour à l’accueil",
@@ -41,45 +41,57 @@ const copy = {
       questionnaireNote: "Le questionnaire est volontairement resserré pour cette première version. Il reprend la logique des Tally de référence sans les recopier entièrement."
     },
     home: {
-      eyebrow: "Tester un service concret dans la Grande Région",
-      title: "Connecter les travailleurs mobiles et les offres qui restent hors radar.",
-      lede: "EURES beta vise un problème simple : le marché du travail est transfrontalier, mais la recherche d’emploi et le recrutement restent encore très nationaux. Le service veut capter les intentions, structurer les besoins et envoyer les bonnes opportunités plus vite.",
-      storyTitle: "Le point de départ",
-      storyText: "Des personnes ayant déjà travaillé au Luxembourg, en Allemagne ou dans un autre pays voisin cherchent souvent d’abord dans leur pays de résidence. En face, des employeurs ont des besoins réels mais peinent à toucher ces profils mobiles.",
+      eyebrow: "Une expérimentation dans la Grande Région",
+      title: "Faciliter les recrutements et la mobilité professionnelle dans la Grande Région",
+      lede: "EURES beta expérimente une nouvelle façon de rapprocher les besoins des employeurs et les projets de mobilité des candidats dans un espace économique transfrontalier.",
+      storyTitle: "Un marché du travail transfrontalier encore fragmenté",
+      storyText: "Le marché du travail dépasse les frontières nationales, mais les recrutements et les recherches d'emploi restent encore largement organisés pays par pays.\n\nLe projet vise à mieux identifier les besoins, les intentions de mobilité et les opportunités afin de favoriser des mises en relation plus pertinentes et plus rapides.\n\nDans la Grande Région, plusieurs centaines de milliers de personnes travaillent déjà au-delà des frontières. Pourtant, les offres d'emploi et les candidatures circulent encore difficilement entre les pays.\n\nDes employeurs rencontrent des difficultés de recrutement tandis que des candidats ouverts à la mobilité ne repèrent pas toujours les opportunités qui pourraient leur correspondre.",
       stats: [
         ["280 000", "travailleurs frontaliers circulent chaque jour dans la Grande Région."],
         ["40–50 k", "personnes avec expérience transfrontalière pourraient rechercher un emploi."],
         ["15 000+", "postes resteraient vacants dans le même bassin économique."]
       ],
-      tracksTitle: "Deux portes d’entrée, un même moteur",
+      tracksTitle: "Deux parcours complémentaires",
       candidateTitle: "Parcours candidat",
-      candidateText: "Comprendre le projet de mobilité, les secteurs visés, les langues, les disponibilités et les éléments concrets qui facilitent une mise en relation rapide.",
+      candidateText: "Le service permet de mieux comprendre les projets de mobilité, les compétences, les langues et les préférences des personnes afin d'identifier plus facilement les opportunités susceptibles de leur correspondre.",
       employerTitle: "Parcours employeur",
-      employerText: "Qualifier les besoins de recrutement, les langues, les contraintes de poste, les aides à l’installation et les critères déterminants côté entreprise.",
-      principlesTitle: "Principes produit",
+      employerText: "Le service aide à qualifier les besoins de recrutement et à mieux prendre en compte les contraintes et critères importants pour faciliter les mises en relation.",
+      principlesTitle: "Une expérimentation centrée sur les usages",
       principles: [
-        ["Simple dès le départ", "Un premier parcours léger, multilingue, exploitable tout de suite."],
-        ["Data utile", "Des réponses structurées pour alimenter GRIST et préparer le scoring de matching."],
-        ["Validation humaine", "Quand le score est insuffisant ou ambigu, un opérateur EURES reprend la main."]
+        ["Tester rapidement", "Un premier service léger et multilingue permet de recueillir des besoins réels et d'observer les usages."],
+        ["Produire de la connaissance", "Les informations recueillies permettent d'améliorer progressivement la compréhension des besoins des candidats et des employeurs."],
+        ["Associer automatisation et expertise humaine", "Le projet explore différentes formes d'assistance tout en conservant la possibilité d'une intervention humaine lorsque cela est nécessaire."]
+      ],
+      perspectivesTitle: "Perspectives",
+      perspectivesBullets: [
+        "Ouverture à d'autres pays de la Grande Région.",
+        "Intégration de nouveaux secteurs d'activité.",
+        "Amélioration continue des parcours utilisateur.",
+        "Développement d'outils de suivi et d'accompagnement.",
+        "Montée en charge du dispositif à partir des enseignements issus des premiers tests."
       ]
     },
     candidateLanding: {
       kicker: "Parcours candidat",
-      title: "Un questionnaire simple pour explorer des opportunités de mobilité en Europe.",
-      lede: "Cette démarche s’adresse aux personnes qui peuvent envisager une mobilité professionnelle européenne, soit en transfrontalier, soit en expatriation. En clair : travailler dans un pays voisin tout en vivant chez soi, ou partir vivre et travailler dans un autre pays européen.",
+      title: "Explorez de nouvelles opportunités professionnelles en Europe",
+      lede: "Répondez à quelques questions pour nous aider à mieux comprendre votre profil et vos projets de mobilité.",
       messageTitle: "Pourquoi remplir ce questionnaire ?",
-      messageIntro: "Ce questionnaire nous aide à comprendre plus vite si votre profil peut correspondre à des opportunités liées à la mobilité européenne.",
+      messageIntro: "Si certaines opportunités correspondent à votre expérience, vos compétences et vos préférences, nous pourrons faciliter les mises en relation avec des employeurs qui recrutent.",
       messageBody: [
-        "Aujourd’hui, le test est mené surtout avec des entreprises basées au Luxembourg, dans un cadre de mobilité transfrontalière ou de mobilité vers un autre pays européen.",
-        "Nous parlons ici d’une phase de test très concrète : on essaie, on regarde ce qui marche, puis on améliore.",
-        "Autrement dit, le service n’est pas encore finalisé, mais il sert déjà à faire remonter de vraies opportunités pour des personnes prêtes à bouger en Europe."
+        "En quelques minutes, vous pouvez préciser votre métier ou votre expérience, les langues que vous maîtrisez, votre disponibilité, votre projet de mobilité et les conditions importantes pour vous.",
+        "Que vous souhaitiez travailler au Luxembourg, dans un pays voisin ou envisager une expérience professionnelle ailleurs en Europe, ce service vous aide à identifier des possibilités adaptées à votre situation.",
+        "Ces informations nous permettent de mieux identifier les opportunités susceptibles de vous intéresser."
       ],
-      messageHighlight: "Vous répondez une fois, et cela nous permet de mieux voir si certaines offres en mobilité européenne peuvent vous convenir maintenant ou bientôt.",
-      messageOutcome: "Le service va ensuite s’ouvrir à d’autres employeurs en Allemagne, en Belgique et en France, ainsi qu’à davantage de métiers.",
-      signatureTitle: "En ce moment, les premiers tests concernent surtout :",
-      signatureName: "le Luxembourg",
-      signatureRole: "et plusieurs secteurs qui recrutent",
+      messageHighlight: "Vous répondez une seule fois, et votre profil peut ensuite être pris en compte pour différentes opportunités.",
+      benefitsTitle: "Ce que le service peut vous apporter",
+      benefits: [
+        "Découvrir davantage d'opportunités.",
+        "Être mis en relation avec des employeurs.",
+        "Accéder à un marché de l'emploi plus large.",
+        "Construire progressivement votre projet de mobilité."
+      ],
       bulletsTitle: "Métiers actuellement testés avec des employeurs luxembourgeois",
+      bulletsLead: "Les premiers tests concernent notamment plusieurs secteurs qui recrutent, en particulier avec des employeurs luxembourgeois.",
       bullets: [
         "La vente et le commerce",
         "Le nettoyage et l’entretien",
@@ -87,10 +99,16 @@ const copy = {
         "L’agriculture et les récoltes",
         "Les missions polyvalentes et les emplois accessibles rapidement"
       ],
-      sideTitle: "Qui sommes-nous ?",
-      sideText: "EURES est le réseau européen de coopération pour l’emploi. Il facilite les recrutements et les opportunités professionnelles en Europe, en particulier sur les parcours transfrontaliers où les candidatures et les offres se croisent difficilement.",
+      sideTitle: "À propos d'EURES",
+      sideText: "EURES est le réseau européen de coopération pour l'emploi. Il accompagne la mobilité professionnelle et facilite les recrutements entre les pays européens.",
       disclaimerTitle: "Ce qui va se passer ensuite",
-      disclaimerText: "Si votre profil correspond à des besoins en cours, il pourra être regardé pour une mise en relation. Et au fil du temps, d’autres entreprises, d’autres pays et d’autres métiers viendront enrichir le service.",
+      disclaimerText: "L'objectif est de vous aider à découvrir des opportunités professionnelles qui correspondent à votre profil et à votre projet de mobilité.",
+      processBullets: [
+        "1. Analyse du profil.",
+        "2. Recherche d'opportunités compatibles.",
+        "3. Proposition de mises en relation lorsque des besoins correspondent.",
+        "4. Enrichissement progressif du service avec davantage d'employeurs, de pays et de métiers."
+      ],
       tags: ["EURES", "France Travail", "Union européenne", "Luxembourg", "Vente & commerce"],
       logos: {
         eures: {
@@ -109,21 +127,25 @@ const copy = {
     },
     employerLanding: {
       kicker: "Parcours employeur",
-      title: "Un questionnaire simple pour faire remonter vos besoins de recrutement en mobilité européenne.",
-      lede: "Cette démarche s’adresse aux employeurs qui peuvent recruter au-delà de leur marché local, en transfrontalier ou avec des candidats venant d’un autre pays européen. L’objectif est simple : comprendre votre besoin plus clairement pour identifier plus vite des profils pouvant correspondre.",
+      title: "Recrutez plus facilement grâce à la mobilité européenne",
+      lede: "Décrivez votre besoin de recrutement en quelques minutes et laissez-nous identifier des candidats susceptibles de correspondre à votre recherche, y compris au-delà de votre marché local.",
       messageTitle: "Pourquoi remplir ce questionnaire ?",
-      messageIntro: "Ce questionnaire nous aide à comprendre votre besoin de recrutement, le contexte du poste et les conditions proposées.",
+      messageIntro: "Ce service s'adresse aux employeurs qui recrutent en transfrontalier ou qui sont prêts à accueillir des candidats venant d'autres pays européens.",
       messageBody: [
-        "Aujourd’hui, l’expérimentation est menée d’abord avec des entreprises basées au Luxembourg, sur des recrutements concrets et parfois difficiles à couvrir.",
-        "Nous sommes dans une phase de test très pratique : nous regardons ce qui aide vraiment à faire émerger des profils pertinents, puis nous améliorons le service.",
-        "En clair, vous décrivez votre besoin une fois, et cela nous permet de mieux repérer les candidatures qui peuvent être compatibles."
+        "Le questionnaire permet de mieux comprendre le poste, les compétences recherchées, les langues utiles, les conditions proposées et les besoins éventuels liés à la mobilité.",
+        "Notre objectif : vous aider à accéder à un vivier de candidats plus large et faciliter les mises en relation lorsque certains postes sont difficiles à pourvoir.",
+        "Plus votre besoin est précis, plus nous sommes en mesure d'identifier des profils compatibles."
       ],
-      messageHighlight: "Le but n’est pas de vous faire perdre du temps avec un formulaire de plus. Le but est de mieux qualifier votre besoin pour faciliter ensuite les mises en relation.",
-      messageOutcome: "Le service s’ouvrira progressivement à d’autres employeurs en Allemagne, en Belgique et en France, ainsi qu’à d’autres métiers.",
-      signatureTitle: "En ce moment, les premiers tests concernent surtout :",
-      signatureName: "des employeurs luxembourgeois",
-      signatureRole: "et plusieurs secteurs qui recrutent",
-      bulletsTitle: "Ce que l’on va qualifier",
+      messageHighlight: "Ce service est conçu pour vous faire gagner du temps et vous aider à élargir votre recherche de candidats quand le recrutement devient plus difficile.",
+      benefitsTitle: "Ce que le service peut vous apporter",
+      benefits: [
+        "Accéder à un vivier de candidats plus large.",
+        "Gagner du temps.",
+        "Améliorer la qualité des mises en relation.",
+        "Être accompagné dans une démarche de recrutement européen."
+      ],
+      bulletsTitle: "Secteurs particulièrement concernés",
+      bulletsLead: "Le service est particulièrement utile lorsque certains recrutements sont difficiles ou lorsque les besoins sont saisonniers ou récurrents.",
       bullets: [
         "La vente et le commerce",
         "Le nettoyage et l’entretien",
@@ -131,10 +153,16 @@ const copy = {
         "L’agriculture et les récoltes",
         "Les missions polyvalentes et les emplois accessibles rapidement"
       ],
-      sideTitle: "Ce que cela change pour vous",
-      sideText: "Vous précisez le type de recrutement, les langues utiles, les contraintes du poste, le niveau attendu et les aides éventuelles à l’arrivée. Cela nous permet de comparer plus sérieusement les besoins côté employeur et les attentes côté candidat.",
+      sideTitle: "Un service simple et utile",
+      sideText: "Vous décrivez votre besoin une fois. Nous nous appuyons ensuite sur ces informations pour rechercher des profils pouvant correspondre et faciliter les échanges lorsque cela est pertinent.",
       disclaimerTitle: "Ce qui se passe ensuite",
-      disclaimerText: "Si des profils paraissent compatibles avec votre recherche, votre besoin peut être repris pour une mise en relation. Et si le besoin n’est pas encore assez clair, le questionnaire nous aide déjà à mieux préparer les prochains recrutements.",
+      disclaimerText: "L'objectif n'est pas de vous faire remplir un formulaire supplémentaire, mais de vous aider à trouver plus facilement les candidats dont vous avez besoin.",
+      processBullets: [
+        "1. Analyse du besoin.",
+        "2. Recherche de profils compatibles.",
+        "3. Proposition de mises en relation lorsque des candidats correspondent.",
+        "4. Amélioration progressive du service."
+      ],
       tags: ["EURES", "France Travail", "Union européenne", "Luxembourg", "Recrutement"]
     },
     candidateQuestionnaire: {
@@ -207,18 +235,40 @@ const copy = {
       helper: "Vous pourrez enrichir ensuite le scoring avec les exigences fines par métier et les validations humaines."
     },
     statPage: {
-      eyebrow: "Données publiques agrégées",
-      title: "Statistiques publiques EURES beta",
-      lede: "Cette page présente des indicateurs agrégés et non nominatifs sur l’activité du projet EURES beta.",
+      eyebrow: "Observatoire public de l'expérimentation",
+      title: "Suivi de l'expérimentation EURES beta",
+      lede: "Cette page présente les principaux indicateurs de suivi de l'expérimentation EURES beta.\n\nLes données publiées sont agrégées et anonymisées. Elles permettent de suivre l'activité du projet et les premiers enseignements issus des usages.",
       updatedPrefix: "Dernière mise à jour",
-      methodology: "Les chiffres affichés proviennent des tables Grist du projet. Les données personnelles, identifiants et contenus libres ne sont jamais affichés.",
-      manualNote: "Les indicateurs de transmission, de réponse employeur et d’embauche sont désormais calculés depuis la table Matchings.",
-      manualMissing: "Les indicateurs opérationnels sont calculés automatiquement depuis les données Matchings.",
+      methodologyTitle: "Méthodologie",
+      methodology: "Les données publiées sont agrégées et anonymisées. Elles permettent de suivre l'activité de l'expérimentation sans afficher de données personnelles.",
+      manualNote: "Les indicateurs de suivi du fonctionnement permettent d'observer les mises en relation, les retours et les étapes du parcours.",
+      manualMissing: "Les indicateurs de suivi du fonctionnement seront enrichis au fur et à mesure de la montée en charge de l'expérimentation.",
       keyFiguresTitle: "Chiffres clés",
+      keyFiguresLead: "Ces premiers résultats permettent d'observer la dynamique de l'expérimentation et les premiers rapprochements entre besoins de recrutement et projets de mobilité.",
+      observationsTitle: "Ce que nous observons",
+      observationsLead: "Les premiers usages permettent déjà d'identifier les secteurs concernés, les mobilités envisagées et les territoires impliqués.",
+      observationsCards: {
+        sectors: "Secteurs actuellement représentés",
+        mobility: "Mobilité recherchée",
+        territories: "Territoires impliqués"
+      },
+      observationsTexts: {
+        sectors: "Les premiers secteurs représentés correspondent aux métiers actuellement explorés dans le cadre de l'expérimentation.",
+        mobility: "Les premiers candidats se projettent principalement vers le Luxembourg, dans des parcours transfrontaliers ou vers d'autres pays européens.",
+        territories: "Les premiers besoins et projets recensés montrent une dynamique déjà active entre plusieurs pays de la Grande Région et au-delà."
+      },
+      learningsTitle: "Premiers enseignements",
+      learnings: [
+        ["Une demande existe", "Les premiers résultats montrent l'existence de besoins de recrutement et l'intérêt de candidats prêts à envisager une mobilité professionnelle."],
+        ["Des rapprochements sont possibles", "L'expérimentation permet d'identifier des compatibilités entre les besoins des employeurs et les projets des candidats."],
+        ["Une montée en charge progressive", "Le dispositif a vocation à s'enrichir progressivement avec davantage d'employeurs, de secteurs et de territoires."]
+      ],
+      detailedTitle: "Données détaillées",
+      detailedLead: "Les éléments ci-dessous permettent d'approfondir la lecture des usages observés dans le cadre de l'expérimentation.",
       monthlyTitle: "Suivi mensuel",
-      monthlyLead: "Les volumes automatiques sont calculés à partir des dates d’enregistrement. Les suivis métier peuvent être complétés mois par mois.",
-      breakdownsTitle: "Répartitions",
-      durationsTitle: "Délais de traitement",
+      monthlyLead: "L'évolution mensuelle permet de suivre la progression du dispositif, l'intensité des usages et les premiers résultats observés.",
+      breakdownsTitle: "Répartitions détaillées",
+      durationsTitle: "Indicateurs de suivi du fonctionnement",
       hoursUnit: "h",
       daysUnit: "j",
       noDurationData: "n/a",
@@ -475,18 +525,40 @@ const copy = {
       helper: "You can extend the scoring later with detailed requirements per sector and human validation."
     },
     statPage: {
-      eyebrow: "Public aggregated data",
-      title: "EURES beta public stats",
-      lede: "This page shows aggregated, non-identifying indicators about EURES beta activity.",
+      eyebrow: "Public observatory of the experiment",
+      title: "Tracking the EURES beta experiment",
+      lede: "This page presents the main monitoring indicators for the EURES beta experiment.\n\nPublished data is aggregated and anonymized. It helps track project activity and the first lessons emerging from use.",
       updatedPrefix: "Last updated",
-      methodology: "Figures come from the project's Grist tables. Personal data, identifiers and free text are never displayed.",
-      manualNote: "Transmission, employer feedback and hiring indicators are now computed directly from the Matchings table.",
-      manualMissing: "Operational indicators are computed automatically from Matchings data.",
+      methodologyTitle: "Methodology",
+      methodology: "Published data is aggregated and anonymized. It helps monitor the experiment without displaying personal data.",
+      manualNote: "Operational follow-up indicators help observe introductions, feedback and the main steps of the journey.",
+      manualMissing: "Operational follow-up indicators will be expanded as the experiment scales up.",
       keyFiguresTitle: "Key figures",
+      keyFiguresLead: "These first results help show the momentum of the experiment and the first links between hiring needs and mobility plans.",
+      observationsTitle: "What we are observing",
+      observationsLead: "Early usage already highlights represented sectors, mobility patterns and involved territories.",
+      observationsCards: {
+        sectors: "Sectors currently represented",
+        mobility: "Mobility sought",
+        territories: "Territories involved"
+      },
+      observationsTexts: {
+        sectors: "The first represented sectors reflect the occupations currently explored in the experiment.",
+        mobility: "The first candidates mainly project themselves towards Luxembourg, through cross-border paths or other European destinations.",
+        territories: "The first needs and candidate plans already show an active dynamic between several countries in the Greater Region and beyond."
+      },
+      learningsTitle: "First lessons",
+      learnings: [
+        ["There is demand", "The first results show both hiring needs and interest from candidates willing to consider professional mobility."],
+        ["Matches are possible", "The experiment helps identify compatibilities between employer needs and candidate plans."],
+        ["A gradual scale-up", "The approach is designed to expand progressively with more employers, sectors and territories."]
+      ],
+      detailedTitle: "Detailed data",
+      detailedLead: "The sections below provide a more detailed view of usage patterns observed through the experiment.",
       monthlyTitle: "Monthly tracking",
-      monthlyLead: "Automatic volumes are calculated from submission dates. Operational follow-up can then be completed month by month.",
-      breakdownsTitle: "Breakdowns",
-      durationsTitle: "Processing times",
+      monthlyLead: "Monthly trends help track the rollout of the service, the level of usage and the first observed results.",
+      breakdownsTitle: "Detailed breakdowns",
+      durationsTitle: "Operational follow-up indicators",
       hoursUnit: "h",
       daysUnit: "d",
       noDurationData: "n/a",
@@ -743,18 +815,40 @@ const copy = {
       helper: "Später kann das Scoring um feinere Kriterien je Branche und menschliche Validierung ergänzt werden."
     },
     statPage: {
-      eyebrow: "Öffentliche aggregierte Daten",
-      title: "Öffentliche EURES-beta-Statistiken",
-      lede: "Diese Seite zeigt aggregierte und nicht personenbezogene Kennzahlen zur Aktivität von EURES beta.",
+      eyebrow: "Öffentliches Beobachtungsportal des Experiments",
+      title: "Verfolgung des EURES-beta-Experiments",
+      lede: "Diese Seite zeigt die wichtigsten Indikatoren zur Beobachtung des EURES-beta-Experiments.\n\nDie veröffentlichten Daten sind aggregiert und anonymisiert. Sie machen die Aktivität des Projekts und erste Erkenntnisse aus der Nutzung sichtbar.",
       updatedPrefix: "Letzte Aktualisierung",
-      methodology: "Die Zahlen stammen aus den Grist-Tabellen des Projekts. Personendaten, Kennungen und freie Texte werden nie angezeigt.",
-      manualNote: "Übermittlungs-, Arbeitgeber-Rückmeldungs- und Einstellungsindikatoren werden nun direkt aus der Matchings-Tabelle berechnet.",
-      manualMissing: "Operative Kennzahlen werden automatisch aus den Matchings-Daten berechnet.",
+      methodologyTitle: "Methodik",
+      methodology: "Die veröffentlichten Daten sind aggregiert und anonymisiert. Sie dienen der Beobachtung des Experiments, ohne personenbezogene Daten anzuzeigen.",
+      manualNote: "Indikatoren zur Funktionsbeobachtung zeigen Vermittlungen, Rückmeldungen und die wichtigsten Schritte im Ablauf.",
+      manualMissing: "Die Indikatoren zur Funktionsbeobachtung werden mit dem Ausbau des Experiments schrittweise ergänzt.",
       keyFiguresTitle: "Kennzahlen",
+      keyFiguresLead: "Diese ersten Ergebnisse zeigen die Dynamik des Experiments und erste Verbindungen zwischen Personalbedarf und Mobilitätsplänen.",
+      observationsTitle: "Was wir beobachten",
+      observationsLead: "Die ersten Nutzungen zeigen bereits vertretene Branchen, Mobilitätsmuster und beteiligte Gebiete.",
+      observationsCards: {
+        sectors: "Derzeit vertretene Branchen",
+        mobility: "Gesuchte Mobilität",
+        territories: "Beteiligte Gebiete"
+      },
+      observationsTexts: {
+        sectors: "Die ersten vertretenen Branchen entsprechen den Berufen, die im Rahmen des Experiments derzeit untersucht werden.",
+        mobility: "Die ersten Kandidatinnen und Kandidaten richten ihren Blick vor allem auf Luxemburg, auf grenzüberschreitende Wege oder andere europäische Ziele.",
+        territories: "Die ersten erfassten Bedarfe und Vorhaben zeigen bereits eine aktive Dynamik zwischen mehreren Ländern der Großregion und darüber hinaus."
+      },
+      learningsTitle: "Erste Erkenntnisse",
+      learnings: [
+        ["Es gibt Nachfrage", "Die ersten Ergebnisse zeigen sowohl Personalbedarf als auch Interesse von Kandidatinnen und Kandidaten, die berufliche Mobilität in Betracht ziehen."],
+        ["Annäherungen sind möglich", "Das Experiment hilft, Kompatibilitäten zwischen Arbeitgeberbedarfen und Kandidatenvorhaben zu erkennen."],
+        ["Schrittweiser Ausbau", "Der Ansatz soll schrittweise mit mehr Arbeitgebern, Branchen und Gebieten wachsen."]
+      ],
+      detailedTitle: "Detaillierte Daten",
+      detailedLead: "Die folgenden Bereiche ermöglichen eine vertiefte Lektüre der im Experiment beobachteten Nutzungsmuster.",
       monthlyTitle: "Monatliche Entwicklung",
-      monthlyLead: "Automatische Volumen werden aus den Einreichungsdaten berechnet. Die operative Nachverfolgung kann dann monatlich ergänzt werden.",
-      breakdownsTitle: "Verteilungen",
-      durationsTitle: "Bearbeitungszeiten",
+      monthlyLead: "Die monatliche Entwicklung zeigt den Ausbau des Angebots, die Intensität der Nutzung und erste beobachtete Ergebnisse.",
+      breakdownsTitle: "Detaillierte Verteilungen",
+      durationsTitle: "Indikatoren zur Funktionsbeobachtung",
       hoursUnit: "Std.",
       daysUnit: "Tg.",
       noDurationData: "k. A.",
@@ -1879,6 +1973,10 @@ function statTemplate(lang, t, data) {
   const durations = data?.durations || {};
   const manualConfigured = Boolean(data?.manual_stats_table?.configured);
   const monthlyColumnKeys = Object.keys(t.statPage.monthlyColumns);
+  const introParagraphs = t.statPage.lede
+    .split("\n\n")
+    .map((paragraph) => `<p>${paragraph}</p>`)
+    .join("");
   const totalCards = Object.entries(t.statPage.totals).map(([key, label]) => `
     <article class="stat-card kpi-card">
       <p>${label}</p>
@@ -1890,6 +1988,37 @@ function statTemplate(lang, t, data) {
     <article class="panel breakdown-panel">
       <h2>${label}</h2>
       ${renderBreakdownList(breakdowns[key], t.statPage.emptyBreakdown)}
+    </article>
+  `).join("");
+
+  const observationPanels = [
+    {
+      title: t.statPage.observationsCards.sectors,
+      text: t.statPage.observationsTexts.sectors,
+      content: renderBreakdownList(breakdowns.secteurs, t.statPage.emptyBreakdown)
+    },
+    {
+      title: t.statPage.observationsCards.mobility,
+      text: t.statPage.observationsTexts.mobility,
+      content: renderBreakdownList(breakdowns.mobilite_candidats, t.statPage.emptyBreakdown)
+    },
+    {
+      title: t.statPage.observationsCards.territories,
+      text: t.statPage.observationsTexts.territories,
+      content: renderBreakdownList(breakdowns.besoins_par_pays, t.statPage.emptyBreakdown)
+    }
+  ].map(({ title, text, content }) => `
+    <article class="surface-card">
+      <h2>${title}</h2>
+      <p>${text}</p>
+      ${content}
+    </article>
+  `).join("");
+
+  const learningPanels = t.statPage.learnings.map(([title, text]) => `
+    <article class="surface-card">
+      <h2>${title}</h2>
+      <p>${text}</p>
     </article>
   `).join("");
 
@@ -1917,7 +2046,7 @@ function statTemplate(lang, t, data) {
           <article class="hero-card hero">
             <div class="eyebrow">${t.statPage.eyebrow}</div>
             <h1>${t.statPage.title}</h1>
-            <p class="lede">${t.statPage.lede}</p>
+            <div class="lede">${introParagraphs}</div>
             <div class="updated-card">
               <span class="updated-label">${t.statPage.updatedPrefix}</span>
               <strong>${formatTimestamp(data?.generated_at, lang)}</strong>
@@ -1929,16 +2058,49 @@ function statTemplate(lang, t, data) {
           </article>
           <aside class="story-card">
             <h2>${t.statPage.keyFiguresTitle}</h2>
-            <p>${t.statPage.monthlyLead}</p>
+            <p>${t.statPage.keyFiguresLead}</p>
           </aside>
         </div>
       </section>
 
       <section class="section">
         <div class="shell">
-          <div class="panel"><h2>${t.statPage.keyFiguresTitle}</h2></div>
+          <div class="panel">
+            <h2>${t.statPage.keyFiguresTitle}</h2>
+            <p>${t.statPage.keyFiguresLead}</p>
+          </div>
           <div class="stats-grid" style="margin-top: 1rem;">
             ${totalCards}
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="shell">
+          <div class="panel">
+            <h2>${t.statPage.observationsTitle}</h2>
+            <p>${t.statPage.observationsLead}</p>
+          </div>
+          <div class="principles-grid" style="margin-top: 1rem;">
+            ${observationPanels}
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="shell">
+          <div class="panel"><h2>${t.statPage.learningsTitle}</h2></div>
+          <div class="principles-grid" style="margin-top: 1rem;">
+            ${learningPanels}
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="shell">
+          <div class="panel">
+            <h2>${t.statPage.detailedTitle}</h2>
+            <p>${t.statPage.detailedLead}</p>
           </div>
         </div>
       </section>
@@ -1981,10 +2143,17 @@ function statTemplate(lang, t, data) {
 
       <section class="section">
         <div class="shell">
-          <div class="panel"><h2>${t.statPage.durationsTitle}</h2></div>
-          <div class="dashboard-grid" style="margin-top: 1rem;">
-            ${durationPanels}
-          </div>
+          <details class="panel" open>
+            <summary><strong>${t.statPage.methodologyTitle}</strong></summary>
+            <div style="margin-top: 1rem;">
+              <p>${t.statPage.methodology}</p>
+              <p>${manualConfigured ? t.statPage.manualNote : t.statPage.manualMissing}</p>
+              <div class="panel" style="margin-top: 1rem;"><h2>${t.statPage.durationsTitle}</h2></div>
+              <div class="dashboard-grid" style="margin-top: 1rem;">
+                ${durationPanels}
+              </div>
+            </div>
+          </details>
         </div>
       </section>
     </main>
@@ -2003,6 +2172,11 @@ async function loadPublicStats() {
 }
 
 function homeTemplate(lang, t) {
+  const storyParagraphs = t.home.storyText
+    .split("\n\n")
+    .map((paragraph) => `<p>${paragraph}</p>`)
+    .join("");
+
   return `
     ${nav("home", lang, t)}
     <main>
@@ -2019,7 +2193,7 @@ function homeTemplate(lang, t) {
           </article>
           <aside class="story-card">
             <h2>${t.home.storyTitle}</h2>
-            <p>${t.home.storyText}</p>
+            ${storyParagraphs}
           </aside>
         </div>
       </section>
@@ -2058,25 +2232,24 @@ function homeTemplate(lang, t) {
       </section>
 
       <section class="section">
-        <div class="shell principles-grid">
-          ${t.home.principles.map(([title, text]) => `
-            <article class="surface-card">
-              <h2>${title}</h2>
-              <p>${text}</p>
-            </article>
-          `).join("")}
+        <div class="shell">
+          <div class="panel"><h2>${t.home.principlesTitle}</h2></div>
+          <div class="principles-grid" style="margin-top: 1rem;">
+            ${t.home.principles.map(([title, text]) => `
+              <article class="surface-card">
+                <h2>${title}</h2>
+                <p>${text}</p>
+              </article>
+            `).join("")}
+          </div>
         </div>
       </section>
 
       <section class="section">
-        <div class="shell dashboard-grid">
+        <div class="shell">
           <article class="panel">
-            <h2>${t.common.matchingTitle}</h2>
-            ${list(t.common.matchingBullets)}
-          </article>
-          <article class="panel">
-            <h2>${t.common.futureTitle}</h2>
-            ${list(t.common.futureBullets)}
+            <h2>${t.home.perspectivesTitle}</h2>
+            ${list(t.home.perspectivesBullets)}
           </article>
         </div>
       </section>
@@ -2116,19 +2289,18 @@ function landingTemplate(page, lang, t, data) {
               <div class="landing-actions">
                 <a class="primary-action" href="${pageUrl(questionnairePage, lang)}">${t.common.ctaQuestionnaire}</a>
               </div>
-              <p>${data.messageOutcome}</p>
-              <p><strong>${data.signatureTitle}</strong><br>${data.signatureName}<br>${data.signatureRole}</p>
             </section>
 
             <section class="candidate-about">
-              <h2>${data.sideTitle}</h2>
-              <p>${data.sideText}</p>
+              <h2>${data.benefitsTitle || data.sideTitle}</h2>
+              ${data.benefits ? list(data.benefits) : `<p>${data.sideText}</p>`}
             </section>
           </article>
 
           <aside class="candidate-sidebar">
             <article class="surface-card candidate-info-card">
               <h2>${data.bulletsTitle}</h2>
+              ${data.bulletsLead ? `<p>${data.bulletsLead}</p>` : ""}
               ${list(data.bullets)}
               <div class="tag-row">
                 ${data.tags.map((tag) => `<span class="tag">${tag}</span>`).join("")}
@@ -2137,12 +2309,13 @@ function landingTemplate(page, lang, t, data) {
 
             <article class="surface-card candidate-info-card">
               <h2>${data.disclaimerTitle}</h2>
+              ${data.processBullets ? list(data.processBullets) : ""}
               <p>${data.disclaimerText}</p>
             </article>
 
             <article class="panel candidate-info-card">
-              <h2>${t.common.matchingTitle}</h2>
-              ${list(t.common.matchingBullets)}
+              <h2>${data.sideTitle}</h2>
+              <p>${data.sideText}</p>
             </article>
           </aside>
         </div>
@@ -2612,14 +2785,15 @@ function employerLandingTemplate(lang, t) {
           </section>
 
           <section class="candidate-about">
-            <h2>${data.sideTitle}</h2>
-            <p>${data.sideText}</p>
+            <h2>${data.benefitsTitle || data.sideTitle}</h2>
+            ${data.benefits ? list(data.benefits) : `<p>${data.sideText}</p>`}
           </section>
         </article>
 
         <aside class="candidate-sidebar">
           <article class="surface-card candidate-info-card">
             <h2>${data.bulletsTitle}</h2>
+            ${data.bulletsLead ? `<p>${data.bulletsLead}</p>` : ""}
             ${list(data.bullets)}
             <div class="tag-row">
               ${data.tags.map((tag) => `<span class="tag">${tag}</span>`).join("")}
@@ -2628,12 +2802,13 @@ function employerLandingTemplate(lang, t) {
 
           <article class="surface-card candidate-info-card">
             <h2>${data.disclaimerTitle || t.common.futureTitle}</h2>
+            ${data.processBullets ? list(data.processBullets) : ""}
             <p>${data.disclaimerText || data.sideText}</p>
           </article>
 
           <article class="panel candidate-info-card">
-            <h2>${t.common.matchingTitle}</h2>
-            ${list(t.common.matchingBullets)}
+            <h2>${data.sideTitle}</h2>
+            <p>${data.sideText}</p>
           </article>
         </aside>
       </div>
