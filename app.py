@@ -3020,13 +3020,20 @@ def save_record(form_id: str):
         matching_result = None
         invitation_linking = None
         if form_id == 'eures-beta':
-            matching_result = run_eures_matching_for_saved_record(
-                form_id=form_id,
-                role=str(fields.get('flow_role') or ''),
-                saved_record=saved_record,
-                config=config,
-                headers=headers,
-            )
+            if action == 'created':
+                matching_result = run_eures_matching_for_saved_record(
+                    form_id=form_id,
+                    role=str(fields.get('flow_role') or ''),
+                    saved_record=saved_record,
+                    config=config,
+                    headers=headers,
+                )
+            else:
+                matching_result = {
+                    'processed': False,
+                    'reason': 'existing_record_update',
+                    'role': str(fields.get('flow_role') or ''),
+                }
             invitation_linking = link_eures_invitation_after_save(
                 role=str(fields.get('flow_role') or ''),
                 request_fields=fields,
