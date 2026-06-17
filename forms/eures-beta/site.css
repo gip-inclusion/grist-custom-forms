@@ -515,7 +515,12 @@ textarea {
 }
 
 .logo-eu {
-  height: 52px;
+  width: 64px;
+  height: 46px;
+  object-fit: cover;
+  object-position: left center;
+  border-radius: 2px;
+  background: var(--ue-blue);
 }
 
 .candidate-badge {
@@ -827,7 +832,9 @@ textarea {
 }
 
 .matrix-wrap {
+  position: relative;
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
   border: 1px solid rgba(23, 50, 77, 0.12);
   border-radius: 20px;
   background: rgba(255, 255, 255, 0.85);
@@ -853,10 +860,24 @@ textarea {
 }
 
 .matrix-table tbody th {
+  position: sticky;
+  left: 0;
+  z-index: 1;
   text-align: left;
   font-weight: 600;
   color: var(--text);
   background: rgba(255, 255, 255, 0.55);
+}
+
+.matrix-table thead th:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background: linear-gradient(180deg, rgba(220, 233, 255, 0.98), rgba(244, 248, 255, 0.98));
+}
+
+.matrix-mobile-hint {
+  display: none;
 }
 
 .matrix-table tr:last-child th,
@@ -953,11 +974,44 @@ textarea {
   }
 
   .logo-eu {
-    height: 46px;
+    width: 52px;
+    height: 38px;
   }
 
   .form-grid {
     grid-template-columns: 1fr;
+  }
+
+  .matrix-mobile-hint {
+    display: block;
+  }
+
+  .matrix-wrap {
+    padding-bottom: 0.2rem;
+  }
+
+  .matrix-wrap::after {
+    content: "";
+    position: sticky;
+    right: 0;
+    display: block;
+    width: 2rem;
+    height: 0;
+    box-shadow: -18px 0 18px -18px rgba(23, 50, 77, 0.28);
+  }
+
+  .matrix-table {
+    min-width: 560px;
+  }
+
+  .matrix-table th,
+  .matrix-table td {
+    padding: 0.7rem 0.55rem;
+    font-size: 0.9rem;
+  }
+
+  .matrix-table tbody th {
+    min-width: 11rem;
   }
 
   .hero h1,
