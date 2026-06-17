@@ -850,76 +850,186 @@ def build_brevo_invitation_email(invitation_row: dict) -> tuple[str, str, str, s
     invite_link = str(invitation_row.get('invite_link') or '').strip() or _build_eures_invitation_link(role, language, invite_token)
     signature_name = get_eures_mail_signature_name()
 
+    if role == 'employer':
+        if language == 'en':
+            subject = "[EURES beta] Recruit more easily through European mobility"
+            preheader = "Describe your hiring need in less than 5 minutes."
+            title = "Are you having trouble recruiting?"
+            body_lines = [
+                "EURES beta is testing a new service to support recruitment across the Greater Region.",
+                "In just a few minutes, describe your hiring need and access a wider pool of candidates open to European mobility.",
+                "The more precise your need is, the easier it is for us to identify relevant profiles.",
+            ]
+            cta = "Complete the questionnaire"
+            cta_note = "Estimated time: less than 5 minutes."
+            footer = "EURES beta is an initiative led by EURES and France Travail to support recruitment and professional mobility in the Greater Region."
+        elif language == 'de':
+            subject = "[EURES beta] Einfacher rekrutieren dank europäischer Mobilität"
+            preheader = "Beschreiben Sie Ihren Bedarf in weniger als 5 Minuten."
+            title = "Haben Sie Schwierigkeiten bei der Rekrutierung?"
+            body_lines = [
+                "EURES beta testet einen neuen Service, um Rekrutierungen in der Großregion zu erleichtern.",
+                "Beschreiben Sie in wenigen Minuten Ihren Bedarf und erhalten Sie Zugang zu einem größeren Pool von Kandidatinnen und Kandidaten, die für europäische Mobilität offen sind.",
+                "Je präziser Ihr Bedarf ist, desto besser können passende Profile identifiziert werden.",
+            ]
+            cta = "Fragebogen ausfüllen"
+            cta_note = "Geschätzte Dauer: weniger als 5 Minuten."
+            footer = "EURES beta ist eine von EURES und France Travail getragene Initiative zur Unterstützung von Rekrutierung und beruflicher Mobilität in der Großregion."
+        else:
+            subject = "[EURES beta] Vous avez des difficultés à recruter ?"
+            preheader = "Décrivez votre besoin en moins de 5 minutes."
+            title = "Vous avez des difficultés à recruter ?"
+            body_lines = [
+                "EURES beta expérimente un nouveau service pour faciliter les recrutements dans la Grande Région.",
+                "En quelques minutes, décrivez votre besoin et accédez à un vivier plus large de candidats ouverts à la mobilité européenne.",
+                "Plus votre besoin est précis, plus nous serons en mesure d'identifier des profils susceptibles de correspondre à votre recherche.",
+            ]
+            cta = "Compléter le questionnaire"
+            cta_note = "Temps estimé : moins de 5 minutes."
+            footer = "EURES beta est une expérimentation portée par EURES et France Travail pour faciliter les recrutements et la mobilité professionnelle dans la Grande Région."
+
+        text_body = (
+            f"{title}\n\n"
+            f"{preheader}\n\n"
+            + "\n\n".join(body_lines)
+            + f"\n\n{cta}: {invite_link}\n\n{cta_note}\n\n{footer}\n"
+        )
+        body_html = f"""
+<!doctype html>
+<html lang="{escape(language)}">
+  <body style="margin:0;padding:0;background:#f6f7fb;font-family:Arial,'Helvetica Neue',sans-serif;color:#16253d;">
+    <div style="display:none;max-height:0;overflow:hidden;opacity:0;mso-hide:all;">
+      {escape(preheader)}
+    </div>
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f6f7fb;padding:20px 12px;">
+      <tr>
+        <td align="center">
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:560px;background:#ffffff;border:1px solid #dfe6f2;border-radius:20px;overflow:hidden;">
+            <tr>
+              <td style="padding:24px 24px 8px;">
+                <div style="font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#4d678c;">EURES beta</div>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:0 24px 8px;">
+                <h1 style="margin:0;font-size:30px;line-height:1.12;font-weight:700;color:#16253d;">{escape(title)}</h1>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:0 24px 4px;">
+                <p style="margin:0 0 14px;font-size:16px;line-height:1.55;color:#324765;">{escape(body_lines[0])}</p>
+                <p style="margin:0 0 14px;font-size:16px;line-height:1.55;color:#324765;">{escape(body_lines[1])}</p>
+                <p style="margin:0 0 22px;font-size:16px;line-height:1.55;color:#324765;">{escape(body_lines[2])}</p>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:0 24px 12px;">
+                <a href="{escape(invite_link)}" style="display:block;width:100%;box-sizing:border-box;padding:15px 18px;border-radius:14px;background:#0a66c2;color:#ffffff;text-decoration:none;font-size:16px;font-weight:700;text-align:center;">{escape(cta)}</a>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:0 24px 24px;">
+                <p style="margin:0;font-size:14px;line-height:1.5;color:#627892;">{escape(cta_note)}</p>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:18px 24px 24px;border-top:1px solid #e7ecf4;">
+                <p style="margin:0;font-size:13px;line-height:1.55;color:#627892;">{escape(footer)}</p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
+""".strip()
+        return recipient, subject, text_body, html_body, invite_token, invite_link
+
     if language == 'en':
-        greeting = f"Hello {first_name}," if first_name else "Hello,"
-        if role == 'candidate':
-            subject = "[EURES beta] Explore professional opportunities in Europe"
-            intro = "You have been identified as someone who may be interested in professional mobility opportunities in Europe."
-            cta = "Start the questionnaire"
-            why = "By answering a few questions, you help us better understand your profile, your availability and your mobility plans."
-        else:
-            subject = "[EURES beta] Describe your recruitment needs"
-            intro = f"We invite you to describe your recruitment needs{f' for {company_name}' if company_name else ''} through a short questionnaire."
-            cta = "Open the questionnaire"
-            why = "This helps us better understand the role, the expected profile and the conditions offered."
-        closing = f"Best regards,\n{signature_name}\nEURES beta"
+        subject = "[EURES beta] What if your next opportunity was elsewhere in Europe?"
+        preheader = "Answer a few questions and explore opportunities through European mobility."
+        title = "Explore new professional opportunities in Europe"
+        body_lines = [
+            "Are you open to a professional opportunity in Luxembourg, in a neighbouring country or elsewhere in Europe?",
+            "EURES beta helps you discover opportunities aligned with your profile and your mobility plans.",
+            "In just a few minutes, describe your experience, skills and preferences so we can identify opportunities that may interest you.",
+        ]
+        cta = "Discover opportunities"
+        cta_note = "Estimated time: less than 5 minutes."
+        footer = "EURES beta is an initiative led by EURES and France Travail to support professional mobility in the Greater Region."
     elif language == 'de':
-        greeting = f"Guten Tag {first_name}," if first_name else "Guten Tag,"
-        if role == 'candidate':
-            subject = "[EURES beta] Berufliche Chancen in Europa entdecken"
-            intro = "Sie wurden als Person identifiziert, die an beruflicher Mobilität in Europa interessiert sein könnte."
-            cta = "Fragebogen starten"
-            why = "Mit einigen Antworten helfen Sie uns, Ihr Profil, Ihre Verfügbarkeit und Ihre Mobilitätspläne besser zu verstehen."
-        else:
-            subject = "[EURES beta] Ihren Rekrutierungsbedarf beschreiben"
-            intro = f"Wir laden Sie ein, Ihren Rekrutierungsbedarf{f' für {company_name}' if company_name else ''} über einen kurzen Fragebogen zu beschreiben."
-            cta = "Fragebogen öffnen"
-            why = "So können wir die Stelle, das gesuchte Profil und die angebotenen Bedingungen besser verstehen."
-        closing = f"Mit freundlichen Grüßen\n{signature_name}\nEURES beta"
+        subject = "[EURES beta] Was wäre, wenn Ihre nächste Chance anderswo in Europa läge?"
+        preheader = "Beantworten Sie ein paar Fragen und entdecken Sie Möglichkeiten durch europäische Mobilität."
+        title = "Entdecken Sie neue berufliche Chancen in Europa"
+        body_lines = [
+            "Sind Sie offen für eine berufliche Erfahrung in Luxemburg, in einem Nachbarland oder anderswo in Europa?",
+            "EURES beta hilft Ihnen, Chancen zu entdecken, die zu Ihrem Profil und Ihrem Mobilitätsprojekt passen.",
+            "Beschreiben Sie in wenigen Minuten Ihre Erfahrung, Ihre Kompetenzen und Ihre Präferenzen, damit passende Möglichkeiten identifiziert werden können.",
+        ]
+        cta = "Chancen entdecken"
+        cta_note = "Geschätzte Dauer: weniger als 5 Minuten."
+        footer = "EURES beta ist eine von EURES und France Travail getragene Initiative zur Unterstützung der beruflichen Mobilität in der Großregion."
     else:
-        greeting = f"Bonjour {first_name}," if first_name else "Bonjour,"
-        if role == 'candidate':
-            subject = "[EURES beta] Explorer des opportunités professionnelles en Europe"
-            intro = "Vous avez été identifié comme une personne pouvant être intéressée par des opportunités de mobilité professionnelle en Europe."
-            cta = "Accéder au questionnaire"
-            why = "En répondant à quelques questions, vous nous aidez à mieux comprendre votre profil, vos disponibilités et votre projet de mobilité."
-        else:
-            subject = "[EURES beta] Décrire votre besoin de recrutement"
-            intro = f"Nous vous invitons à décrire votre besoin de recrutement{f' pour {company_name}' if company_name else ''} à travers un court questionnaire."
-            cta = "Ouvrir le questionnaire"
-            why = "Cela nous permet de mieux comprendre le poste, le profil recherché et les conditions proposées."
-        closing = f"Cordialement,\n{signature_name}\nEURES beta"
+        subject = "[EURES beta] Et si votre prochaine opportunité se trouvait ailleurs en Europe ?"
+        preheader = "Répondez à quelques questions et explorez les possibilités offertes par la mobilité européenne."
+        title = "Explorez de nouvelles opportunités professionnelles en Europe"
+        body_lines = [
+            "Vous êtes ouvert à une expérience professionnelle au Luxembourg, dans un pays voisin ou ailleurs en Europe ?",
+            "EURES beta vous aide à découvrir des opportunités adaptées à votre profil et à votre projet de mobilité.",
+            "En quelques minutes, décrivez votre expérience, vos compétences et vos préférences pour nous permettre d’identifier des opportunités susceptibles de vous intéresser.",
+        ]
+        cta = "Découvrir les opportunités"
+        cta_note = "Temps estimé : moins de 5 minutes."
+        footer = "EURES beta est une expérimentation portée par EURES et France Travail pour faciliter la mobilité professionnelle dans la Grande Région."
 
     text_body = (
-        f"{greeting}\n\n"
-        f"{intro}\n\n"
-        f"{why}\n\n"
-        f"{cta}: {invite_link}\n\n"
-        f"{closing}\n"
+        f"{title}\n\n"
+        f"{preheader}\n\n"
+        + "\n\n".join(body_lines)
+        + f"\n\n{cta}: {invite_link}\n\n{cta_note}\n\n{footer}\n"
     )
     html_body = f"""
 <!doctype html>
 <html lang="{escape(language)}">
-  <body style="margin:0;padding:0;background:#f4efe6;font-family:Georgia,'Times New Roman',serif;color:#1f1f1f;">
-    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f4efe6;padding:24px 12px;">
+  <body style="margin:0;padding:0;background:#f6f7fb;font-family:Arial,'Helvetica Neue',sans-serif;color:#16253d;">
+    <div style="display:none;max-height:0;overflow:hidden;opacity:0;mso-hide:all;">
+      {escape(preheader)}
+    </div>
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f6f7fb;padding:20px 12px;">
       <tr>
         <td align="center">
-          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:720px;background:#fffdf9;border:1px solid #e7dcc7;border-radius:18px;overflow:hidden;">
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:560px;background:#ffffff;border:1px solid #dfe6f2;border-radius:20px;overflow:hidden;">
             <tr>
-              <td style="padding:28px 32px;background:linear-gradient(135deg,#103a2b 0%,#1f5a45 100%);color:#ffffff;">
-                <div style="font-size:13px;letter-spacing:1.6px;text-transform:uppercase;opacity:0.82;">EURES beta</div>
-                <h1 style="margin:10px 0 0;font-size:30px;line-height:1.2;font-weight:700;">{escape(subject.replace('[EURES beta] ', ''))}</h1>
+              <td style="padding:24px 24px 8px;">
+                <div style="font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#4d678c;">EURES beta</div>
               </td>
             </tr>
             <tr>
-              <td style="padding:28px 32px;">
-                <p style="margin:0 0 18px;font-size:16px;line-height:1.7;">{escape(greeting)}</p>
-                <p style="margin:0 0 18px;font-size:16px;line-height:1.7;">{escape(intro)}</p>
-                <p style="margin:0 0 24px;font-size:16px;line-height:1.7;">{escape(why)}</p>
-                <p style="margin:0 0 28px;">
-                  <a href="{escape(invite_link)}" style="display:inline-block;padding:13px 20px;border-radius:999px;background:#0a4aa5;color:#ffffff;text-decoration:none;font-size:15px;font-weight:700;">{escape(cta)}</a>
-                </p>
-                <p style="margin:0;font-size:15px;line-height:1.7;white-space:pre-line;">{escape(closing)}</p>
+              <td style="padding:0 24px 8px;">
+                <h1 style="margin:0;font-size:30px;line-height:1.12;font-weight:700;color:#16253d;">{escape(title)}</h1>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:0 24px 4px;">
+                <p style="margin:0 0 14px;font-size:16px;line-height:1.55;color:#324765;">{escape(body_lines[0])}</p>
+                <p style="margin:0 0 14px;font-size:16px;line-height:1.55;color:#324765;">{escape(body_lines[1])}</p>
+                <p style="margin:0 0 22px;font-size:16px;line-height:1.55;color:#324765;">{escape(body_lines[2])}</p>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:0 24px 12px;">
+                <a href="{escape(invite_link)}" style="display:block;width:100%;box-sizing:border-box;padding:15px 18px;border-radius:14px;background:#0a66c2;color:#ffffff;text-decoration:none;font-size:16px;font-weight:700;text-align:center;">{escape(cta)}</a>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:0 24px 24px;">
+                <p style="margin:0;font-size:14px;line-height:1.5;color:#627892;">{escape(cta_note)}</p>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:18px 24px 24px;border-top:1px solid #e7ecf4;">
+                <p style="margin:0;font-size:13px;line-height:1.55;color:#627892;">{escape(footer)}</p>
               </td>
             </tr>
           </table>

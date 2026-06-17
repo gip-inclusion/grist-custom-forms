@@ -382,6 +382,235 @@
       background: rgba(255, 255, 255, 0.7);
     }
 
+    .tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    .tab-btn {
+      min-height: 48px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 0.8rem 1.1rem;
+      background: rgba(255, 255, 255, 0.84);
+      color: var(--text);
+      font: inherit;
+      cursor: pointer;
+      transition: transform 120ms ease, background 120ms ease, border-color 120ms ease;
+    }
+
+    .tab-btn:hover {
+      transform: translateY(-1px);
+    }
+
+    .tab-btn.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: white;
+    }
+
+    .panel-stack {
+      display: grid;
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .panel[hidden] {
+      display: none;
+    }
+
+    .invitation-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+      gap: 1rem;
+    }
+
+    .form-split {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 0.8rem;
+    }
+
+    .field-stack {
+      display: grid;
+      gap: 0.55rem;
+      margin-bottom: 0.9rem;
+    }
+
+    .field-stack label,
+    .section-title {
+      font-size: 0.92rem;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .field-stack input,
+    .field-stack select,
+    .field-stack textarea,
+    .csv-box textarea {
+      width: 100%;
+      min-height: 48px;
+      border-radius: 16px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.9);
+      color: var(--text);
+      padding: 0.8rem 1rem;
+      font: inherit;
+      box-sizing: border-box;
+    }
+
+    .field-stack textarea,
+    .csv-box textarea {
+      min-height: 110px;
+      resize: vertical;
+    }
+
+    .help-text {
+      margin: 0.35rem 0 0;
+      color: var(--muted);
+      font-size: 0.9rem;
+      line-height: 1.5;
+    }
+
+    .csv-box {
+      display: grid;
+      gap: 0.8rem;
+    }
+
+    .inline-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.65rem;
+      align-items: center;
+    }
+
+    .inline-actions button,
+    .inline-actions label {
+      min-height: 48px;
+      border: 1px solid transparent;
+      border-radius: 999px;
+      padding: 0.8rem 1.1rem;
+      font: inherit;
+      cursor: pointer;
+    }
+
+    .inline-actions button {
+      background: var(--accent);
+      color: white;
+    }
+
+    .inline-actions .btn-secondary {
+      background: rgba(255, 255, 255, 0.84);
+      color: var(--text);
+      border-color: var(--line);
+    }
+
+    .inline-actions .file-label {
+      background: rgba(255, 255, 255, 0.84);
+      color: var(--text);
+      border-color: var(--line);
+      display: inline-flex;
+      align-items: center;
+    }
+
+    .inline-actions input[type="file"] {
+      display: none;
+    }
+
+    .invitation-list {
+      display: grid;
+      gap: 0.9rem;
+      margin-top: 1rem;
+    }
+
+    .invitation-card {
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      background: rgba(255, 255, 255, 0.88);
+      padding: 1rem;
+      display: grid;
+      gap: 0.8rem;
+    }
+
+    .invitation-head {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 0.8rem;
+      align-items: start;
+    }
+
+    .invitation-head h3 {
+      margin: 0 0 0.3rem;
+      font-size: 1.1rem;
+    }
+
+    .invitation-head p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .invitation-meta {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.7rem;
+    }
+
+    .invitation-meta .meta-box {
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.9);
+      padding: 0.8rem;
+    }
+
+    .meta-box strong {
+      display: block;
+      margin-bottom: 0.25rem;
+      font-size: 0.82rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .meta-box span {
+      display: block;
+      line-height: 1.45;
+      word-break: break-word;
+    }
+
+    .pill.sent {
+      background: #e8f3ff;
+      color: #0d4a8f;
+      border-color: #95bae7;
+    }
+
+    .pill.received {
+      background: #ebf8ef;
+      color: #19663c;
+      border-color: #90c8a6;
+    }
+
+    .pill.error {
+      background: #fdebea;
+      color: #8a2f2f;
+      border-color: #e0a4a4;
+    }
+
+    .code-block {
+      display: block;
+      margin: 0;
+      border-radius: 16px;
+      background: #f4f7fb;
+      border: 1px solid #dfe6f2;
+      padding: 0.9rem 1rem;
+      color: #29405f;
+      font-size: 0.9rem;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
     @media (max-width: 1100px) {
       .kpis,
       .subscores-grid {
@@ -390,7 +619,8 @@
 
       .compare-grid,
       .notes-grid,
-      .matching-summary {
+      .matching-summary,
+      .invitation-layout {
         grid-template-columns: 1fr;
       }
 
@@ -408,7 +638,9 @@
 
       .kpis,
       .subscores-grid,
-      .toolbar {
+      .toolbar,
+      .form-split,
+      .invitation-meta {
         grid-template-columns: 1fr;
       }
 
@@ -423,53 +655,187 @@
   <div class="admin-shell">
     <section class="admin-card admin-head">
       <h1>Admin EURES beta</h1>
-      <p>Valider les matchings entre candidats et entreprises. Les cartes ci-dessous montrent le candidat et le besoin employeur en vis-à-vis, avec le détail des sous-scores et les motifs de décision.</p>
+      <p>Piloter les invitations et valider les matchings entre candidats et entreprises. Vous pouvez importer des contacts, envoyer les invitations, puis suivre les réponses et les mises en relation.</p>
     </section>
 
-    <section class="admin-top">
-      <div class="admin-card">
-        <div class="kpis">
-          <div class="kpi">
-            <div class="kpi-label">Total affiché</div>
-            <div class="kpi-value" id="kpi-total">0</div>
-          </div>
-          <div class="kpi">
-            <div class="kpi-label">À valider</div>
-            <div class="kpi-value" id="kpi-pending">0</div>
-          </div>
-          <div class="kpi">
-            <div class="kpi-label">Acceptés</div>
-            <div class="kpi-value" id="kpi-accepted">0</div>
-          </div>
-          <div class="kpi">
-            <div class="kpi-label">Refusés</div>
-            <div class="kpi-value" id="kpi-refused">0</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="admin-card">
-        <div class="toolbar">
-          <select id="filter-status">
-            <option value="pending">À valider</option>
-            <option value="all">Tous</option>
-            <option value="accepted">Acceptés</option>
-            <option value="refused">Refusés</option>
-          </select>
-          <input id="filter-search" type="search" placeholder="Rechercher un nom, une entreprise, un poste, un email">
-          <button id="reload-btn" type="button">Rafraîchir</button>
-        </div>
-        <div class="status-line" id="status-line">Chargement...</div>
+    <section class="admin-card">
+      <div class="tabs">
+        <button class="tab-btn active" type="button" data-tab="invitations">Invitations</button>
+        <button class="tab-btn" type="button" data-tab="matchings">Matchings</button>
       </div>
     </section>
 
-    <section class="matching-list" id="matching-list"></section>
+    <div class="panel-stack">
+      <section class="panel" id="panel-invitations">
+        <section class="admin-top">
+          <div class="admin-card">
+            <div class="kpis">
+              <div class="kpi">
+                <div class="kpi-label">Total affiché</div>
+                <div class="kpi-value" id="invite-kpi-total">0</div>
+              </div>
+              <div class="kpi">
+                <div class="kpi-label">À envoyer</div>
+                <div class="kpi-value" id="invite-kpi-pending">0</div>
+              </div>
+              <div class="kpi">
+                <div class="kpi-label">Envoyées</div>
+                <div class="kpi-value" id="invite-kpi-sent">0</div>
+              </div>
+              <div class="kpi">
+                <div class="kpi-label">Questionnaires reçus</div>
+                <div class="kpi-value" id="invite-kpi-received">0</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="admin-card invitation-layout">
+            <div>
+              <div class="section-title">Ajouter une invitation unitaire</div>
+              <div class="form-split">
+                <div class="field-stack">
+                  <label for="single-role">Type</label>
+                  <select id="single-role">
+                    <option value="candidate">Candidat</option>
+                    <option value="employer">Employeur</option>
+                  </select>
+                </div>
+                <div class="field-stack">
+                  <label for="single-language">Langue</label>
+                  <select id="single-language">
+                    <option value="fr">FR</option>
+                    <option value="en">EN</option>
+                    <option value="de">DE</option>
+                  </select>
+                </div>
+                <div class="field-stack">
+                  <label for="single-email">Email</label>
+                  <input id="single-email" type="email" placeholder="contact@example.com">
+                </div>
+                <div class="field-stack">
+                  <label for="single-company">Structure</label>
+                  <input id="single-company" type="text" placeholder="Entreprise ou structure">
+                </div>
+                <div class="field-stack">
+                  <label for="single-first-name">Prénom</label>
+                  <input id="single-first-name" type="text" placeholder="Prénom">
+                </div>
+                <div class="field-stack">
+                  <label for="single-last-name">Nom</label>
+                  <input id="single-last-name" type="text" placeholder="Nom">
+                </div>
+                <div class="field-stack">
+                  <label for="single-external-ref">Référence externe</label>
+                  <input id="single-external-ref" type="text" placeholder="ID, source, campagne...">
+                </div>
+                <div class="field-stack">
+                  <label for="single-source">Source</label>
+                  <input id="single-source" type="text" value="admin_manual">
+                </div>
+              </div>
+              <div class="field-stack">
+                <label for="single-notes">Note</label>
+                <textarea id="single-notes" placeholder="Optionnel"></textarea>
+              </div>
+              <div class="inline-actions">
+                <button id="single-save-btn" type="button">Ajouter l’invitation</button>
+              </div>
+              <p class="help-text">Cette action crée une ligne dans la table <code>Invitations</code> avec le statut <code>invitation_a_envoyer</code>.</p>
+            </div>
+
+            <div>
+              <div class="section-title">Importer un CSV</div>
+              <div class="csv-box">
+                <div class="inline-actions">
+                  <label class="file-label" for="csv-file">Choisir un fichier CSV</label>
+                  <input id="csv-file" type="file" accept=".csv,text/csv">
+                  <button class="btn-secondary" id="csv-sample-btn" type="button">Charger un exemple</button>
+                </div>
+                <textarea id="csv-text" placeholder="Collez ici le contenu CSV si besoin"></textarea>
+                <div class="inline-actions">
+                  <button id="csv-import-btn" type="button">Importer le CSV</button>
+                  <button class="btn-secondary" id="send-pending-btn" type="button">Envoyer toutes les invitations en attente</button>
+                </div>
+                <p class="help-text">Colonnes recommandées : <code>role,email,first_name,last_name,company_name,language,source,external_ref,notes</code></p>
+                <pre class="code-block" id="csv-example">role,email,first_name,last_name,company_name,language,source,external_ref,notes
+candidate,alice@example.com,Alice,Martin,,fr,campagne_juin,CAND-001,
+employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
+              </div>
+            </div>
+          </div>
+
+          <div class="admin-card">
+            <div class="toolbar">
+              <select id="invite-filter-status">
+                <option value="all">Tous les statuts</option>
+                <option value="invitation_a_envoyer">À envoyer</option>
+                <option value="invitation_envoyee">Envoyées</option>
+                <option value="questionnaire_recu">Questionnaires reçus</option>
+                <option value="erreur_envoi">Erreurs d’envoi</option>
+              </select>
+              <input id="invite-filter-search" type="search" placeholder="Rechercher un email, un nom, une structure, une référence">
+              <button id="invite-reload-btn" type="button">Rafraîchir</button>
+            </div>
+            <div class="status-line" id="invite-status-line">Chargement...</div>
+            <section class="invitation-list" id="invitation-list"></section>
+          </div>
+        </section>
+      </section>
+
+      <section class="panel" id="panel-matchings" hidden>
+        <section class="admin-top">
+          <div class="admin-card">
+            <div class="kpis">
+              <div class="kpi">
+                <div class="kpi-label">Total affiché</div>
+                <div class="kpi-value" id="kpi-total">0</div>
+              </div>
+              <div class="kpi">
+                <div class="kpi-label">À valider</div>
+                <div class="kpi-value" id="kpi-pending">0</div>
+              </div>
+              <div class="kpi">
+                <div class="kpi-label">Acceptés</div>
+                <div class="kpi-value" id="kpi-accepted">0</div>
+              </div>
+              <div class="kpi">
+                <div class="kpi-label">Refusés</div>
+                <div class="kpi-value" id="kpi-refused">0</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="admin-card">
+            <div class="toolbar">
+              <select id="filter-status">
+                <option value="pending">À valider</option>
+                <option value="all">Tous</option>
+                <option value="accepted">Acceptés</option>
+                <option value="refused">Refusés</option>
+              </select>
+              <input id="filter-search" type="search" placeholder="Rechercher un nom, une entreprise, un poste, un email">
+              <button id="reload-btn" type="button">Rafraîchir</button>
+            </div>
+            <div class="status-line" id="status-line">Chargement...</div>
+          </div>
+        </section>
+
+        <section class="matching-list" id="matching-list"></section>
+      </section>
+    </div>
   </div>
 
   <script>
     const state = {
-      rows: [],
-      loading: false,
+      activeTab: "invitations",
+      invitations: {
+        rows: [],
+        loading: false,
+      },
+      matchings: {
+        rows: [],
+        loading: false,
+      },
     };
 
     function esc(value) {
@@ -485,8 +851,8 @@
       return `/api/forms/eures-beta${path}`;
     }
 
-    function setStatus(message) {
-      document.getElementById("status-line").textContent = message;
+    function setStatus(targetId, message) {
+      document.getElementById(targetId).textContent = message;
     }
 
     function scoreStatusLabel(row) {
@@ -548,10 +914,219 @@
       return `<ul>${items.map((item) => `<li>${esc(item)}</li>`).join("")}</ul>`;
     }
 
-    function renderRows() {
+    function invitationStatusLabel(status) {
+      if (status === "invitation_a_envoyer") return "à envoyer";
+      if (status === "invitation_envoyee") return "envoyée";
+      if (status === "questionnaire_recu") return "questionnaire reçu";
+      if (status === "rapprochee") return "rapprochée";
+      if (status === "erreur_envoi") return "erreur d’envoi";
+      return status || "inconnu";
+    }
+
+    function invitationStatusClass(status) {
+      if (status === "invitation_envoyee") return "sent";
+      if (status === "questionnaire_recu" || status === "rapprochee") return "received";
+      if (status === "erreur_envoi") return "error";
+      return "pending";
+    }
+
+    function updateInvitationKpis(stats = {}) {
+      document.getElementById("invite-kpi-total").textContent = stats.total ?? 0;
+      document.getElementById("invite-kpi-pending").textContent = stats.invitation_a_envoyer ?? 0;
+      document.getElementById("invite-kpi-sent").textContent = stats.invitation_envoyee ?? 0;
+      document.getElementById("invite-kpi-received").textContent = stats.questionnaire_recu ?? 0;
+    }
+
+    function renderInvitations() {
+      const list = document.getElementById("invitation-list");
+      const search = normalizeText(document.getElementById("invite-filter-search").value.trim());
+      const filtered = state.invitations.rows.filter((row) => {
+        if (!search) return true;
+        const haystack = [
+          row.email,
+          row.first_name,
+          row.last_name,
+          row.company_name,
+          row.external_ref,
+          row.source,
+          row.notes,
+        ].map(normalizeText).join(" ");
+        return haystack.includes(search);
+      });
+
+      if (!filtered.length) {
+        list.innerHTML = `<div class="empty-state">Aucune invitation ne correspond aux filtres actuels.</div>`;
+        return;
+      }
+
+      list.innerHTML = filtered.map((row) => {
+        const title = row.role === "employer"
+          ? (row.company_name || row.email || "Employeur")
+          : ([row.first_name, row.last_name].filter(Boolean).join(" ") || row.email || "Candidat");
+        const subtitleBits = [
+          row.role === "employer" ? "Employeur" : "Candidat",
+          row.language ? row.language.toUpperCase() : "",
+          row.email || "",
+        ].filter(Boolean);
+        return `
+          <article class="invitation-card" data-record-id="${esc(row.record_id)}">
+            <div class="invitation-head">
+              <div>
+                <h3>${esc(title)}</h3>
+                <p>${esc(subtitleBits.join(" · "))}</p>
+              </div>
+              <div class="summary-tags">
+                <span class="pill ${invitationStatusClass(row.invitation_status)}">${esc(invitationStatusLabel(row.invitation_status))}</span>
+              </div>
+            </div>
+            <div class="invitation-meta">
+              <div class="meta-box">
+                <strong>Source</strong>
+                <span>${esc(row.source || "-")}</span>
+              </div>
+              <div class="meta-box">
+                <strong>Référence</strong>
+                <span>${esc(row.external_ref || "-")}</span>
+              </div>
+              <div class="meta-box">
+                <strong>Envoyée le</strong>
+                <span>${esc(row.sent_at || "-")}</span>
+              </div>
+              <div class="meta-box">
+                <strong>Questionnaire reçu</strong>
+                <span>${esc(row.answered_at || "-")}</span>
+              </div>
+              <div class="meta-box">
+                <strong>Record lié</strong>
+                <span>${esc(row.linked_record_key || row.linked_record_id || "-")}</span>
+              </div>
+              <div class="meta-box">
+                <strong>Matching</strong>
+                <span>${esc(row.matching_status || "-")}</span>
+              </div>
+            </div>
+            ${row.invite_link ? `<pre class="code-block">${esc(row.invite_link)}</pre>` : ""}
+            <div class="inline-actions">
+              <button type="button" data-send-record="${esc(row.record_id)}">Envoyer cette invitation</button>
+            </div>
+          </article>
+        `;
+      }).join("");
+
+      for (const button of list.querySelectorAll("[data-send-record]")) {
+        button.addEventListener("click", async (event) => {
+          const recordId = Number(event.currentTarget.dataset.sendRecord || 0);
+          if (!recordId) return;
+          await sendInvitations([recordId]);
+        });
+      }
+    }
+
+    async function loadInvitations() {
+      if (state.invitations.loading) return;
+      state.invitations.loading = true;
+      setStatus("invite-status-line", "Chargement des invitations...");
+
+      const status = document.getElementById("invite-filter-status").value;
+      const url = new URL(apiUrl("/admin/invitations"), window.location.origin);
+      if (status && status !== "all") url.searchParams.set("status", status);
+
+      try {
+        const response = await fetch(url.toString(), { credentials: "same-origin" });
+        const payload = await response.json();
+        if (!response.ok || !payload.ok) {
+          throw new Error(payload.error || `Erreur API (${response.status})`);
+        }
+        state.invitations.rows = Array.isArray(payload.rows) ? payload.rows : [];
+        updateInvitationKpis(payload.stats || {});
+        renderInvitations();
+        setStatus("invite-status-line", `${state.invitations.rows.length} invitation(s) chargée(s).`);
+      } catch (error) {
+        document.getElementById("invitation-list").innerHTML = `<div class="empty-state">${esc(error.message || "Erreur de chargement")}</div>`;
+        setStatus("invite-status-line", `Erreur : ${error.message || "chargement impossible"}`);
+      } finally {
+        state.invitations.loading = false;
+      }
+    }
+
+    async function importInvitations(payload) {
+      setStatus("invite-status-line", "Import des invitations en cours...");
+      try {
+        const response = await fetch(apiUrl("/admin/invitations/import"), {
+          method: "POST",
+          credentials: "same-origin",
+          headers: {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+          },
+          body: JSON.stringify(payload),
+        });
+        const result = await response.json();
+        if (!response.ok || !result.ok) {
+          throw new Error(result.error || `Erreur API (${response.status})`);
+        }
+        setStatus("invite-status-line", `Import terminé : ${result.created || 0} créée(s), ${result.updated || 0} mise(s) à jour.`);
+        await loadInvitations();
+      } catch (error) {
+        setStatus("invite-status-line", `Erreur : ${error.message || "import impossible"}`);
+      }
+    }
+
+    async function sendInvitations(recordIds = []) {
+      setStatus("invite-status-line", "Envoi des invitations en cours...");
+      try {
+        const response = await fetch(apiUrl("/admin/invitations/send"), {
+          method: "POST",
+          credentials: "same-origin",
+          headers: {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+          },
+          body: JSON.stringify(recordIds.length ? { record_ids: recordIds } : {}),
+        });
+        const payload = await response.json();
+        if (!response.ok || !payload.ok) {
+          throw new Error(payload.error || `Erreur API (${response.status})`);
+        }
+        const sentCount = Array.isArray(payload.sent) ? payload.sent.length : 0;
+        const errorCount = Array.isArray(payload.errors) ? payload.errors.length : 0;
+        setStatus("invite-status-line", `Envoi terminé : ${sentCount} envoyé(s), ${errorCount} erreur(s).`);
+        await loadInvitations();
+      } catch (error) {
+        setStatus("invite-status-line", `Erreur : ${error.message || "envoi impossible"}`);
+      }
+    }
+
+    function buildSingleInvitationPayload() {
+      const role = document.getElementById("single-role").value;
+      const email = document.getElementById("single-email").value.trim();
+      if (!email) {
+        throw new Error("Email requis");
+      }
+      return {
+        rows: [{
+          role,
+          email,
+          first_name: document.getElementById("single-first-name").value.trim(),
+          last_name: document.getElementById("single-last-name").value.trim(),
+          company_name: document.getElementById("single-company").value.trim(),
+          language: document.getElementById("single-language").value.trim() || "fr",
+          source: document.getElementById("single-source").value.trim() || "admin_manual",
+          external_ref: document.getElementById("single-external-ref").value.trim(),
+          notes: document.getElementById("single-notes").value.trim(),
+          invitation_status: "invitation_a_envoyer",
+        }],
+      };
+    }
+
+    function sampleCsv() {
+      return document.getElementById("csv-example").textContent.trim();
+    }
+
+    function renderMatchingRows() {
       const list = document.getElementById("matching-list");
       const search = normalizeText(document.getElementById("filter-search").value.trim());
-      const filtered = state.rows.filter((row) => matchesSearch(row, search));
+      const filtered = state.matchings.rows.filter((row) => matchesSearch(row, search));
 
       if (!filtered.length) {
         list.innerHTML = `<div class="empty-state">Aucun matching ne correspond aux filtres actuels.</div>`;
@@ -688,9 +1263,9 @@
     }
 
     async function loadMatchings() {
-      if (state.loading) return;
-      state.loading = true;
-      setStatus("Chargement des matchings...");
+      if (state.matchings.loading) return;
+      state.matchings.loading = true;
+      setStatus("status-line", "Chargement des matchings...");
 
       const status = document.getElementById("filter-status").value;
       const url = new URL(apiUrl("/admin/matchings"), window.location.origin);
@@ -703,23 +1278,23 @@
           throw new Error(payload.error || `Erreur API (${response.status})`);
         }
 
-        state.rows = Array.isArray(payload.rows) ? payload.rows : [];
+        state.matchings.rows = Array.isArray(payload.rows) ? payload.rows : [];
         document.getElementById("kpi-total").textContent = payload.stats?.total ?? 0;
         document.getElementById("kpi-pending").textContent = payload.stats?.pending ?? 0;
         document.getElementById("kpi-accepted").textContent = payload.stats?.accepted ?? 0;
         document.getElementById("kpi-refused").textContent = payload.stats?.refused ?? 0;
-        renderRows();
-        setStatus(`${state.rows.length} matching(s) chargés.`);
+        renderMatchingRows();
+        setStatus("status-line", `${state.matchings.rows.length} matching(s) chargés.`);
       } catch (error) {
         document.getElementById("matching-list").innerHTML = `<div class="empty-state">${esc(error.message || "Erreur de chargement")}</div>`;
-        setStatus(`Erreur : ${error.message || "chargement impossible"}`);
+        setStatus("status-line", `Erreur : ${error.message || "chargement impossible"}`);
       } finally {
-        state.loading = false;
+        state.matchings.loading = false;
       }
     }
 
     async function submitDecision(recordId, decision, note) {
-      setStatus(`Enregistrement de la décision ${decision}...`);
+      setStatus("status-line", `Enregistrement de la décision ${decision}...`);
       try {
         const response = await fetch(apiUrl(`/admin/matchings/${recordId}/decision`), {
           method: "POST",
@@ -734,15 +1309,15 @@
         if (!response.ok || !payload.ok) {
           throw new Error(payload.error || `Erreur API (${response.status})`);
         }
-        setStatus(`Décision enregistrée : ${decision}.`);
+        setStatus("status-line", `Décision enregistrée : ${decision}.`);
         await loadMatchings();
       } catch (error) {
-        setStatus(`Erreur : ${error.message || "mise à jour impossible"}`);
+        setStatus("status-line", `Erreur : ${error.message || "mise à jour impossible"}`);
       }
     }
 
     async function submitWorkflow(recordId, workflowStatus, note) {
-      setStatus(`Mise à jour du workflow ${workflowStatus}...`);
+      setStatus("status-line", `Mise à jour du workflow ${workflowStatus}...`);
       try {
         const response = await fetch(apiUrl(`/admin/matchings/${recordId}/workflow`), {
           method: "POST",
@@ -757,16 +1332,61 @@
         if (!response.ok || !payload.ok) {
           throw new Error(payload.error || `Erreur API (${response.status})`);
         }
-        setStatus(`Workflow enregistré : ${workflowStatusLabel(payload.workflow_status)}.`);
+        setStatus("status-line", `Workflow enregistré : ${workflowStatusLabel(payload.workflow_status)}.`);
         await loadMatchings();
       } catch (error) {
-        setStatus(`Erreur : ${error.message || "mise à jour impossible"}`);
+        setStatus("status-line", `Erreur : ${error.message || "mise à jour impossible"}`);
       }
     }
 
+    function activateTab(tabName) {
+      state.activeTab = tabName;
+      document.getElementById("panel-invitations").hidden = tabName !== "invitations";
+      document.getElementById("panel-matchings").hidden = tabName !== "matchings";
+      for (const button of document.querySelectorAll("[data-tab]")) {
+        button.classList.toggle("active", button.dataset.tab === tabName);
+      }
+    }
+
+    document.getElementById("single-save-btn").addEventListener("click", async () => {
+      try {
+        await importInvitations(buildSingleInvitationPayload());
+      } catch (error) {
+        setStatus("invite-status-line", `Erreur : ${error.message || "création impossible"}`);
+      }
+    });
+    document.getElementById("csv-sample-btn").addEventListener("click", () => {
+      document.getElementById("csv-text").value = sampleCsv();
+    });
+    document.getElementById("csv-import-btn").addEventListener("click", async () => {
+      const csvText = document.getElementById("csv-text").value.trim();
+      if (!csvText) {
+        setStatus("invite-status-line", "Erreur : aucun CSV fourni.");
+        return;
+      }
+      await importInvitations({ csv_text: csvText });
+    });
+    document.getElementById("send-pending-btn").addEventListener("click", async () => {
+      await sendInvitations([]);
+    });
+    document.getElementById("csv-file").addEventListener("change", async (event) => {
+      const file = event.target.files && event.target.files[0];
+      if (!file) return;
+      const text = await file.text();
+      document.getElementById("csv-text").value = text;
+      setStatus("invite-status-line", `Fichier chargé : ${file.name}`);
+    });
+    document.getElementById("invite-reload-btn").addEventListener("click", loadInvitations);
+    document.getElementById("invite-filter-status").addEventListener("change", loadInvitations);
+    document.getElementById("invite-filter-search").addEventListener("input", renderInvitations);
     document.getElementById("reload-btn").addEventListener("click", loadMatchings);
     document.getElementById("filter-status").addEventListener("change", loadMatchings);
-    document.getElementById("filter-search").addEventListener("input", renderRows);
+    document.getElementById("filter-search").addEventListener("input", renderMatchingRows);
+    for (const button of document.querySelectorAll("[data-tab]")) {
+      button.addEventListener("click", () => activateTab(button.dataset.tab));
+    }
+    activateTab("invitations");
+    loadInvitations();
     loadMatchings();
   </script>
 </body>
