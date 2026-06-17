@@ -422,8 +422,12 @@
 
     .invitation-layout {
       display: grid;
-      grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
       gap: 1rem;
+    }
+
+    .invitation-layout > * {
+      min-width: 0;
     }
 
     .form-split {
@@ -476,6 +480,7 @@
     .csv-box {
       display: grid;
       gap: 0.8rem;
+      min-width: 0;
     }
 
     .inline-actions {
@@ -493,6 +498,9 @@
       padding: 0.8rem 1.1rem;
       font: inherit;
       cursor: pointer;
+      max-width: 100%;
+      white-space: normal;
+      text-align: center;
     }
 
     .inline-actions button {
@@ -611,7 +619,7 @@
       word-break: break-word;
     }
 
-    @media (max-width: 1100px) {
+    @media (max-width: 1280px) {
       .kpis,
       .subscores-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -641,6 +649,11 @@
       .toolbar,
       .form-split,
       .invitation-meta {
+        grid-template-columns: 1fr;
+      }
+
+      .inline-actions {
+        display: grid;
         grid-template-columns: 1fr;
       }
 

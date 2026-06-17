@@ -1026,7 +1026,7 @@ const candidateTallyCopy = {
     heroTitle: "Mobilité européenne, transfrontalière ou expatriation",
     heroLede: "Ce questionnaire nous aide à mieux comprendre votre projet de mobilité en Europe, que vous envisagiez de travailler dans un pays voisin ou de partir vivre et travailler dans un autre pays européen.",
     heroHighlight: "Quelques minutes suffisent. Vos réponses nous permettent de voir plus rapidement si des opportunités peuvent correspondre à votre situation, à vos disponibilités et à vos préférences.",
-    matrixMobileHint: "Sur téléphone, faites défiler le tableau horizontalement pour voir toutes les colonnes.",
+    matrixMobileHint: "Sur téléphone et tablette, chaque ligne s'affiche verticalement pour faciliter la lecture.",
     overviewTitle: "Concernant votre projet de mobilité",
     overviewMatrixTitle: "Sélectionner ci-dessous votre pays de résidence, le(s) pays où vous souhaitez travailler et ceux où vous avez déjà travaillé",
     mobilityTypeTitle: "Quel type de mobilité envisagez vous ?",
@@ -1226,7 +1226,7 @@ const candidateTallyCopy = {
     heroTitle: "European mobility, cross-border commuting or relocation",
     heroLede: "This questionnaire helps us better understand your mobility plans in Europe, whether you are considering working in a neighbouring country or moving to live and work in another European country.",
     heroHighlight: "It only takes a few minutes. Your answers help us identify more quickly whether opportunities may match your situation, availability and preferences.",
-    matrixMobileHint: "On mobile, scroll horizontally inside the table to see all columns.",
+    matrixMobileHint: "On mobile and tablet, each row is displayed vertically for easier reading.",
     overviewTitle: "About your mobility plans",
     overviewMatrixTitle: "Select below your country of residence, the country or countries where you would like to work, and those where you have already worked",
     mobilityTypeTitle: "What type of mobility are you considering?",
@@ -1366,7 +1366,7 @@ const candidateTallyCopy = {
     heroTitle: "Europäische Mobilität, Grenzpendeln oder Umzug",
     heroLede: "Dieser Fragebogen hilft uns, Ihre Mobilitätspläne in Europa besser zu verstehen, egal ob Sie in einem Nachbarland arbeiten möchten oder in ein anderes europäisches Land ziehen wollen, um dort zu leben und zu arbeiten.",
     heroHighlight: "Das dauert nur wenige Minuten. Ihre Antworten helfen uns, schneller zu erkennen, ob Chancen zu Ihrer Situation, Ihrer Verfügbarkeit und Ihren Präferenzen passen könnten.",
-    matrixMobileHint: "Auf dem Smartphone können Sie die Tabelle horizontal verschieben, um alle Spalten zu sehen.",
+    matrixMobileHint: "Auf Smartphone und Tablet wird jede Zeile untereinander angezeigt, damit sie leichter lesbar ist.",
     overviewTitle: "Zu Ihrem Mobilitätsprojekt",
     overviewMatrixTitle: "Wählen Sie unten Ihr Wohnland, die Länder, in denen Sie arbeiten möchten, und die Länder, in denen Sie bereits gearbeitet haben",
     mobilityTypeTitle: "Welche Art von Mobilität ziehen Sie in Betracht?",
@@ -1621,7 +1621,7 @@ const employerTallyCopy = {
     salaryOfferIntro: "Indiquez ici le salaire proposé pour ce métier, en euros, en précisant s'il s'agit d'un montant brut ou net.",
     introNote: "Ce formulaire prend 2 à 3 minutes et s’adresse aux employeurs ayant des besoins de recrutement ouverts à la mobilité européenne et aux recrutements hors frontières.",
     introNote2: "Nous travaillons actuellement sur quelques métiers prioritaires, afin de tester le service sur des cas concrets.",
-    matrixMobileHint: "Sur téléphone, faites défiler le tableau horizontalement pour voir toutes les colonnes.",
+    matrixMobileHint: "Sur téléphone et tablette, chaque ligne s'affiche verticalement pour faciliter la lecture.",
     sections: {
       need: "Votre besoin de recrutement",
       conditions: "Profils, aides et conditions de travail",
@@ -1703,7 +1703,7 @@ const employerTallyCopy = {
     salaryOfferIntro: "Indicate the salary offered for this role here, in euros, and specify whether it is gross or net.",
     introNote: "This form takes 2 to 3 minutes and is intended for employers with hiring needs open to European mobility and cross-border recruitment.",
     introNote2: "We are currently working on a few priority occupations in order to test the service on concrete cases.",
-    matrixMobileHint: "On mobile, scroll horizontally inside the table to see all columns.",
+    matrixMobileHint: "On mobile and tablet, each row is displayed vertically for easier reading.",
     sections: {
       need: "Your hiring need",
       conditions: "Profiles, support and working conditions",
@@ -1794,7 +1794,7 @@ const employerTallyCopy = {
     salaryOfferIntro: "Geben Sie hier das für diesen Beruf angebotene Gehalt in Euro an und präzisieren Sie, ob es sich um einen Brutto- oder Nettobetrag handelt.",
     introNote: "Dieses Formular dauert 2 bis 3 Minuten und richtet sich an Arbeitgeber mit Personalbedarf, der für europäische Mobilität und grenzüberschreitende Rekrutierung offen ist.",
     introNote2: "Wir arbeiten derzeit an einigen prioritären Berufen, um den Dienst an konkreten Fällen zu testen.",
-    matrixMobileHint: "Auf dem Smartphone können Sie die Tabelle horizontal verschieben, um alle Spalten zu sehen.",
+    matrixMobileHint: "Auf Smartphone und Tablet wird jede Zeile untereinander angezeigt, damit sie leichter lesbar ist.",
     sections: {
       need: "Ihr Personalbedarf",
       conditions: "Profile, Unterstützung und Arbeitsbedingungen",
@@ -2496,8 +2496,11 @@ function matrixQuestion(title, rows, columns, hint = "", inputType = "checkbox",
                 ${columns.map((column) => {
                   const item = typeof column === "string" ? { value: column, label: column } : column;
                   return `
-                  <td>
-                    <input type="${inputType}" name="${row.field}" value="${item.value}">
+                  <td data-column-label="${escapeHtml(item.label)}">
+                    <label class="matrix-option">
+                      <span class="matrix-option-label">${item.label}</span>
+                      <input type="${inputType}" name="${row.field}" value="${item.value}">
+                    </label>
                   </td>
                 `;
                 }).join("")}

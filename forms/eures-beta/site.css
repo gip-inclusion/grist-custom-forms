@@ -885,6 +885,18 @@ textarea {
   border-bottom: 0;
 }
 
+.matrix-option {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  width: 100%;
+}
+
+.matrix-option-label {
+  display: none;
+}
+
 .ranking-grid {
   display: grid;
   gap: 0.9rem;
@@ -948,6 +960,93 @@ textarea {
   }
 }
 
+@media (max-width: 1024px) {
+  .matrix-mobile-hint {
+    display: block;
+  }
+
+  .matrix-wrap {
+    overflow: visible;
+    padding: 0;
+    border: 0;
+    background: transparent;
+  }
+
+  .matrix-wrap::after {
+    display: none;
+  }
+
+  .matrix-table,
+  .matrix-table thead,
+  .matrix-table tbody,
+  .matrix-table tr,
+  .matrix-table th,
+  .matrix-table td {
+    display: block;
+    width: 100%;
+  }
+
+  .matrix-table {
+    min-width: 0;
+    border-collapse: separate;
+  }
+
+  .matrix-table thead {
+    display: none;
+  }
+
+  .matrix-table tbody {
+    display: grid;
+    gap: 0.9rem;
+  }
+
+  .matrix-table tbody tr {
+    border: 1px solid rgba(23, 50, 77, 0.12);
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.9);
+    overflow: hidden;
+  }
+
+  .matrix-table tbody th {
+    position: static;
+    min-width: 0;
+    padding: 1rem 1rem 0.75rem;
+    background: linear-gradient(180deg, rgba(220, 233, 255, 0.82), rgba(255, 255, 255, 0.92));
+    border-bottom: 1px solid rgba(23, 50, 77, 0.10);
+  }
+
+  .matrix-table td {
+    padding: 0;
+    text-align: left;
+    border-bottom: 1px solid rgba(23, 50, 77, 0.08);
+  }
+
+  .matrix-table tr:last-child td:last-child {
+    border-bottom: 0;
+  }
+
+  .matrix-option {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    padding: 0.85rem 1rem;
+    min-height: 52px;
+  }
+
+  .matrix-option-label {
+    display: block;
+    color: var(--text);
+    line-height: 1.4;
+    padding-right: 1rem;
+  }
+
+  .matrix-option input {
+    width: 1.15rem;
+    height: 1.15rem;
+    flex: 0 0 auto;
+  }
+}
+
 @media (max-width: 720px) {
   .shell {
     width: min(var(--max), calc(100% - 1rem));
@@ -980,38 +1079,6 @@ textarea {
 
   .form-grid {
     grid-template-columns: 1fr;
-  }
-
-  .matrix-mobile-hint {
-    display: block;
-  }
-
-  .matrix-wrap {
-    padding-bottom: 0.2rem;
-  }
-
-  .matrix-wrap::after {
-    content: "";
-    position: sticky;
-    right: 0;
-    display: block;
-    width: 2rem;
-    height: 0;
-    box-shadow: -18px 0 18px -18px rgba(23, 50, 77, 0.28);
-  }
-
-  .matrix-table {
-    min-width: 560px;
-  }
-
-  .matrix-table th,
-  .matrix-table td {
-    padding: 0.7rem 0.55rem;
-    font-size: 0.9rem;
-  }
-
-  .matrix-table tbody th {
-    min-width: 11rem;
   }
 
   .hero h1,
