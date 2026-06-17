@@ -549,9 +549,33 @@ def _eures_invitation_lookup_key(role: str, email: str) -> tuple[str, str]:
 
 
 def _extract_csv_rows(csv_text: str) -> list[dict]:
-    buffer = StringIO(str(csv_text or ''))
-    reader = csv.DictReader(buffer)
-    return [dict(row or {}) for row in reader]
+    raw_text = str(csv_text or '').replace('\r\n', '\n').replace('\r', '\n').lstrip('\ufeff')
+    if not raw_text.strip():
+        return []
+
+    sample = '\n'.join(raw_text.splitlines()[:5])
+    try:
+        dialect = csv.Sniffer().sniff(sample, delimiters=',;')
+    except Exception:
+        dialect = csv.excel
+
+    buffer = StringIO(raw_text)
+    reader = csv.DictReader(buffer, dialect=dialect)
+    if reader.fieldnames:
+        reader.fieldnames = [str(name or '').strip().lstrip('\ufeff') for name in reader.fieldnames]
+
+    rows = []
+    for row in reader:
+        if not isinstance(row, dict):
+            continue
+        cleaned = {
+            str(key or '').strip().lstrip('\ufeff'): str(value or '').strip()
+            for key, value in row.items()
+            if str(key or '').strip().lstrip('\ufeff')
+        }
+        if any(cleaned.values()):
+            rows.append(cleaned)
+    return rows
 
 
 def _coalesce_row_value(row: dict, *keys: str) -> str:

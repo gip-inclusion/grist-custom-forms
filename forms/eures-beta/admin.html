@@ -1215,7 +1215,9 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
         if (!response.ok || !result.ok) {
           throw new Error(result.error || `Erreur API (${response.status})`);
         }
-        setStatus("invite-status-line", `Import terminé : ${result.created || 0} créée(s), ${result.updated || 0} mise(s) à jour.`);
+        const skippedCount = Array.isArray(result.skipped) ? result.skipped.length : 0;
+        const skippedNote = skippedCount ? `, ${skippedCount} ignorée(s)` : "";
+        setStatus("invite-status-line", `Import terminé : ${result.created || 0} créée(s), ${result.updated || 0} mise(s) à jour${skippedNote}.`);
         await loadInvitations();
       } catch (error) {
         setStatus("invite-status-line", `Erreur : ${error.message || "import impossible"}`);
