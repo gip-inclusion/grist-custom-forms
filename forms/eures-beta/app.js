@@ -1912,6 +1912,12 @@ function currentLang() {
   return LANGS.includes(lang) ? lang : DEFAULT_LANG;
 }
 
+function currentInviteToken() {
+  const params = new URLSearchParams(window.location.search);
+  const inviteToken = (params.get("invite_token") || "").trim();
+  return inviteToken || "";
+}
+
 function setDocumentLang(lang) {
   document.documentElement.lang = lang;
 }
@@ -1925,7 +1931,12 @@ function pageUrl(page, lang) {
     "candidate-questionnaire": `${BASE_PATH}/questionnaire-candidate`,
     "employer-questionnaire": `${BASE_PATH}/questionnaire-employer`
   };
-  return `${map[page]}?lang=${lang}`;
+  const params = new URLSearchParams({ lang });
+  const inviteToken = currentInviteToken();
+  if (inviteToken) {
+    params.set("invite_token", inviteToken);
+  }
+  return `${map[page]}?${params.toString()}`;
 }
 
 function nav(page, lang, t) {
@@ -3301,6 +3312,7 @@ function attachEmployerTallyBehavior(lang, t) {
     return;
   }
   const content = getEmployerTallyContent(lang);
+  const inviteToken = currentInviteToken();
   const uuid = getUuid("employer");
   const statusEl = document.getElementById("status");
   const uuidBox = document.getElementById("uuid-box");
@@ -3429,6 +3441,9 @@ function attachEmployerTallyBehavior(lang, t) {
         ])
       )
     };
+    if (inviteToken) {
+      fields.invite_token = inviteToken;
+    }
 
     saveBtn.disabled = true;
     setStatus(t.common.saving);
@@ -3462,6 +3477,7 @@ function attachCandidateTallyBehavior(lang, t) {
     return;
   }
   const content = getCandidateTallyContent(lang);
+  const inviteToken = currentInviteToken();
 
   const uuid = getUuid("candidate");
   const statusEl = document.getElementById("status");
@@ -3609,6 +3625,9 @@ function attachCandidateTallyBehavior(lang, t) {
         ])
       )
     };
+    if (inviteToken) {
+      fields.invite_token = inviteToken;
+    }
 
     saveBtn.disabled = true;
     setStatus(t.common.saving);

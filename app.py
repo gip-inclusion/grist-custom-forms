@@ -14,10 +14,12 @@ Environment variables:
 import os
 import json
 import time
+import csv
+import secrets
 from html import escape
 from collections import Counter, defaultdict
 from datetime import datetime
-from io import BytesIO
+from io import BytesIO, StringIO
 from functools import wraps
 from pathlib import Path
 from urllib.parse import urljoin
@@ -42,6 +44,7 @@ _TABLE_COLUMNS_CACHE_TTL_SECONDS = 60
 EURES_CANDIDATS_TABLE = 'Candidats'
 EURES_BESOINS_TABLE = 'Besoins_Employeurs'
 EURES_MATCHINGS_TABLE = 'Matchings'
+EURES_INVITATIONS_TABLE_DEFAULT = 'Invitations'
 EURES_STATS_TABLE_DEFAULT = 'Pilotage_EURES_Mensuel'
 EURES_MATCHING_FIELDS = {
     'besoin_id',
@@ -75,6 +78,48 @@ EURES_MATCHING_ADMIN_FIELDS = {
     'embauche_confirmee_at',
     'embauche_confirmee_by',
 }
+EURES_INVITATION_FIELDS = {
+    'role',
+    'email',
+    'first_name',
+    'last_name',
+    'company_name',
+    'language',
+    'source',
+    'external_ref',
+    'invite_token',
+    'invite_link',
+    'invitation_status',
+    'invitation_status_updated_at',
+    'invitation_status_updated_by',
+    'import_batch_id',
+    'imported_at',
+    'imported_by',
+    'sent_at',
+    'sent_by',
+    'brevo_message_id',
+    'answered_at',
+    'linked_form_role',
+    'linked_record_id',
+    'linked_record_key',
+    'matching_status',
+    'matching_status_updated_at',
+    'matching_status_updated_by',
+    'notes',
+}
+EURES_INVITATION_ALLOWED_ROLES = {'candidate', 'employer'}
+EURES_INVITATION_ALLOWED_STATUSES = {
+    'invitation_a_envoyer',
+    'invitation_envoyee',
+    'questionnaire_recu',
+    'rapprochement_a_confirmer',
+    'rapprochee',
+    'matching_calcule',
+    'traitee',
+    'erreur_envoi',
+    'desactivee',
+}
+EURES_INVITATION_SENDABLE_STATUSES = {'invitation_a_envoyer', 'erreur_envoi'}
 EURES_SECTOR_CANONICAL_MAP = {
     'vente': 'vente',
     'commerce': 'vente',
@@ -354,6 +399,18 @@ def get_eures_matching_config() -> dict | None:
     }
 
 
+def get_eures_invitations_config() -> dict | None:
+    """Get configuration for the optional EURES invitations table."""
+    base = get_form_config('eures-beta', 'candidate') or get_form_config('eures-beta')
+    if not base:
+        return None
+    return {
+        'doc_id': base['doc_id'],
+        'table_id': os.environ.get('GRIST_TABLE_EURES_BETA_INVITATIONS', EURES_INVITATIONS_TABLE_DEFAULT),
+        'api_key': base.get('api_key'),
+    }
+
+
 def get_brevo_config() -> dict:
     return {
         'api_key': os.environ.get('BREVO_API_KEY', '').strip(),
@@ -456,6 +513,423 @@ def get_eures_email_action_serializer() -> URLSafeSerializer:
     if not secret:
         raise RuntimeError('Missing EURES email action secret configuration.')
     return URLSafeSerializer(secret_key=secret, salt='eures-email-action')
+
+
+def _generate_eures_invitation_token() -> str:
+    return secrets.token_urlsafe(24)
+
+
+def _normalize_eures_invitation_role(value: str) -> str:
+    role = str(value or '').strip().lower().replace('-', '_')
+    if role in {'candidat', 'candidate'}:
+        return 'candidate'
+    if role in {'employeur', 'employer'}:
+        return 'employer'
+    return ''
+
+
+def _normalize_eures_invitation_status(value: str) -> str:
+    status = str(value or '').strip().lower().replace(' ', '_')
+    if status in EURES_INVITATION_ALLOWED_STATUSES:
+        return status
+    return ''
+
+
+def _build_eures_invitation_link(role: str, language: str, invite_token: str) -> str:
+    page = 'candidate' if role == 'candidate' else 'employer'
+    lang = str(language or 'fr').strip().lower()
+    if lang not in {'fr', 'en', 'de'}:
+        lang = 'fr'
+    base = get_public_app_base_url()
+    return f'{base}/forms/eures-beta/{page}?lang={lang}&invite_token={invite_token}'
+
+
+def _eures_invitation_lookup_key(role: str, email: str) -> tuple[str, str]:
+    return (_normalize_eures_invitation_role(role), normalize_email(email))
+
+
+def _extract_csv_rows(csv_text: str) -> list[dict]:
+    buffer = StringIO(str(csv_text or ''))
+    reader = csv.DictReader(buffer)
+    return [dict(row or {}) for row in reader]
+
+
+def _coalesce_row_value(row: dict, *keys: str) -> str:
+    for key in keys:
+        if key in row and str(row.get(key) or '').strip():
+            return str(row.get(key) or '').strip()
+    return ''
+
+
+def _parse_eures_invitation_rows(payload: dict) -> list[dict]:
+    rows = payload.get('rows')
+    if isinstance(rows, list):
+        return [row for row in rows if isinstance(row, dict)]
+
+    csv_text = payload.get('csv_text')
+    if isinstance(csv_text, str) and csv_text.strip():
+        return _extract_csv_rows(csv_text)
+
+    return []
+
+
+def _normalize_eures_invitation_row(row: dict, actor: str, batch_id: str) -> dict:
+    role = _normalize_eures_invitation_role(_coalesce_row_value(row, 'role', 'type', 'profil', 'profile'))
+    email = normalize_email(_coalesce_row_value(row, 'email', 'mail', 'contact_email'))
+    language = _coalesce_row_value(row, 'language', 'langue', 'lang') or 'fr'
+    invitation_status = _normalize_eures_invitation_status(
+        _coalesce_row_value(row, 'invitation_status', 'status', 'statut')
+    ) or 'invitation_a_envoyer'
+    token = _coalesce_row_value(row, 'invite_token', 'token') or _generate_eures_invitation_token()
+    return {
+        'role': role,
+        'email': email,
+        'first_name': _coalesce_row_value(row, 'first_name', 'prenom', 'prénom'),
+        'last_name': _coalesce_row_value(row, 'last_name', 'nom'),
+        'company_name': _coalesce_row_value(row, 'company_name', 'entreprise', 'company'),
+        'language': language.lower(),
+        'source': _coalesce_row_value(row, 'source', 'origine') or 'csv_import',
+        'external_ref': _coalesce_row_value(row, 'external_ref', 'external_id', 'id_externe', 'id'),
+        'invite_token': token,
+        'invite_link': _build_eures_invitation_link(role, language, token) if role else '',
+        'invitation_status': invitation_status,
+        'invitation_status_updated_at': _now_iso_utc(),
+        'invitation_status_updated_by': actor,
+        'import_batch_id': batch_id,
+        'imported_at': _now_iso_utc(),
+        'imported_by': actor,
+        'notes': _coalesce_row_value(row, 'notes', 'note', 'comment', 'commentaire'),
+    }
+
+
+def list_eures_invitations() -> list[dict]:
+    config = get_eures_invitations_config()
+    if not config:
+        raise RuntimeError('EURES invitations configuration is incomplete.')
+    headers = _eures_admin_headers(config)
+    records = fetch_table_records(config['doc_id'], config['table_id'], headers)
+    rows = []
+    for rec in records:
+        fields = rec.get('fields', {}) if isinstance(rec, dict) else {}
+        rows.append({
+            'record_id': rec.get('id'),
+            'role': fields.get('role', ''),
+            'email': fields.get('email', ''),
+            'first_name': fields.get('first_name', ''),
+            'last_name': fields.get('last_name', ''),
+            'company_name': fields.get('company_name', ''),
+            'language': fields.get('language', ''),
+            'source': fields.get('source', ''),
+            'external_ref': fields.get('external_ref', ''),
+            'invite_token': fields.get('invite_token', ''),
+            'invite_link': fields.get('invite_link', ''),
+            'invitation_status': fields.get('invitation_status', 'invitation_a_envoyer'),
+            'sent_at': fields.get('sent_at', ''),
+            'answered_at': fields.get('answered_at', ''),
+            'linked_form_role': fields.get('linked_form_role', ''),
+            'linked_record_id': fields.get('linked_record_id', ''),
+            'linked_record_key': fields.get('linked_record_key', ''),
+            'matching_status': fields.get('matching_status', ''),
+            'notes': fields.get('notes', ''),
+            'import_batch_id': fields.get('import_batch_id', ''),
+            'imported_at': fields.get('imported_at', ''),
+            'imported_by': fields.get('imported_by', ''),
+        })
+    rows.sort(key=lambda row: (str(row.get('invitation_status') or ''), -int(row.get('record_id') or 0)))
+    return rows
+
+
+def upsert_eures_invitation_rows(rows: list[dict], actor: str) -> dict:
+    config = get_eures_invitations_config()
+    if not config:
+        raise RuntimeError('EURES invitations configuration is incomplete.')
+    headers = _eures_admin_headers(config)
+    ensure_table_columns(config, EURES_INVITATION_FIELDS, headers)
+    existing_records = fetch_table_records(config['doc_id'], config['table_id'], headers)
+    by_key: dict[tuple[str, str], dict] = {}
+    for rec in existing_records:
+        fields = rec.get('fields', {}) if isinstance(rec, dict) else {}
+        key = _eures_invitation_lookup_key(fields.get('role', ''), fields.get('email', ''))
+        if key[0] and key[1]:
+            by_key[key] = rec
+
+    batch_id = f'invite-import-{int(time.time())}'
+    to_create = []
+    to_update = []
+    skipped = []
+    for raw_row in rows:
+        normalized = _normalize_eures_invitation_row(raw_row, actor=actor, batch_id=batch_id)
+        role = normalized['role']
+        email = normalized['email']
+        if role not in EURES_INVITATION_ALLOWED_ROLES or not email:
+            skipped.append({
+                'row': raw_row,
+                'reason': 'missing_or_invalid_role_or_email',
+            })
+            continue
+        existing = by_key.get((role, email))
+        if existing:
+            existing_fields = existing.get('fields', {}) if isinstance(existing.get('fields'), dict) else {}
+            merged = dict(existing_fields)
+            merged.update({
+                key: value for key, value in normalized.items()
+                if value not in (None, '')
+            })
+            merged['invite_token'] = existing_fields.get('invite_token') or normalized['invite_token']
+            merged['invite_link'] = _build_eures_invitation_link(role, merged.get('language', 'fr'), merged['invite_token'])
+            to_update.append({'id': existing['id'], 'fields': merged})
+        else:
+            to_create.append({'fields': normalized})
+
+    base_url = f"{GRIST_BASE_URL}/api/docs/{config['doc_id']}/tables/{config['table_id']}/records"
+    if to_create:
+        resp = write_grist_records('POST', base_url, {'records': to_create}, headers)
+        if resp.status_code != 200:
+            raise RuntimeError(f'Failed to create invitations: HTTP {resp.status_code} - {resp.text}')
+    if to_update:
+        resp = write_grist_records('PATCH', base_url, {'records': to_update}, headers)
+        if resp.status_code != 200:
+            raise RuntimeError(f'Failed to update invitations: HTTP {resp.status_code} - {resp.text}')
+
+    return {
+        'ok': True,
+        'batch_id': batch_id,
+        'created': len(to_create),
+        'updated': len(to_update),
+        'skipped': skipped,
+    }
+
+
+def update_eures_invitation_record_by_id(record_id: int, fields: dict, headers: dict | None = None):
+    """Patch one invitation record by Grist record id."""
+    config = get_eures_invitations_config()
+    if not config:
+        raise RuntimeError('EURES invitations configuration is incomplete.')
+    if headers is None:
+        headers = _eures_admin_headers(config)
+    ensure_table_columns(config, set(fields.keys()) & EURES_INVITATION_FIELDS, headers)
+    allowed_columns = get_table_columns(config, headers)
+    filtered_fields = {k: v for k, v in fields.items() if k in allowed_columns}
+    base_url = f"{GRIST_BASE_URL}/api/docs/{config['doc_id']}/tables/{config['table_id']}/records"
+    resp = write_grist_records('PATCH', base_url, {'records': [{'id': record_id, 'fields': filtered_fields}]}, headers)
+    if resp.status_code != 200:
+        raise RuntimeError(f'Failed to update invitation: HTTP {resp.status_code} - {resp.text}')
+    return resp
+
+
+def find_eures_invitation_by_token(invite_token: str, headers: dict | None = None) -> dict | None:
+    """Find one invitation row by invite token."""
+    token = str(invite_token or '').strip()
+    if not token:
+        return None
+    config = get_eures_invitations_config()
+    if not config:
+        raise RuntimeError('EURES invitations configuration is incomplete.')
+    if headers is None:
+        headers = _eures_admin_headers(config)
+    records = fetch_table_records(config['doc_id'], config['table_id'], headers)
+    for rec in records:
+        fields = rec.get('fields', {}) if isinstance(rec, dict) else {}
+        if str(fields.get('invite_token') or '').strip() == token:
+            return rec
+    return None
+
+
+def find_eures_invitation_by_role_email(role: str, email: str, headers: dict | None = None) -> dict | None:
+    """Find one invitation row by normalized role and email."""
+    normalized_role = _normalize_eures_invitation_role(role)
+    normalized_email = normalize_email(email)
+    if not normalized_role or not normalized_email:
+        return None
+    config = get_eures_invitations_config()
+    if not config:
+        raise RuntimeError('EURES invitations configuration is incomplete.')
+    if headers is None:
+        headers = _eures_admin_headers(config)
+    records = fetch_table_records(config['doc_id'], config['table_id'], headers)
+    for rec in records:
+        fields = rec.get('fields', {}) if isinstance(rec, dict) else {}
+        if _eures_invitation_lookup_key(fields.get('role', ''), fields.get('email', '')) == (normalized_role, normalized_email):
+            return rec
+    return None
+
+
+def link_eures_invitation_after_save(role: str, request_fields: dict, saved_record: dict, matching_result: dict | None = None) -> dict:
+    """Link a saved EURES questionnaire to its invitation when possible."""
+    if _normalize_eures_invitation_role(role) not in EURES_INVITATION_ALLOWED_ROLES:
+        return {'linked': False, 'reason': 'unsupported_role'}
+
+    config = get_eures_invitations_config()
+    if not config:
+        return {'linked': False, 'reason': 'invitations_not_configured'}
+
+    headers = _eures_admin_headers(config)
+    invite_token = str((request_fields or {}).get('invite_token') or '').strip()
+    saved_fields = saved_record.get('fields', {}) if isinstance(saved_record.get('fields'), dict) else {}
+    email = normalize_email(
+        (request_fields or {}).get('email')
+        or saved_fields.get('email')
+        or saved_fields.get('tally_q18')
+        or saved_fields.get('tally_q33')
+    )
+
+    invitation = None
+    link_mode = ''
+    if invite_token:
+        invitation = find_eures_invitation_by_token(invite_token, headers=headers)
+        if invitation:
+            link_mode = 'token'
+
+    if invitation is None and email:
+        invitation = find_eures_invitation_by_role_email(role, email, headers=headers)
+        if invitation:
+            link_mode = 'email'
+
+    if not invitation:
+        return {
+            'linked': False,
+            'reason': 'invitation_not_found',
+            'invite_token_present': bool(invite_token),
+            'email_present': bool(email),
+        }
+
+    record_id = invitation.get('id')
+    if not record_id:
+        return {'linked': False, 'reason': 'invalid_invitation_record'}
+
+    saved_record_key = str(saved_fields.get('id_tally') or saved_fields.get('uuid') or '').strip()
+    now = _now_iso_utc()
+    invitation_fields = invitation.get('fields', {}) if isinstance(invitation.get('fields'), dict) else {}
+    notes = str(invitation_fields.get('notes') or '').strip()
+    if link_mode == 'email':
+        fallback_note = 'Lien questionnaire/invitation rapproche via email.'
+        if fallback_note not in notes:
+            notes = f'{notes} | {fallback_note}'.strip(' |')
+
+    update_fields = {
+        'answered_at': now,
+        'linked_form_role': _normalize_eures_invitation_role(role),
+        'linked_record_id': str(saved_record.get('id') or ''),
+        'linked_record_key': saved_record_key,
+        'invitation_status': 'questionnaire_recu',
+        'invitation_status_updated_at': now,
+        'invitation_status_updated_by': 'system_questionnaire_submission',
+        'notes': notes,
+    }
+    if isinstance(matching_result, dict) and matching_result.get('processed'):
+        update_fields['matching_status'] = 'matching_calcule'
+        update_fields['matching_status_updated_at'] = now
+        update_fields['matching_status_updated_by'] = 'system_matching'
+
+    update_eures_invitation_record_by_id(int(record_id), update_fields, headers=headers)
+    return {
+        'linked': True,
+        'mode': link_mode,
+        'invitation_record_id': record_id,
+        'linked_record_id': saved_record.get('id'),
+        'linked_record_key': saved_record_key,
+        'email': email,
+    }
+
+
+def build_brevo_invitation_email(invitation_row: dict) -> tuple[str, str, str, str]:
+    """Build recipient, subject, text body and HTML body for one invitation."""
+    role = _normalize_eures_invitation_role(invitation_row.get('role', ''))
+    if role not in EURES_INVITATION_ALLOWED_ROLES:
+        raise RuntimeError('Invitation role is missing or invalid.')
+    recipient = normalize_email(invitation_row.get('email', ''))
+    if not recipient:
+        raise RuntimeError('Invitation email is missing.')
+
+    language = str(invitation_row.get('language') or 'fr').strip().lower()
+    if language not in {'fr', 'en', 'de'}:
+        language = 'fr'
+    first_name = str(invitation_row.get('first_name') or '').strip()
+    company_name = str(invitation_row.get('company_name') or '').strip()
+    invite_token = str(invitation_row.get('invite_token') or '').strip() or _generate_eures_invitation_token()
+    invite_link = str(invitation_row.get('invite_link') or '').strip() or _build_eures_invitation_link(role, language, invite_token)
+    signature_name = get_eures_mail_signature_name()
+
+    if language == 'en':
+        greeting = f"Hello {first_name}," if first_name else "Hello,"
+        if role == 'candidate':
+            subject = "[EURES beta] Explore professional opportunities in Europe"
+            intro = "You have been identified as someone who may be interested in professional mobility opportunities in Europe."
+            cta = "Start the questionnaire"
+            why = "By answering a few questions, you help us better understand your profile, your availability and your mobility plans."
+        else:
+            subject = "[EURES beta] Describe your recruitment needs"
+            intro = f"We invite you to describe your recruitment needs{f' for {company_name}' if company_name else ''} through a short questionnaire."
+            cta = "Open the questionnaire"
+            why = "This helps us better understand the role, the expected profile and the conditions offered."
+        closing = f"Best regards,\n{signature_name}\nEURES beta"
+    elif language == 'de':
+        greeting = f"Guten Tag {first_name}," if first_name else "Guten Tag,"
+        if role == 'candidate':
+            subject = "[EURES beta] Berufliche Chancen in Europa entdecken"
+            intro = "Sie wurden als Person identifiziert, die an beruflicher Mobilität in Europa interessiert sein könnte."
+            cta = "Fragebogen starten"
+            why = "Mit einigen Antworten helfen Sie uns, Ihr Profil, Ihre Verfügbarkeit und Ihre Mobilitätspläne besser zu verstehen."
+        else:
+            subject = "[EURES beta] Ihren Rekrutierungsbedarf beschreiben"
+            intro = f"Wir laden Sie ein, Ihren Rekrutierungsbedarf{f' für {company_name}' if company_name else ''} über einen kurzen Fragebogen zu beschreiben."
+            cta = "Fragebogen öffnen"
+            why = "So können wir die Stelle, das gesuchte Profil und die angebotenen Bedingungen besser verstehen."
+        closing = f"Mit freundlichen Grüßen\n{signature_name}\nEURES beta"
+    else:
+        greeting = f"Bonjour {first_name}," if first_name else "Bonjour,"
+        if role == 'candidate':
+            subject = "[EURES beta] Explorer des opportunités professionnelles en Europe"
+            intro = "Vous avez été identifié comme une personne pouvant être intéressée par des opportunités de mobilité professionnelle en Europe."
+            cta = "Accéder au questionnaire"
+            why = "En répondant à quelques questions, vous nous aidez à mieux comprendre votre profil, vos disponibilités et votre projet de mobilité."
+        else:
+            subject = "[EURES beta] Décrire votre besoin de recrutement"
+            intro = f"Nous vous invitons à décrire votre besoin de recrutement{f' pour {company_name}' if company_name else ''} à travers un court questionnaire."
+            cta = "Ouvrir le questionnaire"
+            why = "Cela nous permet de mieux comprendre le poste, le profil recherché et les conditions proposées."
+        closing = f"Cordialement,\n{signature_name}\nEURES beta"
+
+    text_body = (
+        f"{greeting}\n\n"
+        f"{intro}\n\n"
+        f"{why}\n\n"
+        f"{cta}: {invite_link}\n\n"
+        f"{closing}\n"
+    )
+    html_body = f"""
+<!doctype html>
+<html lang="{escape(language)}">
+  <body style="margin:0;padding:0;background:#f4efe6;font-family:Georgia,'Times New Roman',serif;color:#1f1f1f;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f4efe6;padding:24px 12px;">
+      <tr>
+        <td align="center">
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:720px;background:#fffdf9;border:1px solid #e7dcc7;border-radius:18px;overflow:hidden;">
+            <tr>
+              <td style="padding:28px 32px;background:linear-gradient(135deg,#103a2b 0%,#1f5a45 100%);color:#ffffff;">
+                <div style="font-size:13px;letter-spacing:1.6px;text-transform:uppercase;opacity:0.82;">EURES beta</div>
+                <h1 style="margin:10px 0 0;font-size:30px;line-height:1.2;font-weight:700;">{escape(subject.replace('[EURES beta] ', ''))}</h1>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:28px 32px;">
+                <p style="margin:0 0 18px;font-size:16px;line-height:1.7;">{escape(greeting)}</p>
+                <p style="margin:0 0 18px;font-size:16px;line-height:1.7;">{escape(intro)}</p>
+                <p style="margin:0 0 24px;font-size:16px;line-height:1.7;">{escape(why)}</p>
+                <p style="margin:0 0 28px;">
+                  <a href="{escape(invite_link)}" style="display:inline-block;padding:13px 20px;border-radius:999px;background:#0a4aa5;color:#ffffff;text-decoration:none;font-size:15px;font-weight:700;">{escape(cta)}</a>
+                </p>
+                <p style="margin:0;font-size:15px;line-height:1.7;white-space:pre-line;">{escape(closing)}</p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
+""".strip()
+    return recipient, subject, text_body, html_body, invite_token, invite_link
 
 
 def get_table_columns(config: dict, headers: dict) -> set[str]:
@@ -2434,6 +2908,7 @@ def save_record(form_id: str):
             }), 502
 
         matching_result = None
+        invitation_linking = None
         if form_id == 'eures-beta':
             matching_result = run_eures_matching_for_saved_record(
                 form_id=form_id,
@@ -2441,6 +2916,12 @@ def save_record(form_id: str):
                 saved_record=saved_record,
                 config=config,
                 headers=headers,
+            )
+            invitation_linking = link_eures_invitation_after_save(
+                role=str(fields.get('flow_role') or ''),
+                request_fields=fields,
+                saved_record=saved_record,
+                matching_result=matching_result,
             )
 
         return jsonify({
@@ -2450,6 +2931,7 @@ def save_record(form_id: str):
             'record_key': record_key,
             'record_id': saved_record.get('id'),
             'matching': matching_result,
+            'invitation_linking': invitation_linking,
         }), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -2655,6 +3137,245 @@ def admin_overview(form_id: str):
         },
         'rows': rows,
     }), 200
+
+
+@app.route('/api/forms/<form_id>/admin/invitations', methods=['GET'])
+@admin_required
+def admin_eures_invitations(form_id: str):
+    """Admin API: list invitations for EURES beta."""
+    if form_id != 'eures-beta':
+        return jsonify({'error': f'Unknown invitation admin form: {form_id}'}), 404
+
+    status = str(request.args.get('status', 'all') or 'all').strip().lower()
+    role = _normalize_eures_invitation_role(request.args.get('role', '')) if request.args.get('role') else ''
+    search = str(request.args.get('search', '') or '').strip().lower()
+
+    try:
+        rows = list_eures_invitations()
+        if status != 'all':
+            rows = [row for row in rows if str(row.get('invitation_status') or '') == status]
+        if role:
+            rows = [row for row in rows if str(row.get('role') or '') == role]
+        if search:
+            rows = [
+                row for row in rows
+                if search in ' '.join([
+                    str(row.get('email') or ''),
+                    str(row.get('first_name') or ''),
+                    str(row.get('last_name') or ''),
+                    str(row.get('company_name') or ''),
+                    str(row.get('external_ref') or ''),
+                ]).lower()
+            ]
+        stats = Counter(row.get('invitation_status') or 'invitation_a_envoyer' for row in rows)
+        return jsonify({
+            'ok': True,
+            'form_id': form_id,
+            'stats': {
+                'total': len(rows),
+                'invitation_a_envoyer': stats.get('invitation_a_envoyer', 0),
+                'invitation_envoyee': stats.get('invitation_envoyee', 0),
+                'questionnaire_recu': stats.get('questionnaire_recu', 0),
+                'rapprochee': stats.get('rapprochee', 0),
+                'erreur_envoi': stats.get('erreur_envoi', 0),
+            },
+            'rows': rows,
+        }), 200
+    except Exception as e:
+        app.logger.exception('EURES invitations list failed')
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/forms/<form_id>/admin/invitations/import', methods=['POST'])
+@admin_required
+def admin_eures_invitations_import(form_id: str):
+    """Admin API: import invitation rows from JSON or CSV payload."""
+    if form_id != 'eures-beta':
+        return jsonify({'error': f'Unknown invitation import form: {form_id}'}), 404
+
+    data = request.get_json() or {}
+    rows = _parse_eures_invitation_rows(data)
+    if not rows:
+        return jsonify({'error': 'No invitation rows provided'}), 400
+
+    auth = request.authorization
+    actor = auth.username if auth and auth.username else 'admin'
+    try:
+        result = upsert_eures_invitation_rows(rows, actor=actor)
+        return jsonify(result), 200
+    except Exception as e:
+        app.logger.exception('EURES invitations import failed')
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/forms/<form_id>/admin/invitations/<int:record_id>', methods=['PATCH'])
+@admin_required
+def admin_eures_invitation_update(form_id: str, record_id: int):
+    """Admin API: patch one invitation row."""
+    if form_id != 'eures-beta':
+        return jsonify({'error': f'Unknown invitation update form: {form_id}'}), 404
+
+    data = request.get_json() or {}
+    update_fields = {}
+    role = data.get('role')
+    if role is not None:
+        normalized_role = _normalize_eures_invitation_role(role)
+        if normalized_role not in EURES_INVITATION_ALLOWED_ROLES:
+            return jsonify({'error': 'Invalid invitation role'}), 400
+        update_fields['role'] = normalized_role
+
+    email = data.get('email')
+    if email is not None:
+        normalized_email = normalize_email(email)
+        if not normalized_email:
+            return jsonify({'error': 'Invalid invitation email'}), 400
+        update_fields['email'] = normalized_email
+
+    status = data.get('invitation_status')
+    if status is not None:
+        normalized_status = _normalize_eures_invitation_status(status)
+        if normalized_status not in EURES_INVITATION_ALLOWED_STATUSES:
+            return jsonify({'error': 'Invalid invitation status'}), 400
+        auth = request.authorization
+        actor = auth.username if auth and auth.username else 'admin'
+        update_fields['invitation_status'] = normalized_status
+        update_fields['invitation_status_updated_at'] = _now_iso_utc()
+        update_fields['invitation_status_updated_by'] = actor
+
+    for field_name in {
+        'first_name',
+        'last_name',
+        'company_name',
+        'language',
+        'source',
+        'external_ref',
+        'notes',
+        'answered_at',
+        'linked_form_role',
+        'linked_record_id',
+        'linked_record_key',
+        'matching_status',
+    }:
+        if field_name in data:
+            update_fields[field_name] = str(data.get(field_name) or '').strip()
+
+    if not update_fields:
+        return jsonify({'error': 'No supported invitation fields provided'}), 400
+
+    config = get_eures_invitations_config()
+    if not config:
+        return jsonify({'error': 'EURES invitations configuration is incomplete.'}), 500
+
+    headers = _eures_admin_headers(config)
+    try:
+        ensure_table_columns(config, set(update_fields.keys()) & EURES_INVITATION_FIELDS, headers)
+        allowed_columns = get_table_columns(config, headers)
+        filtered_fields = {k: v for k, v in update_fields.items() if k in allowed_columns}
+        base_url = f"{GRIST_BASE_URL}/api/docs/{config['doc_id']}/tables/{config['table_id']}/records"
+        resp = write_grist_records('PATCH', base_url, {'records': [{'id': record_id, 'fields': filtered_fields}]}, headers)
+        if resp.status_code != 200:
+            raise RuntimeError(f'Failed to update invitation: HTTP {resp.status_code} - {resp.text}')
+        updated = fetch_record_by_id(config['doc_id'], config['table_id'], record_id, headers)
+        return jsonify({
+            'ok': True,
+            'record_id': record_id,
+            'fields': updated.get('fields', {}) if isinstance(updated, dict) else {},
+        }), 200
+    except Exception as e:
+        app.logger.exception('EURES invitation update failed')
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/forms/<form_id>/admin/invitations/send', methods=['POST'])
+@admin_required
+def admin_eures_invitations_send(form_id: str):
+    """Admin API: send pending invitations through Brevo."""
+    if form_id != 'eures-beta':
+        return jsonify({'error': f'Unknown invitation send form: {form_id}'}), 404
+
+    data = request.get_json() or {}
+    requested_ids = data.get('record_ids') or []
+    if requested_ids and not isinstance(requested_ids, list):
+        return jsonify({'error': 'record_ids must be a list'}), 400
+
+    config = get_eures_invitations_config()
+    if not config:
+        return jsonify({'error': 'EURES invitations configuration is incomplete.'}), 500
+
+    headers = _eures_admin_headers(config)
+    auth = request.authorization
+    actor = auth.username if auth and auth.username else 'admin'
+    try:
+        records = fetch_table_records(config['doc_id'], config['table_id'], headers)
+        if requested_ids:
+            requested_ids_set = {int(value) for value in requested_ids}
+            target_records = [rec for rec in records if int(rec.get('id') or 0) in requested_ids_set]
+        else:
+            target_records = []
+            for rec in records:
+                fields = rec.get('fields', {}) if isinstance(rec, dict) else {}
+                if str(fields.get('invitation_status') or '').strip().lower() == 'invitation_a_envoyer':
+                    target_records.append(rec)
+
+        sent = []
+        skipped = []
+        errors = []
+        for rec in target_records:
+            record_id = int(rec.get('id') or 0)
+            fields = rec.get('fields', {}) if isinstance(rec.get('fields'), dict) else {}
+            current_status = str(fields.get('invitation_status') or '').strip().lower()
+            if current_status not in EURES_INVITATION_SENDABLE_STATUSES:
+                skipped.append({
+                    'record_id': record_id,
+                    'email': fields.get('email', ''),
+                    'reason': f'status_not_sendable:{current_status or "unknown"}',
+                })
+                continue
+            try:
+                recipient, subject, text_body, html_body, invite_token, invite_link = build_brevo_invitation_email(fields)
+                brevo_result = send_brevo_transactional_email(recipient, subject, text_body, html_body)
+                update_eures_invitation_record_by_id(record_id, {
+                    'invite_token': invite_token,
+                    'invite_link': invite_link,
+                    'invitation_status': 'invitation_envoyee',
+                    'invitation_status_updated_at': _now_iso_utc(),
+                    'invitation_status_updated_by': actor,
+                    'sent_at': _now_iso_utc(),
+                    'sent_by': actor,
+                    'brevo_message_id': str((brevo_result or {}).get('messageId') or ''),
+                }, headers=headers)
+                sent.append({
+                    'record_id': record_id,
+                    'email': recipient,
+                    'brevo_message_id': str((brevo_result or {}).get('messageId') or ''),
+                })
+            except Exception as e:
+                error_message = str(e)
+                errors.append({
+                    'record_id': record_id,
+                    'email': fields.get('email', ''),
+                    'error': error_message,
+                })
+                try:
+                    update_eures_invitation_record_by_id(record_id, {
+                        'invitation_status': 'erreur_envoi',
+                        'invitation_status_updated_at': _now_iso_utc(),
+                        'invitation_status_updated_by': actor,
+                        'notes': error_message[:500],
+                    }, headers=headers)
+                except Exception:
+                    app.logger.exception('EURES invitation error status update failed')
+
+        return jsonify({
+            'ok': True,
+            'requested': len(target_records),
+            'sent': sent,
+            'skipped': skipped,
+            'errors': errors,
+        }), 200
+    except Exception as e:
+        app.logger.exception('EURES invitations send failed')
+        return jsonify({'error': str(e)}), 500
 
 
 @app.route('/api/forms/<form_id>/admin/matchings', methods=['GET'])
