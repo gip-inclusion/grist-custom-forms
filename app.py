@@ -944,7 +944,7 @@ def build_brevo_invitation_email(invitation_row: dict) -> tuple[str, str, str, s
   </body>
 </html>
 """.strip()
-        return recipient, subject, text_body, html_body, invite_token, invite_link
+        return recipient, subject, text_body, body_html, invite_token, invite_link
 
     if language == 'en':
         subject = "[EURES beta] What if your next opportunity was elsewhere in Europe?"
