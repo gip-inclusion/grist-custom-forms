@@ -1650,6 +1650,7 @@ const employerTallyCopy = {
       q18: "Adresse e-mail",
       q19: "Téléphone",
       q20: "Lieux de travail",
+      q20Extra: "Quels autres métiers souhaiteriez-vous voir proposés ici à l'avenir ?",
       salaryType: "Sous quelle forme exprimez-vous le salaire proposé ?",
       salaryMin: "Montant minimum proposé, en euros bruts ou nets",
       salaryMax: "Montant maximum proposé, en euros bruts ou nets",
@@ -1732,6 +1733,7 @@ const employerTallyCopy = {
       q18: "Email address",
       q19: "Phone",
       q20: "Work locations",
+      q20Extra: "Which other occupations would you like to see included here in the future?",
       salaryType: "How do you express the salary offered?",
       salaryMin: "Minimum amount offered, in gross or net euros",
       salaryMax: "Maximum amount offered, in gross or net euros",
@@ -1823,6 +1825,7 @@ const employerTallyCopy = {
       q18: "E-Mail-Adresse",
       q19: "Telefon",
       q20: "Arbeitsorte",
+      q20Extra: "Welche anderen Berufe würden Sie hier künftig gerne sehen?",
       salaryType: "In welcher Form geben Sie das angebotene Gehalt an?",
       salaryMin: "Angebotener Mindestbetrag in Euro brutto oder netto",
       salaryMax: "Angebotener Höchstbetrag in Euro brutto oder netto",
@@ -2986,6 +2989,13 @@ function employerTallyQuestionnaireTemplate(lang, t) {
             `).join("")}
 
             <section class="form-section">
+              <label class="field">
+                <span>${content.questions.q20Extra}</span>
+                <textarea name="tally_q20_extra" rows="3"></textarea>
+              </label>
+            </section>
+
+            <section class="form-section">
               <fieldset class="fieldset">
                 <legend>${content.questions.q15}</legend>
                 ${choicePills("tally_q15", content.optionGroups.q15)}
@@ -3303,7 +3313,8 @@ function humanizeEmployerRawAnswers(fields) {
       entreprise: fields.tally_q17 || "",
       email: fields.tally_q18 || "",
       telephone: fields.tally_q19 || "",
-      lieux_travail: fields.tally_q20 || ""
+      lieux_travail: fields.tally_q20 || "",
+      autres_metiers_souhaites: fields.tally_q20_extra || ""
     },
     consentement_rgpd: fields.tally_q21 || ""
   };

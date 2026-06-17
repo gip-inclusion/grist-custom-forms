@@ -853,10 +853,10 @@ def build_brevo_invitation_email(invitation_row: dict) -> tuple[str, str, str, s
     if role == 'employer':
         if language == 'en':
             subject = "[EURES beta] Recruit more easily through European mobility"
-            preheader = "Describe your hiring need in less than 5 minutes."
+            preheader = "Experimental service: describe your hiring need in less than 5 minutes."
             title = "Are you having trouble recruiting?"
             body_lines = [
-                "EURES beta is testing a new service to support recruitment across the Greater Region.",
+                "EURES beta is currently testing a simple service to support recruitment across the Greater Region.",
                 "In just a few minutes, describe your hiring need and access a wider pool of candidates open to European mobility.",
                 "The more precise your need is, the easier it is for us to identify relevant profiles.",
             ]
@@ -865,10 +865,10 @@ def build_brevo_invitation_email(invitation_row: dict) -> tuple[str, str, str, s
             footer = "EURES beta is an initiative led by EURES and France Travail to support recruitment and professional mobility in the Greater Region."
         elif language == 'de':
             subject = "[EURES beta] Einfacher rekrutieren dank europäischer Mobilität"
-            preheader = "Beschreiben Sie Ihren Bedarf in weniger als 5 Minuten."
+            preheader = "Experimenteller Service: Beschreiben Sie Ihren Bedarf in weniger als 5 Minuten."
             title = "Haben Sie Schwierigkeiten bei der Rekrutierung?"
             body_lines = [
-                "EURES beta testet einen neuen Service, um Rekrutierungen in der Großregion zu erleichtern.",
+                "EURES beta testet derzeit einen einfachen Service, um Rekrutierungen in der Großregion zu erleichtern.",
                 "Beschreiben Sie in wenigen Minuten Ihren Bedarf und erhalten Sie Zugang zu einem größeren Pool von Kandidatinnen und Kandidaten, die für europäische Mobilität offen sind.",
                 "Je präziser Ihr Bedarf ist, desto besser können passende Profile identifiziert werden.",
             ]
@@ -877,10 +877,10 @@ def build_brevo_invitation_email(invitation_row: dict) -> tuple[str, str, str, s
             footer = "EURES beta ist eine von EURES und France Travail getragene Initiative zur Unterstützung von Rekrutierung und beruflicher Mobilität in der Großregion."
         else:
             subject = "[EURES beta] Vous avez des difficultés à recruter ?"
-            preheader = "Décrivez votre besoin en moins de 5 minutes."
+            preheader = "Expérimentation en cours : décrivez votre besoin en moins de 5 minutes."
             title = "Vous avez des difficultés à recruter ?"
             body_lines = [
-                "EURES beta expérimente un nouveau service pour faciliter les recrutements dans la Grande Région.",
+                "EURES beta teste actuellement un service simple pour faciliter les recrutements dans la Grande Région.",
                 "En quelques minutes, décrivez votre besoin et accédez à un vivier plus large de candidats ouverts à la mobilité européenne.",
                 "Plus votre besoin est précis, plus nous serons en mesure d'identifier des profils susceptibles de correspondre à votre recherche.",
             ]
@@ -948,11 +948,11 @@ def build_brevo_invitation_email(invitation_row: dict) -> tuple[str, str, str, s
 
     if language == 'en':
         subject = "[EURES beta] What if your next opportunity was elsewhere in Europe?"
-        preheader = "Answer a few questions and explore opportunities through European mobility."
+        preheader = "Experimental service: answer a few questions and explore opportunities through European mobility."
         title = "Explore new professional opportunities in Europe"
         body_lines = [
-            "Are you open to a professional opportunity in Luxembourg, in a neighbouring country or elsewhere in Europe?",
-            "EURES beta helps you discover opportunities aligned with your profile and your mobility plans.",
+            "EURES beta is currently testing a simple service for people interested in mobility within Europe.",
+            "Are you open to a professional opportunity in Luxembourg, in a neighbouring country or elsewhere in Europe? EURES beta helps you discover opportunities aligned with your profile and your mobility plans.",
             "In just a few minutes, describe your experience, skills and preferences so we can identify opportunities that may interest you.",
         ]
         cta = "Discover opportunities"
@@ -960,11 +960,11 @@ def build_brevo_invitation_email(invitation_row: dict) -> tuple[str, str, str, s
         footer = "EURES beta is an initiative led by EURES and France Travail to support professional mobility in the Greater Region."
     elif language == 'de':
         subject = "[EURES beta] Was wäre, wenn Ihre nächste Chance anderswo in Europa läge?"
-        preheader = "Beantworten Sie ein paar Fragen und entdecken Sie Möglichkeiten durch europäische Mobilität."
+        preheader = "Experimenteller Service: Beantworten Sie ein paar Fragen und entdecken Sie Möglichkeiten durch europäische Mobilität."
         title = "Entdecken Sie neue berufliche Chancen in Europa"
         body_lines = [
-            "Sind Sie offen für eine berufliche Erfahrung in Luxemburg, in einem Nachbarland oder anderswo in Europa?",
-            "EURES beta hilft Ihnen, Chancen zu entdecken, die zu Ihrem Profil und Ihrem Mobilitätsprojekt passen.",
+            "EURES beta testet derzeit einen einfachen Service für Menschen, die an beruflicher Mobilität in Europa interessiert sind.",
+            "Sind Sie offen für eine berufliche Erfahrung in Luxemburg, in einem Nachbarland oder anderswo in Europa? EURES beta hilft Ihnen, Chancen zu entdecken, die zu Ihrem Profil und Ihrem Mobilitätsprojekt passen.",
             "Beschreiben Sie in wenigen Minuten Ihre Erfahrung, Ihre Kompetenzen und Ihre Präferenzen, damit passende Möglichkeiten identifiziert werden können.",
         ]
         cta = "Chancen entdecken"
@@ -972,11 +972,11 @@ def build_brevo_invitation_email(invitation_row: dict) -> tuple[str, str, str, s
         footer = "EURES beta ist eine von EURES und France Travail getragene Initiative zur Unterstützung der beruflichen Mobilität in der Großregion."
     else:
         subject = "[EURES beta] Et si votre prochaine opportunité se trouvait ailleurs en Europe ?"
-        preheader = "Répondez à quelques questions et explorez les possibilités offertes par la mobilité européenne."
+        preheader = "Expérimentation en cours : répondez à quelques questions et explorez les possibilités offertes par la mobilité européenne."
         title = "Explorez de nouvelles opportunités professionnelles en Europe"
         body_lines = [
-            "Vous êtes ouvert à une expérience professionnelle au Luxembourg, dans un pays voisin ou ailleurs en Europe ?",
-            "EURES beta vous aide à découvrir des opportunités adaptées à votre profil et à votre projet de mobilité.",
+            "EURES beta teste actuellement un service simple pour les personnes intéressées par la mobilité professionnelle en Europe.",
+            "Vous êtes ouvert à une expérience professionnelle au Luxembourg, dans un pays voisin ou ailleurs en Europe ? EURES beta vous aide à découvrir des opportunités adaptées à votre profil et à votre projet de mobilité.",
             "En quelques minutes, décrivez votre expérience, vos compétences et vos préférences pour nous permettre d’identifier des opportunités susceptibles de vous intéresser.",
         ]
         cta = "Découvrir les opportunités"
