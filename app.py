@@ -53,6 +53,7 @@ app.config.update(
 )
 
 _ADMIN_MAGIC_LINK_REQUESTS: dict[tuple[str, str], float] = {}
+_ADMIN_MAGIC_LINK_USED: dict[str, float] = {}
 
 GRIST_BASE_URL = os.environ.get('GRIST_BASE_URL', 'https://grist.numerique.gouv.fr').rstrip('/')
 _TABLE_COLUMNS_CACHE: dict[tuple[str, str], dict[str, object]] = {}
@@ -426,6 +427,28 @@ def _set_admin_session(form_id: str, email: str):
 
 def _clear_admin_session(form_id: str):
     session.pop(_admin_session_key(form_id), None)
+
+
+def _consume_admin_magic_link_jti(jti: str, ttl_seconds: int) -> bool:
+    now = time.time()
+    expired_before = now - max(ttl_seconds, 60)
+    for key, used_at in list(_ADMIN_MAGIC_LINK_USED.items()):
+        if used_at < expired_before:
+            _ADMIN_MAGIC_LINK_USED.pop(key, None)
+    if jti in _ADMIN_MAGIC_LINK_USED:
+        return False
+    _ADMIN_MAGIC_LINK_USED[jti] = now
+    return True
+
+
+def get_admin_actor(form_id: str, fallback: str = 'admin') -> str:
+    session_identity = _current_admin_session(form_id)
+    if session_identity and session_identity.get('email'):
+        return str(session_identity['email'])
+    auth = request.authorization
+    if auth and auth.username:
+        return auth.username
+    return fallback
 
 
 def _admin_auth_error_response(form_id: str):
@@ -3902,8 +3925,7 @@ def admin_eures_invitations_import(form_id: str):
     if not rows:
         return jsonify({'error': 'No invitation rows provided'}), 400
 
-    auth = request.authorization
-    actor = auth.username if auth and auth.username else 'admin'
+    actor = get_admin_actor(form_id)
     try:
         result = upsert_eures_invitation_rows(rows, actor=actor)
         return jsonify(result), 200
@@ -3943,8 +3965,7 @@ def admin_eures_invitation_update(form_id: str, record_id: int):
         normalized_status = _normalize_eures_invitation_status(status)
         if normalized_status not in EURES_INVITATION_ALLOWED_STATUSES:
             return jsonify({'error': 'Invalid invitation status'}), 400
-        auth = request.authorization
-        actor = auth.username if auth and auth.username else 'admin'
+        actor = get_admin_actor(form_id)
         update_fields['invitation_status'] = normalized_status
         update_fields['invitation_status_updated_at'] = _now_iso_utc()
         update_fields['invitation_status_updated_by'] = actor
@@ -4014,8 +4035,7 @@ def admin_eures_invitations_send(form_id: str):
         return jsonify({'error': 'EURES invitations configuration is incomplete.'}), 500
 
     headers = _eures_admin_headers(config)
-    auth = request.authorization
-    actor = auth.username if auth and auth.username else 'admin'
+    actor = get_admin_actor(form_id)
     try:
         records = fetch_table_records(config['doc_id'], config['table_id'], headers)
         if requested_ids:
@@ -4176,8 +4196,7 @@ def admin_eures_matching_decision(form_id: str, record_id: int):
         if decision == 'accepted':
             ensure_brevo_ready(check_api=True)
 
-        auth = request.authorization
-        decided_by = auth.username if auth and auth.username else 'admin'
+        decided_by = get_admin_actor(form_id)
         decision_fields = {
             'admin_status': decision,
             'admin_decision_at': _now_iso_utc(),
@@ -4340,8 +4359,7 @@ def admin_eures_matching_workflow(form_id: str, record_id: int):
                 'error': f'Transition impossible: {current_status} -> {target_status}',
             }), 400
 
-        auth = request.authorization
-        actor = auth.username if auth and auth.username else 'admin'
+        actor = get_admin_actor(form_id)
         update_fields = _matching_workflow_update_fields(target_status, actor)
         if note:
             previous_note = str(existing_fields.get('admin_decision_note') or '').strip()
@@ -4555,6 +4573,7 @@ def admin_login(form_id: str):
             token = get_admin_magic_link_serializer(form_id).dumps({
                 'form_id': form_id,
                 'email': email,
+                'jti': secrets.token_urlsafe(16),
             })
             login_link = url_for('admin_magic_link_consume', form_id=form_id, token=token, _external=True)
             recipient, subject, text_body, html_body = build_admin_magic_link_email(form_id, email, login_link)
@@ -4604,12 +4623,19 @@ def admin_magic_link_consume(form_id: str):
 
     email = normalize_email(payload.get('email'))
     token_form_id = str(payload.get('form_id') or '').strip()
-    if token_form_id != form_id or email not in get_admin_allowed_emails(form_id):
+    jti = str(payload.get('jti') or '').strip()
+    if token_form_id != form_id or email not in get_admin_allowed_emails(form_id) or not jti:
         app.logger.warning(
             'Admin magic link rejected after decode',
             extra={'form_id': form_id, 'email': email},
         )
         return Response('Lien invalide : acces non autorise.', status=403, mimetype='text/plain')
+    if not _consume_admin_magic_link_jti(jti, get_admin_magic_link_ttl_seconds(form_id)):
+        app.logger.warning(
+            'Admin magic link replay blocked',
+            extra={'form_id': form_id, 'email': email},
+        )
+        return Response('Lien deja utilise.', status=400, mimetype='text/plain')
 
     _set_admin_session(form_id, email)
     app.logger.info(

@@ -56,6 +56,7 @@ class AdminMagicLinkTest(unittest.TestCase):
             token = app.get_admin_magic_link_serializer('eures-beta').dumps({
                 'form_id': 'eures-beta',
                 'email': 'admin@example.org',
+                'jti': 'token-1',
             })
             response = self.client.get(f'/admin/eures-beta/magic-login?token={token}')
 
@@ -65,6 +66,20 @@ class AdminMagicLinkTest(unittest.TestCase):
             admin_response = self.client.get('/admin/eures-beta/')
             self.assertEqual(admin_response.status_code, 200)
             admin_response.close()
+
+    def test_magic_link_cannot_be_reused(self):
+        with patch.dict(os.environ, self.env, clear=False):
+            token = app.get_admin_magic_link_serializer('eures-beta').dumps({
+                'form_id': 'eures-beta',
+                'email': 'admin@example.org',
+                'jti': 'token-replay',
+            })
+            first = self.client.get(f'/admin/eures-beta/magic-login?token={token}')
+            self.assertEqual(first.status_code, 302)
+
+            second = self.client.get(f'/admin/eures-beta/magic-login?token={token}')
+            self.assertEqual(second.status_code, 400)
+            self.assertIn('Lien deja utilise.', second.get_data(as_text=True))
 
 
 if __name__ == '__main__':
