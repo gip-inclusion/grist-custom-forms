@@ -103,7 +103,7 @@ class BrevoHealthTest(unittest.TestCase):
         self.assertIn('Je vais le contacter', text_body)
         self.assertIn('julie.barthelemy@arhis.lu', recipient)
 
-    def test_build_candidate_invitation_email_uses_official_trust_markers(self):
+    def test_build_candidate_invitation_email_uses_simple_french_greeting(self):
         invitation = {
             'role': 'candidate',
             'email': 'candidate@example.org',
@@ -119,10 +119,13 @@ class BrevoHealthTest(unittest.TestCase):
         self.assertEqual(invite_token, 'token-demo')
         self.assertEqual(invite_link, invitation['invite_link'])
         self.assertIn('Questionnaire candidat', subject)
+        self.assertTrue(text_body.startswith("Bonjour,\n\n"))
         self.assertIn("conseiller EURES", text_body)
-        self.assertIn("domaine officiel", text_body)
+        self.assertNotIn("Questionnaire candidat EURES beta", text_body)
+        self.assertNotIn("Repères de vérification", text_body)
         self.assertIn("France Travail", html_body)
-        self.assertIn("formulaires.inclusion.gouv.fr", html_body)
+        self.assertNotIn("Questionnaire candidat EURES beta", html_body)
+        self.assertNotIn("Repères de vérification", html_body)
 
     @patch.object(app, 'send_brevo_transactional_email')
     @patch.object(app, 'update_eures_invitation_record_by_id')

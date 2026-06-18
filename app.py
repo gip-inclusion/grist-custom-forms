@@ -936,15 +936,12 @@ def build_brevo_invitation_email(invitation_row: dict) -> tuple[str, str, str, s
     invite_link = str(invitation_row.get('invite_link') or '').strip() or _build_eures_invitation_link(role, language, invite_token)
     signature_name = get_eures_mail_signature_name()
     signature_role = get_eures_mail_signature_role()
-    invite_host = urlparse(invite_link).netloc or get_public_app_base_url().replace('https://', '').replace('http://', '')
-
-    greeting = first_name or company_name or ''
     if language == 'en':
-        hello = f"Hello {greeting}," if greeting else "Hello,"
+        hello = "Hello,"
     elif language == 'de':
-        hello = f"Guten Tag {greeting}," if greeting else "Guten Tag,"
+        hello = "Guten Tag,"
     else:
-        hello = f"Bonjour {greeting}," if greeting else "Bonjour,"
+        hello = "Bonjour,"
 
     if role == 'employer':
         if language == 'en':
@@ -958,12 +955,6 @@ def build_brevo_invitation_email(invitation_row: dict) -> tuple[str, str, str, s
             title = "Official invitation to complete the employer questionnaire"
             cta = "Access the employer questionnaire"
             cta_note = f"If the button does not work, copy this address into your browser: {invite_link}"
-            trust_title = "How to verify this message"
-            trust_lines = [
-                f"The questionnaire link points to the official domain: {invite_host}",
-                "The sender identifies EURES beta, EURES and France Travail.",
-                "If you have any doubt, do not click immediately and verify the link domain before opening it.",
-            ]
             footer = "EURES beta is an experimental service supported by EURES and France Travail to facilitate recruitment and professional mobility in the Greater Region."
         elif language == 'de':
             subject = "[EURES beta / EURES / France Travail] Einladung zum Arbeitgeberfragebogen"
@@ -976,12 +967,6 @@ def build_brevo_invitation_email(invitation_row: dict) -> tuple[str, str, str, s
             title = "Offizielle Einladung zum Arbeitgeberfragebogen"
             cta = "Zum Arbeitgeberfragebogen"
             cta_note = f"Falls die Schaltfläche nicht funktioniert, kopieren Sie diese Adresse in Ihren Browser: {invite_link}"
-            trust_title = "So prüfen Sie die Echtheit"
-            trust_lines = [
-                f"Der Link verweist auf die offizielle Domain: {invite_host}",
-                "Der Absender nennt ausdrücklich EURES beta, EURES und France Travail.",
-                "Wenn Sie unsicher sind, öffnen Sie den Link nicht sofort und prüfen Sie zuerst die Domain.",
-            ]
             footer = "EURES beta ist ein experimenteller Service von EURES und France Travail zur Unterstützung von Rekrutierung und beruflicher Mobilität in der Großregion."
         else:
             subject = "[EURES / France Travail] Questionnaire employeur - expérimentation EURES beta"
@@ -991,26 +976,19 @@ def build_brevo_invitation_email(invitation_row: dict) -> tuple[str, str, str, s
                 "Dans le cadre d'une expérimentation EURES actuellement menée autour des besoins de recrutement et de la mobilité professionnelle dans la Grande Région, nous recueillons des besoins d'employeurs partenaires afin d'identifier plus facilement des profils susceptibles de correspondre.",
                 "Pour cela, je vous invite à compléter le court formulaire ci-dessous. Il vous prendra seulement quelques minutes.",
             ]
-            title = "Questionnaire employeur EURES beta"
+            title = ""
             cta = "Accéder au formulaire"
             cta_note = "Le questionnaire permet de préciser votre besoin, vos contraintes de recrutement et les conditions proposées afin d'étudier ensuite d'éventuelles mises en relation."
-            trust_title = "Repères de vérification"
-            trust_lines = [
-                f"Le lien du questionnaire renvoie vers le domaine officiel : {invite_host}",
-                "L'expéditeur mentionne explicitement EURES, France Travail et l'expérimentation EURES beta.",
-                "En cas de doute, vous pouvez vérifier le domaine affiché avant d'ouvrir le lien.",
-            ]
             footer = (
                 "EURES est le réseau européen de coopération pour l'emploi, qui facilite les recrutements "
                 "et les opportunités professionnelles en Europe."
             )
 
+        title_block = f"{title}\n\n" if title else ""
         text_body = (
             f"{hello}\n\n"
-            f"{title}\n\n"
+            f"{title_block}"
             + "\n\n".join(body_lines)
-            + f"\n\n{trust_title}\n"
-            + "\n".join(f"- {line}" for line in trust_lines)
             + f"\n\n{cta}: {invite_link}\n\n{cta_note}\n\n{footer}\n\nCordialement,\n\n{signature_name}\n{signature_role}\n"
         )
         body_html = f"""
@@ -1033,7 +1011,7 @@ def build_brevo_invitation_email(invitation_row: dict) -> tuple[str, str, str, s
             <tr>
               <td style="padding:24px 28px 8px;">
                 <p style="margin:0 0 10px;font-size:16px;line-height:1.6;color:#324765;">{escape(hello)}</p>
-                <h1 style="margin:0;font-size:28px;line-height:1.18;font-weight:700;color:#16253d;">{escape(title)}</h1>
+                {"<h1 style=\"margin:0;font-size:28px;line-height:1.18;font-weight:700;color:#16253d;\">" + escape(title) + "</h1>" if title else ""}
               </td>
             </tr>
             <tr>
@@ -1041,16 +1019,6 @@ def build_brevo_invitation_email(invitation_row: dict) -> tuple[str, str, str, s
                 <p style="margin:0 0 14px;font-size:16px;line-height:1.55;color:#324765;">{escape(body_lines[0])}</p>
                 <p style="margin:0 0 14px;font-size:16px;line-height:1.55;color:#324765;">{escape(body_lines[1])}</p>
                 <p style="margin:0 0 22px;font-size:16px;line-height:1.55;color:#324765;">{escape(body_lines[2])}</p>
-              </td>
-            </tr>
-            <tr>
-              <td style="padding:0 28px 18px;">
-                <div style="border:1px solid #d9e1ee;border-radius:14px;background:#f8fafc;padding:16px 18px;">
-                  <div style="margin:0 0 8px;font-size:14px;font-weight:700;color:#17324d;">{escape(trust_title)}</div>
-                  <ul style="margin:0;padding-left:18px;color:#4b5f79;font-size:14px;line-height:1.6;">
-                    {''.join(f'<li>{escape(line)}</li>' for line in trust_lines)}
-                  </ul>
-                </div>
               </td>
             </tr>
             <tr>
@@ -1089,12 +1057,6 @@ def build_brevo_invitation_email(invitation_row: dict) -> tuple[str, str, str, s
         title = "Official invitation to complete the candidate questionnaire"
         cta = "Access the candidate questionnaire"
         cta_note = f"If the button does not work, copy this address into your browser: {invite_link}"
-        trust_title = "How to verify this message"
-        trust_lines = [
-            f"The questionnaire link points to the official domain: {invite_host}",
-            "The sender identifies EURES beta, EURES and France Travail.",
-            "If you have any doubt, verify the displayed domain before opening the link.",
-        ]
         footer = "EURES beta is an experimental service supported by EURES and France Travail to facilitate professional mobility in the Greater Region."
     elif language == 'de':
         subject = "[EURES beta / EURES / France Travail] Einladung zum Kandidatenfragebogen"
@@ -1107,12 +1069,6 @@ def build_brevo_invitation_email(invitation_row: dict) -> tuple[str, str, str, s
         title = "Offizielle Einladung zum Kandidatenfragebogen"
         cta = "Zum Kandidatenfragebogen"
         cta_note = f"Falls die Schaltfläche nicht funktioniert, kopieren Sie diese Adresse in Ihren Browser: {invite_link}"
-        trust_title = "So prüfen Sie die Echtheit"
-        trust_lines = [
-            f"Der Link verweist auf die offizielle Domain: {invite_host}",
-            "Der Absender nennt ausdrücklich EURES beta, EURES und France Travail.",
-            "Wenn Sie unsicher sind, prüfen Sie zuerst die angezeigte Domain.",
-        ]
         footer = "EURES beta ist ein experimenteller Service von EURES und France Travail zur Unterstützung beruflicher Mobilität in der Großregion."
     else:
         subject = "[EURES / France Travail] Questionnaire candidat - expérimentation EURES beta"
@@ -1122,15 +1078,9 @@ def build_brevo_invitation_email(invitation_row: dict) -> tuple[str, str, str, s
             "Dans le cadre d'une expérimentation EURES actuellement menée autour des besoins de recrutement, j'ai consulté votre profil ainsi que vos coordonnées publiés sur le portail EURES afin d'identifier des candidats dont le profil pourrait correspondre aux besoins actuellement déposés par des employeurs partenaires.",
             "Pour cela, je vous invite à compléter le court formulaire ci-dessous. Il vous prendra seulement quelques minutes.",
         ]
-        title = "Questionnaire candidat EURES beta"
+        title = ""
         cta = "Accéder au formulaire"
         cta_note = "Ce questionnaire permettra de vérifier que votre profil, vos disponibilités et vos attentes correspondent bien aux besoins actuellement recherchés."
-        trust_title = "Repères de vérification"
-        trust_lines = [
-            f"Le lien du questionnaire renvoie vers le domaine officiel : {invite_host}",
-            "L'expéditeur mentionne explicitement EURES, France Travail et l'expérimentation EURES beta.",
-            "En cas de doute, vous pouvez vérifier le domaine affiché avant d'ouvrir le lien.",
-        ]
         footer = (
             "Si votre profil correspond aux critères recherchés, votre candidature pourra ensuite être proposée "
             "à l'employeur, qui vous contactera directement pour échanger avec vous.\n\n"
@@ -1138,14 +1088,13 @@ def build_brevo_invitation_email(invitation_row: dict) -> tuple[str, str, str, s
             "opportunités professionnelles en Europe."
         )
 
-        text_body = (
-            f"{hello}\n\n"
-            f"{title}\n\n"
-            + "\n\n".join(body_lines)
-            + f"\n\n{trust_title}\n"
-            + "\n".join(f"- {line}" for line in trust_lines)
-            + f"\n\n{cta}: {invite_link}\n\n{cta_note}\n\n{footer}\n\nCordialement,\n\n{signature_name}\n{signature_role}\n"
-        )
+    title_block = f"{title}\n\n" if title else ""
+    text_body = (
+        f"{hello}\n\n"
+        f"{title_block}"
+        + "\n\n".join(body_lines)
+        + f"\n\n{cta}: {invite_link}\n\n{cta_note}\n\n{footer}\n\nCordialement,\n\n{signature_name}\n{signature_role}\n"
+    )
     html_body = f"""
 <!doctype html>
 <html lang="{escape(language)}">
@@ -1166,7 +1115,7 @@ def build_brevo_invitation_email(invitation_row: dict) -> tuple[str, str, str, s
             <tr>
               <td style="padding:24px 28px 8px;">
                 <p style="margin:0 0 10px;font-size:16px;line-height:1.6;color:#324765;">{escape(hello)}</p>
-                <h1 style="margin:0;font-size:28px;line-height:1.18;font-weight:700;color:#16253d;">{escape(title)}</h1>
+                {"<h1 style=\"margin:0;font-size:28px;line-height:1.18;font-weight:700;color:#16253d;\">" + escape(title) + "</h1>" if title else ""}
               </td>
             </tr>
             <tr>
@@ -1174,16 +1123,6 @@ def build_brevo_invitation_email(invitation_row: dict) -> tuple[str, str, str, s
                 <p style="margin:0 0 14px;font-size:16px;line-height:1.55;color:#324765;">{escape(body_lines[0])}</p>
                 <p style="margin:0 0 14px;font-size:16px;line-height:1.55;color:#324765;">{escape(body_lines[1])}</p>
                 <p style="margin:0 0 22px;font-size:16px;line-height:1.55;color:#324765;">{escape(body_lines[2])}</p>
-              </td>
-            </tr>
-            <tr>
-              <td style="padding:0 28px 18px;">
-                <div style="border:1px solid #d9e1ee;border-radius:14px;background:#f8fafc;padding:16px 18px;">
-                  <div style="margin:0 0 8px;font-size:14px;font-weight:700;color:#17324d;">{escape(trust_title)}</div>
-                  <ul style="margin:0;padding-left:18px;color:#4b5f79;font-size:14px;line-height:1.6;">
-                    {''.join(f'<li>{escape(line)}</li>' for line in trust_lines)}
-                  </ul>
-                </div>
               </td>
             </tr>
             <tr>
