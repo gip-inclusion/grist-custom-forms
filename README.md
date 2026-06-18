@@ -67,6 +67,41 @@ uv run flask run -p 5005
   - `GET /health?deep=1`
   - returns HTTP `503` when Brevo is broken or unreachable, which is suitable for a monitor or scheduled probe
 
+### EURES deployment notes
+
+EURES beta now runs as a dedicated Scalingo app, but the public domain
+`formulaires.inclusion.gouv.fr` may still be attached to the `fagerh` app.
+
+Use these environment variables to make the split explicit:
+
+- `DEFAULT_HOME_FORM_ID`
+  - controls the `/` redirect for the current app
+  - set `DEFAULT_HOME_FORM_ID=eures-beta` on the dedicated EURES app
+  - set `DEFAULT_HOME_FORM_ID=fagerh` on the Fagerh app
+- `PUBLIC_APP_BASE_URL`
+  - base URL used in generated public links and emails
+- `EURES_PUBLIC_PROXY_ENABLED`
+  - when `true`, the app proxies only the EURES beta public routes
+- `EURES_PUBLIC_PROXY_BASE_URL`
+  - upstream dedicated EURES app, for example `https://eures-beta.osc-fr1.scalingo.io`
+
+Recommended setup:
+
+- on `eures-beta`
+  - `DEFAULT_HOME_FORM_ID=eures-beta`
+  - `PUBLIC_APP_BASE_URL=https://formulaires.inclusion.gouv.fr`
+- on `fagerh`
+  - `DEFAULT_HOME_FORM_ID=fagerh`
+  - `EURES_PUBLIC_PROXY_ENABLED=true`
+  - `EURES_PUBLIC_PROXY_BASE_URL=https://eures-beta.osc-fr1.scalingo.io`
+
+Public routes proxied by `fagerh` when EURES proxying is enabled:
+
+- `/forms/eures-beta/...`
+- `/admin/eures-beta`
+- `/api/forms/eures-beta/...`
+- `/eures-beta/matching-feedback`
+
 ### TODO
 
 - [ ] Protect record creation route (via invitation links, auth, rate limiting, etc.)
