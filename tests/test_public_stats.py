@@ -93,6 +93,9 @@ class PublicStatsTest(unittest.TestCase):
             'matchings': 2,
             'candidats_contactes': 3,
             'candidatures_transmises_employeur': 2,
+            'contacts_acceptes_employeur': 0,
+            'contacts_refuses_employeur': 0,
+            'contacts_sans_reponse_employeur': 0,
             'embauches': 1,
         })
         self.assertEqual(payload['monthly'], [
@@ -103,6 +106,9 @@ class PublicStatsTest(unittest.TestCase):
                 'matchings': 1,
                 'candidats_contactes': 3,
                 'candidatures_transmises_employeur': 2,
+                'contacts_acceptes_employeur': 0,
+                'contacts_refuses_employeur': 0,
+                'contacts_sans_reponse_employeur': 0,
                 'embauches': 1,
             },
             {
@@ -112,12 +118,15 @@ class PublicStatsTest(unittest.TestCase):
                 'matchings': 1,
                 'candidats_contactes': 0,
                 'candidatures_transmises_employeur': 0,
+                'contacts_acceptes_employeur': 0,
+                'contacts_refuses_employeur': 0,
+                'contacts_sans_reponse_employeur': 0,
                 'embauches': 0,
             },
         ])
         self.assertTrue(payload['manual_stats_table']['configured'])
         self.assertEqual(payload['breakdowns']['matchings_par_statut'], [
-            {'label': 'Autres', 'count': 2},
+            {'label': 'A valider admin', 'count': 2},
         ])
 
 

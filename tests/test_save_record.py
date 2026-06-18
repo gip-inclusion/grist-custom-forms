@@ -26,11 +26,11 @@ class SaveRecordTest(unittest.TestCase):
         self.addCleanup(self.duplicates_patch.stop)
 
     @patch.object(app, 'write_grist_records')
-    @patch.object(app, 'fetch_record_by_uuid')
-    def test_save_returns_compact_success_after_uuid_verification(self, fetch_record_by_uuid, write_grist_records):
+    @patch.object(app, 'fetch_record_by_field')
+    def test_save_returns_compact_success_after_uuid_verification(self, fetch_record_by_field, write_grist_records):
         write_grist_records.return_value = Mock(status_code=200)
         lookup_response = Mock(status_code=200)
-        fetch_record_by_uuid.side_effect = [
+        fetch_record_by_field.side_effect = [
             (None, lookup_response),
             ({'id': 42, 'fields': {'uuid': self.fields['uuid']}}, lookup_response),
         ]
@@ -42,15 +42,18 @@ class SaveRecordTest(unittest.TestCase):
             'ok': True,
             'action': 'created',
             'uuid': self.fields['uuid'],
+            'record_key': 'uuid',
             'record_id': 42,
+            'matching': None,
+            'invitation_linking': None,
         })
 
     @patch.object(app, 'write_grist_records')
-    @patch.object(app, 'fetch_record_by_uuid')
-    def test_save_fails_when_grist_success_cannot_be_verified(self, fetch_record_by_uuid, write_grist_records):
+    @patch.object(app, 'fetch_record_by_field')
+    def test_save_fails_when_grist_success_cannot_be_verified(self, fetch_record_by_field, write_grist_records):
         write_grist_records.return_value = Mock(status_code=200)
         lookup_response = Mock(status_code=200)
-        fetch_record_by_uuid.side_effect = [
+        fetch_record_by_field.side_effect = [
             (None, lookup_response),
             (None, lookup_response),
         ]
@@ -63,14 +66,14 @@ class SaveRecordTest(unittest.TestCase):
         })
 
     @patch.object(app, 'write_grist_records')
-    @patch.object(app, 'fetch_record_by_uuid')
-    def test_save_fails_when_grist_write_still_redirects(self, fetch_record_by_uuid, write_grist_records):
+    @patch.object(app, 'fetch_record_by_field')
+    def test_save_fails_when_grist_write_still_redirects(self, fetch_record_by_field, write_grist_records):
         write_grist_records.return_value = Mock(
             status_code=308,
             url='https://old-grist.example.test/api/records',
             headers={'Location': 'https://grist.example.test/api/records'},
         )
-        fetch_record_by_uuid.return_value = (None, Mock(status_code=200))
+        fetch_record_by_field.return_value = (None, Mock(status_code=200))
 
         response = self.client.post('/api/forms/fagerh/record', json={'fields': self.fields})
 

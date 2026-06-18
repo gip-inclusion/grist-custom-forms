@@ -1970,6 +1970,7 @@ def _public_breakdown_label(kind: str, label: str) -> str:
     """Normalize raw stored values into cleaner public labels."""
     cleaned = _clean_public_label(label)
     lowered = cleaned.lower()
+    humanized = cleaned.replace('_', ' ')
 
     if kind == 'matchings_par_statut':
         return {
@@ -1982,7 +1983,8 @@ def _public_breakdown_label(kind: str, label: str) -> str:
             'refuse_employeur': 'Refuse employeur',
             'mise_en_relation_faite': 'Mise en relation faite',
             'embauche_confirmee': 'Embauche confirmee',
-        }.get(lowered, cleaned[:1].upper() + cleaned[1:])
+            'a_valider': 'A valider',
+        }.get(lowered, humanized[:1].upper() + humanized[1:])
 
     if kind == 'mobilite_candidats':
         if ':' in cleaned:
@@ -1992,6 +1994,8 @@ def _public_breakdown_label(kind: str, label: str) -> str:
                 return raw_value
             if prefix_l in {'pays souhaités', 'pays souhaites'}:
                 return f'Pays vises : {raw_value}'
+            if prefix_l in {'expérience pays', 'experience pays'}:
+                return f'Experience dans : {raw_value}'
         return cleaned[:1].upper() + cleaned[1:]
 
     if kind == 'experience_internationale_candidats':
@@ -2240,9 +2244,12 @@ def build_eures_public_stats() -> dict:
             if not month:
                 continue
             monthly[month]['mois'] = month
-            monthly[month]['candidats_contactes'] += 0
-            monthly[month]['candidatures_transmises_employeur'] += 0
-            monthly[month]['embauches'] += 0
+            monthly[month]['candidats_contactes'] += _safe_int(fields.get('candidats_contactes'))
+            monthly[month]['candidatures_transmises_employeur'] += _safe_int(fields.get('candidatures_transmises_employeur'))
+            monthly[month]['contacts_acceptes_employeur'] += _safe_int(fields.get('contacts_acceptes_employeur'))
+            monthly[month]['contacts_refuses_employeur'] += _safe_int(fields.get('contacts_refuses_employeur'))
+            monthly[month]['contacts_sans_reponse_employeur'] += _safe_int(fields.get('contacts_sans_reponse_employeur'))
+            monthly[month]['embauches'] += _safe_int(fields.get('embauches'))
 
     monthly_rows = [row for _, row in sorted(monthly.items()) if row.get('mois')]
 
