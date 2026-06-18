@@ -38,6 +38,7 @@ class EuresPublicProxyTest(unittest.TestCase):
 
         self.assertEqual(response.status_code, 200)
         requests_request.assert_not_called()
+        response.close()
 
 
 if __name__ == '__main__':

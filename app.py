@@ -19,7 +19,7 @@ import csv
 import secrets
 from html import escape
 from collections import Counter, defaultdict
-from datetime import datetime
+from datetime import datetime, timezone
 from io import BytesIO, StringIO
 from functools import wraps
 from pathlib import Path
@@ -479,7 +479,7 @@ def ensure_brevo_ready(check_api: bool = False) -> dict:
 
 
 def _now_iso_utc() -> str:
-    return datetime.utcnow().isoformat() + 'Z'
+    return datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
 
 
 def _initial_matching_workflow_status(scoring_status: str) -> str:
