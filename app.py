@@ -47,6 +47,7 @@ EURES_BESOINS_TABLE = 'Besoins_Employeurs'
 EURES_MATCHINGS_TABLE = 'Matchings'
 EURES_INVITATIONS_TABLE_DEFAULT = 'Invitations'
 EURES_STATS_TABLE_DEFAULT = 'Pilotage_EURES_Mensuel'
+EURES_PUBLIC_PROXY_BASE_URL = os.environ.get('EURES_PUBLIC_PROXY_BASE_URL', 'https://eures-beta.osc-fr1.scalingo.io').rstrip('/')
 EURES_MATCHING_FIELDS = {
     'besoin_id',
     'candidat_id',
@@ -564,6 +565,86 @@ def get_public_app_base_url() -> str:
     if request and request.url_root:
         return request.url_root.rstrip('/')
     return 'https://eures-beta.osc-fr1.scalingo.io'
+
+
+def _proxy_eures_location_header(location: str) -> str:
+    """Rewrite absolute redirects back to the current public host."""
+    value = str(location or '').strip()
+    if not value:
+        return value
+    if value.startswith(EURES_PUBLIC_PROXY_BASE_URL):
+        current_base = request.host_url.rstrip('/')
+        return current_base + value[len(EURES_PUBLIC_PROXY_BASE_URL):]
+    return value
+
+
+def proxy_eures_public_request(path: str = '') -> Response:
+    """Proxy one public EURES beta request to the dedicated Scalingo app."""
+    target_path = '/' + str(path or '').lstrip('/')
+    target_url = f'{EURES_PUBLIC_PROXY_BASE_URL}{target_path}'
+    if request.query_string:
+        target_url = f'{target_url}?{request.query_string.decode("utf-8", errors="ignore")}'
+
+    excluded_headers = {
+        'host',
+        'content-length',
+        'connection',
+        'transfer-encoding',
+        'accept-encoding',
+    }
+    upstream_headers = {
+        key: value
+        for key, value in request.headers.items()
+        if key.lower() not in excluded_headers
+    }
+    upstream_headers['X-Forwarded-Host'] = request.host
+    upstream_headers['X-Forwarded-Proto'] = request.scheme
+    upstream_headers['X-Forwarded-For'] = request.headers.get('X-Forwarded-For', request.remote_addr or '')
+
+    upstream_response = requests.request(
+        method=request.method,
+        url=target_url,
+        headers=upstream_headers,
+        data=request.get_data(),
+        cookies=request.cookies,
+        allow_redirects=False,
+        timeout=60,
+    )
+
+    downstream = Response(upstream_response.content, status=upstream_response.status_code)
+    hop_by_hop = {
+        'content-length',
+        'connection',
+        'transfer-encoding',
+    }
+    for key, value in upstream_response.headers.items():
+        lowered = key.lower()
+        if lowered in hop_by_hop:
+            continue
+        if lowered == 'location':
+            value = _proxy_eures_location_header(value)
+        downstream.headers[key] = value
+    return downstream
+
+
+def should_proxy_eures_public_request(form_id: str) -> bool:
+    """Enable EURES proxying only on the public Fagerh domain."""
+    if str(form_id or '').strip().lower() != 'eures-beta':
+        return False
+    forced = os.environ.get('EURES_PUBLIC_PROXY_ENABLED', '').strip().lower()
+    if forced in {'1', 'true', 'yes', 'on'}:
+        return True
+    if forced in {'0', 'false', 'no', 'off'}:
+        return False
+    host = str(request.host or '').split(':', 1)[0].strip().lower()
+    return host == 'formulaires.inclusion.gouv.fr'
+
+
+def maybe_proxy_eures_request(form_id: str) -> Response | None:
+    """Proxy only the EURES beta public surface when served by Fagerh."""
+    if should_proxy_eures_public_request(form_id):
+        return proxy_eures_public_request(request.path)
+    return None
 
 
 def get_eures_email_action_serializer() -> URLSafeSerializer:
@@ -3028,6 +3109,9 @@ def find_duplicate_finess(config: dict, current_uuid: str, finess_values: set, h
 @app.route('/api/forms/<form_id>/record', methods=['GET'])
 def get_record(form_id: str):
     """Fetch a record by UUID or table-specific identifier."""
+    proxied = maybe_proxy_eures_request(form_id)
+    if proxied:
+        return proxied
     config = get_form_config(form_id, request.args.get('flow_role'))
     if not config:
         return jsonify({'error': f'Unknown form: {form_id}'}), 404
@@ -3063,6 +3147,9 @@ def get_record(form_id: str):
 @app.route('/api/forms/<form_id>/record', methods=['POST'])
 def save_record(form_id: str):
     """Create or update a record."""
+    proxied = maybe_proxy_eures_request(form_id)
+    if proxied:
+        return proxied
     data = request.get_json()
     if not data or 'fields' not in data:
         return jsonify({'error': 'Invalid request body'}), 400
@@ -3198,6 +3285,9 @@ def save_record(form_id: str):
 @app.route('/api/forms/<form_id>/export-readable-xlsx', methods=['POST'])
 def export_readable_xlsx(form_id: str):
     """Generate a human-readable Excel export from a form payload without changing Grist storage."""
+    proxied = maybe_proxy_eures_request(form_id)
+    if proxied:
+        return proxied
     data = request.get_json()
     if not isinstance(data, dict):
         return jsonify({'error': 'Invalid request body'}), 400
@@ -3219,6 +3309,9 @@ def export_readable_xlsx(form_id: str):
 @app.route('/api/forms/<form_id>/check-finess', methods=['POST'])
 def check_finess(form_id: str):
     """Check whether FINESS values already exist in another questionnaire."""
+    proxied = maybe_proxy_eures_request(form_id)
+    if proxied:
+        return proxied
     config = get_form_config(form_id)
     if not config:
         return jsonify({'error': f'Unknown form: {form_id}'}), 404
@@ -3249,6 +3342,9 @@ def check_finess(form_id: str):
 @app.route('/api/forms/<form_id>/recover-by-email', methods=['POST'])
 def recover_by_email(form_id: str):
     """Recover a questionnaire UUID from validation email (+ optional FINESS)."""
+    proxied = maybe_proxy_eures_request(form_id)
+    if proxied:
+        return proxied
     config = get_form_config(form_id)
     if not config:
         return jsonify({'error': f'Unknown form: {form_id}'}), 404
@@ -3325,6 +3421,9 @@ def recover_by_email(form_id: str):
 @admin_required
 def admin_overview(form_id: str):
     """Admin dashboard data: counts + questionnaire list."""
+    proxied = maybe_proxy_eures_request(form_id)
+    if proxied:
+        return proxied
     config = get_form_config(form_id)
     if not config:
         return jsonify({'error': f'Unknown form: {form_id}'}), 404
@@ -3401,6 +3500,9 @@ def admin_overview(form_id: str):
 @admin_required
 def admin_eures_invitations(form_id: str):
     """Admin API: list invitations for EURES beta."""
+    proxied = maybe_proxy_eures_request(form_id)
+    if proxied:
+        return proxied
     if form_id != 'eures-beta':
         return jsonify({'error': f'Unknown invitation admin form: {form_id}'}), 404
 
@@ -3448,6 +3550,9 @@ def admin_eures_invitations(form_id: str):
 @admin_required
 def admin_eures_invitations_import(form_id: str):
     """Admin API: import invitation rows from JSON or CSV payload."""
+    proxied = maybe_proxy_eures_request(form_id)
+    if proxied:
+        return proxied
     if form_id != 'eures-beta':
         return jsonify({'error': f'Unknown invitation import form: {form_id}'}), 404
 
@@ -3470,6 +3575,9 @@ def admin_eures_invitations_import(form_id: str):
 @admin_required
 def admin_eures_invitation_update(form_id: str, record_id: int):
     """Admin API: patch one invitation row."""
+    proxied = maybe_proxy_eures_request(form_id)
+    if proxied:
+        return proxied
     if form_id != 'eures-beta':
         return jsonify({'error': f'Unknown invitation update form: {form_id}'}), 404
 
@@ -3548,6 +3656,9 @@ def admin_eures_invitation_update(form_id: str, record_id: int):
 @admin_required
 def admin_eures_invitations_send(form_id: str):
     """Admin API: send pending invitations through Brevo."""
+    proxied = maybe_proxy_eures_request(form_id)
+    if proxied:
+        return proxied
     if form_id != 'eures-beta':
         return jsonify({'error': f'Unknown invitation send form: {form_id}'}), 404
 
@@ -3646,6 +3757,9 @@ def admin_eures_invitations_send(form_id: str):
 @admin_required
 def admin_eures_matchings(form_id: str):
     """Admin API: list matchings for EURES beta review."""
+    proxied = maybe_proxy_eures_request(form_id)
+    if proxied:
+        return proxied
     if form_id != 'eures-beta':
         return jsonify({'error': f'Unknown admin matching form: {form_id}'}), 404
 
@@ -3676,6 +3790,9 @@ def admin_eures_matchings(form_id: str):
 @admin_required
 def admin_eures_brevo_health(form_id: str):
     """Admin API: return the current Brevo configuration and API reachability state."""
+    proxied = maybe_proxy_eures_request(form_id)
+    if proxied:
+        return proxied
     if form_id != 'eures-beta':
         return jsonify({'error': f'Unknown admin form: {form_id}'}), 404
 
@@ -3692,6 +3809,9 @@ def admin_eures_brevo_health(form_id: str):
 @admin_required
 def admin_eures_matching_decision(form_id: str, record_id: int):
     """Admin API: accept or refuse one matching."""
+    proxied = maybe_proxy_eures_request(form_id)
+    if proxied:
+        return proxied
     if form_id != 'eures-beta':
         return jsonify({'error': f'Unknown admin matching form: {form_id}'}), 404
 
@@ -3782,6 +3902,9 @@ def admin_eures_matching_decision(form_id: str, record_id: int):
 @admin_required
 def admin_eures_matching_workflow(form_id: str, record_id: int):
     """Admin API: advance one matching in the business workflow."""
+    proxied = maybe_proxy_eures_request(form_id)
+    if proxied:
+        return proxied
     if form_id != 'eures-beta':
         return jsonify({'error': f'Unknown admin matching form: {form_id}'}), 404
 
@@ -3833,6 +3956,8 @@ def admin_eures_matching_workflow(form_id: str, record_id: int):
 @app.route('/eures-beta/matching-feedback', methods=['GET'])
 def eures_matching_feedback():
     """Record employer feedback from email CTA links."""
+    if should_proxy_eures_public_request('eures-beta'):
+        return proxy_eures_public_request(request.path)
     token = str(request.args.get('token') or '').strip()
     if not token:
         return Response('Lien invalide : token manquant.', status=400, mimetype='text/plain')
@@ -3907,6 +4032,9 @@ def eures_matching_feedback():
 @app.route('/api/forms/<form_id>/public-stats', methods=['GET'])
 def public_stats(form_id: str):
     """Public aggregated stats page data."""
+    proxied = maybe_proxy_eures_request(form_id)
+    if proxied:
+        return proxied
     if form_id != 'eures-beta':
         return jsonify({'error': f'Unknown public stats form: {form_id}'}), 404
 
@@ -3940,6 +4068,9 @@ def index():
 @app.route('/forms/<form_id>')
 def serve_form(form_id: str):
     """Serve form HTML."""
+    proxied = maybe_proxy_eures_request(form_id)
+    if proxied:
+        return proxied
     return send_from_directory(FORMS_DIR / form_id, 'index.html')
 
 
@@ -3957,6 +4088,9 @@ def serve_fagerh_questions_pdf():
 @app.route('/forms/<form_id>/<path:filename>')
 def serve_form_file(form_id: str, filename: str):
     """Serve extra files from a form folder (e.g. UI prototypes)."""
+    proxied = maybe_proxy_eures_request(form_id)
+    if proxied:
+        return proxied
     resolved = _resolve_form_path(form_id, filename)
     if not resolved:
         return jsonify({'error': 'File not found'}), 404
@@ -3968,6 +4102,9 @@ def serve_form_file(form_id: str, filename: str):
 @admin_required
 def serve_admin(form_id: str):
     """Serve admin dashboard HTML for a form."""
+    proxied = maybe_proxy_eures_request(form_id)
+    if proxied:
+        return proxied
     return send_from_directory(FORMS_DIR / form_id, 'admin.html')
 
 
