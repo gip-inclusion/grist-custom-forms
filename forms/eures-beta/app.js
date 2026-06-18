@@ -38,7 +38,13 @@ const copy = {
       saved: "Réponses enregistrées.",
       saveErrorPrefix: "Échec de l’enregistrement",
       uuidPrefix: "Identifiant de reprise",
-      questionnaireNote: "Le questionnaire est volontairement resserré pour cette première version. Il reprend la logique des Tally de référence sans les recopier entièrement."
+      questionnaireNote: "Le questionnaire est volontairement resserré pour cette première version. Il reprend la logique des Tally de référence sans les recopier entièrement.",
+      validation: {
+        required: "Information obligatoire :",
+        invalidEmail: "Adresse e-mail à corriger :",
+        invalidValue: "Information à corriger :",
+        checkHighlighted: "Vérifiez le champ mis en évidence puis réessayez."
+      }
     },
     home: {
       eyebrow: "Une expérimentation dans la Grande Région",
@@ -356,7 +362,13 @@ const copy = {
       saved: "Answers saved.",
       saveErrorPrefix: "Save failed",
       uuidPrefix: "Resume identifier",
-      questionnaireNote: "This questionnaire is intentionally compact for the first version. It follows the logic of the reference Tally forms without copying them in full."
+      questionnaireNote: "This questionnaire is intentionally compact for the first version. It follows the logic of the reference Tally forms without copying them in full.",
+      validation: {
+        required: "Required information:",
+        invalidEmail: "Email address to correct:",
+        invalidValue: "Information to correct:",
+        checkHighlighted: "Check the highlighted field and try again."
+      }
     },
     home: {
       eyebrow: "An experiment in the Greater Region",
@@ -674,7 +686,13 @@ const copy = {
       saved: "Antworten gespeichert.",
       saveErrorPrefix: "Speichern fehlgeschlagen",
       uuidPrefix: "Wiederaufnahme-ID",
-      questionnaireNote: "Dieser Fragebogen ist für die erste Version bewusst kompakt. Er orientiert sich an den vorhandenen Tally-Formularen, ohne sie vollständig zu kopieren."
+      questionnaireNote: "Dieser Fragebogen ist für die erste Version bewusst kompakt. Er orientiert sich an den vorhandenen Tally-Formularen, ohne sie vollständig zu kopieren.",
+      validation: {
+        required: "Pflichtangabe:",
+        invalidEmail: "E-Mail-Adresse bitte korrigieren:",
+        invalidValue: "Angabe bitte korrigieren:",
+        checkHighlighted: "Bitte prüfen Sie das markierte Feld und versuchen Sie es erneut."
+      }
     },
     home: {
       eyebrow: "Ein Experiment in der Großregion",
@@ -1940,6 +1958,115 @@ function pageUrl(page, lang) {
     params.set("invite_token", inviteToken);
   }
   return `${map[page]}?${params.toString()}`;
+}
+
+function isVisibleControl(element) {
+  if (!element || element.disabled) {
+    return false;
+  }
+  if (element.closest("[hidden]")) {
+    return false;
+  }
+  return element.getClientRects().length > 0;
+}
+
+function cleanLabelText(value) {
+  return String(value || "")
+    .replace(/\s+/g, " ")
+    .replace(/\*/g, "")
+    .trim();
+}
+
+function getFieldLabel(element) {
+  if (!element) {
+    return "";
+  }
+
+  const fromAria = cleanLabelText(element.getAttribute("aria-label"));
+  if (fromAria) {
+    return fromAria;
+  }
+
+  if (element.id) {
+    const explicit = document.querySelector(`label[for="${CSS.escape(element.id)}"]`);
+    const explicitText = cleanLabelText(explicit?.textContent);
+    if (explicitText) {
+      return explicitText;
+    }
+  }
+
+  const wrappingLabel = element.closest("label");
+  const wrappingText = cleanLabelText(wrappingLabel?.textContent);
+  if (wrappingText) {
+    return wrappingText;
+  }
+
+  const field = element.closest(".field, .field-stack, .question-block, fieldset, .panel");
+  const scopedLabel = cleanLabelText(
+    field?.querySelector("label, legend, h3, h4, .section-title")?.textContent
+  );
+  if (scopedLabel) {
+    return scopedLabel;
+  }
+
+  return cleanLabelText(element.name || element.type || "champ");
+}
+
+function focusField(element) {
+  if (!element) {
+    return;
+  }
+  element.focus({ preventScroll: true });
+  element.scrollIntoView({ behavior: "smooth", block: "center" });
+}
+
+function describeInvalidField(element, t) {
+  const label = getFieldLabel(element);
+  if (element.validity?.valueMissing) {
+    return `${t.common.validation.required} ${label}`;
+  }
+  if (element.validity?.typeMismatch && element.type === "email") {
+    return `${t.common.validation.invalidEmail} ${label}`;
+  }
+  return `${t.common.validation.invalidValue} ${label}`;
+}
+
+function findFirstInvalidControl(form) {
+  const seenRadioNames = new Set();
+  const controls = Array.from(form.elements).filter((element) => {
+    if (!(element instanceof HTMLElement)) {
+      return false;
+    }
+    if (element.tagName === "BUTTON" || element.type === "hidden") {
+      return false;
+    }
+    if (!isVisibleControl(element)) {
+      return false;
+    }
+    if (element.type === "radio") {
+      if (seenRadioNames.has(element.name)) {
+        return false;
+      }
+      seenRadioNames.add(element.name);
+    }
+    return typeof element.checkValidity === "function" && !element.checkValidity();
+  });
+
+  return controls[0] || null;
+}
+
+function showFirstInvalidControl(form, setStatus, t) {
+  const invalid = findFirstInvalidControl(form);
+  if (!invalid) {
+    return false;
+  }
+
+  setStatus(`${describeInvalidField(invalid, t)} ${t.common.validation.checkHighlighted}`, "error");
+  focusField(invalid);
+  if (typeof invalid.reportValidity === "function") {
+    invalid.reportValidity();
+  }
+  return true;
 }
 
 function nav(page, lang, t) {
@@ -3362,17 +3489,19 @@ function attachEmployerTallyBehavior(lang, t) {
   }
 
   function validateCheckboxGroup(name, label, min = 1, max = Infinity) {
-    const visibleInputs = Array.from(form.querySelectorAll(`input[name="${name}"]`)).filter((input) => !input.disabled);
+    const visibleInputs = Array.from(form.querySelectorAll(`input[name="${name}"]`)).filter((input) => isVisibleControl(input));
     if (!visibleInputs.length) {
       return true;
     }
     const checkedCount = visibleInputs.filter((input) => input.checked).length;
     if (checkedCount < min) {
-      setStatus(`${content.errors.chooseAtLeastOne} ${label}`, "error");
+      setStatus(`${content.errors.chooseAtLeastOne} ${label}. ${t.common.validation.checkHighlighted}`, "error");
+      focusField(visibleInputs[0]);
       return false;
     }
     if (checkedCount > max) {
-      setStatus(`${content.errors.chooseBetween} ${label}`, "error");
+      setStatus(`${content.errors.chooseBetween} ${label}. ${t.common.validation.checkHighlighted}`, "error");
+      focusField(visibleInputs[0]);
       return false;
     }
     return true;
@@ -3390,6 +3519,10 @@ function attachEmployerTallyBehavior(lang, t) {
 
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
+
+    if (showFirstInvalidControl(form, setStatus, t)) {
+      return;
+    }
 
     const validations = [
       ["tally_q01", content.questions.q01],
@@ -3554,6 +3687,10 @@ function attachCandidateTallyBehavior(lang, t) {
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
 
+    if (showFirstInvalidControl(form, setStatus, t)) {
+      return;
+    }
+
     const { values, files } = collectValues();
     const activeRankingIndexes = candidateTallyMeta.rankingOptions
       .map((_, index) => index)
@@ -3571,7 +3708,9 @@ function attachCandidateTallyBehavior(lang, t) {
       const seenRanks = rankSelections.map((item) => item.rank).filter(Boolean);
       const uniqueRanks = new Set(seenRanks);
       if (seenRanks.length !== activeRankingIndexes.length || uniqueRanks.size !== seenRanks.length) {
-        setStatus(content.rankingError, "error");
+        setStatus(`${content.rankingError} ${t.common.validation.checkHighlighted}`, "error");
+        const firstRankingField = form.querySelector(`select[name="rank__tally_q17__${activeRankingIndexes[0]}"]`);
+        focusField(firstRankingField);
         return;
       }
 
@@ -3947,6 +4086,10 @@ function attachQuestionnaireBehavior(page, lang, t) {
 
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
+
+    if (showFirstInvalidControl(form, setStatus, t)) {
+      return;
+    }
 
     const fields = aggregateFormData(form);
     fields.uuid = uuid;
