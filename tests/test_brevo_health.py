@@ -100,6 +100,27 @@ class BrevoHealthTest(unittest.TestCase):
         self.assertIn('Je vais le contacter', text_body)
         self.assertIn('julie.barthelemy@arhis.lu', recipient)
 
+    def test_build_candidate_invitation_email_uses_official_trust_markers(self):
+        invitation = {
+            'role': 'candidate',
+            'email': 'candidate@example.org',
+            'first_name': 'Marie',
+            'language': 'fr',
+            'invite_token': 'token-demo',
+            'invite_link': 'https://formulaires.inclusion.gouv.fr/forms/eures-beta/questionnaire-candidate?lang=fr&invite_token=token-demo',
+        }
+
+        recipient, subject, text_body, html_body, invite_token, invite_link = app.build_brevo_invitation_email(invitation)
+
+        self.assertEqual(recipient, 'candidate@example.org')
+        self.assertEqual(invite_token, 'token-demo')
+        self.assertEqual(invite_link, invitation['invite_link'])
+        self.assertIn('Invitation à compléter le questionnaire candidat', subject)
+        self.assertIn("Comment vérifier", text_body)
+        self.assertIn("domaine officiel", text_body)
+        self.assertIn("France Travail", html_body)
+        self.assertIn("formulaires.inclusion.gouv.fr", html_body)
+
 
 if __name__ == '__main__':
     unittest.main()

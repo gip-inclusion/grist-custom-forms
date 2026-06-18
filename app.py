@@ -23,7 +23,7 @@ from datetime import datetime
 from io import BytesIO, StringIO
 from functools import wraps
 from pathlib import Path
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlparse
 from itsdangerous import BadSignature, URLSafeSerializer
 from dotenv import load_dotenv
 import requests
@@ -931,92 +931,134 @@ def build_brevo_invitation_email(invitation_row: dict) -> tuple[str, str, str, s
     invite_token = str(invitation_row.get('invite_token') or '').strip() or _generate_eures_invitation_token()
     invite_link = str(invitation_row.get('invite_link') or '').strip() or _build_eures_invitation_link(role, language, invite_token)
     signature_name = get_eures_mail_signature_name()
+    invite_host = urlparse(invite_link).netloc or get_public_app_base_url().replace('https://', '').replace('http://', '')
+
+    greeting = first_name or company_name or ''
+    if language == 'en':
+        hello = f"Hello {greeting}," if greeting else "Hello,"
+    elif language == 'de':
+        hello = f"Guten Tag {greeting}," if greeting else "Guten Tag,"
+    else:
+        hello = f"Bonjour {greeting}," if greeting else "Bonjour,"
 
     if role == 'employer':
         if language == 'en':
-            subject = "[EURES beta] Recruit more easily through European mobility"
-            preheader = "Experimental service: describe your hiring need in less than 5 minutes."
-            title = "Are you having trouble recruiting?"
+            subject = "[EURES beta / EURES / France Travail] Invitation to complete the employer questionnaire"
+            preheader = "Official invitation to complete the EURES beta employer questionnaire."
             body_lines = [
-                "EURES beta is an initiative led by EURES and France Travail to support recruitment and professional mobility in the Greater Region.",
-                "In just a few minutes, describe your hiring need and access a wider pool of candidates open to European mobility.",
-                "The more precise your need is, the easier it is for us to identify relevant profiles.",
+                "You are receiving this message as part of the EURES beta initiative led by EURES and France Travail in the Greater Region.",
+                "This questionnaire is used to describe your recruitment need in a structured way so that compatible profiles can later be identified and reviewed.",
+                "Completing it takes about 5 minutes.",
             ]
-            cta = "Complete the questionnaire"
-            cta_note = "Estimated time: less than 5 minutes."
-            footer = "EURES beta is an initiative led by EURES and France Travail to support recruitment and professional mobility in the Greater Region."
+            title = "Official invitation to complete the employer questionnaire"
+            cta = "Access the employer questionnaire"
+            cta_note = f"If the button does not work, copy this address into your browser: {invite_link}"
+            trust_title = "How to verify this message"
+            trust_lines = [
+                f"The questionnaire link points to the official domain: {invite_host}",
+                "The sender identifies EURES beta, EURES and France Travail.",
+                "If you have any doubt, do not click immediately and verify the link domain before opening it.",
+            ]
+            footer = "EURES beta is an experimental service supported by EURES and France Travail to facilitate recruitment and professional mobility in the Greater Region."
         elif language == 'de':
-            subject = "[EURES beta] Einfacher rekrutieren dank europäischer Mobilität"
-            preheader = "Experimenteller Service: Beschreiben Sie Ihren Bedarf in weniger als 5 Minuten."
-            title = "Haben Sie Schwierigkeiten bei der Rekrutierung?"
+            subject = "[EURES beta / EURES / France Travail] Einladung zum Arbeitgeberfragebogen"
+            preheader = "Offizielle Einladung zum Ausfüllen des EURES-beta-Arbeitgeberfragebogens."
             body_lines = [
-                "EURES beta ist eine von EURES und France Travail getragene Initiative zur Unterstützung von Rekrutierung und beruflicher Mobilität in der Großregion.",
-                "Beschreiben Sie in wenigen Minuten Ihren Bedarf und erhalten Sie Zugang zu einem größeren Pool von Kandidatinnen und Kandidaten, die für europäische Mobilität offen sind.",
-                "Je präziser Ihr Bedarf ist, desto besser können passende Profile identifiziert werden.",
+                "Sie erhalten diese Nachricht im Rahmen der Initiative EURES beta, die von EURES und France Travail in der Großregion getragen wird.",
+                "Mit diesem Fragebogen kann Ihr Personalbedarf strukturiert beschrieben werden, damit anschließend passende Profile identifiziert und geprüft werden können.",
+                "Das Ausfüllen dauert ungefähr 5 Minuten.",
             ]
-            cta = "Fragebogen ausfüllen"
-            cta_note = "Geschätzte Dauer: weniger als 5 Minuten."
-            footer = "EURES beta ist eine von EURES und France Travail getragene Initiative zur Unterstützung von Rekrutierung und beruflicher Mobilität in der Großregion."
+            title = "Offizielle Einladung zum Arbeitgeberfragebogen"
+            cta = "Zum Arbeitgeberfragebogen"
+            cta_note = f"Falls die Schaltfläche nicht funktioniert, kopieren Sie diese Adresse in Ihren Browser: {invite_link}"
+            trust_title = "So prüfen Sie die Echtheit"
+            trust_lines = [
+                f"Der Link verweist auf die offizielle Domain: {invite_host}",
+                "Der Absender nennt ausdrücklich EURES beta, EURES und France Travail.",
+                "Wenn Sie unsicher sind, öffnen Sie den Link nicht sofort und prüfen Sie zuerst die Domain.",
+            ]
+            footer = "EURES beta ist ein experimenteller Service von EURES und France Travail zur Unterstützung von Rekrutierung und beruflicher Mobilität in der Großregion."
         else:
-            subject = "[EURES beta] Vous avez des difficultés à recruter ?"
-            preheader = "Expérimentation en cours : décrivez votre besoin en moins de 5 minutes."
-            title = "Vous avez des difficultés à recruter ?"
+            subject = "[EURES beta / EURES / France Travail] Invitation à compléter le questionnaire employeur"
+            preheader = "Invitation officielle à compléter le questionnaire employeur EURES beta."
             body_lines = [
-                "EURES beta est une expérimentation portée par EURES et France Travail pour faciliter les recrutements et la mobilité professionnelle dans la Grande Région.",
-                "En quelques minutes, décrivez votre besoin et accédez à un vivier plus large de candidats ouverts à la mobilité européenne.",
-                "Plus votre besoin est précis, plus nous serons en mesure d'identifier des profils susceptibles de correspondre à votre recherche.",
+                "Vous recevez ce message dans le cadre de l'expérimentation EURES beta portée par EURES et France Travail dans la Grande Région.",
+                "Ce questionnaire permet de décrire votre besoin de recrutement de manière structurée afin d'identifier ensuite des profils potentiellement compatibles.",
+                "Le questionnaire prend environ 5 minutes.",
             ]
-            cta = "Compléter le questionnaire"
-            cta_note = "Temps estimé : moins de 5 minutes."
-            footer = "EURES beta est une expérimentation portée par EURES et France Travail pour faciliter les recrutements et la mobilité professionnelle dans la Grande Région."
+            title = "Invitation officielle à compléter le questionnaire employeur"
+            cta = "Accéder au questionnaire employeur"
+            cta_note = f"Si le bouton ne fonctionne pas, vous pouvez copier cette adresse dans votre navigateur : {invite_link}"
+            trust_title = "Comment vérifier qu'il s'agit d'un message authentique"
+            trust_lines = [
+                f"Le lien du questionnaire renvoie vers le domaine officiel : {invite_host}",
+                "L'expéditeur mentionne explicitement EURES beta, EURES et France Travail.",
+                "En cas de doute, n'ouvrez pas le lien immédiatement et vérifiez d'abord le domaine affiché.",
+            ]
+            footer = "EURES beta est un service expérimental porté par EURES et France Travail pour faciliter les recrutements et la mobilité professionnelle dans la Grande Région."
 
         text_body = (
+            f"{hello}\n\n"
             f"{title}\n\n"
-            f"{preheader}\n\n"
             + "\n\n".join(body_lines)
-            + f"\n\n{cta}: {invite_link}\n\n{cta_note}\n\n{footer}\n"
+            + f"\n\n{trust_title}\n"
+            + "\n".join(f"- {line}" for line in trust_lines)
+            + f"\n\n{cta}: {invite_link}\n\n{cta_note}\n\n{footer}\n\n{signature_name}\nEURES beta\n"
         )
         body_html = f"""
 <!doctype html>
 <html lang="{escape(language)}">
-  <body style="margin:0;padding:0;background:#f6f7fb;font-family:Arial,'Helvetica Neue',sans-serif;color:#16253d;">
+  <body style="margin:0;padding:0;background:#f5f7fb;font-family:Arial,'Helvetica Neue',sans-serif;color:#16253d;">
     <div style="display:none;max-height:0;overflow:hidden;opacity:0;mso-hide:all;">
       {escape(preheader)}
     </div>
-    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f6f7fb;padding:20px 12px;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f5f7fb;padding:20px 12px;">
       <tr>
         <td align="center">
-          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:560px;background:#ffffff;border:1px solid #dfe6f2;border-radius:20px;overflow:hidden;">
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:640px;background:#ffffff;border:1px solid #d9e1ee;border-radius:18px;overflow:hidden;">
             <tr>
-              <td style="padding:24px 24px 8px;">
-                <div style="font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#4d678c;">EURES beta</div>
+              <td style="padding:22px 28px;background:#0f2742;color:#ffffff;">
+                <div style="font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;opacity:0.9;">EURES beta</div>
+                <div style="margin-top:6px;font-size:14px;line-height:1.5;opacity:0.92;">EURES • France Travail</div>
               </td>
             </tr>
             <tr>
-              <td style="padding:0 24px 8px;">
-                <h1 style="margin:0;font-size:30px;line-height:1.12;font-weight:700;color:#16253d;">{escape(title)}</h1>
+              <td style="padding:24px 28px 8px;">
+                <p style="margin:0 0 10px;font-size:16px;line-height:1.6;color:#324765;">{escape(hello)}</p>
+                <h1 style="margin:0;font-size:28px;line-height:1.18;font-weight:700;color:#16253d;">{escape(title)}</h1>
               </td>
             </tr>
             <tr>
-              <td style="padding:0 24px 4px;">
+              <td style="padding:0 28px 4px;">
                 <p style="margin:0 0 14px;font-size:16px;line-height:1.55;color:#324765;">{escape(body_lines[0])}</p>
                 <p style="margin:0 0 14px;font-size:16px;line-height:1.55;color:#324765;">{escape(body_lines[1])}</p>
                 <p style="margin:0 0 22px;font-size:16px;line-height:1.55;color:#324765;">{escape(body_lines[2])}</p>
               </td>
             </tr>
             <tr>
-              <td style="padding:0 24px 12px;">
-                <a href="{escape(invite_link)}" style="display:block;width:100%;box-sizing:border-box;padding:15px 18px;border-radius:14px;background:#0a66c2;color:#ffffff;text-decoration:none;font-size:16px;font-weight:700;text-align:center;">{escape(cta)}</a>
+              <td style="padding:0 28px 18px;">
+                <div style="border:1px solid #d9e1ee;border-radius:14px;background:#f8fafc;padding:16px 18px;">
+                  <div style="margin:0 0 8px;font-size:14px;font-weight:700;color:#17324d;">{escape(trust_title)}</div>
+                  <ul style="margin:0;padding-left:18px;color:#4b5f79;font-size:14px;line-height:1.6;">
+                    {''.join(f'<li>{escape(line)}</li>' for line in trust_lines)}
+                  </ul>
+                </div>
               </td>
             </tr>
             <tr>
-              <td style="padding:0 24px 24px;">
-                <p style="margin:0;font-size:14px;line-height:1.5;color:#627892;">{escape(cta_note)}</p>
+              <td style="padding:0 28px 12px;">
+                <a href="{escape(invite_link)}" style="display:block;width:100%;box-sizing:border-box;padding:15px 18px;border-radius:12px;background:#004494;color:#ffffff;text-decoration:none;font-size:16px;font-weight:700;text-align:center;">{escape(cta)}</a>
               </td>
             </tr>
             <tr>
-              <td style="padding:18px 24px 24px;border-top:1px solid #e7ecf4;">
-                <p style="margin:0;font-size:13px;line-height:1.55;color:#627892;">{escape(footer)}</p>
+              <td style="padding:0 28px 22px;">
+                <p style="margin:0;font-size:14px;line-height:1.6;color:#627892;">{escape(cta_note)}</p>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:18px 28px 24px;border-top:1px solid #e7ecf4;">
+                <p style="margin:0 0 10px;font-size:13px;line-height:1.6;color:#627892;">{escape(footer)}</p>
+                <p style="margin:0;font-size:13px;line-height:1.6;color:#627892;">{escape(signature_name)}<br>EURES beta</p>
               </td>
             </tr>
           </table>
@@ -1029,89 +1071,122 @@ def build_brevo_invitation_email(invitation_row: dict) -> tuple[str, str, str, s
         return recipient, subject, text_body, body_html, invite_token, invite_link
 
     if language == 'en':
-        subject = "[EURES beta] What if your next opportunity was elsewhere in Europe?"
-        preheader = "Experimental service: answer a few questions and explore opportunities through European mobility."
-        title = "Explore new professional opportunities in Europe"
+        subject = "[EURES beta / EURES / France Travail] Invitation to complete the candidate questionnaire"
+        preheader = "Official invitation to complete the EURES beta candidate questionnaire."
         body_lines = [
-            "EURES beta is an initiative led by EURES and France Travail to support professional mobility in the Greater Region.",
-            "Are you open to a professional opportunity in Luxembourg, in a neighbouring country or elsewhere in Europe? EURES beta helps you discover opportunities aligned with your profile and your mobility plans.",
-            "In just a few minutes, describe your experience, skills and preferences so we can identify opportunities that may interest you.",
+            "You are receiving this message as part of the EURES beta initiative led by EURES and France Travail in the Greater Region.",
+            "This questionnaire helps us understand your profile, your mobility plans and the type of opportunities that may match your situation.",
+            "Completing it takes about 5 minutes.",
         ]
-        cta = "Discover opportunities"
-        cta_note = "Estimated time: less than 5 minutes."
-        footer = "EURES beta is an initiative led by EURES and France Travail to support professional mobility in the Greater Region."
+        title = "Official invitation to complete the candidate questionnaire"
+        cta = "Access the candidate questionnaire"
+        cta_note = f"If the button does not work, copy this address into your browser: {invite_link}"
+        trust_title = "How to verify this message"
+        trust_lines = [
+            f"The questionnaire link points to the official domain: {invite_host}",
+            "The sender identifies EURES beta, EURES and France Travail.",
+            "If you have any doubt, verify the displayed domain before opening the link.",
+        ]
+        footer = "EURES beta is an experimental service supported by EURES and France Travail to facilitate professional mobility in the Greater Region."
     elif language == 'de':
-        subject = "[EURES beta] Was wäre, wenn Ihre nächste Chance anderswo in Europa läge?"
-        preheader = "Experimenteller Service: Beantworten Sie ein paar Fragen und entdecken Sie Möglichkeiten durch europäische Mobilität."
-        title = "Entdecken Sie neue berufliche Chancen in Europa"
+        subject = "[EURES beta / EURES / France Travail] Einladung zum Kandidatenfragebogen"
+        preheader = "Offizielle Einladung zum Ausfüllen des EURES-beta-Kandidatenfragebogens."
         body_lines = [
-            "EURES beta ist eine von EURES und France Travail getragene Initiative zur Unterstützung der beruflichen Mobilität in der Großregion.",
-            "Sind Sie offen für eine berufliche Erfahrung in Luxemburg, in einem Nachbarland oder anderswo in Europa? EURES beta hilft Ihnen, Chancen zu entdecken, die zu Ihrem Profil und Ihrem Mobilitätsprojekt passen.",
-            "Beschreiben Sie in wenigen Minuten Ihre Erfahrung, Ihre Kompetenzen und Ihre Präferenzen, damit passende Möglichkeiten identifiziert werden können.",
+            "Sie erhalten diese Nachricht im Rahmen der Initiative EURES beta, die von EURES und France Travail in der Großregion getragen wird.",
+            "Mit diesem Fragebogen können wir Ihr Profil, Ihr Mobilitätsprojekt und die für Sie passenden beruflichen Möglichkeiten besser verstehen.",
+            "Das Ausfüllen dauert ungefähr 5 Minuten.",
         ]
-        cta = "Chancen entdecken"
-        cta_note = "Geschätzte Dauer: weniger als 5 Minuten."
-        footer = "EURES beta ist eine von EURES und France Travail getragene Initiative zur Unterstützung der beruflichen Mobilität in der Großregion."
+        title = "Offizielle Einladung zum Kandidatenfragebogen"
+        cta = "Zum Kandidatenfragebogen"
+        cta_note = f"Falls die Schaltfläche nicht funktioniert, kopieren Sie diese Adresse in Ihren Browser: {invite_link}"
+        trust_title = "So prüfen Sie die Echtheit"
+        trust_lines = [
+            f"Der Link verweist auf die offizielle Domain: {invite_host}",
+            "Der Absender nennt ausdrücklich EURES beta, EURES und France Travail.",
+            "Wenn Sie unsicher sind, prüfen Sie zuerst die angezeigte Domain.",
+        ]
+        footer = "EURES beta ist ein experimenteller Service von EURES und France Travail zur Unterstützung beruflicher Mobilität in der Großregion."
     else:
-        subject = "[EURES beta] Et si votre prochaine opportunité se trouvait ailleurs en Europe ?"
-        preheader = "Expérimentation en cours : répondez à quelques questions et explorez les possibilités offertes par la mobilité européenne."
-        title = "Explorez de nouvelles opportunités professionnelles en Europe"
+        subject = "[EURES beta / EURES / France Travail] Invitation à compléter le questionnaire candidat"
+        preheader = "Invitation officielle à compléter le questionnaire candidat EURES beta."
         body_lines = [
-            "EURES beta est une expérimentation portée par EURES et France Travail pour faciliter la mobilité professionnelle dans la Grande Région.",
-            "Vous êtes ouvert à une expérience professionnelle au Luxembourg, dans un pays voisin ou ailleurs en Europe ? EURES beta vous aide à découvrir des opportunités adaptées à votre profil et à votre projet de mobilité.",
-            "En quelques minutes, décrivez votre expérience, vos compétences et vos préférences pour nous permettre d’identifier des opportunités susceptibles de vous intéresser.",
+            "Vous recevez ce message dans le cadre de l'expérimentation EURES beta portée par EURES et France Travail dans la Grande Région.",
+            "Ce questionnaire nous permet de mieux comprendre votre profil, votre projet de mobilité et les opportunités professionnelles susceptibles de vous correspondre.",
+            "Le questionnaire prend environ 5 minutes.",
         ]
-        cta = "Découvrir les opportunités"
-        cta_note = "Temps estimé : moins de 5 minutes."
-        footer = "EURES beta est une expérimentation portée par EURES et France Travail pour faciliter la mobilité professionnelle dans la Grande Région."
+        title = "Invitation officielle à compléter le questionnaire candidat"
+        cta = "Accéder au questionnaire candidat"
+        cta_note = f"Si le bouton ne fonctionne pas, vous pouvez copier cette adresse dans votre navigateur : {invite_link}"
+        trust_title = "Comment vérifier qu'il s'agit d'un message authentique"
+        trust_lines = [
+            f"Le lien du questionnaire renvoie vers le domaine officiel : {invite_host}",
+            "L'expéditeur mentionne explicitement EURES beta, EURES et France Travail.",
+            "En cas de doute, vérifiez d'abord le domaine affiché avant d'ouvrir le lien.",
+        ]
+        footer = "EURES beta est un service expérimental porté par EURES et France Travail pour faciliter la mobilité professionnelle dans la Grande Région."
 
     text_body = (
+        f"{hello}\n\n"
         f"{title}\n\n"
-        f"{preheader}\n\n"
         + "\n\n".join(body_lines)
-        + f"\n\n{cta}: {invite_link}\n\n{cta_note}\n\n{footer}\n"
+        + f"\n\n{trust_title}\n"
+        + "\n".join(f"- {line}" for line in trust_lines)
+        + f"\n\n{cta}: {invite_link}\n\n{cta_note}\n\n{footer}\n\n{signature_name}\nEURES beta\n"
     )
     html_body = f"""
 <!doctype html>
 <html lang="{escape(language)}">
-  <body style="margin:0;padding:0;background:#f6f7fb;font-family:Arial,'Helvetica Neue',sans-serif;color:#16253d;">
+  <body style="margin:0;padding:0;background:#f5f7fb;font-family:Arial,'Helvetica Neue',sans-serif;color:#16253d;">
     <div style="display:none;max-height:0;overflow:hidden;opacity:0;mso-hide:all;">
       {escape(preheader)}
     </div>
-    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f6f7fb;padding:20px 12px;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f5f7fb;padding:20px 12px;">
       <tr>
         <td align="center">
-          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:560px;background:#ffffff;border:1px solid #dfe6f2;border-radius:20px;overflow:hidden;">
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:640px;background:#ffffff;border:1px solid #d9e1ee;border-radius:18px;overflow:hidden;">
             <tr>
-              <td style="padding:24px 24px 8px;">
-                <div style="font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#4d678c;">EURES beta</div>
+              <td style="padding:22px 28px;background:#0f2742;color:#ffffff;">
+                <div style="font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;opacity:0.9;">EURES beta</div>
+                <div style="margin-top:6px;font-size:14px;line-height:1.5;opacity:0.92;">EURES • France Travail</div>
               </td>
             </tr>
             <tr>
-              <td style="padding:0 24px 8px;">
-                <h1 style="margin:0;font-size:30px;line-height:1.12;font-weight:700;color:#16253d;">{escape(title)}</h1>
+              <td style="padding:24px 28px 8px;">
+                <p style="margin:0 0 10px;font-size:16px;line-height:1.6;color:#324765;">{escape(hello)}</p>
+                <h1 style="margin:0;font-size:28px;line-height:1.18;font-weight:700;color:#16253d;">{escape(title)}</h1>
               </td>
             </tr>
             <tr>
-              <td style="padding:0 24px 4px;">
+              <td style="padding:0 28px 4px;">
                 <p style="margin:0 0 14px;font-size:16px;line-height:1.55;color:#324765;">{escape(body_lines[0])}</p>
                 <p style="margin:0 0 14px;font-size:16px;line-height:1.55;color:#324765;">{escape(body_lines[1])}</p>
                 <p style="margin:0 0 22px;font-size:16px;line-height:1.55;color:#324765;">{escape(body_lines[2])}</p>
               </td>
             </tr>
             <tr>
-              <td style="padding:0 24px 12px;">
-                <a href="{escape(invite_link)}" style="display:block;width:100%;box-sizing:border-box;padding:15px 18px;border-radius:14px;background:#0a66c2;color:#ffffff;text-decoration:none;font-size:16px;font-weight:700;text-align:center;">{escape(cta)}</a>
+              <td style="padding:0 28px 18px;">
+                <div style="border:1px solid #d9e1ee;border-radius:14px;background:#f8fafc;padding:16px 18px;">
+                  <div style="margin:0 0 8px;font-size:14px;font-weight:700;color:#17324d;">{escape(trust_title)}</div>
+                  <ul style="margin:0;padding-left:18px;color:#4b5f79;font-size:14px;line-height:1.6;">
+                    {''.join(f'<li>{escape(line)}</li>' for line in trust_lines)}
+                  </ul>
+                </div>
               </td>
             </tr>
             <tr>
-              <td style="padding:0 24px 24px;">
-                <p style="margin:0;font-size:14px;line-height:1.5;color:#627892;">{escape(cta_note)}</p>
+              <td style="padding:0 28px 12px;">
+                <a href="{escape(invite_link)}" style="display:block;width:100%;box-sizing:border-box;padding:15px 18px;border-radius:12px;background:#004494;color:#ffffff;text-decoration:none;font-size:16px;font-weight:700;text-align:center;">{escape(cta)}</a>
               </td>
             </tr>
             <tr>
-              <td style="padding:18px 24px 24px;border-top:1px solid #e7ecf4;">
-                <p style="margin:0;font-size:13px;line-height:1.55;color:#627892;">{escape(footer)}</p>
+              <td style="padding:0 28px 22px;">
+                <p style="margin:0;font-size:14px;line-height:1.6;color:#627892;">{escape(cta_note)}</p>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:18px 28px 24px;border-top:1px solid #e7ecf4;">
+                <p style="margin:0 0 10px;font-size:13px;line-height:1.6;color:#627892;">{escape(footer)}</p>
+                <p style="margin:0;font-size:13px;line-height:1.6;color:#627892;">{escape(signature_name)}<br>EURES beta</p>
               </td>
             </tr>
           </table>
