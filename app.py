@@ -19,15 +19,15 @@ import csv
 import secrets
 from html import escape
 from collections import Counter, defaultdict
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from io import BytesIO, StringIO
 from functools import wraps
 from pathlib import Path
 from urllib.parse import urljoin, urlparse
-from itsdangerous import BadSignature, URLSafeSerializer
+from itsdangerous import BadSignature, SignatureExpired, URLSafeSerializer, URLSafeTimedSerializer
 from dotenv import load_dotenv
 import requests
-from flask import Flask, request, jsonify, redirect, send_file, send_from_directory, Response
+from flask import Flask, request, jsonify, redirect, send_file, send_from_directory, Response, session, url_for
 from werkzeug.middleware.dispatcher import DispatcherMiddleware
 
 load_dotenv()
@@ -38,6 +38,21 @@ ASSETS_DIR = BASE_DIR / 'assets'
 DOCS_DIR = BASE_DIR / 'docs'
 
 app = Flask(__name__)
+app.config.update(
+    SECRET_KEY=(
+        os.environ.get('SESSION_SECRET')
+        or os.environ.get('FLASK_SECRET_KEY')
+        or os.environ.get('EURES_EMAIL_ACTION_SECRET')
+        or os.environ.get('ADMIN_PASSWORD')
+        or secrets.token_urlsafe(32)
+    ),
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE='Lax',
+    SESSION_COOKIE_SECURE=str(os.environ.get('SESSION_COOKIE_SECURE', 'true')).strip().lower() not in {'0', 'false', 'no', 'off'},
+    PERMANENT_SESSION_LIFETIME=timedelta(hours=8),
+)
+
+_ADMIN_MAGIC_LINK_REQUESTS: dict[tuple[str, str], float] = {}
 
 GRIST_BASE_URL = os.environ.get('GRIST_BASE_URL', 'https://grist.numerique.gouv.fr').rstrip('/')
 _TABLE_COLUMNS_CACHE: dict[tuple[str, str], dict[str, object]] = {}
@@ -321,10 +336,112 @@ def _resolve_form_path(form_id: str, raw_path: str) -> str | None:
     return None
 
 
-def _require_admin_auth():
+def _admin_env_name(base: str, form_id: str) -> list[str]:
+    normalized = str(form_id or '').strip().replace('-', '_').upper()
+    names = []
+    if normalized:
+        names.append(f'{base}_{normalized}')
+    names.append(base)
+    return names
+
+
+def _admin_env_value(base: str, form_id: str, default: str = '') -> str:
+    for name in _admin_env_name(base, form_id):
+        value = str(os.environ.get(name) or '').strip()
+        if value:
+            return value
+    return default
+
+
+def get_admin_auth_mode(form_id: str) -> str:
+    mode = _admin_env_value('ADMIN_AUTH_MODE', form_id, default='basic').strip().lower().replace('-', '_')
+    if mode not in {'basic', 'magic_link', 'hybrid'}:
+        return 'basic'
+    return mode
+
+
+def get_admin_allowed_emails(form_id: str) -> set[str]:
+    raw = _admin_env_value('ADMIN_ALLOWED_EMAILS', form_id)
+    return {
+        normalize_email(part)
+        for part in raw.split(',')
+        if normalize_email(part)
+    }
+
+
+def get_admin_magic_link_ttl_seconds(form_id: str) -> int:
+    raw = _admin_env_value('ADMIN_MAGIC_LINK_TTL_SECONDS', form_id, default='900')
+    try:
+        ttl = int(raw)
+    except Exception:
+        ttl = 900
+    return max(60, min(ttl, 86400))
+
+
+def get_admin_magic_link_rate_limit_seconds(form_id: str) -> int:
+    raw = _admin_env_value('ADMIN_MAGIC_LINK_RATE_LIMIT_SECONDS', form_id, default='60')
+    try:
+        seconds = int(raw)
+    except Exception:
+        seconds = 60
+    return max(0, min(seconds, 3600))
+
+
+def get_admin_magic_link_serializer(form_id: str) -> URLSafeTimedSerializer:
+    secret = (
+        os.environ.get('SESSION_SECRET', '').strip()
+        or os.environ.get('FLASK_SECRET_KEY', '').strip()
+        or os.environ.get('EURES_EMAIL_ACTION_SECRET', '').strip()
+        or os.environ.get('BREVO_API_KEY', '').strip()
+    )
+    if not secret:
+        raise RuntimeError('Missing admin magic link secret configuration.')
+    return URLSafeTimedSerializer(secret_key=secret, salt=f'admin-magic-link:{form_id}')
+
+
+def _admin_session_key(form_id: str) -> str:
+    return f'admin_session:{form_id}'
+
+
+def _current_admin_session(form_id: str) -> dict | None:
+    payload = session.get(_admin_session_key(form_id))
+    if not isinstance(payload, dict):
+        return None
+    email = normalize_email(payload.get('email'))
+    if not email or email not in get_admin_allowed_emails(form_id):
+        return None
+    return {
+        'email': email,
+        'authenticated_at': str(payload.get('authenticated_at') or ''),
+    }
+
+
+def _set_admin_session(form_id: str, email: str):
+    session.permanent = True
+    session[_admin_session_key(form_id)] = {
+        'email': normalize_email(email),
+        'authenticated_at': _now_iso_utc(),
+    }
+
+
+def _clear_admin_session(form_id: str):
+    session.pop(_admin_session_key(form_id), None)
+
+
+def _admin_auth_error_response(form_id: str):
+    login_url = url_for('admin_login', form_id=form_id)
+    if request.path.startswith('/api/'):
+        return jsonify({
+            'error': 'Authentication required',
+            'login_url': login_url,
+        }), 401
+    return redirect(login_url)
+
+
+def _require_admin_basic_auth(form_id: str):
     """HTTP Basic auth guard for admin endpoints."""
-    username = os.environ.get('ADMIN_USERNAME')
-    password = os.environ.get('ADMIN_PASSWORD')
+    username = _admin_env_value('ADMIN_USERNAME', form_id)
+    password = _admin_env_value('ADMIN_PASSWORD', form_id)
     if not username or not password:
         return Response(
             'Admin access not configured. Set ADMIN_USERNAME and ADMIN_PASSWORD.',
@@ -342,11 +459,125 @@ def _require_admin_auth():
     return None
 
 
+def _require_admin_magic_link_auth(form_id: str):
+    allowed_emails = get_admin_allowed_emails(form_id)
+    if not allowed_emails:
+        return Response(
+            'Admin access not configured. Set ADMIN_ALLOWED_EMAILS.',
+            503,
+            {'Content-Type': 'text/plain; charset=utf-8'},
+        )
+    if _current_admin_session(form_id):
+        return None
+    return _admin_auth_error_response(form_id)
+
+
+def build_admin_magic_link_email(form_id: str, email: str, login_link: str) -> tuple[str, str, str, str]:
+    title = f'Connexion admin {form_id}'
+    subject = f'[{form_id}] Votre lien de connexion admin'
+    text_body = (
+        "Bonjour,\n\n"
+        f"Voici votre lien de connexion pour l'espace d'administration {form_id}.\n\n"
+        f"{login_link}\n\n"
+        f"Ce lien expire dans {get_admin_magic_link_ttl_seconds(form_id) // 60} minutes.\n"
+        "Si vous n'etes pas a l'origine de cette demande, ignorez cet email.\n\n"
+        "Cordialement,\n"
+        f"{get_eures_mail_signature_name()}\n"
+        "EURES beta\n"
+    )
+    html_body = f"""
+<!doctype html>
+<html lang="fr">
+  <body style="margin:0;padding:0;background:#f4efe6;font-family:Georgia,'Times New Roman',serif;color:#1f1f1f;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f4efe6;padding:24px 12px;">
+      <tr>
+        <td align="center">
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:680px;background:#fffdf9;border:1px solid #e7dcc7;border-radius:18px;overflow:hidden;">
+            <tr>
+              <td style="padding:28px 32px;background:linear-gradient(135deg,#0f2742 0%,#004494 100%);color:#ffffff;">
+                <div style="font-size:13px;letter-spacing:1.6px;text-transform:uppercase;opacity:0.82;">Administration securisee</div>
+                <h1 style="margin:10px 0 0;font-size:30px;line-height:1.2;font-weight:700;">{escape(title)}</h1>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:28px 32px;">
+                <p style="margin:0 0 18px;font-size:16px;line-height:1.7;">Bonjour,</p>
+                <p style="margin:0 0 18px;font-size:16px;line-height:1.7;">
+                  Voici votre lien de connexion pour l'espace d'administration <strong>{escape(form_id)}</strong>.
+                </p>
+                <p style="margin:0 0 24px;">
+                  <a href="{escape(login_link)}" style="display:inline-block;padding:14px 18px;border-radius:12px;background:#004494;color:#ffffff;text-decoration:none;font-size:16px;font-weight:700;">Se connecter a l'administration</a>
+                </p>
+                <p style="margin:0 0 12px;font-size:15px;line-height:1.7;color:#3b3b3b;">
+                  Ce lien expire dans <strong>{get_admin_magic_link_ttl_seconds(form_id) // 60} minutes</strong>.
+                </p>
+                <p style="margin:0;font-size:14px;line-height:1.7;color:#6a645c;">
+                  Si vous n'etes pas a l'origine de cette demande, ignorez cet email.
+                </p>
+                <p style="margin:22px 0 0;font-size:15px;line-height:1.7;">
+                  Cordialement,<br><br>{escape(get_eures_mail_signature_name())}<br>EURES beta
+                </p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
+""".strip()
+    return normalize_email(email), subject, text_body, html_body
+
+
+def _render_admin_login_page(form_id: str, message: str = '', error: str = '') -> Response:
+    html = f"""<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Connexion admin {escape(form_id)}</title>
+  </head>
+  <body style="margin:0;background:#f4efe6;font-family:Georgia,'Times New Roman',serif;color:#1f1f1f;">
+    <main style="max-width:620px;margin:64px auto;padding:0 20px;">
+      <section style="background:#fffdf9;border:1px solid #e7dcc7;border-radius:20px;overflow:hidden;box-shadow:0 10px 30px rgba(15,39,66,0.08);">
+        <header style="padding:28px 32px;background:linear-gradient(135deg,#0f2742 0%,#004494 100%);color:#fff;">
+          <div style="font-size:13px;letter-spacing:1.6px;text-transform:uppercase;opacity:0.82;">Administration securisee</div>
+          <h1 style="margin:10px 0 0;font-size:34px;line-height:1.1;">EURES beta</h1>
+        </header>
+        <div style="padding:28px 32px;">
+          <p style="margin:0 0 18px;font-size:16px;line-height:1.7;">
+            Saisissez votre adresse email autorisee pour recevoir un lien de connexion a usage limite dans le temps.
+          </p>
+          {f'<p style="margin:0 0 16px;padding:12px 14px;border-radius:12px;background:#eef6ed;color:#215732;font-size:15px;line-height:1.6;">{escape(message)}</p>' if message else ''}
+          {f'<p style="margin:0 0 16px;padding:12px 14px;border-radius:12px;background:#fbebeb;color:#7c2222;font-size:15px;line-height:1.6;">{escape(error)}</p>' if error else ''}
+          <form method="post" action="{escape(url_for('admin_login', form_id=form_id))}">
+            <label for="email" style="display:block;margin:0 0 8px;font-size:14px;font-weight:700;">Adresse email</label>
+            <input id="email" name="email" type="email" required autocomplete="email" style="width:100%;box-sizing:border-box;border:1px solid #d9ccb4;border-radius:12px;padding:14px 16px;font-size:16px;">
+            <button type="submit" style="margin-top:18px;border:0;border-radius:12px;background:#004494;color:#fff;padding:14px 18px;font-size:16px;font-weight:700;cursor:pointer;">Recevoir un lien de connexion</button>
+          </form>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>"""
+    return Response(html, mimetype='text/html')
+
+
 def admin_required(fn):
     """Decorator to protect admin pages and APIs with basic auth."""
     @wraps(fn)
     def wrapper(*args, **kwargs):
-        denied = _require_admin_auth()
+        form_id = str(kwargs.get('form_id') or '')
+        mode = get_admin_auth_mode(form_id)
+        if mode == 'magic_link':
+            denied = _require_admin_magic_link_auth(form_id)
+        elif mode == 'hybrid':
+            denied = _require_admin_magic_link_auth(form_id)
+            if denied is not None:
+                basic_denied = _require_admin_basic_auth(form_id)
+                denied = None if basic_denied is None else denied
+        else:
+            denied = _require_admin_basic_auth(form_id)
         if denied:
             return denied
         return fn(*args, **kwargs)
@@ -4261,6 +4492,135 @@ def serve_form_file(form_id: str, filename: str):
     if not resolved:
         return jsonify({'error': 'File not found'}), 404
     return send_from_directory(FORMS_DIR / form_id, resolved)
+
+
+@app.route('/admin/<form_id>/login', methods=['GET', 'POST'])
+def admin_login(form_id: str):
+    """Magic-link login entrypoint for admin surfaces."""
+    proxied = maybe_proxy_eures_request(form_id)
+    if proxied:
+        return proxied
+    mode = get_admin_auth_mode(form_id)
+    if mode not in {'magic_link', 'hybrid'}:
+        return Response('Admin magic-link login is not enabled for this form.', status=404, mimetype='text/plain')
+
+    if _current_admin_session(form_id):
+        return redirect(url_for('serve_admin', form_id=form_id))
+
+    if request.method == 'GET':
+        return _render_admin_login_page(form_id)
+
+    payload = request.get_json(silent=True) if request.is_json else {}
+    email = normalize_email((payload or {}).get('email') or request.form.get('email'))
+    allowed_emails = get_admin_allowed_emails(form_id)
+    generic_message = "Si cette adresse est autorisee, un lien de connexion vient d'etre envoye."
+    rate_limit_seconds = get_admin_magic_link_rate_limit_seconds(form_id)
+
+    if not email:
+        if request.is_json:
+            return jsonify({'error': 'Email required'}), 400
+        return _render_admin_login_page(form_id, error='Veuillez saisir une adresse email valide.')
+
+    app.logger.info(
+        'Admin magic link requested',
+        extra={
+            'form_id': form_id,
+            'email': email,
+            'client_ip': request.headers.get('X-Forwarded-For', request.remote_addr or ''),
+        },
+    )
+
+    if email in allowed_emails:
+        throttle_key = (form_id, email)
+        now = time.time()
+        last_sent = _ADMIN_MAGIC_LINK_REQUESTS.get(throttle_key, 0.0)
+        if rate_limit_seconds and now - last_sent < rate_limit_seconds:
+            app.logger.warning(
+                'Admin magic link throttled',
+                extra={'form_id': form_id, 'email': email},
+            )
+        else:
+            token = get_admin_magic_link_serializer(form_id).dumps({
+                'form_id': form_id,
+                'email': email,
+            })
+            login_link = url_for('admin_magic_link_consume', form_id=form_id, token=token, _external=True)
+            recipient, subject, text_body, html_body = build_admin_magic_link_email(form_id, email, login_link)
+            send_brevo_transactional_email(recipient, subject, text_body, html_body)
+            _ADMIN_MAGIC_LINK_REQUESTS[throttle_key] = now
+            app.logger.info(
+                'Admin magic link sent',
+                extra={'form_id': form_id, 'email': email},
+            )
+    else:
+        app.logger.warning(
+            'Admin magic link rejected by allowlist',
+            extra={'form_id': form_id, 'email': email},
+        )
+
+    if request.is_json:
+        return jsonify({'ok': True, 'message': generic_message}), 200
+    return _render_admin_login_page(form_id, message=generic_message)
+
+
+@app.route('/admin/<form_id>/magic-login', methods=['GET'])
+def admin_magic_link_consume(form_id: str):
+    """Validate one signed admin login link and open a session."""
+    proxied = maybe_proxy_eures_request(form_id)
+    if proxied:
+        return proxied
+    mode = get_admin_auth_mode(form_id)
+    if mode not in {'magic_link', 'hybrid'}:
+        return Response('Admin magic-link login is not enabled for this form.', status=404, mimetype='text/plain')
+
+    token = str(request.args.get('token') or '').strip()
+    if not token:
+        return Response('Lien invalide : token manquant.', status=400, mimetype='text/plain')
+
+    try:
+        payload = get_admin_magic_link_serializer(form_id).loads(
+            token,
+            max_age=get_admin_magic_link_ttl_seconds(form_id),
+        )
+    except SignatureExpired:
+        return Response('Lien invalide ou expire.', status=400, mimetype='text/plain')
+    except BadSignature:
+        return Response('Lien invalide ou expire.', status=400, mimetype='text/plain')
+    except Exception as e:
+        app.logger.exception('Admin magic link decode failed')
+        return Response(f'Erreur de lecture du lien : {e}', status=500, mimetype='text/plain')
+
+    email = normalize_email(payload.get('email'))
+    token_form_id = str(payload.get('form_id') or '').strip()
+    if token_form_id != form_id or email not in get_admin_allowed_emails(form_id):
+        app.logger.warning(
+            'Admin magic link rejected after decode',
+            extra={'form_id': form_id, 'email': email},
+        )
+        return Response('Lien invalide : acces non autorise.', status=403, mimetype='text/plain')
+
+    _set_admin_session(form_id, email)
+    app.logger.info(
+        'Admin magic link session opened',
+        extra={'form_id': form_id, 'email': email},
+    )
+    return redirect(url_for('serve_admin', form_id=form_id))
+
+
+@app.route('/admin/<form_id>/logout', methods=['GET', 'POST'])
+def admin_logout(form_id: str):
+    """Close one admin session."""
+    proxied = maybe_proxy_eures_request(form_id)
+    if proxied:
+        return proxied
+    identity = _current_admin_session(form_id)
+    _clear_admin_session(form_id)
+    if identity:
+        app.logger.info(
+            'Admin session closed',
+            extra={'form_id': form_id, 'email': identity.get('email', '')},
+        )
+    return redirect(url_for('admin_login', form_id=form_id))
 
 
 @app.route('/admin/<form_id>/')

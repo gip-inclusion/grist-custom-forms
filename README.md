@@ -49,17 +49,31 @@ uv run flask run -p 5005
 ### Admin console
 
 - URL: `/admin/<form-id>/` (example: `/admin/fagerh/`)
-- Required env vars:
+- Required env vars for legacy basic auth:
   - `ADMIN_USERNAME`
   - `ADMIN_PASSWORD`
+- Required env vars for EURES magic-link auth:
+  - `SESSION_SECRET`
+  - `ADMIN_AUTH_MODE_EURES_BETA=magic_link` or `hybrid`
+  - `ADMIN_ALLOWED_EMAILS_EURES_BETA`
   - `BREVO_API_KEY` for transactional emails
   - `BREVO_FROM_EMAIL` for transactional emails
   - `BREVO_FROM_NAME` optional, defaults to `EURES beta`
+- Optional hardening for magic-link auth:
+  - `ADMIN_MAGIC_LINK_TTL_SECONDS_EURES_BETA` default `900`
+  - `ADMIN_MAGIC_LINK_RATE_LIMIT_SECONDS_EURES_BETA` default `60`
+  - `SESSION_COOKIE_SECURE=true`
 - The admin page shows:
   - total questionnaires,
   - in progress (`saisie_terminee != true`),
   - completed (`saisie_terminee == true`),
   - searchable/filterable list.
+- Magic-link flow:
+  - `GET /admin/eures-beta/login`
+  - submit an allowed email address
+  - receive a short-lived signed login link by email
+  - open the link to create a secure admin session
+  - `GET /admin/eures-beta/logout` closes the session
 - EURES beta exposes an extra Brevo diagnostic:
   - `GET /api/forms/eures-beta/admin/brevo-health?check=1`
   - checks env configuration and Brevo API reachability without sending an email
