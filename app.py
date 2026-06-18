@@ -2929,6 +2929,81 @@ def build_brevo_matching_email(row: dict) -> tuple[str, str, str, str]:
     return recipient, subject, body_text, body_html
 
 
+def build_brevo_candidate_matching_notification_email(row: dict) -> tuple[str, str, str, str]:
+    """Build the candidate notification email once the profile is sent to the employer."""
+    candidat = row.get('candidat', {}) if isinstance(row.get('candidat'), dict) else {}
+    employeur = row.get('employeur', {}) if isinstance(row.get('employeur'), dict) else {}
+    recipient = normalize_email(candidat.get('email', ''))
+    if not recipient:
+        raise RuntimeError('Candidate email is missing for accepted matching notification.')
+
+    employeur_name = str(employeur.get('employeur') or 'un employeur partenaire').strip() or 'un employeur partenaire'
+    candidate_name = str(candidat.get('nom') or '').strip()
+    hello = "Bonjour,"
+    if candidate_name:
+        hello = "Bonjour,"
+
+    subject = f"[EURES beta] Votre candidature a ete transmise a {employeur_name}"
+    body_text = (
+        f"{hello}\n\n"
+        f"Nous vous informons que votre candidature a ete transmise a {employeur_name}.\n\n"
+        "Si cet employeur souhaite echanger avec vous, il pourra vous contacter directement.\n\n"
+        "Nous vous invitons a :\n"
+        "- repondre aux appels masques ou aux numeros inconnus,\n"
+        "- verifier regulierement votre boite e-mail,\n"
+        "- consulter egalement vos courriers indesirables ou spams.\n\n"
+        "Cordialement,\n"
+        f"{get_eures_mail_signature_name()}\n"
+        "EURES beta\n"
+    )
+
+    body_html = f"""
+<!doctype html>
+<html lang="fr">
+  <body style="margin:0;padding:0;background:#f4efe6;font-family:Georgia,'Times New Roman',serif;color:#1f1f1f;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f4efe6;padding:24px 12px;">
+      <tr>
+        <td align="center">
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:680px;background:#fffdf9;border:1px solid #e7dcc7;border-radius:18px;overflow:hidden;">
+            <tr>
+              <td style="padding:28px 32px;background:linear-gradient(135deg,#0f2742 0%,#004494 100%);color:#ffffff;">
+                <div style="font-size:13px;letter-spacing:1.6px;text-transform:uppercase;opacity:0.82;">EURES beta</div>
+                <h1 style="margin:10px 0 0;font-size:30px;line-height:1.2;font-weight:700;">Candidature transmise</h1>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:28px 32px;">
+                <p style="margin:0 0 18px;font-size:16px;line-height:1.7;">Bonjour,</p>
+                <p style="margin:0 0 18px;font-size:16px;line-height:1.7;">
+                  Nous vous informons que votre candidature a ete transmise a
+                  <strong>{escape(employeur_name)}</strong>.
+                </p>
+                <p style="margin:0 0 18px;font-size:16px;line-height:1.7;">
+                  Si cet employeur souhaite echanger avec vous, il pourra vous contacter directement.
+                </p>
+                <div style="border:1px solid #e7dcc7;border-radius:14px;background:#f8f4ec;padding:18px 20px;">
+                  <p style="margin:0 0 10px;font-size:15px;line-height:1.6;"><strong>Nous vous invitons a :</strong></p>
+                  <ul style="margin:0;padding-left:20px;font-size:15px;line-height:1.7;color:#3b3b3b;">
+                    <li>repondre aux appels masques ou aux numeros inconnus,</li>
+                    <li>verifier regulierement votre boite e-mail,</li>
+                    <li>consulter egalement vos courriers indesirables ou spams.</li>
+                  </ul>
+                </div>
+                <p style="margin:22px 0 0;font-size:15px;line-height:1.7;">
+                  Cordialement,<br><br>{escape(get_eures_mail_signature_name())}<br>EURES beta
+                </p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
+""".strip()
+    return recipient, subject, body_text, body_html
+
+
 def send_brevo_transactional_email(to_email: str, subject: str, text_body: str, html_body: str):
     """Send one transactional email via Brevo."""
     brevo = get_brevo_config()
@@ -3878,6 +3953,7 @@ def admin_eures_matching_decision(form_id: str, record_id: int):
         updated = fetch_record_by_id(config['doc_id'], EURES_MATCHINGS_TABLE, record_id, headers)
         updated_fields = updated.get('fields', {}) if isinstance(updated, dict) else {}
         brevo_result = None
+        candidate_brevo_result = None
         if decision == 'accepted':
             matching_rows = list_eures_admin_matchings(status='all')
             matching_row = next((row for row in matching_rows if int(row.get('record_id') or 0) == record_id), None)
@@ -3885,6 +3961,13 @@ def admin_eures_matching_decision(form_id: str, record_id: int):
                 raise RuntimeError('Accepted matching could not be reloaded for email delivery.')
             to_email, subject, text_body, html_body = build_brevo_matching_email(matching_row)
             brevo_result = send_brevo_transactional_email(to_email, subject, text_body, html_body)
+            candidate_to_email, candidate_subject, candidate_text_body, candidate_html_body = build_brevo_candidate_matching_notification_email(matching_row)
+            candidate_brevo_result = send_brevo_transactional_email(
+                candidate_to_email,
+                candidate_subject,
+                candidate_text_body,
+                candidate_html_body,
+            )
             update_matching_record_by_id(
                 config['doc_id'],
                 record_id,
@@ -3899,6 +3982,14 @@ def admin_eures_matching_decision(form_id: str, record_id: int):
                     'to_email': to_email,
                 },
             )
+            app.logger.info(
+                'EURES accepted matching candidate notification sent',
+                extra={
+                    'form_id': form_id,
+                    'record_id': record_id,
+                    'to_email': candidate_to_email,
+                },
+            )
         return jsonify({
             'ok': True,
             'record_id': record_id,
@@ -3908,6 +3999,7 @@ def admin_eures_matching_decision(form_id: str, record_id: int):
             'admin_decision_note': updated_fields.get('admin_decision_note', note),
             'email_sent': decision == 'accepted',
             'email_result': brevo_result,
+            'candidate_email_result': candidate_brevo_result,
         }), 200
     except Exception as e:
         app.logger.exception('EURES matching decision update failed')

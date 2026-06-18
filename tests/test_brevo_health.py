@@ -103,6 +103,27 @@ class BrevoHealthTest(unittest.TestCase):
         self.assertIn('Je vais le contacter', text_body)
         self.assertIn('julie.barthelemy@arhis.lu', recipient)
 
+    def test_build_candidate_matching_notification_email_mentions_company_and_spam_check(self):
+        row = {
+            'record_id': 57,
+            'candidat': {
+                'nom': 'Romuald Bernard',
+                'email': 'romuald08150@gmail.com',
+            },
+            'employeur': {
+                'employeur': 'ARHIS HR SOLUTIONS',
+            },
+        }
+
+        recipient, subject, text_body, html_body = app.build_brevo_candidate_matching_notification_email(row)
+
+        self.assertEqual(recipient, 'romuald08150@gmail.com')
+        self.assertIn('ARHIS HR SOLUTIONS', subject)
+        self.assertIn('ARHIS HR SOLUTIONS', text_body)
+        self.assertIn('appels masques', text_body)
+        self.assertIn('spams', text_body)
+        self.assertIn('ARHIS HR SOLUTIONS', html_body)
+
     def test_build_candidate_invitation_email_uses_simple_french_greeting(self):
         invitation = {
             'role': 'candidate',
