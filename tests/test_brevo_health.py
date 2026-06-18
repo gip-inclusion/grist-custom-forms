@@ -67,6 +67,39 @@ class BrevoHealthTest(unittest.TestCase):
         self.assertEqual(response.status_code, 503)
         self.assertEqual(response.get_json()['status'], 'degraded')
 
+    def test_build_matching_email_falls_back_to_employer_email_field(self):
+        row = {
+            'record_id': 57,
+            'raisons': ['langues: français'],
+            'candidat': {
+                'nom': 'Romuald Bernard',
+                'email': 'romuald08150@gmail.com',
+                'telephone': '',
+                'ville': '',
+                'pays': 'France',
+                'metier': 'Missions polyvalentes',
+                'langues': 'français',
+                'mobilite': 'Luxembourg',
+                'disponibilite': 'Dès que possible',
+            },
+            'employeur': {
+                'employeur': 'ARHIS',
+                'contact': '',
+                'email': 'julie.barthelemy@arhis.lu',
+                'poste': 'Nettoyage et entretien',
+                'pays': 'Luxembourg',
+                'langues_requises': 'français',
+                'date_debut': 'Dans les prochains jours',
+            },
+        }
+
+        recipient, subject, text_body, html_body = app.build_brevo_matching_email(row)
+
+        self.assertEqual(recipient, 'julie.barthelemy@arhis.lu')
+        self.assertIn('Nettoyage et entretien', subject)
+        self.assertIn('Je vais le contacter', text_body)
+        self.assertIn('julie.barthelemy@arhis.lu', recipient)
+
 
 if __name__ == '__main__':
     unittest.main()

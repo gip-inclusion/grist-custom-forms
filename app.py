@@ -12,6 +12,7 @@ Environment variables:
 """
 
 import os
+import re
 import json
 import time
 import csv
@@ -2588,6 +2589,37 @@ def _extract_employer_contact_email(contact_value: str) -> str:
     return raw
 
 
+def _extract_first_email(value) -> str:
+    raw = str(value or '').strip()
+    if not raw or '@' not in raw:
+        return ''
+    match = re.search(r'([A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,})', raw, flags=re.IGNORECASE)
+    return normalize_email(match.group(1)) if match else ''
+
+
+def _resolve_employer_recipient(employeur: dict) -> str:
+    if not isinstance(employeur, dict):
+        return ''
+
+    direct_candidates = [
+        employeur.get('contact', ''),
+        employeur.get('email', ''),
+        employeur.get('mail', ''),
+        employeur.get('contact_email', ''),
+        employeur.get('email_contact', ''),
+    ]
+    for value in direct_candidates:
+        email = _extract_employer_contact_email(value) or _extract_first_email(value)
+        if email:
+            return email
+
+    for value in employeur.values():
+        email = _extract_first_email(value)
+        if email:
+            return email
+    return ''
+
+
 def _format_email_multiline(value: str) -> str:
     text = str(value or '').strip()
     if not text:
@@ -2607,7 +2639,7 @@ def build_brevo_matching_email(row: dict) -> tuple[str, str, str, str]:
     """Build recipient, subject, text body and HTML body for one accepted matching."""
     candidat = row.get('candidat', {}) if isinstance(row.get('candidat'), dict) else {}
     employeur = row.get('employeur', {}) if isinstance(row.get('employeur'), dict) else {}
-    recipient = _extract_employer_contact_email(employeur.get('contact', ''))
+    recipient = _resolve_employer_recipient(employeur)
     if not recipient:
         raise RuntimeError('Employer contact email is missing for accepted matching.')
 
@@ -2890,6 +2922,7 @@ def list_eures_admin_matchings(status: str = 'all') -> list[dict]:
             'employeur': {
                 'employeur': besoin.get('employeur', ''),
                 'contact': besoin.get('contact', ''),
+                'email': _coalesce_row_value(besoin, 'email', 'mail', 'contact_email', 'email_contact'),
                 'pays': besoin.get('pays', ''),
                 'poste': besoin.get('poste', ''),
                 'langues_requises': besoin.get('langues_requises', ''),
