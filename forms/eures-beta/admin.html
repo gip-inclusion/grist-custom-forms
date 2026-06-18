@@ -422,12 +422,16 @@
 
     .invitation-layout {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
       gap: 1rem;
+      align-items: start;
     }
 
     .invitation-layout > * {
       min-width: 0;
+      display: grid;
+      gap: 0.9rem;
+      padding: 0.25rem;
     }
 
     .form-split {
@@ -481,6 +485,18 @@
       display: grid;
       gap: 0.8rem;
       min-width: 0;
+      width: 100%;
+    }
+
+    .csv-box > * {
+      min-width: 0;
+    }
+
+    .csv-actions {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, max-content));
+      gap: 0.65rem;
+      justify-content: start;
     }
 
     .inline-actions {
@@ -524,6 +540,14 @@
 
     .inline-actions input[type="file"] {
       display: none;
+    }
+
+    #csv-text,
+    #csv-example {
+      width: 100%;
+      max-width: 100%;
+      display: block;
+      box-sizing: border-box;
     }
 
     .invitation-list {
@@ -723,6 +747,10 @@
         grid-template-columns: 1fr;
       }
 
+      .csv-actions {
+        grid-template-columns: 1fr;
+      }
+
       .detail-row {
         grid-template-columns: 1fr;
         gap: 0.25rem;
@@ -789,7 +817,7 @@
           </div>
 
           <div class="admin-card invitation-layout">
-            <div>
+            <div class="invitation-panel">
               <div class="section-title">Ajouter une invitation unitaire</div>
               <div class="form-split">
                 <div class="field-stack">
@@ -842,10 +870,10 @@
               <p class="help-text">Cette action crée une ligne dans la table <code>Invitations</code> avec le statut <code>invitation_a_envoyer</code>.</p>
             </div>
 
-            <div>
+            <div class="invitation-panel">
               <div class="section-title">Importer un CSV</div>
               <div class="csv-box">
-                <div class="inline-actions">
+                <div class="inline-actions csv-actions">
                   <label class="file-label" for="csv-file">Choisir un fichier CSV</label>
                   <input id="csv-file" type="file" accept=".csv,text/csv">
                   <button class="btn-secondary" id="csv-sample-btn" type="button">Charger un exemple</button>
