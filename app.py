@@ -616,6 +616,7 @@ def proxy_eures_public_request(path: str = '') -> Response:
         'content-length',
         'connection',
         'transfer-encoding',
+        'content-encoding',
     }
     for key, value in upstream_response.headers.items():
         lowered = key.lower()
