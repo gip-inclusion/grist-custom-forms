@@ -8,6 +8,9 @@ import app
 class BrevoHealthTest(unittest.TestCase):
     def setUp(self):
         self.client = app.app.test_client()
+        self.admin_auth = {
+            'Authorization': 'Basic YWRtaW46QWRtaW5FdXJlczIwMjY='
+        }
 
     def test_get_brevo_health_detects_missing_configuration(self):
         with patch.dict(os.environ, {}, clear=False):
@@ -120,6 +123,56 @@ class BrevoHealthTest(unittest.TestCase):
         self.assertIn("domaine officiel", text_body)
         self.assertIn("France Travail", html_body)
         self.assertIn("formulaires.inclusion.gouv.fr", html_body)
+
+    @patch.object(app, 'send_brevo_transactional_email')
+    @patch.object(app, 'update_eures_invitation_record_by_id')
+    @patch.object(app, 'fetch_table_records')
+    @patch.object(app, 'get_eures_invitations_config')
+    def test_admin_invitation_send_allows_force_resend_for_sent_rows(
+        self,
+        get_eures_invitations_config,
+        fetch_table_records,
+        update_eures_invitation_record_by_id,
+        send_brevo_transactional_email,
+    ):
+        get_eures_invitations_config.return_value = {
+            'doc_id': 'doc-id',
+            'table_id': 'Invitations',
+            'api_key': 'grist-key',
+        }
+        fetch_table_records.return_value = [{
+            'id': 159,
+            'fields': {
+                'role': 'candidate',
+                'email': 'candidate@example.org',
+                'first_name': 'Marie',
+                'language': 'fr',
+                'invite_token': 'token-demo',
+                'invite_link': 'https://formulaires.inclusion.gouv.fr/forms/eures-beta/questionnaire-candidate?lang=fr&invite_token=token-demo',
+                'invitation_status': 'invitation_envoyee',
+            },
+        }]
+        send_brevo_transactional_email.return_value = {'messageId': 'brevo-123'}
+
+        with patch.dict(os.environ, {
+            'ADMIN_USERNAME': 'admin',
+            'ADMIN_PASSWORD': 'AdminEures2026',
+        }, clear=False):
+            response = self.client.post(
+                '/api/forms/eures-beta/admin/invitations/send',
+                json={'record_ids': [159], 'force_resend': True},
+                headers=self.admin_auth,
+            )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.get_json()
+        self.assertTrue(payload['ok'])
+        self.assertTrue(payload['force_resend'])
+        self.assertEqual(len(payload['sent']), 1)
+        self.assertEqual(payload['sent'][0]['record_id'], 159)
+        self.assertTrue(payload['sent'][0]['force_resend'])
+        send_brevo_transactional_email.assert_called_once()
+        update_eures_invitation_record_by_id.assert_called_once()
 
 
 if __name__ == '__main__':

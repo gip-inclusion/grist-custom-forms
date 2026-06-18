@@ -3614,6 +3614,7 @@ def admin_eures_invitations_send(form_id: str):
 
     data = request.get_json() or {}
     requested_ids = data.get('record_ids') or []
+    force_resend = bool(data.get('force_resend'))
     if requested_ids and not isinstance(requested_ids, list):
         return jsonify({'error': 'record_ids must be a list'}), 400
 
@@ -3643,7 +3644,10 @@ def admin_eures_invitations_send(form_id: str):
             record_id = int(rec.get('id') or 0)
             fields = rec.get('fields', {}) if isinstance(rec.get('fields'), dict) else {}
             current_status = str(fields.get('invitation_status') or '').strip().lower()
-            if current_status not in EURES_INVITATION_SENDABLE_STATUSES:
+            sendable_statuses = EURES_INVITATION_SENDABLE_STATUSES
+            if force_resend and requested_ids:
+                sendable_statuses = EURES_INVITATION_ALLOWED_STATUSES - {'desactivee'}
+            if current_status not in sendable_statuses:
                 skipped.append({
                     'record_id': record_id,
                     'email': fields.get('email', ''),
@@ -3667,6 +3671,7 @@ def admin_eures_invitations_send(form_id: str):
                     'record_id': record_id,
                     'email': recipient,
                     'brevo_message_id': str((brevo_result or {}).get('messageId') or ''),
+                    'force_resend': force_resend,
                 })
             except Exception as e:
                 error_message = str(e)
@@ -3688,6 +3693,7 @@ def admin_eures_invitations_send(form_id: str):
         return jsonify({
             'ok': True,
             'requested': len(target_records),
+            'force_resend': force_resend,
             'sent': sent,
             'skipped': skipped,
             'errors': errors,
