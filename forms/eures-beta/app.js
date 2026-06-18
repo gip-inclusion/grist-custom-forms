@@ -2069,6 +2069,26 @@ function showFirstInvalidControl(form, setStatus, t) {
   return true;
 }
 
+function validateVisibleCheckboxGroup(form, name, label, setStatus, t, min = 1, max = Infinity) {
+  const visibleInputs = Array.from(form.querySelectorAll(`input[name="${name}"]`)).filter((input) => isVisibleControl(input));
+  if (!visibleInputs.length) {
+    return true;
+  }
+
+  const checkedCount = visibleInputs.filter((input) => input.checked).length;
+  if (checkedCount < min) {
+    setStatus(`${t.common.validation.required} ${label}. ${t.common.validation.checkHighlighted}`, "error");
+    focusField(visibleInputs[0]);
+    return false;
+  }
+  if (checkedCount > max) {
+    setStatus(`${t.common.validation.invalidValue} ${label}. ${t.common.validation.checkHighlighted}`, "error");
+    focusField(visibleInputs[0]);
+    return false;
+  }
+  return true;
+}
+
 function nav(page, lang, t) {
   return `
     <header class="site-header">
@@ -2677,7 +2697,7 @@ function salaryExpectationFields(baseName, content) {
       </div>
       <label class="field">
         <span>${content.salaryFields.min}</span>
-        <input type="number" name="${baseName}_salary_min" min="0" step="0.01">
+        <input type="number" name="${baseName}_salary_min" min="0" step="0.01" required>
       </label>
     </div>
   `;
@@ -2695,11 +2715,11 @@ function salaryOfferFields(baseName, content) {
       </div>
       <label class="field">
         <span>${content.salaryFields.min}</span>
-        <input type="number" name="${baseName}_salary_min" min="0" step="0.01">
+        <input type="number" name="${baseName}_salary_min" min="0" step="0.01" required>
       </label>
       <label class="field">
         <span>${content.salaryFields.max}</span>
-        <input type="number" name="${baseName}_salary_max" min="0" step="0.01">
+        <input type="number" name="${baseName}_salary_max" min="0" step="0.01" required>
       </label>
     </div>
   `;
@@ -2910,7 +2930,7 @@ function candidateTallyQuestionnaireTemplate(lang, t) {
                 </label>
                 <label class="field">
                   <span>${content.questions.phone}</span>
-                  <input type="tel" name="tally_q34">
+                  <input type="tel" name="tally_q34" required>
                 </label>
               </div>
               <label class="field">
@@ -3489,19 +3509,12 @@ function attachEmployerTallyBehavior(lang, t) {
   }
 
   function validateCheckboxGroup(name, label, min = 1, max = Infinity) {
-    const visibleInputs = Array.from(form.querySelectorAll(`input[name="${name}"]`)).filter((input) => isVisibleControl(input));
-    if (!visibleInputs.length) {
-      return true;
-    }
-    const checkedCount = visibleInputs.filter((input) => input.checked).length;
-    if (checkedCount < min) {
-      setStatus(`${content.errors.chooseAtLeastOne} ${label}. ${t.common.validation.checkHighlighted}`, "error");
-      focusField(visibleInputs[0]);
-      return false;
-    }
-    if (checkedCount > max) {
-      setStatus(`${content.errors.chooseBetween} ${label}. ${t.common.validation.checkHighlighted}`, "error");
-      focusField(visibleInputs[0]);
+    if (!validateVisibleCheckboxGroup(form, name, label, setStatus, t, min, max)) {
+      if (min === 1 && max === Infinity) {
+        setStatus(`${content.errors.chooseAtLeastOne} ${label}. ${t.common.validation.checkHighlighted}`, "error");
+      } else if (max !== Infinity) {
+        setStatus(`${content.errors.chooseBetween} ${label}. ${t.common.validation.checkHighlighted}`, "error");
+      }
       return false;
     }
     return true;
@@ -3526,6 +3539,7 @@ function attachEmployerTallyBehavior(lang, t) {
 
     const validations = [
       ["tally_q01", content.questions.q01],
+      ...employerTallyMeta.languageRows.map((row) => [row.field, `${content.questions.q02} - ${row.label}`, 1, 1]),
       ["tally_q05", content.questions.q05],
       ["tally_q06", content.questions.q06],
       ["tally_q07", content.questions.q07],
@@ -3689,6 +3703,49 @@ function attachCandidateTallyBehavior(lang, t) {
 
     if (showFirstInvalidControl(form, setStatus, t)) {
       return;
+    }
+
+    const hasTargetCountry = candidateTallyMeta.countryRows.some((row) => {
+      return Array.from(form.querySelectorAll(`input[name="${row.field}"]`)).some((input) => input.checked);
+    });
+    if (!hasTargetCountry) {
+      setStatus(`${t.common.validation.required} ${content.overviewMatrixTitle}. ${t.common.validation.checkHighlighted}`, "error");
+      focusField(form.querySelector(`input[name="${candidateTallyMeta.countryRows[0].field}"]`));
+      return;
+    }
+    if (!validateVisibleCheckboxGroup(form, "tally_q02", content.mobilityTypeTitle, setStatus, t, 1, 2)) {
+      return;
+    }
+    if (!validateVisibleCheckboxGroup(form, "tally_q19", content.questions.q19, setStatus, t, 1, 5)) {
+      return;
+    }
+    if (
+      (form.querySelector('input[name="tally_q06"]:checked') || {}).value === "J’ai des contraintes ou préférences horaires" &&
+      !candidateTallyMeta.scheduleRows.every((row) => validateVisibleCheckboxGroup(form, row.field, `${content.questions.q07} - ${row.label}`, setStatus, t))
+    ) {
+      return;
+    }
+    for (const row of candidateTallyMeta.documentsRows) {
+      if (!validateVisibleCheckboxGroup(form, row.field, `${content.questions.q10} - ${row.label}`, setStatus, t, 1, 1)) {
+        return;
+      }
+    }
+    for (const row of candidateTallyMeta.languageRows) {
+      if (!validateVisibleCheckboxGroup(form, row.field, `${content.questions.q18} - ${row.label}`, setStatus, t, 1, 1)) {
+        return;
+      }
+    }
+    const sectorGroupValidations = [
+      ["tally_q20", content.sectorTitles.vente],
+      ["tally_q22", content.sectorTitles.nettoyage],
+      ["tally_q25", content.sectorTitles.hotel],
+      ["tally_q27", content.sectorTitles.agri],
+      ["tally_q29", content.sectorTitles.polyvalent],
+    ];
+    for (const [name, label] of sectorGroupValidations) {
+      if (!validateVisibleCheckboxGroup(form, name, label, setStatus, t, 1, 4)) {
+        return;
+      }
     }
 
     const { values, files } = collectValues();
@@ -3886,7 +3943,7 @@ function questionnaireTemplate(page, lang, t, data) {
                   </label>
                   <label class="field">
                     <span>${data.fields.phone}</span>
-                    <input type="tel" name="candidate_phone">
+                    <input type="tel" name="candidate_phone" required>
                   </label>
                   <label class="field">
                     <span>${data.fields.city}</span>
@@ -3976,7 +4033,7 @@ function questionnaireTemplate(page, lang, t, data) {
                   </label>
                   <label class="field">
                     <span>${data.fields.phone}</span>
-                    <input type="tel" name="employer_phone">
+                    <input type="tel" name="employer_phone" required>
                   </label>
                 </div>
                 <label class="field">
@@ -4089,6 +4146,28 @@ function attachQuestionnaireBehavior(page, lang, t) {
 
     if (showFirstInvalidControl(form, setStatus, t)) {
       return;
+    }
+
+    if (role === "candidate") {
+      if (!validateVisibleCheckboxGroup(form, "candidate_target_countries", data.fields.targetCountries, setStatus, t)) {
+        return;
+      }
+      if (!validateVisibleCheckboxGroup(form, "candidate_sectors", data.fields.sectors, setStatus, t)) {
+        return;
+      }
+      if (!validateVisibleCheckboxGroup(form, "candidate_languages", data.fields.languages, setStatus, t)) {
+        return;
+      }
+    } else {
+      if (!validateVisibleCheckboxGroup(form, "employer_languages_required", data.fields.languagesRequired, setStatus, t)) {
+        return;
+      }
+      if (!validateVisibleCheckboxGroup(form, "employer_installation_support", data.fields.installationSupport, setStatus, t)) {
+        return;
+      }
+      if (!validateVisibleCheckboxGroup(form, "employer_critical_criteria", data.fields.criticalCriteria, setStatus, t)) {
+        return;
+      }
     }
 
     const fields = aggregateFormData(form);
