@@ -3441,6 +3441,10 @@ def get_record(form_id: str):
     proxied = maybe_proxy_eures_request(form_id)
     if proxied:
         return proxied
+    if form_id == 'eures-beta':
+        return jsonify({
+            'error': 'Public record lookup is disabled for this form.',
+        }), 403
     config = get_form_config(form_id, request.args.get('flow_role'))
     if not config:
         return jsonify({'error': f'Unknown form: {form_id}'}), 404
@@ -3641,6 +3645,10 @@ def check_finess(form_id: str):
     proxied = maybe_proxy_eures_request(form_id)
     if proxied:
         return proxied
+    if form_id == 'eures-beta':
+        return jsonify({
+            'error': 'Public FINESS lookup is disabled for this form.',
+        }), 403
     config = get_form_config(form_id)
     if not config:
         return jsonify({'error': f'Unknown form: {form_id}'}), 404
@@ -3674,6 +3682,10 @@ def recover_by_email(form_id: str):
     proxied = maybe_proxy_eures_request(form_id)
     if proxied:
         return proxied
+    if form_id == 'eures-beta':
+        return jsonify({
+            'error': 'Public questionnaire recovery is disabled for this form.',
+        }), 403
     config = get_form_config(form_id)
     if not config:
         return jsonify({'error': f'Unknown form: {form_id}'}), 404
