@@ -975,7 +975,7 @@ def build_brevo_invitation_email(invitation_row: dict) -> tuple[str, str, str, s
         preheader = "Experimental service: answer a few questions and explore opportunities through European mobility."
         title = "Explore new professional opportunities in Europe"
         body_lines = [
-            "EURES beta is currently testing a simple service for people interested in mobility within Europe.",
+            "EURES beta is an initiative led by EURES and France Travail to support professional mobility in the Greater Region.",
             "Are you open to a professional opportunity in Luxembourg, in a neighbouring country or elsewhere in Europe? EURES beta helps you discover opportunities aligned with your profile and your mobility plans.",
             "In just a few minutes, describe your experience, skills and preferences so we can identify opportunities that may interest you.",
         ]
@@ -987,7 +987,7 @@ def build_brevo_invitation_email(invitation_row: dict) -> tuple[str, str, str, s
         preheader = "Experimenteller Service: Beantworten Sie ein paar Fragen und entdecken Sie Möglichkeiten durch europäische Mobilität."
         title = "Entdecken Sie neue berufliche Chancen in Europa"
         body_lines = [
-            "EURES beta testet derzeit einen einfachen Service für Menschen, die an beruflicher Mobilität in Europa interessiert sind.",
+            "EURES beta ist eine von EURES und France Travail getragene Initiative zur Unterstützung der beruflichen Mobilität in der Großregion.",
             "Sind Sie offen für eine berufliche Erfahrung in Luxemburg, in einem Nachbarland oder anderswo in Europa? EURES beta hilft Ihnen, Chancen zu entdecken, die zu Ihrem Profil und Ihrem Mobilitätsprojekt passen.",
             "Beschreiben Sie in wenigen Minuten Ihre Erfahrung, Ihre Kompetenzen und Ihre Präferenzen, damit passende Möglichkeiten identifiziert werden können.",
         ]
@@ -999,7 +999,7 @@ def build_brevo_invitation_email(invitation_row: dict) -> tuple[str, str, str, s
         preheader = "Expérimentation en cours : répondez à quelques questions et explorez les possibilités offertes par la mobilité européenne."
         title = "Explorez de nouvelles opportunités professionnelles en Europe"
         body_lines = [
-            "EURES beta teste actuellement un service simple pour les personnes intéressées par la mobilité professionnelle en Europe.",
+            "EURES beta est une expérimentation portée par EURES et France Travail pour faciliter la mobilité professionnelle dans la Grande Région.",
             "Vous êtes ouvert à une expérience professionnelle au Luxembourg, dans un pays voisin ou ailleurs en Europe ? EURES beta vous aide à découvrir des opportunités adaptées à votre profil et à votre projet de mobilité.",
             "En quelques minutes, décrivez votre expérience, vos compétences et vos préférences pour nous permettre d’identifier des opportunités susceptibles de vous intéresser.",
         ]
