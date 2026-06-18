@@ -617,6 +617,9 @@ def admin_required(fn):
     @wraps(fn)
     def wrapper(*args, **kwargs):
         form_id = str(kwargs.get('form_id') or '')
+        proxied = maybe_proxy_eures_request(form_id)
+        if proxied is not None:
+            return proxied
         mode = get_admin_auth_mode(form_id)
         if mode == 'magic_link':
             denied = _require_admin_magic_link_auth(form_id)

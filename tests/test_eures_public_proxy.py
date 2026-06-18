@@ -40,6 +40,27 @@ class EuresPublicProxyTest(unittest.TestCase):
         requests_request.assert_not_called()
         response.close()
 
+    @patch.object(app.requests, 'request')
+    def test_public_domain_proxies_eures_admin_before_local_auth(self, requests_request):
+        requests_request.return_value = Mock(
+            status_code=302,
+            content=b'',
+            headers={'Location': '/admin/eures-beta/login'},
+        )
+
+        response = self.client.get(
+            '/admin/eures-beta',
+            base_url='https://formulaires.inclusion.gouv.fr',
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.headers['Location'], '/admin/eures-beta/login')
+        requests_request.assert_called_once()
+        self.assertEqual(
+            requests_request.call_args.kwargs['url'],
+            'https://eures-beta.osc-fr1.scalingo.io/admin/eures-beta',
+        )
+
 
 if __name__ == '__main__':
     unittest.main()
