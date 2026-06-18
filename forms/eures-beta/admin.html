@@ -915,6 +915,7 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
               <button id="reload-btn" type="button">Rafraîchir</button>
             </div>
             <div class="status-line" id="status-line">Chargement...</div>
+            <div class="status-line" id="brevo-status-line">Vérification Brevo...</div>
           </div>
         </section>
 
@@ -936,6 +937,7 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
         rows: [],
         loading: false,
       },
+      brevo: null,
     };
 
     function esc(value) {
@@ -953,6 +955,23 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
 
     function setStatus(targetId, message) {
       document.getElementById(targetId).textContent = message;
+    }
+
+    function renderBrevoStatus(health) {
+      const message = health?.message || "état inconnu";
+      if (!health?.configured) {
+        setStatus("brevo-status-line", `Brevo : configuration incomplète. ${message}`);
+        return;
+      }
+      if (health.api_ok === false) {
+        setStatus("brevo-status-line", `Brevo : incident API. ${message}`);
+        return;
+      }
+      if (health.api_ok === true) {
+        setStatus("brevo-status-line", `Brevo : opérationnel. ${message}`);
+        return;
+      }
+      setStatus("brevo-status-line", `Brevo : configuration OK. ${message}`);
     }
 
     function scoreStatusLabel(row) {
@@ -1445,6 +1464,18 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
       }
     }
 
+    async function loadBrevoHealth() {
+      try {
+        const response = await fetch(`${apiUrl("/admin/brevo-health")}?check=1`, { credentials: "same-origin" });
+        const payload = await response.json();
+        const health = payload?.brevo || null;
+        state.brevo = health;
+        renderBrevoStatus(health);
+      } catch (error) {
+        setStatus("brevo-status-line", `Brevo : vérification impossible. ${error.message || "erreur réseau"}`);
+      }
+    }
+
     async function submitDecision(recordId, decision, note) {
       setStatus("status-line", `Enregistrement de la décision ${decision}...`);
       try {
@@ -1550,7 +1581,10 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
     document.getElementById("invite-reload-btn").addEventListener("click", loadInvitations);
     document.getElementById("invite-filter-status").addEventListener("change", loadInvitations);
     document.getElementById("invite-filter-search").addEventListener("input", renderInvitations);
-    document.getElementById("reload-btn").addEventListener("click", loadMatchings);
+    document.getElementById("reload-btn").addEventListener("click", async () => {
+      await loadBrevoHealth();
+      await loadMatchings();
+    });
     document.getElementById("filter-status").addEventListener("change", loadMatchings);
     document.getElementById("filter-search").addEventListener("input", renderMatchingRows);
     for (const button of document.querySelectorAll("[data-tab]")) {
@@ -1558,6 +1592,7 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
     }
     activateTab("invitations");
     loadInvitations();
+    loadBrevoHealth();
     loadMatchings();
   </script>
 </body>

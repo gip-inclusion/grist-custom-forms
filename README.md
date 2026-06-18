@@ -52,11 +52,20 @@ uv run flask run -p 5005
 - Required env vars:
   - `ADMIN_USERNAME`
   - `ADMIN_PASSWORD`
+  - `BREVO_API_KEY` for transactional emails
+  - `BREVO_FROM_EMAIL` for transactional emails
+  - `BREVO_FROM_NAME` optional, defaults to `EURES beta`
 - The admin page shows:
   - total questionnaires,
   - in progress (`saisie_terminee != true`),
   - completed (`saisie_terminee == true`),
   - searchable/filterable list.
+- EURES beta exposes an extra Brevo diagnostic:
+  - `GET /api/forms/eures-beta/admin/brevo-health?check=1`
+  - checks env configuration and Brevo API reachability without sending an email
+- Global deep health check:
+  - `GET /health?deep=1`
+  - returns HTTP `503` when Brevo is broken or unreachable, which is suitable for a monitor or scheduled probe
 
 ### TODO
 

@@ -419,6 +419,63 @@ def get_brevo_config() -> dict:
     }
 
 
+def get_brevo_health(check_api: bool = False, timeout: int = 8) -> dict:
+    """Return a sanitized Brevo health snapshot suitable for admin and health checks."""
+    brevo = get_brevo_config()
+    configured = bool(brevo['api_key'] and brevo['from_email'])
+    result = {
+        'configured': configured,
+        'from_email': brevo['from_email'],
+        'from_name': brevo['from_name'],
+        'api_ok': None,
+        'http_status': None,
+        'status': 'ok' if configured else 'missing_config',
+        'message': 'Brevo configuration complete.' if configured else 'BREVO_API_KEY or BREVO_FROM_EMAIL is missing.',
+    }
+    if not configured or not check_api:
+        return result
+
+    try:
+        response = requests.get(
+            'https://api.brevo.com/v3/account',
+            headers={
+                'accept': 'application/json',
+                'api-key': brevo['api_key'],
+            },
+            timeout=timeout,
+        )
+        result['http_status'] = response.status_code
+        if response.ok:
+            result['api_ok'] = True
+            result['status'] = 'ok'
+            result['message'] = 'Brevo API reachable.'
+            return result
+
+        result['api_ok'] = False
+        result['status'] = 'api_error'
+        try:
+            payload = response.json()
+        except ValueError:
+            payload = {}
+        result['message'] = str(payload.get('message') or payload.get('error') or f'Brevo API returned HTTP {response.status_code}.')
+        return result
+    except requests.RequestException as exc:
+        result['api_ok'] = False
+        result['status'] = 'request_error'
+        result['message'] = str(exc)
+        return result
+
+
+def ensure_brevo_ready(check_api: bool = False) -> dict:
+    """Raise a readable error when Brevo is not ready for transactional sends."""
+    health = get_brevo_health(check_api=check_api)
+    if not health['configured']:
+        raise RuntimeError('Brevo configuration is incomplete. Missing BREVO_API_KEY or BREVO_FROM_EMAIL.')
+    if check_api and health['api_ok'] is not True:
+        raise RuntimeError(f"Brevo API check failed: {health['message']}")
+    return health
+
+
 def _now_iso_utc() -> str:
     return datetime.utcnow().isoformat() + 'Z'
 
@@ -3549,6 +3606,22 @@ def admin_eures_matchings(form_id: str):
         return jsonify({'error': str(e)}), 500
 
 
+@app.route('/api/forms/<form_id>/admin/brevo-health', methods=['GET'])
+@admin_required
+def admin_eures_brevo_health(form_id: str):
+    """Admin API: return the current Brevo configuration and API reachability state."""
+    if form_id != 'eures-beta':
+        return jsonify({'error': f'Unknown admin form: {form_id}'}), 404
+
+    check_api = str(request.args.get('check') or '').strip().lower() in {'1', 'true', 'yes', 'on'}
+    health = get_brevo_health(check_api=check_api)
+    status_code = 200 if health['configured'] and (not check_api or health['api_ok'] is True) else 503
+    return jsonify({
+        'ok': status_code == 200,
+        'brevo': health,
+    }), status_code
+
+
 @app.route('/api/forms/<form_id>/admin/matchings/<int:record_id>/decision', methods=['POST'])
 @admin_required
 def admin_eures_matching_decision(form_id: str, record_id: int):
@@ -3572,6 +3645,9 @@ def admin_eures_matching_decision(form_id: str, record_id: int):
         if not existing:
             return jsonify({'error': 'Matching not found'}), 404
         existing_fields = existing.get('fields', {}) if isinstance(existing.get('fields'), dict) else {}
+
+        if decision == 'accepted':
+            ensure_brevo_ready(check_api=True)
 
         auth = request.authorization
         decided_by = auth.username if auth and auth.username else 'admin'
@@ -3777,7 +3853,15 @@ def public_stats(form_id: str):
 @app.route('/health')
 def health():
     """Health check endpoint."""
-    return jsonify({'status': 'ok'})
+    deep = str(request.args.get('deep') or '').strip().lower() in {'1', 'true', 'yes', 'on'}
+    payload = {'status': 'ok'}
+    if deep:
+        brevo = get_brevo_health(check_api=True)
+        payload['brevo'] = brevo
+        if not brevo['configured'] or brevo['api_ok'] is not True:
+            payload['status'] = 'degraded'
+            return jsonify(payload), 503
+    return jsonify(payload)
 
 
 @app.route('/')
