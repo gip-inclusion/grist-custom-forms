@@ -648,6 +648,21 @@ def maybe_proxy_eures_request(form_id: str) -> Response | None:
     return None
 
 
+def get_default_home_form_id() -> str:
+    """Resolve which form should be used as the root redirect for the current app."""
+    configured = str(os.environ.get('DEFAULT_HOME_FORM_ID') or '').strip()
+    if configured:
+        return configured
+
+    host = str(request.host or '').split(':', 1)[0].strip().lower()
+    if host in {
+        'eures-beta.osc-fr1.scalingo.io',
+        'www.eures-beta.osc-fr1.scalingo.io',
+    }:
+        return 'eures-beta'
+    return 'fagerh'
+
+
 def get_eures_email_action_serializer() -> URLSafeSerializer:
     secret = (
         os.environ.get('EURES_EMAIL_ACTION_SECRET', '').strip()
@@ -4061,7 +4076,7 @@ def health():
 
 @app.route('/')
 def index():
-    return redirect('/forms/fagerh/')
+    return redirect(f"/forms/{get_default_home_form_id()}/")
 
 
 # Static file serving for forms and frontend
