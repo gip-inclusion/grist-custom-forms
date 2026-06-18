@@ -4006,6 +4006,57 @@ def admin_eures_matching_decision(form_id: str, record_id: int):
         return jsonify({'error': str(e)}), 500
 
 
+@app.route('/api/forms/<form_id>/admin/matchings/<int:record_id>/candidate-email', methods=['POST'])
+@admin_required
+def admin_eures_matching_candidate_email(form_id: str, record_id: int):
+    """Admin API: resend only the candidate notification email for one matching."""
+    proxied = maybe_proxy_eures_request(form_id)
+    if proxied:
+        return proxied
+    if form_id != 'eures-beta':
+        return jsonify({'error': f'Unknown admin matching form: {form_id}'}), 404
+
+    config = get_eures_matching_config()
+    if not config:
+        return jsonify({'error': 'EURES beta matching configuration is incomplete.'}), 500
+
+    try:
+        ensure_brevo_ready(check_api=True)
+        matching_rows = list_eures_admin_matchings(status='all')
+        matching_row = next((row for row in matching_rows if int(row.get('record_id') or 0) == record_id), None)
+        if not matching_row:
+            return jsonify({'error': 'Matching not found'}), 404
+
+        candidate_to_email, candidate_subject, candidate_text_body, candidate_html_body = (
+            build_brevo_candidate_matching_notification_email(matching_row)
+        )
+        candidate_brevo_result = send_brevo_transactional_email(
+            candidate_to_email,
+            candidate_subject,
+            candidate_text_body,
+            candidate_html_body,
+        )
+
+        app.logger.info(
+            'EURES matching candidate notification resent',
+            extra={
+                'form_id': form_id,
+                'record_id': record_id,
+                'to_email': candidate_to_email,
+            },
+        )
+        return jsonify({
+            'ok': True,
+            'record_id': record_id,
+            'candidate_email_sent': True,
+            'candidate_email': candidate_to_email,
+            'candidate_email_result': candidate_brevo_result,
+        }), 200
+    except Exception as e:
+        app.logger.exception('EURES matching candidate notification resend failed')
+        return jsonify({'error': str(e)}), 500
+
+
 @app.route('/api/forms/<form_id>/admin/matchings/<int:record_id>/workflow', methods=['POST'])
 @admin_required
 def admin_eures_matching_workflow(form_id: str, record_id: int):
