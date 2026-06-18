@@ -50,6 +50,7 @@ app.config.update(
     SESSION_COOKIE_SAMESITE='Lax',
     SESSION_COOKIE_SECURE=str(os.environ.get('SESSION_COOKIE_SECURE', 'true')).strip().lower() not in {'0', 'false', 'no', 'off'},
     PERMANENT_SESSION_LIFETIME=timedelta(hours=8),
+    SESSION_REFRESH_EACH_REQUEST=False,
 )
 
 _ADMIN_MAGIC_LINK_REQUESTS: dict[tuple[str, str], float] = {}
@@ -388,6 +389,20 @@ def get_admin_magic_link_rate_limit_seconds(form_id: str) -> int:
     return max(0, min(seconds, 3600))
 
 
+def get_admin_session_ttl_seconds(form_id: str) -> int:
+    raw = _admin_env_value('ADMIN_SESSION_TTL_SECONDS', form_id, default='3600')
+    try:
+        ttl = int(raw)
+    except Exception:
+        ttl = 3600
+    return max(300, min(ttl, 86400))
+
+
+def is_admin_session_persistent(form_id: str) -> bool:
+    raw = _admin_env_value('ADMIN_SESSION_PERSISTENT', form_id, default='false').strip().lower()
+    return raw in {'1', 'true', 'yes', 'on'}
+
+
 def get_admin_magic_link_serializer(form_id: str) -> URLSafeTimedSerializer:
     secret = (
         os.environ.get('SESSION_SECRET', '').strip()
@@ -411,18 +426,29 @@ def _current_admin_session(form_id: str) -> dict | None:
     email = normalize_email(payload.get('email'))
     if not email or email not in get_admin_allowed_emails(form_id):
         return None
+    authenticated_at_raw = str(payload.get('authenticated_at') or '')
+    try:
+        authenticated_at = datetime.fromisoformat(authenticated_at_raw.replace('Z', '+00:00'))
+    except Exception:
+        _clear_admin_session(form_id)
+        return None
+    session_age = datetime.now(timezone.utc) - authenticated_at.astimezone(timezone.utc)
+    if session_age.total_seconds() > get_admin_session_ttl_seconds(form_id):
+        _clear_admin_session(form_id)
+        return None
     return {
         'email': email,
-        'authenticated_at': str(payload.get('authenticated_at') or ''),
+        'authenticated_at': authenticated_at_raw,
     }
 
 
 def _set_admin_session(form_id: str, email: str):
-    session.permanent = True
+    session.permanent = is_admin_session_persistent(form_id)
     session[_admin_session_key(form_id)] = {
         'email': normalize_email(email),
         'authenticated_at': _now_iso_utc(),
     }
+    session.modified = True
 
 
 def _clear_admin_session(form_id: str):
