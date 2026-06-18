@@ -2020,6 +2020,33 @@ function focusField(element) {
   element.scrollIntoView({ behavior: "smooth", block: "center" });
 }
 
+function getFieldContainer(element) {
+  return element?.closest(".field, .fieldset, .matrix-question, .matrix-wrap, .form-section") || null;
+}
+
+function clearInvalidState(scope) {
+  const root = scope instanceof HTMLElement ? scope : document;
+  root.querySelectorAll(".is-invalid").forEach((node) => node.classList.remove("is-invalid"));
+  root.querySelectorAll(".field-error").forEach((node) => node.remove());
+}
+
+function setInlineFieldError(element, message) {
+  const container = getFieldContainer(element);
+  if (!container) {
+    return;
+  }
+  container.classList.add("is-invalid");
+  const existing = container.querySelector(".field-error");
+  if (existing) {
+    existing.textContent = message;
+    return;
+  }
+  const note = document.createElement("p");
+  note.className = "field-error";
+  note.textContent = message;
+  container.appendChild(note);
+}
+
 function describeInvalidField(element, t) {
   const label = getFieldLabel(element);
   if (element.validity?.valueMissing) {
@@ -2056,12 +2083,15 @@ function findFirstInvalidControl(form) {
 }
 
 function showFirstInvalidControl(form, setStatus, t) {
+  clearInvalidState(form);
   const invalid = findFirstInvalidControl(form);
   if (!invalid) {
     return false;
   }
 
-  setStatus(`${describeInvalidField(invalid, t)} ${t.common.validation.checkHighlighted}`, "error");
+  const message = `${describeInvalidField(invalid, t)} ${t.common.validation.checkHighlighted}`;
+  setStatus(message, "error");
+  setInlineFieldError(invalid, message);
   focusField(invalid);
   if (typeof invalid.reportValidity === "function") {
     invalid.reportValidity();
@@ -2070,6 +2100,7 @@ function showFirstInvalidControl(form, setStatus, t) {
 }
 
 function validateVisibleCheckboxGroup(form, name, label, setStatus, t, min = 1, max = Infinity) {
+  clearInvalidState(form.querySelector(`input[name="${name}"]`) || form);
   const visibleInputs = Array.from(form.querySelectorAll(`input[name="${name}"]`)).filter((input) => isVisibleControl(input));
   if (!visibleInputs.length) {
     return true;
@@ -2077,12 +2108,16 @@ function validateVisibleCheckboxGroup(form, name, label, setStatus, t, min = 1, 
 
   const checkedCount = visibleInputs.filter((input) => input.checked).length;
   if (checkedCount < min) {
-    setStatus(`${t.common.validation.required} ${label}. ${t.common.validation.checkHighlighted}`, "error");
+    const message = `${t.common.validation.required} ${label}. ${t.common.validation.checkHighlighted}`;
+    setStatus(message, "error");
+    setInlineFieldError(visibleInputs[0], message);
     focusField(visibleInputs[0]);
     return false;
   }
   if (checkedCount > max) {
-    setStatus(`${t.common.validation.invalidValue} ${label}. ${t.common.validation.checkHighlighted}`, "error");
+    const message = `${t.common.validation.invalidValue} ${label}. ${t.common.validation.checkHighlighted}`;
+    setStatus(message, "error");
+    setInlineFieldError(visibleInputs[0], message);
     focusField(visibleInputs[0]);
     return false;
   }
@@ -3522,6 +3557,20 @@ function attachEmployerTallyBehavior(lang, t) {
 
   form.addEventListener("change", () => toggleEmployerConditionBlocks(form));
   form.addEventListener("input", () => toggleEmployerConditionBlocks(form));
+  form.addEventListener("change", (event) => {
+    const container = getFieldContainer(event.target);
+    if (container) {
+      container.classList.remove("is-invalid");
+      container.querySelectorAll(".field-error").forEach((node) => node.remove());
+    }
+  });
+  form.addEventListener("input", (event) => {
+    const container = getFieldContainer(event.target);
+    if (container) {
+      container.classList.remove("is-invalid");
+      container.querySelectorAll(".field-error").forEach((node) => node.remove());
+    }
+  });
   toggleEmployerConditionBlocks(form);
   enforceCheckboxLimit(form, limitedGroups, 4, setStatus, content.errors.maxFour);
 
@@ -3690,6 +3739,20 @@ function attachCandidateTallyBehavior(lang, t) {
 
   form.addEventListener("change", () => toggleConditionBlocks(form));
   form.addEventListener("input", () => toggleConditionBlocks(form));
+  form.addEventListener("change", (event) => {
+    const container = getFieldContainer(event.target);
+    if (container) {
+      container.classList.remove("is-invalid");
+      container.querySelectorAll(".field-error").forEach((node) => node.remove());
+    }
+  });
+  form.addEventListener("input", (event) => {
+    const container = getFieldContainer(event.target);
+    if (container) {
+      container.classList.remove("is-invalid");
+      container.querySelectorAll(".field-error").forEach((node) => node.remove());
+    }
+  });
   toggleConditionBlocks(form);
   enforceCheckboxLimit(form, limitedGroups, 4, setStatus, content.errors.maxFour);
 
@@ -4140,6 +4203,21 @@ function attachQuestionnaireBehavior(page, lang, t) {
     statusEl.textContent = message;
     statusEl.dataset.state = state;
   }
+
+  form.addEventListener("change", (event) => {
+    const container = getFieldContainer(event.target);
+    if (container) {
+      container.classList.remove("is-invalid");
+      container.querySelectorAll(".field-error").forEach((node) => node.remove());
+    }
+  });
+  form.addEventListener("input", (event) => {
+    const container = getFieldContainer(event.target);
+    if (container) {
+      container.classList.remove("is-invalid");
+      container.querySelectorAll(".field-error").forEach((node) => node.remove());
+    }
+  });
 
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
