@@ -553,6 +553,10 @@ def get_eures_mail_signature_name() -> str:
     return os.environ.get('EURES_SIGNATURE_NAME', 'Eric Barthélémy').strip() or 'Eric Barthélémy'
 
 
+def get_eures_mail_signature_role() -> str:
+    return os.environ.get('EURES_SIGNATURE_ROLE', 'Conseiller EURES - France Travail').strip() or 'Conseiller EURES - France Travail'
+
+
 def get_public_app_base_url() -> str:
     configured = os.environ.get('PUBLIC_APP_BASE_URL', '').strip()
     if configured:
@@ -931,6 +935,7 @@ def build_brevo_invitation_email(invitation_row: dict) -> tuple[str, str, str, s
     invite_token = str(invitation_row.get('invite_token') or '').strip() or _generate_eures_invitation_token()
     invite_link = str(invitation_row.get('invite_link') or '').strip() or _build_eures_invitation_link(role, language, invite_token)
     signature_name = get_eures_mail_signature_name()
+    signature_role = get_eures_mail_signature_role()
     invite_host = urlparse(invite_link).netloc or get_public_app_base_url().replace('https://', '').replace('http://', '')
 
     greeting = first_name or company_name or ''
@@ -979,23 +984,26 @@ def build_brevo_invitation_email(invitation_row: dict) -> tuple[str, str, str, s
             ]
             footer = "EURES beta ist ein experimenteller Service von EURES und France Travail zur Unterstützung von Rekrutierung und beruflicher Mobilität in der Großregion."
         else:
-            subject = "[EURES beta / EURES / France Travail] Invitation à compléter le questionnaire employeur"
-            preheader = "Invitation officielle à compléter le questionnaire employeur EURES beta."
+            subject = "[EURES / France Travail] Questionnaire employeur - expérimentation EURES beta"
+            preheader = "Dans le cadre de ma mission de conseiller EURES au sein de France Travail, je vous invite à compléter un court questionnaire."
             body_lines = [
-                "Vous recevez ce message dans le cadre de l'expérimentation EURES beta portée par EURES et France Travail dans la Grande Région.",
-                "Ce questionnaire permet de décrire votre besoin de recrutement de manière structurée afin d'identifier ensuite des profils potentiellement compatibles.",
-                "Le questionnaire prend environ 5 minutes.",
+                "Je me permets de vous contacter dans le cadre de ma mission de conseiller EURES au sein de France Travail.",
+                "Dans le cadre d'une expérimentation EURES actuellement menée autour des besoins de recrutement et de la mobilité professionnelle dans la Grande Région, nous recueillons des besoins d'employeurs partenaires afin d'identifier plus facilement des profils susceptibles de correspondre.",
+                "Pour cela, je vous invite à compléter le court formulaire ci-dessous. Il vous prendra seulement quelques minutes.",
             ]
-            title = "Invitation officielle à compléter le questionnaire employeur"
-            cta = "Accéder au questionnaire employeur"
-            cta_note = f"Si le bouton ne fonctionne pas, vous pouvez copier cette adresse dans votre navigateur : {invite_link}"
-            trust_title = "Comment vérifier qu'il s'agit d'un message authentique"
+            title = "Questionnaire employeur EURES beta"
+            cta = "Accéder au formulaire"
+            cta_note = "Le questionnaire permet de préciser votre besoin, vos contraintes de recrutement et les conditions proposées afin d'étudier ensuite d'éventuelles mises en relation."
+            trust_title = "Repères de vérification"
             trust_lines = [
                 f"Le lien du questionnaire renvoie vers le domaine officiel : {invite_host}",
-                "L'expéditeur mentionne explicitement EURES beta, EURES et France Travail.",
-                "En cas de doute, n'ouvrez pas le lien immédiatement et vérifiez d'abord le domaine affiché.",
+                "L'expéditeur mentionne explicitement EURES, France Travail et l'expérimentation EURES beta.",
+                "En cas de doute, vous pouvez vérifier le domaine affiché avant d'ouvrir le lien.",
             ]
-            footer = "EURES beta est un service expérimental porté par EURES et France Travail pour faciliter les recrutements et la mobilité professionnelle dans la Grande Région."
+            footer = (
+                "EURES est le réseau européen de coopération pour l'emploi, qui facilite les recrutements "
+                "et les opportunités professionnelles en Europe."
+            )
 
         text_body = (
             f"{hello}\n\n"
@@ -1003,7 +1011,7 @@ def build_brevo_invitation_email(invitation_row: dict) -> tuple[str, str, str, s
             + "\n\n".join(body_lines)
             + f"\n\n{trust_title}\n"
             + "\n".join(f"- {line}" for line in trust_lines)
-            + f"\n\n{cta}: {invite_link}\n\n{cta_note}\n\n{footer}\n\n{signature_name}\nEURES beta\n"
+            + f"\n\n{cta}: {invite_link}\n\n{cta_note}\n\n{footer}\n\nCordialement,\n\n{signature_name}\n{signature_role}\n"
         )
         body_html = f"""
 <!doctype html>
@@ -1058,7 +1066,7 @@ def build_brevo_invitation_email(invitation_row: dict) -> tuple[str, str, str, s
             <tr>
               <td style="padding:18px 28px 24px;border-top:1px solid #e7ecf4;">
                 <p style="margin:0 0 10px;font-size:13px;line-height:1.6;color:#627892;">{escape(footer)}</p>
-                <p style="margin:0;font-size:13px;line-height:1.6;color:#627892;">{escape(signature_name)}<br>EURES beta</p>
+                <p style="margin:0;font-size:13px;line-height:1.6;color:#627892;">Cordialement,<br><br>{escape(signature_name)}<br>{escape(signature_role)}</p>
               </td>
             </tr>
           </table>
@@ -1107,32 +1115,37 @@ def build_brevo_invitation_email(invitation_row: dict) -> tuple[str, str, str, s
         ]
         footer = "EURES beta ist ein experimenteller Service von EURES und France Travail zur Unterstützung beruflicher Mobilität in der Großregion."
     else:
-        subject = "[EURES beta / EURES / France Travail] Invitation à compléter le questionnaire candidat"
-        preheader = "Invitation officielle à compléter le questionnaire candidat EURES beta."
+        subject = "[EURES / France Travail] Questionnaire candidat - expérimentation EURES beta"
+        preheader = "Dans le cadre de ma mission de conseiller EURES au sein de France Travail, je vous invite à compléter un court questionnaire."
         body_lines = [
-            "Vous recevez ce message dans le cadre de l'expérimentation EURES beta portée par EURES et France Travail dans la Grande Région.",
-            "Ce questionnaire nous permet de mieux comprendre votre profil, votre projet de mobilité et les opportunités professionnelles susceptibles de vous correspondre.",
-            "Le questionnaire prend environ 5 minutes.",
+            "Je me permets de vous contacter dans le cadre de ma mission de conseiller EURES au sein de France Travail.",
+            "Dans le cadre d'une expérimentation EURES actuellement menée autour des besoins de recrutement, j'ai consulté votre profil ainsi que vos coordonnées publiés sur le portail EURES afin d'identifier des candidats dont le profil pourrait correspondre aux besoins actuellement déposés par des employeurs partenaires.",
+            "Pour cela, je vous invite à compléter le court formulaire ci-dessous. Il vous prendra seulement quelques minutes.",
         ]
-        title = "Invitation officielle à compléter le questionnaire candidat"
-        cta = "Accéder au questionnaire candidat"
-        cta_note = f"Si le bouton ne fonctionne pas, vous pouvez copier cette adresse dans votre navigateur : {invite_link}"
-        trust_title = "Comment vérifier qu'il s'agit d'un message authentique"
+        title = "Questionnaire candidat EURES beta"
+        cta = "Accéder au formulaire"
+        cta_note = "Ce questionnaire permettra de vérifier que votre profil, vos disponibilités et vos attentes correspondent bien aux besoins actuellement recherchés."
+        trust_title = "Repères de vérification"
         trust_lines = [
             f"Le lien du questionnaire renvoie vers le domaine officiel : {invite_host}",
-            "L'expéditeur mentionne explicitement EURES beta, EURES et France Travail.",
-            "En cas de doute, vérifiez d'abord le domaine affiché avant d'ouvrir le lien.",
+            "L'expéditeur mentionne explicitement EURES, France Travail et l'expérimentation EURES beta.",
+            "En cas de doute, vous pouvez vérifier le domaine affiché avant d'ouvrir le lien.",
         ]
-        footer = "EURES beta est un service expérimental porté par EURES et France Travail pour faciliter la mobilité professionnelle dans la Grande Région."
+        footer = (
+            "Si votre profil correspond aux critères recherchés, votre candidature pourra ensuite être proposée "
+            "à l'employeur, qui vous contactera directement pour échanger avec vous.\n\n"
+            "EURES est le réseau européen de coopération pour l'emploi, qui facilite les recrutements et les "
+            "opportunités professionnelles en Europe."
+        )
 
-    text_body = (
-        f"{hello}\n\n"
-        f"{title}\n\n"
-        + "\n\n".join(body_lines)
-        + f"\n\n{trust_title}\n"
-        + "\n".join(f"- {line}" for line in trust_lines)
-        + f"\n\n{cta}: {invite_link}\n\n{cta_note}\n\n{footer}\n\n{signature_name}\nEURES beta\n"
-    )
+        text_body = (
+            f"{hello}\n\n"
+            f"{title}\n\n"
+            + "\n\n".join(body_lines)
+            + f"\n\n{trust_title}\n"
+            + "\n".join(f"- {line}" for line in trust_lines)
+            + f"\n\n{cta}: {invite_link}\n\n{cta_note}\n\n{footer}\n\nCordialement,\n\n{signature_name}\n{signature_role}\n"
+        )
     html_body = f"""
 <!doctype html>
 <html lang="{escape(language)}">
@@ -1186,7 +1199,7 @@ def build_brevo_invitation_email(invitation_row: dict) -> tuple[str, str, str, s
             <tr>
               <td style="padding:18px 28px 24px;border-top:1px solid #e7ecf4;">
                 <p style="margin:0 0 10px;font-size:13px;line-height:1.6;color:#627892;">{escape(footer)}</p>
-                <p style="margin:0;font-size:13px;line-height:1.6;color:#627892;">{escape(signature_name)}<br>EURES beta</p>
+                <p style="margin:0;font-size:13px;line-height:1.6;color:#627892;">Cordialement,<br><br>{escape(signature_name)}<br>{escape(signature_role)}</p>
               </td>
             </tr>
           </table>
