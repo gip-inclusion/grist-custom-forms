@@ -880,7 +880,7 @@ def build_brevo_invitation_email(invitation_row: dict) -> tuple[str, str, str, s
             preheader = "Experimental service: describe your hiring need in less than 5 minutes."
             title = "Are you having trouble recruiting?"
             body_lines = [
-                "EURES beta is currently testing a simple service to support recruitment across the Greater Region.",
+                "EURES beta is an initiative led by EURES and France Travail to support recruitment and professional mobility in the Greater Region.",
                 "In just a few minutes, describe your hiring need and access a wider pool of candidates open to European mobility.",
                 "The more precise your need is, the easier it is for us to identify relevant profiles.",
             ]
@@ -892,7 +892,7 @@ def build_brevo_invitation_email(invitation_row: dict) -> tuple[str, str, str, s
             preheader = "Experimenteller Service: Beschreiben Sie Ihren Bedarf in weniger als 5 Minuten."
             title = "Haben Sie Schwierigkeiten bei der Rekrutierung?"
             body_lines = [
-                "EURES beta testet derzeit einen einfachen Service, um Rekrutierungen in der Großregion zu erleichtern.",
+                "EURES beta ist eine von EURES und France Travail getragene Initiative zur Unterstützung von Rekrutierung und beruflicher Mobilität in der Großregion.",
                 "Beschreiben Sie in wenigen Minuten Ihren Bedarf und erhalten Sie Zugang zu einem größeren Pool von Kandidatinnen und Kandidaten, die für europäische Mobilität offen sind.",
                 "Je präziser Ihr Bedarf ist, desto besser können passende Profile identifiziert werden.",
             ]
@@ -904,7 +904,7 @@ def build_brevo_invitation_email(invitation_row: dict) -> tuple[str, str, str, s
             preheader = "Expérimentation en cours : décrivez votre besoin en moins de 5 minutes."
             title = "Vous avez des difficultés à recruter ?"
             body_lines = [
-                "EURES beta teste actuellement un service simple pour faciliter les recrutements dans la Grande Région.",
+                "EURES beta est une expérimentation portée par EURES et France Travail pour faciliter les recrutements et la mobilité professionnelle dans la Grande Région.",
                 "En quelques minutes, décrivez votre besoin et accédez à un vivier plus large de candidats ouverts à la mobilité européenne.",
                 "Plus votre besoin est précis, plus nous serons en mesure d'identifier des profils susceptibles de correspondre à votre recherche.",
             ]
