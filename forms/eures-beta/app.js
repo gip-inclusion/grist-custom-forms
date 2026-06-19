@@ -2855,10 +2855,10 @@ function salaryOfferFields(baseName, content) {
       <p class="mini-note">${content.salaryOfferIntro}</p>
     </div>
     <div class="form-grid">
-      <div class="field">
-        <span>${content.salaryFields.type}</span>
+      <fieldset class="fieldset">
+        <legend>${content.salaryFields.type}</legend>
         ${radioPills(`${baseName}_salary_type`, content.salaryUnits)}
-      </div>
+      </fieldset>
       <label class="field">
         <span>${content.salaryFields.min}</span>
         <input type="number" name="${baseName}_salary_min" min="0" step="0.01" required>
@@ -3219,7 +3219,7 @@ function employerTallyQuestionnaireTemplate(lang, t) {
 
           <form class="questionnaire-form" id="employer-tally-form" data-role="employer" novalidate>
             <section class="form-section">
-              <h3>${content.sections.need}</h3>
+              <h2>${content.sections.need}</h2>
               <div class="section-intro">
                 <p class="mini-note">${content.introNote}</p>
                 <p class="mini-note">${content.introNote2}</p>
@@ -3229,14 +3229,14 @@ function employerTallyQuestionnaireTemplate(lang, t) {
                 ${choicePills("tally_q01", content.sectorsOptions)}
               </fieldset>
               ${matrixQuestion(content.questions.q02, content.languageRows, content.languageColumns, content.questions.q02Hint, "radio", content.matrixMobileHint)}
-              <div class="field">
-                <span>${content.questions.q03}</span>
+              <fieldset class="fieldset">
+                <legend>${content.questions.q03}</legend>
                 ${radioPills("tally_q03", content.optionGroups.q03)}
-              </div>
-              <div class="field">
-                <span>${content.questions.q04}</span>
+              </fieldset>
+              <fieldset class="fieldset">
+                <legend>${content.questions.q04}</legend>
                 ${radioPills("tally_q04", content.optionGroups.q04)}
-              </div>
+              </fieldset>
               <label class="field">
                 <span>${content.questions.q20}</span>
                 <input type="text" name="tally_q20" required>
@@ -3252,7 +3252,7 @@ function employerTallyQuestionnaireTemplate(lang, t) {
             </section>
 
             <section class="form-section">
-              <h3>${content.sections.conditions}</h3>
+              <h2>${content.sections.conditions}</h2>
               <div class="section-intro">
                 <p class="mini-note">Décrivez ici les profils que vous pouvez accueillir, les aides éventuelles à l’arrivée et les critères qui comptent vraiment pour vous.</p>
               </div>
@@ -3296,7 +3296,7 @@ function employerTallyQuestionnaireTemplate(lang, t) {
             </section>
 
             <section class="form-section">
-              <h3>${content.sections.contact}</h3>
+              <h2>${content.sections.contact}</h2>
               <div class="section-intro">
                 <p class="mini-note">Ces informations nous permettent de vous recontacter rapidement si des profils semblent compatibles avec votre besoin.</p>
               </div>
@@ -3321,7 +3321,7 @@ function employerTallyQuestionnaireTemplate(lang, t) {
             </section>
 
             <section class="form-section">
-              <h3>${content.questions.q21Title}</h3>
+              <h2>${content.questions.q21Title}</h2>
               <p class="mini-note">${content.questions.q21Text}</p>
               <p class="mini-note">${content.questions.q21Text2}</p>
               <p class="mini-note"><strong>${content.questions.q21Text3}</strong></p>
