@@ -52,6 +52,7 @@ const copy = {
       lede: "EURES beta expérimente une nouvelle façon de rapprocher les besoins des employeurs et les projets de mobilité des candidats dans un espace économique transfrontalier.",
       storyTitle: "Un marché du travail transfrontalier encore fragmenté",
       storyText: "Le marché du travail dépasse les frontières nationales, mais les recrutements et les recherches d'emploi restent encore largement organisés pays par pays.\n\nLe projet vise à mieux identifier les besoins, les intentions de mobilité et les opportunités afin de favoriser des mises en relation plus pertinentes et plus rapides.\n\nDans la Grande Région, plusieurs centaines de milliers de personnes travaillent déjà au-delà des frontières. Pourtant, les offres d'emploi et les candidatures circulent encore difficilement entre les pays.\n\nDes employeurs rencontrent des difficultés de recrutement tandis que des candidats ouverts à la mobilité ne repèrent pas toujours les opportunités qui pourraient leur correspondre.",
+      statsTitle: "Quelques repères sur la Grande Région",
       stats: [
         ["280 000", "travailleurs frontaliers circulent chaque jour dans la Grande Région."],
         ["40–50 k", "personnes avec expérience transfrontalière pourraient rechercher un emploi."],
@@ -376,6 +377,7 @@ const copy = {
       lede: "EURES beta is testing a new way to bring together employers' needs and candidates' mobility plans in a cross-border economic area.",
       storyTitle: "A cross-border labour market that remains fragmented",
       storyText: "The labour market goes beyond national borders, yet recruitment and job search are still largely organised country by country.\n\nThe project aims to better identify needs, mobility intentions and opportunities in order to support more relevant and faster introductions.\n\nAcross the Greater Region, several hundred thousand people already work beyond national borders. Even so, job offers and applications still circulate with difficulty between countries.\n\nSome employers face recruitment difficulties, while candidates open to mobility do not always spot the opportunities that could match them.",
+      statsTitle: "A few key markers across the Greater Region",
       stats: [
         ["280,000", "cross-border workers commute daily within the Greater Region."],
         ["40–50k", "people with cross-border experience may be looking for work."],
@@ -700,6 +702,7 @@ const copy = {
       lede: "EURES beta erprobt einen neuen Weg, um den Bedarf von Arbeitgebern und die Mobilitätspläne von Kandidatinnen und Kandidaten in einem grenzüberschreitenden Wirtschaftsraum besser zusammenzubringen.",
       storyTitle: "Ein grenzüberschreitender Arbeitsmarkt, der noch immer fragmentiert ist",
       storyText: "Der Arbeitsmarkt geht über nationale Grenzen hinaus, doch Stellensuche und Rekrutierung sind noch immer weitgehend von Land zu Land organisiert.\n\nDas Projekt soll Bedarfe, Mobilitätsabsichten und Chancen besser sichtbar machen, um passendere und schnellere Vermittlungen zu ermöglichen.\n\nIn der Großregion arbeiten bereits mehrere hunderttausend Menschen jenseits nationaler Grenzen. Trotzdem zirkulieren Stellenangebote und Bewerbungen noch immer nur schwer zwischen den Ländern.\n\nEinige Arbeitgeber haben Rekrutierungsschwierigkeiten, während mobilitätsbereite Kandidatinnen und Kandidaten passende Chancen nicht immer erkennen.",
+      statsTitle: "Einige Orientierungspunkte in der Großregion",
       stats: [
         ["280.000", "Grenzpendler bewegen sich täglich in der Großregion."],
         ["40–50 Tsd.", "Menschen mit grenzüberschreitender Erfahrung könnten Arbeit suchen."],
@@ -2565,8 +2568,9 @@ function homeTemplate(lang, t) {
         </div>
       </section>
 
-      <section class="section">
+      <section class="section" aria-labelledby="home-stats-title">
         <div class="shell stats-grid">
+          <h2 id="home-stats-title" class="sr-only">${t.home.statsTitle}</h2>
           ${t.home.stats.map(([value, text]) => `
             <article class="stat-card">
               <strong>${value}</strong>
@@ -2581,14 +2585,14 @@ function homeTemplate(lang, t) {
           <div class="panel"><h2>${t.home.tracksTitle}</h2></div>
           <div class="tracks-grid" style="margin-top: 1rem;">
             <article class="surface-card">
-              <h2>${t.home.candidateTitle}</h2>
+              <h3>${t.home.candidateTitle}</h3>
               <p>${t.home.candidateText}</p>
               <div class="hero-actions">
                 <a class="primary-action" href="${pageUrl("candidate-landing", lang)}">${t.common.ctaSeeCandidate}</a>
               </div>
             </article>
             <article class="surface-card">
-              <h2>${t.home.employerTitle}</h2>
+              <h3>${t.home.employerTitle}</h3>
               <p>${t.home.employerText}</p>
               <div class="hero-actions">
                 <a class="primary-action" href="${pageUrl("employer-landing", lang)}">${t.common.ctaSeeEmployer}</a>
@@ -2604,7 +2608,7 @@ function homeTemplate(lang, t) {
           <div class="principles-grid" style="margin-top: 1rem;">
             ${t.home.principles.map(([title, text]) => `
               <article class="surface-card">
-                <h2>${title}</h2>
+                <h3>${title}</h3>
                 <p>${text}</p>
               </article>
             `).join("")}
