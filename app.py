@@ -139,6 +139,10 @@ EURES_INVITATION_FIELDS = {
     'sent_at',
     'sent_by',
     'brevo_message_id',
+    'reminder_count',
+    'last_reminder_at',
+    'last_reminder_by',
+    'last_reminder_message_id',
     'answered_at',
     'linked_form_role',
     'linked_record_id',
@@ -1113,6 +1117,15 @@ def _normalize_eures_invitation_status(value: str) -> str:
     return ''
 
 
+def get_eures_invitation_reminder_delay_days() -> int:
+    raw = str(os.getenv('EURES_INVITATION_REMINDER_DELAY_DAYS', '7') or '7').strip()
+    try:
+        value = int(raw)
+    except Exception:
+        value = 7
+    return value if value > 0 else 7
+
+
 def _build_eures_invitation_link(role: str, language: str, invite_token: str) -> str:
     page = 'candidate' if role == 'candidate' else 'employer'
     lang = str(language or 'fr').strip().lower()
@@ -1211,8 +1224,11 @@ def list_eures_invitations() -> list[dict]:
     headers = _eures_admin_headers(config)
     records = fetch_table_records(config['doc_id'], config['table_id'], headers)
     rows = []
+    now = datetime.now(timezone.utc)
     for rec in records:
         fields = rec.get('fields', {}) if isinstance(rec, dict) else {}
+        days_since_sent = _days_since(fields.get('sent_at'), now=now)
+        needs_reminder = _eures_invitation_needs_reminder(fields, now=now)
         rows.append({
             'record_id': rec.get('id'),
             'role': fields.get('role', ''),
@@ -1228,6 +1244,9 @@ def list_eures_invitations() -> list[dict]:
             'invitation_status': fields.get('invitation_status', 'invitation_a_envoyer'),
             'sent_at': fields.get('sent_at', ''),
             'answered_at': fields.get('answered_at', ''),
+            'reminder_count': _safe_int(fields.get('reminder_count')),
+            'last_reminder_at': fields.get('last_reminder_at', ''),
+            'last_reminder_by': fields.get('last_reminder_by', ''),
             'linked_form_role': fields.get('linked_form_role', ''),
             'linked_record_id': fields.get('linked_record_id', ''),
             'linked_record_key': fields.get('linked_record_key', ''),
@@ -1236,6 +1255,8 @@ def list_eures_invitations() -> list[dict]:
             'import_batch_id': fields.get('import_batch_id', ''),
             'imported_at': fields.get('imported_at', ''),
             'imported_by': fields.get('imported_by', ''),
+            'days_since_sent': days_since_sent,
+            'needs_reminder': needs_reminder,
         })
     rows.sort(key=lambda row: (str(row.get('invitation_status') or ''), -int(row.get('record_id') or 0)))
     return rows
@@ -1448,7 +1469,7 @@ def link_eures_invitation_after_save(role: str, request_fields: dict, saved_reco
     }
 
 
-def build_brevo_invitation_email(invitation_row: dict) -> tuple[str, str, str, str]:
+def build_brevo_invitation_email(invitation_row: dict, kind: str = 'initial') -> tuple[str, str, str, str]:
     """Build recipient, subject, text body and HTML body for one invitation."""
     role = _normalize_eures_invitation_role(invitation_row.get('role', ''))
     if role not in EURES_INVITATION_ALLOWED_ROLES:
@@ -1467,6 +1488,7 @@ def build_brevo_invitation_email(invitation_row: dict) -> tuple[str, str, str, s
     signature_name = get_eures_mail_signature_name()
     signature_role = get_eures_mail_signature_role()
     privacy_url = get_eures_privacy_url(language)
+    reminder_mode = kind == 'reminder'
     if language == 'en':
         hello = "Hello,"
     elif language == 'de':
@@ -1476,40 +1498,76 @@ def build_brevo_invitation_email(invitation_row: dict) -> tuple[str, str, str, s
 
     if role == 'employer':
         if language == 'en':
-            subject = "[EURES beta / EURES / France Travail] Invitation to complete the employer questionnaire"
-            preheader = "Official invitation to complete the EURES beta employer questionnaire."
-            body_lines = [
-                "You are receiving this message as part of the EURES beta initiative led by EURES and France Travail in the Greater Region.",
-                "This questionnaire is used to describe your recruitment need in a structured way so that compatible profiles can later be identified and reviewed.",
-                "Completing it takes about 5 minutes.",
-            ]
-            title = "Official invitation to complete the employer questionnaire"
-            cta = "Access the employer questionnaire"
-            cta_note = f"If the button does not work, copy this address into your browser: {invite_link}"
+            if reminder_mode:
+                subject = "[EURES / France Travail] Reminder: employer questionnaire"
+                preheader = "A short follow-up if you still have a recruitment need to share with EURES beta."
+                body_lines = [
+                    "I am following up on my previous message regarding EURES beta.",
+                    "If you still have a recruitment need to share, this short questionnaire helps us understand your criteria and identify potentially relevant profiles more quickly.",
+                    "Completing it takes about 5 minutes.",
+                ]
+                title = "Employer questionnaire reminder"
+                cta = "Access the questionnaire"
+                cta_note = f"This questionnaire helps describe your recruitment need, your constraints and the proposed conditions. If the button does not work, copy this address into your browser: {invite_link}"
+            else:
+                subject = "[EURES / France Travail] Recruitment: identifying profiles suited to your need"
+                preheader = "As part of my role as an EURES adviser within France Travail, I am contacting you to help identify suitable profiles more quickly."
+                body_lines = [
+                    "I am contacting you as part of my role as an EURES adviser within France Travail.",
+                    "As part of an experiment carried out with EURES in the Greater Region, we support employers with recruitment needs by helping identify potentially suitable profiles more quickly.",
+                    "If you have a current or upcoming recruitment need, I invite you to complete the short form below. It only takes a few minutes.",
+                ]
+                title = ""
+                cta = "Access the questionnaire"
+                cta_note = f"This questionnaire helps describe your recruitment need, your constraints and the proposed conditions in order to review possible introductions with relevant candidates. If the button does not work, copy this address into your browser: {invite_link}"
             footer = "EURES beta is an experimental service supported by EURES and France Travail to facilitate recruitment and professional mobility in the Greater Region."
         elif language == 'de':
-            subject = "[EURES beta / EURES / France Travail] Einladung zum Arbeitgeberfragebogen"
-            preheader = "Offizielle Einladung zum Ausfüllen des EURES-beta-Arbeitgeberfragebogens."
-            body_lines = [
-                "Sie erhalten diese Nachricht im Rahmen der Initiative EURES beta, die von EURES und France Travail in der Großregion getragen wird.",
-                "Mit diesem Fragebogen kann Ihr Personalbedarf strukturiert beschrieben werden, damit anschließend passende Profile identifiziert und geprüft werden können.",
-                "Das Ausfüllen dauert ungefähr 5 Minuten.",
-            ]
-            title = "Offizielle Einladung zum Arbeitgeberfragebogen"
-            cta = "Zum Arbeitgeberfragebogen"
-            cta_note = f"Falls die Schaltfläche nicht funktioniert, kopieren Sie diese Adresse in Ihren Browser: {invite_link}"
+            if reminder_mode:
+                subject = "[EURES / France Travail] Erinnerung: Arbeitgeberfragebogen"
+                preheader = "Kurze Erinnerung, falls Sie weiterhin einen Personalbedarf mit EURES beta teilen möchten."
+                body_lines = [
+                    "Ich melde mich erneut zu meiner vorherigen Nachricht zu EURES beta.",
+                    "Wenn Sie weiterhin einen Personalbedarf haben, hilft uns dieser kurze Fragebogen dabei, Ihre Kriterien besser zu verstehen und schneller passende Profile zu identifizieren.",
+                    "Das Ausfüllen dauert ungefähr 5 Minuten.",
+                ]
+                title = "Erinnerung zum Arbeitgeberfragebogen"
+                cta = "Zum Fragebogen"
+                cta_note = f"Mit diesem Fragebogen können Ihr Personalbedarf, Ihre Rahmenbedingungen und die angebotenen Bedingungen präzisiert werden. Falls die Schaltfläche nicht funktioniert, kopieren Sie diese Adresse in Ihren Browser: {invite_link}"
+            else:
+                subject = "[EURES / France Travail] Rekrutierung: passende Profile für Ihren Bedarf"
+                preheader = "Im Rahmen meiner Tätigkeit als EURES-Berater bei France Travail kontaktiere ich Sie, um passende Profile schneller zu identifizieren."
+                body_lines = [
+                    "Ich kontaktiere Sie im Rahmen meiner Tätigkeit als EURES-Berater bei France Travail.",
+                    "Im Rahmen eines gemeinsamen Experiments mit EURES in der Großregion unterstützen wir Arbeitgeber mit Personalbedarf dabei, potenziell passende Profile schneller zu identifizieren.",
+                    "Wenn Sie einen aktuellen oder kommenden Personalbedarf haben, lade ich Sie ein, den kurzen Fragebogen unten auszufüllen. Das dauert nur wenige Minuten.",
+                ]
+                title = ""
+                cta = "Zum Fragebogen"
+                cta_note = f"Mit diesem Fragebogen können Ihr Personalbedarf, Ihre Rahmenbedingungen und die angebotenen Bedingungen präzisiert werden, um anschließend mögliche Vermittlungen mit passenden Kandidaten zu prüfen. Falls die Schaltfläche nicht funktioniert, kopieren Sie diese Adresse in Ihren Browser: {invite_link}"
             footer = "EURES beta ist ein experimenteller Service von EURES und France Travail zur Unterstützung von Rekrutierung und beruflicher Mobilität in der Großregion."
         else:
-            subject = "[EURES / France Travail] Recrutement : identification de profils adaptes a votre besoin"
-            preheader = "Dans le cadre de ma mission de conseiller EURES au sein de France Travail, je vous contacte pour vous proposer un repérage plus rapide de profils susceptibles de correspondre."
-            body_lines = [
-                "Je me permets de vous contacter dans le cadre de ma mission de conseiller EURES au sein de France Travail.",
-                "Dans le cadre d'une expérimentation menée avec EURES dans la Grande Région, nous accompagnons des employeurs ayant des besoins de recrutement en leur proposant un repérage plus rapide de profils susceptibles de correspondre.",
-                "Si vous avez un besoin de recrutement en cours ou à venir, je vous invite à compléter le court formulaire ci-dessous. Il vous prendra seulement quelques minutes.",
-            ]
-            title = ""
-            cta = "Accéder au formulaire"
-            cta_note = "Ce questionnaire permet de préciser votre besoin, vos contraintes de recrutement et les conditions proposées, afin d'étudier ensuite d'éventuelles mises en relation avec des candidats pertinents."
+            if reminder_mode:
+                subject = "[EURES / France Travail] Relance : questionnaire employeur"
+                preheader = "Je me permets de revenir vers vous si vous avez toujours un besoin de recrutement a partager dans EURES beta."
+                body_lines = [
+                    "Je me permets de revenir vers vous concernant mon précédent message relatif à EURES beta.",
+                    "Si vous avez toujours un besoin de recrutement à partager, ce court questionnaire nous permet de mieux comprendre vos critères et d'identifier plus rapidement des profils susceptibles de correspondre.",
+                    "Il vous prendra seulement quelques minutes.",
+                ]
+                title = ""
+                cta = "Accéder au questionnaire"
+                cta_note = "Ce questionnaire permet de préciser votre besoin, vos contraintes de recrutement et les conditions proposées, afin d'étudier ensuite d'éventuelles mises en relation avec des candidats pertinents."
+            else:
+                subject = "[EURES / France Travail] Recrutement : identification de profils adaptes a votre besoin"
+                preheader = "Dans le cadre de ma mission de conseiller EURES au sein de France Travail, je vous contacte pour vous proposer un repérage plus rapide de profils susceptibles de correspondre."
+                body_lines = [
+                    "Je me permets de vous contacter dans le cadre de ma mission de conseiller EURES au sein de France Travail.",
+                    "Dans le cadre d'une expérimentation menée avec EURES dans la Grande Région, nous accompagnons des employeurs ayant des besoins de recrutement en leur proposant un repérage plus rapide de profils susceptibles de correspondre.",
+                    "Si vous avez un besoin de recrutement en cours ou à venir, je vous invite à compléter le court formulaire ci-dessous. Il vous prendra seulement quelques minutes.",
+                ]
+                title = ""
+                cta = "Accéder au formulaire"
+                cta_note = "Ce questionnaire permet de préciser votre besoin, vos contraintes de recrutement et les conditions proposées, afin d'étudier ensuite d'éventuelles mises en relation avec des candidats pertinents."
             footer = (
                 "EURES est le réseau européen de coopération pour l'emploi, qui facilite les recrutements "
                 "et les opportunités professionnelles en Europe."
@@ -1583,40 +1641,76 @@ def build_brevo_invitation_email(invitation_row: dict) -> tuple[str, str, str, s
         return recipient, subject, text_body, body_html, invite_token, invite_link
 
     if language == 'en':
-        subject = "[EURES beta / EURES / France Travail] Invitation to complete the candidate questionnaire"
-        preheader = "Official invitation to complete the EURES beta candidate questionnaire."
-        body_lines = [
-            "You are receiving this message as part of the EURES beta initiative led by EURES and France Travail in the Greater Region.",
-            "This questionnaire helps us understand your profile, your mobility plans and the type of opportunities that may match your situation.",
-            "Completing it takes about 5 minutes.",
-        ]
-        title = "Official invitation to complete the candidate questionnaire"
-        cta = "Access the candidate questionnaire"
-        cta_note = f"If the button does not work, copy this address into your browser: {invite_link}"
+        if reminder_mode:
+            subject = "[EURES / France Travail] Reminder: candidate questionnaire"
+            preheader = "A short follow-up if you still wish to be considered for EURES beta opportunities."
+            body_lines = [
+                "I am following up on my previous message regarding EURES beta.",
+                "If you still wish to be considered for suitable opportunities, this short questionnaire helps us better understand your profile, your mobility plans and your current availability.",
+                "Completing it takes about 5 minutes.",
+            ]
+            title = "Candidate questionnaire reminder"
+            cta = "Access the questionnaire"
+            cta_note = f"If the button does not work, copy this address into your browser: {invite_link}"
+        else:
+            subject = "[EURES beta / EURES / France Travail] Invitation to complete the candidate questionnaire"
+            preheader = "Official invitation to complete the EURES beta candidate questionnaire."
+            body_lines = [
+                "You are receiving this message as part of the EURES beta initiative led by EURES and France Travail in the Greater Region.",
+                "This questionnaire helps us understand your profile, your mobility plans and the type of opportunities that may match your situation.",
+                "Completing it takes about 5 minutes.",
+            ]
+            title = "Official invitation to complete the candidate questionnaire"
+            cta = "Access the candidate questionnaire"
+            cta_note = f"If the button does not work, copy this address into your browser: {invite_link}"
         footer = "EURES beta is an experimental service supported by EURES and France Travail to facilitate professional mobility in the Greater Region."
     elif language == 'de':
-        subject = "[EURES beta / EURES / France Travail] Einladung zum Kandidatenfragebogen"
-        preheader = "Offizielle Einladung zum Ausfüllen des EURES-beta-Kandidatenfragebogens."
-        body_lines = [
-            "Sie erhalten diese Nachricht im Rahmen der Initiative EURES beta, die von EURES und France Travail in der Großregion getragen wird.",
-            "Mit diesem Fragebogen können wir Ihr Profil, Ihr Mobilitätsprojekt und die für Sie passenden beruflichen Möglichkeiten besser verstehen.",
-            "Das Ausfüllen dauert ungefähr 5 Minuten.",
-        ]
-        title = "Offizielle Einladung zum Kandidatenfragebogen"
-        cta = "Zum Kandidatenfragebogen"
-        cta_note = f"Falls die Schaltfläche nicht funktioniert, kopieren Sie diese Adresse in Ihren Browser: {invite_link}"
+        if reminder_mode:
+            subject = "[EURES / France Travail] Erinnerung: Kandidatenfragebogen"
+            preheader = "Kurze Erinnerung, falls Sie weiterhin für passende EURES-beta-Möglichkeiten berücksichtigt werden möchten."
+            body_lines = [
+                "Ich melde mich erneut zu meiner vorherigen Nachricht zu EURES beta.",
+                "Wenn Sie weiterhin für passende Möglichkeiten berücksichtigt werden möchten, hilft uns dieser kurze Fragebogen dabei, Ihr Profil, Ihr Mobilitätsprojekt und Ihre aktuelle Verfügbarkeit besser zu verstehen.",
+                "Das Ausfüllen dauert ungefähr 5 Minuten.",
+            ]
+            title = "Erinnerung zum Kandidatenfragebogen"
+            cta = "Zum Fragebogen"
+            cta_note = f"Falls die Schaltfläche nicht funktioniert, kopieren Sie diese Adresse in Ihren Browser: {invite_link}"
+        else:
+            subject = "[EURES beta / EURES / France Travail] Einladung zum Kandidatenfragebogen"
+            preheader = "Offizielle Einladung zum Ausfüllen des EURES-beta-Kandidatenfragebogens."
+            body_lines = [
+                "Sie erhalten diese Nachricht im Rahmen der Initiative EURES beta, die von EURES und France Travail in der Großregion getragen wird.",
+                "Mit diesem Fragebogen können wir Ihr Profil, Ihr Mobilitätsprojekt und die für Sie passenden beruflichen Möglichkeiten besser verstehen.",
+                "Das Ausfüllen dauert ungefähr 5 Minuten.",
+            ]
+            title = "Offizielle Einladung zum Kandidatenfragebogen"
+            cta = "Zum Kandidatenfragebogen"
+            cta_note = f"Falls die Schaltfläche nicht funktioniert, kopieren Sie diese Adresse in Ihren Browser: {invite_link}"
         footer = "EURES beta ist ein experimenteller Service von EURES und France Travail zur Unterstützung beruflicher Mobilität in der Großregion."
     else:
-        subject = "[EURES / France Travail] Questionnaire candidat - expérimentation EURES beta"
-        preheader = "Dans le cadre de ma mission de conseiller EURES au sein de France Travail, je vous invite à compléter un court questionnaire."
-        body_lines = [
-            "Je me permets de vous contacter dans le cadre de ma mission de conseiller EURES au sein de France Travail.",
-            "Dans le cadre d'une expérimentation EURES actuellement menée autour des besoins de recrutement, j'ai consulté votre profil ainsi que vos coordonnées publiés sur le portail EURES afin d'identifier des candidats dont le profil pourrait correspondre aux besoins actuellement déposés par des employeurs partenaires.",
-            "Pour cela, je vous invite à compléter le court formulaire ci-dessous. Il vous prendra seulement quelques minutes.",
-        ]
-        title = ""
-        cta = "Accéder au formulaire"
-        cta_note = "Ce questionnaire permettra de vérifier que votre profil, vos disponibilités et vos attentes correspondent bien aux besoins actuellement recherchés."
+        if reminder_mode:
+            subject = "[EURES / France Travail] Relance : questionnaire candidat"
+            preheader = "Je me permets de revenir vers vous si vous souhaitez toujours être pris en compte pour des opportunites EURES beta."
+            body_lines = [
+                "Je me permets de revenir vers vous concernant mon précédent message relatif à EURES beta.",
+                "Si vous souhaitez toujours être pris en compte pour des opportunités correspondant à votre profil, ce court questionnaire nous permet de mieux comprendre votre projet, vos disponibilités et vos attentes.",
+                "Il vous prendra seulement quelques minutes.",
+            ]
+            title = ""
+            cta = "Accéder au questionnaire"
+            cta_note = "Ce questionnaire permettra de vérifier que votre profil, vos disponibilités et vos attentes correspondent bien aux besoins actuellement recherchés."
+        else:
+            subject = "[EURES / France Travail] Questionnaire candidat - expérimentation EURES beta"
+            preheader = "Dans le cadre de ma mission de conseiller EURES au sein de France Travail, je vous invite à compléter un court questionnaire."
+            body_lines = [
+                "Je me permets de vous contacter dans le cadre de ma mission de conseiller EURES au sein de France Travail.",
+                "Dans le cadre d'une expérimentation EURES actuellement menée autour des besoins de recrutement, j'ai consulté votre profil ainsi que vos coordonnées publiés sur le portail EURES afin d'identifier des candidats dont le profil pourrait correspondre aux besoins actuellement déposés par des employeurs partenaires.",
+                "Pour cela, je vous invite à compléter le court formulaire ci-dessous. Il vous prendra seulement quelques minutes.",
+            ]
+            title = ""
+            cta = "Accéder au formulaire"
+            cta_note = "Ce questionnaire permettra de vérifier que votre profil, vos disponibilités et vos attentes correspondent bien aux besoins actuellement recherchés."
         footer = (
             "Si votre profil correspond aux critères recherchés, votre candidature pourra ensuite être proposée "
             "à l'employeur, qui vous contactera directement pour échanger avec vous.\n\n"
@@ -2367,6 +2461,30 @@ def _parse_datetime(value) -> datetime | None:
         except Exception:
             continue
     return None
+
+
+def _days_since(value, now: datetime | None = None) -> int | None:
+    dt = _parse_datetime(value)
+    if dt is None:
+        return None
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    ref = now or datetime.now(timezone.utc)
+    return max((ref - dt).days, 0)
+
+
+def _eures_invitation_needs_reminder(fields: dict, now: datetime | None = None) -> bool:
+    if not isinstance(fields, dict):
+        return False
+    if str(fields.get('invitation_status') or '').strip().lower() != 'invitation_envoyee':
+        return False
+    if str(fields.get('answered_at') or '').strip():
+        return False
+    sent_at = fields.get('sent_at')
+    days_since_sent = _days_since(sent_at, now=now)
+    if days_since_sent is None:
+        return False
+    return days_since_sent >= get_eures_invitation_reminder_delay_days()
 
 
 def _duration_hours(start_value, end_value) -> float | None:
@@ -4721,6 +4839,7 @@ def admin_eures_invitations(form_id: str):
                 ]).lower()
             ]
         stats = Counter(row.get('invitation_status') or 'invitation_a_envoyer' for row in rows)
+        reminder_due = sum(1 for row in rows if row.get('needs_reminder'))
         return jsonify({
             'ok': True,
             'form_id': form_id,
@@ -4731,6 +4850,7 @@ def admin_eures_invitations(form_id: str):
                 'questionnaire_recu': stats.get('questionnaire_recu', 0),
                 'rapprochee': stats.get('rapprochee', 0),
                 'erreur_envoi': stats.get('erreur_envoi', 0),
+                'reminder_due': reminder_due,
             },
             'rows': rows,
         }), 200
@@ -4979,6 +5099,99 @@ def admin_eures_invitations_send(form_id: str):
         }), 200
     except Exception as e:
         app.logger.exception('EURES invitations send failed')
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/forms/<form_id>/admin/invitations/remind', methods=['POST'])
+@admin_required
+def admin_eures_invitations_remind(form_id: str):
+    """Admin API: send reminder emails for already sent invitations."""
+    proxied = maybe_proxy_eures_request(form_id)
+    if proxied:
+        return proxied
+    if form_id != 'eures-beta':
+        return jsonify({'error': f'Unknown invitation reminder form: {form_id}'}), 404
+
+    data = request.get_json() or {}
+    requested_ids = data.get('record_ids') or []
+    if requested_ids and not isinstance(requested_ids, list):
+        return jsonify({'error': 'record_ids must be a list'}), 400
+
+    config = get_eures_invitations_config()
+    if not config:
+        return jsonify({'error': 'EURES invitations configuration is incomplete.'}), 500
+
+    headers = _eures_admin_headers(config)
+    actor = get_admin_actor(form_id)
+    try:
+        ensure_table_columns(config, EURES_INVITATION_FIELDS, headers)
+        records = fetch_table_records(config['doc_id'], config['table_id'], headers)
+        requested_ids_set = {int(value) for value in requested_ids} if requested_ids else set()
+        target_records = []
+        for rec in records:
+            record_id = int(rec.get('id') or 0)
+            fields = rec.get('fields', {}) if isinstance(rec.get('fields'), dict) else {}
+            if requested_ids_set and record_id not in requested_ids_set:
+                continue
+            if not requested_ids_set and not _eures_invitation_needs_reminder(fields):
+                continue
+            target_records.append(rec)
+
+        reminded = []
+        skipped = []
+        errors = []
+        for rec in target_records:
+            record_id = int(rec.get('id') or 0)
+            fields = rec.get('fields', {}) if isinstance(rec.get('fields'), dict) else {}
+            current_status = str(fields.get('invitation_status') or '').strip().lower()
+            if current_status != 'invitation_envoyee':
+                skipped.append({
+                    'record_id': record_id,
+                    'email': fields.get('email', ''),
+                    'reason': f'status_not_remindable:{current_status or "unknown"}',
+                })
+                continue
+            if str(fields.get('answered_at') or '').strip():
+                skipped.append({
+                    'record_id': record_id,
+                    'email': fields.get('email', ''),
+                    'reason': 'already_answered',
+                })
+                continue
+            try:
+                recipient, subject, text_body, html_body, invite_token, invite_link = build_brevo_invitation_email(fields, kind='reminder')
+                brevo_result = send_brevo_transactional_email(recipient, subject, text_body, html_body)
+                update_eures_invitation_record_by_id(record_id, {
+                    'invite_token': invite_token,
+                    'invite_link': invite_link,
+                    'invitation_status_updated_at': _now_iso_utc(),
+                    'invitation_status_updated_by': actor,
+                    'reminder_count': _safe_int(fields.get('reminder_count')) + 1,
+                    'last_reminder_at': _now_iso_utc(),
+                    'last_reminder_by': actor,
+                    'last_reminder_message_id': str((brevo_result or {}).get('messageId') or ''),
+                }, headers=headers)
+                reminded.append({
+                    'record_id': record_id,
+                    'email': recipient,
+                    'brevo_message_id': str((brevo_result or {}).get('messageId') or ''),
+                })
+            except Exception as e:
+                errors.append({
+                    'record_id': record_id,
+                    'email': fields.get('email', ''),
+                    'error': str(e),
+                })
+
+        return jsonify({
+            'ok': True,
+            'requested': len(target_records),
+            'reminded': reminded,
+            'skipped': skipped,
+            'errors': errors,
+        }), 200
+    except Exception as e:
+        app.logger.exception('EURES invitations remind failed')
         return jsonify({'error': str(e)}), 500
 
 

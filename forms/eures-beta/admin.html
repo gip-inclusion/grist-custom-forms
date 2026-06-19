@@ -961,6 +961,10 @@
                 <div class="kpi-label">Questionnaires reçus</div>
                 <div class="kpi-value" id="invite-kpi-received">0</div>
               </div>
+              <div class="kpi">
+                <div class="kpi-label">À relancer</div>
+                <div class="kpi-value" id="invite-kpi-reminder">0</div>
+              </div>
             </div>
           </div>
 
@@ -980,6 +984,18 @@
               <div class="inline-actions" style="margin-top: 0.2rem;">
                 <button id="send-selected-btn" type="button">Envoyer la sélection</button>
                 <button class="btn-secondary" id="cancel-selection-btn" type="button">Annuler la sélection</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="admin-card send-panel">
+            <div class="send-panel-head">
+              <div class="send-panel-count">
+                <strong id="reminder-send-count">0</strong>
+                <span id="reminder-send-label">invitation à relancer</span>
+              </div>
+              <div class="inline-actions">
+                <button id="send-reminders-btn" type="button">Relancer les invitations sans réponse</button>
               </div>
             </div>
           </div>
@@ -1064,6 +1080,7 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
                 <option value="all">Tous les statuts</option>
                 <option value="invitation_a_envoyer">À envoyer</option>
                 <option value="invitation_envoyee">Envoyées</option>
+                <option value="reminder_due">À relancer</option>
                 <option value="questionnaire_recu">Questionnaires reçus</option>
                 <option value="erreur_envoi">Erreurs d’envoi</option>
               </select>
@@ -1430,10 +1447,15 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
       document.getElementById("invite-kpi-pending").textContent = stats.invitation_a_envoyer ?? 0;
       document.getElementById("invite-kpi-sent").textContent = stats.invitation_envoyee ?? 0;
       document.getElementById("invite-kpi-received").textContent = stats.questionnaire_recu ?? 0;
+      document.getElementById("invite-kpi-reminder").textContent = stats.reminder_due ?? 0;
     }
 
     function pendingInvitationRows() {
       return state.invitations.rows.filter((row) => row.invitation_status === "invitation_a_envoyer");
+    }
+
+    function reminderInvitationRows() {
+      return state.invitations.rows.filter((row) => row.needs_reminder);
     }
 
     function updatePendingSendPanel() {
@@ -1489,10 +1511,24 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
       document.getElementById("send-selected-btn").disabled = state.invitations.selectedIds.length === 0;
     }
 
+    function updateReminderPanel() {
+      const reminderRows = reminderInvitationRows();
+      const count = reminderRows.length;
+      document.getElementById("reminder-send-count").textContent = count;
+      document.getElementById("reminder-send-label").textContent = count > 1
+        ? "invitations à relancer"
+        : "invitation à relancer";
+      document.getElementById("send-reminders-btn").disabled = count === 0;
+    }
+
     function renderInvitations() {
       const list = document.getElementById("invitation-list");
       const search = normalizeText(document.getElementById("invite-filter-search").value.trim());
+      const statusFilter = document.getElementById("invite-filter-status").value;
       const filtered = state.invitations.rows.filter((row) => {
+        if (statusFilter === "reminder_due" && !row.needs_reminder) {
+          return false;
+        }
         if (!search) return true;
         const haystack = [
           row.email,
@@ -1549,6 +1585,18 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
                 <span>${esc(row.answered_at || "-")}</span>
               </div>
               <div class="meta-box">
+                <strong>Jours depuis envoi</strong>
+                <span>${esc(row.days_since_sent ?? "-")}</span>
+              </div>
+              <div class="meta-box">
+                <strong>Relances</strong>
+                <span>${esc(row.reminder_count ?? 0)}</span>
+              </div>
+              <div class="meta-box">
+                <strong>Dernière relance</strong>
+                <span>${esc(row.last_reminder_at || "-")}</span>
+              </div>
+              <div class="meta-box">
                 <strong>Record lié</strong>
                 <span>${esc(row.linked_record_key || row.linked_record_id || "-")}</span>
               </div>
@@ -1560,6 +1608,11 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
             ${row.invitation_status === "erreur_envoi" ? `
               <div class="inline-actions" style="margin-top:0.9rem;">
                 <button class="btn-refuse" type="button" data-delete-invitation="${esc(row.record_id)}">Supprimer cette erreur</button>
+              </div>
+            ` : ""}
+            ${row.invitation_status === "invitation_envoyee" && !row.answered_at ? `
+              <div class="inline-actions" style="margin-top:0.9rem;">
+                <button type="button" data-remind-invitation="${esc(row.record_id)}">${row.needs_reminder ? "Relancer maintenant" : "Envoyer une relance"}</button>
               </div>
             ` : ""}
             ${row.invite_link ? `<pre class="code-block">${esc(row.invite_link)}</pre>` : ""}
@@ -1576,7 +1629,15 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
           await deleteInvitationError(recordId);
         });
       }
+      for (const button of list.querySelectorAll("[data-remind-invitation]")) {
+        button.addEventListener("click", async (event) => {
+          const recordId = Number(event.currentTarget.dataset.remindInvitation || 0);
+          if (!recordId) return;
+          await sendInvitationReminders([recordId]);
+        });
+      }
       updatePendingSendPanel();
+      updateReminderPanel();
     }
 
     async function loadCockpit() {
@@ -1635,7 +1696,7 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
 
       const status = document.getElementById("invite-filter-status").value;
       const url = new URL(apiUrl("/admin/invitations"), window.location.origin);
-      if (status && status !== "all") url.searchParams.set("status", status);
+      if (status && status !== "all" && status !== "reminder_due") url.searchParams.set("status", status);
 
       try {
         const response = await fetch(url.toString(), { credentials: "same-origin" });
@@ -1703,8 +1764,35 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
         const errorCount = Array.isArray(payload.errors) ? payload.errors.length : 0;
         setStatus("invite-status-line", `Envoi terminé : ${sentCount} envoyé(s), ${errorCount} erreur(s).`);
         await loadInvitations();
+        await loadCockpit();
       } catch (error) {
         setStatus("invite-status-line", `Erreur : ${error.message || "envoi impossible"}`);
+      }
+    }
+
+    async function sendInvitationReminders(recordIds = []) {
+      setStatus("invite-status-line", "Envoi des relances en cours...");
+      try {
+        const response = await fetch(apiUrl("/admin/invitations/remind"), {
+          method: "POST",
+          credentials: "same-origin",
+          headers: {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+          },
+          body: JSON.stringify(recordIds.length ? { record_ids: recordIds } : {}),
+        });
+        const payload = await response.json();
+        if (!response.ok || !payload.ok) {
+          throw new Error(payload.error || `Erreur API (${response.status})`);
+        }
+        const remindedCount = Array.isArray(payload.reminded) ? payload.reminded.length : 0;
+        const errorCount = Array.isArray(payload.errors) ? payload.errors.length : 0;
+        setStatus("invite-status-line", `Relance terminée : ${remindedCount} relancée(s), ${errorCount} erreur(s).`);
+        await loadInvitations();
+        await loadCockpit();
+      } catch (error) {
+        setStatus("invite-status-line", `Erreur : ${error.message || "relance impossible"}`);
       }
     }
 
@@ -2612,6 +2700,9 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
     });
     document.getElementById("send-pending-btn").addEventListener("click", async () => {
       await sendInvitations([]);
+    });
+    document.getElementById("send-reminders-btn").addEventListener("click", async () => {
+      await sendInvitationReminders([]);
     });
     document.getElementById("toggle-selection-btn").addEventListener("click", () => {
       state.invitations.selectionMode = true;
