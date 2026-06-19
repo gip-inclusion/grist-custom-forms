@@ -1032,6 +1032,18 @@ textarea {
   font-size: 0.92rem;
 }
 
+.footer-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+}
+
+.footer-link {
+  color: var(--accent-strong);
+}
+
 @media (max-width: 940px) {
   .hero-grid,
   .landing-grid,

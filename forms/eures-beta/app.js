@@ -13,6 +13,7 @@ const copy = {
       navEmployer: "Employeur",
       navStats: "Statistiques",
       langLabel: "Langue",
+      privacyLink: "Protection des données",
       partnersLabel: "Partenaires",
       tagsLabel: "Repères",
       footer: "Expérimentation EURES beta pour faciliter la mobilité professionnelle et les recrutements dans la Grande Région.",
@@ -330,6 +331,44 @@ const copy = {
       emptyBreakdown: "Aucune donnée exploitable pour le moment.",
       loading: "Chargement des statistiques...",
       error: "Impossible de charger les statistiques pour le moment."
+    },
+    privacyPage: {
+      eyebrow: "Protection des données",
+      title: "Mentions d'information EURES beta",
+      intro: "Cette page résume la manière dont les données personnelles sont utilisées dans le cadre de l'expérimentation EURES beta.",
+      sections: {
+        controller: "Qui traite les données ?",
+        purposes: "Pourquoi les données sont-elles collectées ?",
+        recipients: "Qui peut y accéder ?",
+        retention: "Combien de temps sont-elles conservées ?",
+        rights: "Quels sont vos droits ?",
+        matching: "Comment fonctionne le matching ?"
+      },
+      retentionColumns: ["Catégorie", "Durée"],
+      controllerText: "Les données sont traitées dans le cadre de l'expérimentation EURES beta par les équipes habilitées du projet. Elles sont utilisées uniquement pour le suivi des candidatures, des besoins employeurs et des mises en relation proposées.",
+      purposesList: [
+        "Qualifier les profils candidats et les besoins employeurs.",
+        "Calculer des rapprochements candidats / employeurs.",
+        "Permettre une validation humaine des matchings proposés.",
+        "Organiser, lorsque cela est pertinent, la mise en relation entre un candidat et un employeur.",
+        "Produire des indicateurs agrégés et anonymisés de suivi de l'expérimentation."
+      ],
+      recipientsList: [
+        "Les personnes habilitées chargées du suivi de l'expérimentation.",
+        "Les outils techniques nécessaires au fonctionnement du service, dans un cadre contrôlé.",
+        "L'employeur concerné, uniquement lorsqu'un matching a été validé et pour les informations nécessaires à la prise de contact."
+      ],
+      retentionRows: [
+        ["Candidats", "12 mois après le dernier contact utile."],
+        ["Besoins employeurs", "12 mois après la clôture du besoin ou le dernier échange utile."],
+        ["Matchings", "24 mois pour le suivi du fonctionnement et la traçabilité des décisions."],
+        ["Invitations sans réponse", "6 mois."],
+        ["Logs d'administration et de sécurité", "6 mois."],
+        ["Statistiques publiques agrégées", "Conservation plus longue possible dès lors qu'elles sont agrégées et anonymisées."]
+      ],
+      rightsText: "Vous pouvez demander l'accès à vos données, leur rectification, leur effacement, ou exercer vos autres droits dans les conditions prévues par la réglementation applicable. Une adresse de contact dédiée sera publiée avec la version complète des mentions RGPD.",
+      matchingText: "Le matching ne publie pas les données personnelles. Il produit une proposition interne de rapprochement, fondée sur des critères structurés, avant toute éventuelle transmission ciblée à un employeur concerné.",
+      note: "Cette page constitue une première base d'information pour l'expérimentation et sera complétée avec les mentions juridiques détaillées."
     }
   },
   en: {
@@ -341,6 +380,7 @@ const copy = {
       navEmployer: "Employer",
       navStats: "Stats",
       langLabel: "Language",
+      privacyLink: "Data protection",
       partnersLabel: "Partners",
       tagsLabel: "Tags",
       footer: "EURES beta experiment to support professional mobility and recruitment across the Greater Region.",
@@ -658,6 +698,44 @@ const copy = {
       emptyBreakdown: "No usable data yet.",
       loading: "Loading statistics...",
       error: "Unable to load statistics right now."
+    },
+    privacyPage: {
+      eyebrow: "Data protection",
+      title: "EURES beta privacy notice",
+      intro: "This page summarizes how personal data is used within the EURES beta experiment.",
+      sections: {
+        controller: "Who processes the data?",
+        purposes: "Why is the data collected?",
+        recipients: "Who can access it?",
+        retention: "How long is it kept?",
+        rights: "What are your rights?",
+        matching: "How does matching work?"
+      },
+      retentionColumns: ["Category", "Retention period"],
+      controllerText: "Data is processed within the EURES beta experiment by the authorized project teams. It is used only to manage candidate profiles, employer needs and proposed introductions.",
+      purposesList: [
+        "Qualify candidate profiles and employer needs.",
+        "Calculate candidate / employer matches.",
+        "Allow human validation of suggested matches.",
+        "Organize introductions when relevant between a candidate and an employer.",
+        "Produce aggregated and anonymized indicators for monitoring the experiment."
+      ],
+      recipientsList: [
+        "Authorized staff in charge of the experiment.",
+        "Technical tools required to operate the service, in a controlled framework.",
+        "The relevant employer, only when a match has been validated and only for the information needed to make contact."
+      ],
+      retentionRows: [
+        ["Candidates", "12 months after the last useful contact."],
+        ["Employer needs", "12 months after the need is closed or the last useful exchange."],
+        ["Matchings", "24 months for operational follow-up and decision traceability."],
+        ["Unanswered invitations", "6 months."],
+        ["Admin and security logs", "6 months."],
+        ["Aggregated public statistics", "May be kept longer once aggregated and anonymized."]
+      ],
+      rightsText: "You may request access to your data, its correction or deletion, and exercise your other rights under applicable regulations. A dedicated contact address will be published with the full legal privacy notice.",
+      matchingText: "Matching does not publish personal data. It creates an internal proposal based on structured criteria before any targeted transmission to a relevant employer.",
+      note: "This page is an initial information basis for the experiment and will be completed with the full legal privacy notice."
     }
   },
   de: {
@@ -669,6 +747,7 @@ const copy = {
       navEmployer: "Arbeitgeber",
       navStats: "Statistik",
       langLabel: "Sprache",
+      privacyLink: "Datenschutz",
       partnersLabel: "Partner",
       tagsLabel: "Stichworte",
       footer: "EURES-beta-Experiment zur Unterstützung beruflicher Mobilität und Rekrutierung in der Großregion.",
@@ -986,6 +1065,44 @@ const copy = {
       emptyBreakdown: "Noch keine auswertbaren Daten.",
       loading: "Statistiken werden geladen...",
       error: "Die Statistiken können derzeit nicht geladen werden."
+    },
+    privacyPage: {
+      eyebrow: "Datenschutz",
+      title: "Datenschutzhinweise EURES beta",
+      intro: "Diese Seite fasst zusammen, wie personenbezogene Daten im Rahmen des EURES-beta-Experiments verwendet werden.",
+      sections: {
+        controller: "Wer verarbeitet die Daten?",
+        purposes: "Warum werden die Daten erhoben?",
+        recipients: "Wer kann darauf zugreifen?",
+        retention: "Wie lange werden sie aufbewahrt?",
+        rights: "Welche Rechte haben Sie?",
+        matching: "Wie funktioniert das Matching?"
+      },
+      retentionColumns: ["Kategorie", "Aufbewahrungsdauer"],
+      controllerText: "Die Daten werden im Rahmen des EURES-beta-Experiments von den dafür autorisierten Projektteams verarbeitet. Sie werden nur zur Verwaltung von Kandidatenprofilen, Arbeitgeberbedarfen und vorgeschlagenen Vermittlungen verwendet.",
+      purposesList: [
+        "Kandidatenprofile und Arbeitgeberbedarfe qualifizieren.",
+        "Kandidaten-/Arbeitgeber-Matchings berechnen.",
+        "Eine menschliche Validierung der vorgeschlagenen Matchings ermöglichen.",
+        "Bei Relevanz die Kontaktanbahnung zwischen Kandidat und Arbeitgeber organisieren.",
+        "Aggregierte und anonymisierte Indikatoren zur Beobachtung des Experiments erstellen."
+      ],
+      recipientsList: [
+        "Autorisierte Personen, die das Experiment begleiten.",
+        "Technische Werkzeuge, die für den Betrieb des Dienstes erforderlich sind, in einem kontrollierten Rahmen.",
+        "Der betreffende Arbeitgeber, nur wenn ein Matching validiert wurde und nur für die zur Kontaktaufnahme erforderlichen Informationen."
+      ],
+      retentionRows: [
+        ["Kandidaten", "12 Monate nach dem letzten zweckdienlichen Kontakt."],
+        ["Arbeitgeberbedarfe", "12 Monate nach Abschluss des Bedarfs oder dem letzten zweckdienlichen Austausch."],
+        ["Matchings", "24 Monate für das operative Monitoring und die Nachvollziehbarkeit von Entscheidungen."],
+        ["Unbeantwortete Einladungen", "6 Monate."],
+        ["Admin- und Sicherheitslogs", "6 Monate."],
+        ["Aggregierte öffentliche Statistiken", "Können länger aufbewahrt werden, sobald sie aggregiert und anonymisiert sind."]
+      ],
+      rightsText: "Sie können Zugang zu Ihren Daten, deren Berichtigung oder Löschung verlangen und Ihre weiteren Rechte nach den geltenden Vorschriften ausüben. Eine eigene Kontaktadresse wird mit der vollständigen rechtlichen Datenschutzerklärung veröffentlicht.",
+      matchingText: "Das Matching veröffentlicht keine personenbezogenen Daten. Es erstellt zunächst einen internen Vorschlag auf Basis strukturierter Kriterien, bevor gegebenenfalls eine gezielte Übermittlung an einen relevanten Arbeitgeber erfolgt.",
+      note: "Diese Seite ist eine erste Informationsgrundlage für das Experiment und wird durch die vollständigen rechtlichen Datenschutzhinweise ergänzt."
     }
   }
 };
@@ -1994,6 +2111,7 @@ function pageUrl(page, lang) {
     "candidate-landing": `${BASE_PATH}/candidate`,
     "employer-landing": `${BASE_PATH}/employer`,
     stat: `${BASE_PATH}/stat`,
+    privacy: `${BASE_PATH}/privacy`,
     "candidate-questionnaire": `${BASE_PATH}/questionnaire-candidate`,
     "employer-questionnaire": `${BASE_PATH}/questionnaire-employer`
   };
@@ -2306,7 +2424,14 @@ function nav(page, lang, t) {
 }
 
 function footer(t) {
-  return `<footer class="footer"><div class="shell">${t.common.footer}</div></footer>`;
+  return `
+    <footer class="footer">
+      <div class="shell footer-inner">
+        <span>${t.common.footer}</span>
+        <a class="footer-link" href="${pageUrl("privacy", currentLang())}">${t.common.privacyLink}</a>
+      </div>
+    </footer>
+  `;
 }
 
 function list(items) {
@@ -2663,6 +2788,92 @@ function homeTemplate(lang, t) {
           <article class="panel">
             <h2>${t.home.perspectivesTitle}</h2>
             ${list(t.home.perspectivesBullets)}
+          </article>
+        </div>
+      </section>
+    </main>
+    ${footer(t)}
+  `;
+}
+
+function privacyTemplate(lang, t) {
+  const data = t.privacyPage;
+  return `
+    ${nav("privacy", lang, t)}
+    <main id="main-content" tabindex="-1">
+      <section class="hero">
+        <div class="shell hero-grid">
+          <article class="hero-card hero">
+            <div class="eyebrow">${data.eyebrow}</div>
+            <h1>${data.title}</h1>
+            <p class="lede">${data.intro}</p>
+          </article>
+          <aside class="story-card">
+            <h2>${data.sections.retention}</h2>
+            <p>${data.note}</p>
+          </aside>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="shell principles-grid">
+          <article class="surface-card">
+            <h2>${data.sections.controller}</h2>
+            <p>${data.controllerText}</p>
+          </article>
+          <article class="surface-card">
+            <h2>${data.sections.matching}</h2>
+            <p>${data.matchingText}</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="shell tracks-grid">
+          <article class="surface-card">
+            <h2>${data.sections.purposes}</h2>
+            ${list(data.purposesList)}
+          </article>
+          <article class="surface-card">
+            <h2>${data.sections.recipients}</h2>
+            ${list(data.recipientsList)}
+          </article>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="shell">
+          <div class="panel">
+            <h2>${data.sections.retention}</h2>
+          </div>
+          <div class="table-wrap">
+            <table class="stats-table">
+              <caption class="sr-only">${data.sections.retention}</caption>
+              <thead>
+                <tr>
+                  <th scope="col">${data.retentionColumns[0]}</th>
+                  <th scope="col">${data.retentionColumns[1]}</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${data.retentionRows.map(([label, value]) => `
+                  <tr>
+                    <th scope="row">${label}</th>
+                    <td>${value}</td>
+                  </tr>
+                `).join("")}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="shell">
+          <article class="panel">
+            <h2>${data.sections.rights}</h2>
+            <p>${data.rightsText}</p>
+            <p class="mini-note">${data.note}</p>
           </article>
         </div>
       </section>
@@ -4433,6 +4644,11 @@ function render() {
 
   if (page === "home") {
     root.innerHTML = homeTemplate(lang, t);
+    return;
+  }
+
+  if (page === "privacy") {
+    root.innerHTML = privacyTemplate(lang, t);
     return;
   }
 
