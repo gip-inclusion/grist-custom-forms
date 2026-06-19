@@ -1326,8 +1326,8 @@ def delete_eures_invitation_record_by_id(record_id: int, headers: dict | None = 
         raise RuntimeError('EURES invitations configuration is incomplete.')
     if headers is None:
         headers = _eures_admin_headers(config)
-    base_url = f"{GRIST_BASE_URL}/api/docs/{config['doc_id']}/tables/{config['table_id']}/records"
-    resp = write_grist_records('DELETE', base_url, {'records': [int(record_id)]}, headers)
+    delete_url = f"{GRIST_BASE_URL}/api/docs/{config['doc_id']}/tables/{config['table_id']}/records/delete"
+    resp = write_grist_records('POST', delete_url, [int(record_id)], headers)
     if resp.status_code not in {200, 202, 204}:
         raise RuntimeError(f'Failed to delete invitation: HTTP {resp.status_code} - {resp.text}')
     return resp
