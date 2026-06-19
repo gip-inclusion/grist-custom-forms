@@ -2020,12 +2020,74 @@ function focusField(element) {
   element.scrollIntoView({ behavior: "smooth", block: "center" });
 }
 
+function setStatusMessage(statusEl, message, state = "") {
+  if (!statusEl) {
+    return;
+  }
+  statusEl.textContent = message;
+  statusEl.dataset.state = state;
+  if (state === "error") {
+    statusEl.setAttribute("role", "alert");
+    statusEl.setAttribute("aria-live", "assertive");
+  } else {
+    statusEl.setAttribute("role", "status");
+    statusEl.setAttribute("aria-live", "polite");
+  }
+}
+
 function getFieldContainer(element) {
   return element?.closest(".field, .fieldset, .matrix-question, .matrix-wrap, .form-section") || null;
 }
 
+function nextFieldErrorId() {
+  nextFieldErrorId.counter = (nextFieldErrorId.counter || 0) + 1;
+  return `field-error-${nextFieldErrorId.counter}`;
+}
+
+function clearFieldErrorState(element) {
+  if (!(element instanceof HTMLElement)) {
+    return;
+  }
+  const container = getFieldContainer(element);
+  if (container) {
+    container.classList.remove("is-invalid");
+    container.querySelectorAll(".field-error").forEach((node) => node.remove());
+  }
+  const controls = [];
+  if (element instanceof HTMLInputElement && element.name) {
+    controls.push(...document.querySelectorAll(`[name="${CSS.escape(element.name)}"]`));
+  } else {
+    controls.push(element);
+  }
+  controls.forEach((control) => {
+    if (!(control instanceof HTMLElement)) {
+      return;
+    }
+    control.removeAttribute("aria-invalid");
+    const describedBy = String(control.getAttribute("aria-describedby") || "")
+      .split(/\s+/)
+      .filter((token) => token && !token.startsWith("field-error-"));
+    if (describedBy.length) {
+      control.setAttribute("aria-describedby", describedBy.join(" "));
+    } else {
+      control.removeAttribute("aria-describedby");
+    }
+  });
+}
+
 function clearInvalidState(scope) {
   const root = scope instanceof HTMLElement ? scope : document;
+  root.querySelectorAll('[aria-invalid="true"]').forEach((node) => {
+    node.removeAttribute("aria-invalid");
+    const describedBy = String(node.getAttribute("aria-describedby") || "")
+      .split(/\s+/)
+      .filter((token) => token && !token.startsWith("field-error-"));
+    if (describedBy.length) {
+      node.setAttribute("aria-describedby", describedBy.join(" "));
+    } else {
+      node.removeAttribute("aria-describedby");
+    }
+  });
   root.querySelectorAll(".is-invalid").forEach((node) => node.classList.remove("is-invalid"));
   root.querySelectorAll(".field-error").forEach((node) => node.remove());
 }
@@ -2043,8 +2105,28 @@ function setInlineFieldError(element, message) {
   }
   const note = document.createElement("p");
   note.className = "field-error";
+  note.id = nextFieldErrorId();
   note.textContent = message;
   container.appendChild(note);
+  const controls = [];
+  if (element instanceof HTMLInputElement && element.name) {
+    controls.push(...document.querySelectorAll(`[name="${CSS.escape(element.name)}"]`));
+  } else {
+    controls.push(element);
+  }
+  controls.forEach((control) => {
+    if (!(control instanceof HTMLElement)) {
+      return;
+    }
+    control.setAttribute("aria-invalid", "true");
+    const describedBy = new Set(
+      String(control.getAttribute("aria-describedby") || "")
+        .split(/\s+/)
+        .filter(Boolean)
+    );
+    describedBy.add(note.id);
+    control.setAttribute("aria-describedby", Array.from(describedBy).join(" "));
+  });
 }
 
 function describeInvalidField(element, t) {
@@ -2125,7 +2207,14 @@ function validateVisibleCheckboxGroup(form, name, label, setStatus, t, min = 1, 
 }
 
 function nav(page, lang, t) {
+  const navItems = [
+    ["home", t.common.navHome],
+    ["candidate-landing", t.common.navCandidate],
+    ["employer-landing", t.common.navEmployer],
+    ["stat", t.common.navStats],
+  ];
   return `
+    <a class="skip-link" href="#main-content">Aller au contenu</a>
     <header class="site-header">
       <div class="shell">
         <a class="brand" href="${pageUrl("home", lang)}">
@@ -2136,14 +2225,13 @@ function nav(page, lang, t) {
         </a>
         <nav class="nav" aria-label="Primary">
           <div class="nav-links">
-            <a class="nav-pill" href="${pageUrl("home", lang)}">${t.common.navHome}</a>
-            <a class="nav-pill" href="${pageUrl("candidate-landing", lang)}">${t.common.navCandidate}</a>
-            <a class="nav-pill" href="${pageUrl("employer-landing", lang)}">${t.common.navEmployer}</a>
-            <a class="nav-pill" href="${pageUrl("stat", lang)}">${t.common.navStats}</a>
+            ${navItems.map(([key, label]) => `
+              <a class="nav-pill${key === page ? " is-active" : ""}" href="${pageUrl(key, lang)}"${key === page ? ' aria-current="page"' : ""}>${label}</a>
+            `).join("")}
           </div>
           <div class="lang-switch" aria-label="${t.common.langLabel}">
             ${LANGS.map((choice) => `
-              <a class="lang-link${choice === lang ? " is-active" : ""}" href="${pageUrl(page, choice)}">${choice.toUpperCase()}</a>
+              <a class="lang-link${choice === lang ? " is-active" : ""}" href="${pageUrl(page, choice)}"${choice === lang ? ' aria-current="true"' : ""}>${choice.toUpperCase()}</a>
             `).join("")}
           </div>
         </nav>
@@ -2298,7 +2386,7 @@ function statTemplate(lang, t, data) {
 
   return `
     ${nav("stat", lang, t)}
-    <main>
+    <main id="main-content" tabindex="-1">
       <section class="hero">
         <div class="shell hero-grid">
           <article class="hero-card hero">
@@ -2371,6 +2459,7 @@ function statTemplate(lang, t, data) {
           </div>
           <div class="table-wrap">
             <table class="stats-table">
+              <caption class="sr-only">${t.statPage.monthlyTitle}</caption>
               <thead>
                 <tr>
                   ${Object.values(t.statPage.monthlyColumns).map((label) => `<th>${label}</th>`).join("")}
@@ -2437,7 +2526,7 @@ function homeTemplate(lang, t) {
 
   return `
     ${nav("home", lang, t)}
-    <main>
+    <main id="main-content" tabindex="-1">
       <section class="hero">
         <div class="shell hero-grid">
           <article class="hero-card hero">
@@ -2521,7 +2610,7 @@ function landingTemplate(page, lang, t, data) {
   if (page === "candidate-landing") {
     return `
       ${nav(page, lang, t)}
-      <main class="section candidate-landing-page">
+      <main id="main-content" class="section candidate-landing-page" tabindex="-1">
         <div class="shell candidate-landing-layout">
           <article class="candidate-letter">
             <div class="candidate-logos" aria-label="Partners">
@@ -2584,7 +2673,7 @@ function landingTemplate(page, lang, t, data) {
 
   return `
     ${nav(page, lang, t)}
-    <main class="section">
+    <main id="main-content" class="section" tabindex="-1">
       <div class="shell landing-grid">
         <article class="hero-card landing-card">
           <div class="kicker">${data.kicker}</div>
@@ -2658,33 +2747,35 @@ function radioPills(name, options) {
 }
 
 function matrixQuestion(title, rows, columns, hint = "", inputType = "checkbox", mobileHint = "") {
+  const captionId = nextFieldErrorId();
   return `
     <div class="field">
       <span>${title}</span>
       ${hint ? `<p class="mini-note">${hint}</p>` : ""}
       ${mobileHint ? `<p class="mini-note matrix-mobile-hint">${mobileHint}</p>` : ""}
       <div class="matrix-wrap">
-        <table class="matrix-table">
+        <table class="matrix-table" aria-describedby="${captionId}">
+          <caption id="${captionId}" class="sr-only">${title}</caption>
           <thead>
             <tr>
               <th></th>
               ${columns.map((column) => {
                 const item = typeof column === "string" ? { value: column, label: column } : column;
-                return `<th>${item.label}</th>`;
+                return `<th scope="col">${item.label}</th>`;
               }).join("")}
             </tr>
           </thead>
           <tbody>
             ${rows.map((row) => `
               <tr>
-                <th>${row.label}</th>
+                <th scope="row">${row.label}</th>
                 ${columns.map((column) => {
                   const item = typeof column === "string" ? { value: column, label: column } : column;
                   return `
                   <td data-column-label="${escapeHtml(item.label)}">
                     <label class="matrix-option">
                       <span class="matrix-option-label">${item.label}</span>
-                      <input type="${inputType}" name="${row.field}" value="${item.value}">
+                      <input type="${inputType}" name="${row.field}" value="${item.value}" aria-label="${escapeHtml(`${title} - ${row.label} - ${item.label}`)}">
                     </label>
                   </td>
                 `;
@@ -2765,7 +2856,7 @@ function candidateTallyQuestionnaireTemplate(lang, t) {
   const content = getCandidateTallyContent(lang);
   return `
     ${nav("candidate-questionnaire", lang, t)}
-    <main class="questionnaire-shell">
+    <main id="main-content" class="questionnaire-shell" tabindex="-1">
       <div class="shell questionnaire-grid">
         <section class="questionnaire-card candidate-letter questionnaire-letter">
           <div class="questionnaire-hero">
@@ -2990,7 +3081,7 @@ function candidateTallyQuestionnaireTemplate(lang, t) {
               <button class="primary-action" type="submit" id="save-btn">${t.common.submit}</button>
               <a class="ghost-action" href="${pageUrl("candidate-landing", lang)}">${t.common.ctaBackHome}</a>
             </div>
-            <div class="status" id="status" aria-live="polite"></div>
+            <div class="status" id="status" role="status" aria-live="polite"></div>
           </form>
         </section>
 
@@ -3020,7 +3111,7 @@ function employerLandingTemplate(lang, t) {
   const logos = t.candidateLanding.logos;
   return `
     ${nav("employer-landing", lang, t)}
-    <main class="section candidate-landing-page">
+    <main id="main-content" class="section candidate-landing-page" tabindex="-1">
       <div class="shell candidate-landing-layout">
         <article class="candidate-letter">
           <div class="candidate-logos" aria-label="Partners">
@@ -3088,7 +3179,7 @@ function employerTallyQuestionnaireTemplate(lang, t) {
   const content = getEmployerTallyContent(lang);
   return `
     ${nav("employer-questionnaire", lang, t)}
-    <main class="questionnaire-shell">
+    <main id="main-content" class="questionnaire-shell" tabindex="-1">
       <div class="shell questionnaire-grid">
         <section class="questionnaire-card candidate-letter questionnaire-letter">
           <div class="questionnaire-hero">
@@ -3224,7 +3315,7 @@ function employerTallyQuestionnaireTemplate(lang, t) {
               <button class="primary-action" type="submit" id="save-btn">${t.common.submit}</button>
               <a class="ghost-action" href="${pageUrl("employer-landing", lang)}">${t.common.ctaBackHome}</a>
             </div>
-            <div class="status" id="status" aria-live="polite"></div>
+            <div class="status" id="status" role="status" aria-live="polite"></div>
           </form>
         </section>
 
@@ -3516,8 +3607,7 @@ function attachEmployerTallyBehavior(lang, t) {
   uuidBox.textContent = `${t.common.uuidPrefix}: ${uuid}`;
 
   function setStatus(message, state = "") {
-    statusEl.textContent = message;
-    statusEl.dataset.state = state;
+    setStatusMessage(statusEl, message, state);
   }
 
   const limitedGroups = ["tally_q10", "tally_q11", "tally_q12", "tally_q13", "tally_q14"];
@@ -3558,18 +3648,10 @@ function attachEmployerTallyBehavior(lang, t) {
   form.addEventListener("change", () => toggleEmployerConditionBlocks(form));
   form.addEventListener("input", () => toggleEmployerConditionBlocks(form));
   form.addEventListener("change", (event) => {
-    const container = getFieldContainer(event.target);
-    if (container) {
-      container.classList.remove("is-invalid");
-      container.querySelectorAll(".field-error").forEach((node) => node.remove());
-    }
+    clearFieldErrorState(event.target);
   });
   form.addEventListener("input", (event) => {
-    const container = getFieldContainer(event.target);
-    if (container) {
-      container.classList.remove("is-invalid");
-      container.querySelectorAll(".field-error").forEach((node) => node.remove());
-    }
+    clearFieldErrorState(event.target);
   });
   toggleEmployerConditionBlocks(form);
   enforceCheckboxLimit(form, limitedGroups, 4, setStatus, content.errors.maxFour);
@@ -3696,8 +3778,7 @@ function attachCandidateTallyBehavior(lang, t) {
   uuidBox.textContent = `${t.common.uuidPrefix}: ${uuid}`;
 
   function setStatus(message, state = "") {
-    statusEl.textContent = message;
-    statusEl.dataset.state = state;
+    setStatusMessage(statusEl, message, state);
   }
 
   const limitedGroups = ["tally_q20", "tally_q22", "tally_q25", "tally_q27", "tally_q29"];
@@ -3740,18 +3821,10 @@ function attachCandidateTallyBehavior(lang, t) {
   form.addEventListener("change", () => toggleConditionBlocks(form));
   form.addEventListener("input", () => toggleConditionBlocks(form));
   form.addEventListener("change", (event) => {
-    const container = getFieldContainer(event.target);
-    if (container) {
-      container.classList.remove("is-invalid");
-      container.querySelectorAll(".field-error").forEach((node) => node.remove());
-    }
+    clearFieldErrorState(event.target);
   });
   form.addEventListener("input", (event) => {
-    const container = getFieldContainer(event.target);
-    if (container) {
-      container.classList.remove("is-invalid");
-      container.querySelectorAll(".field-error").forEach((node) => node.remove());
-    }
+    clearFieldErrorState(event.target);
   });
   toggleConditionBlocks(form);
   enforceCheckboxLimit(form, limitedGroups, 4, setStatus, content.errors.maxFour);
@@ -3932,7 +4005,7 @@ function questionnaireTemplate(page, lang, t, data) {
   const isCandidate = page === "candidate-questionnaire";
   return `
     ${nav(page, lang, t)}
-    <main class="questionnaire-shell">
+    <main id="main-content" class="questionnaire-shell" tabindex="-1">
       <div class="shell questionnaire-grid">
         <section class="questionnaire-card">
           <div class="questionnaire-hero">
@@ -4117,7 +4190,7 @@ function questionnaireTemplate(page, lang, t, data) {
               <button class="primary-action" type="submit" id="save-btn">${t.common.submit}</button>
               <a class="ghost-action" href="${pageUrl(isCandidate ? "candidate-landing" : "employer-landing", lang)}">${t.common.ctaBackHome}</a>
             </div>
-            <div class="status" id="status" aria-live="polite"></div>
+            <div class="status" id="status" role="status" aria-live="polite"></div>
           </form>
         </section>
 
@@ -4200,23 +4273,14 @@ function attachQuestionnaireBehavior(page, lang, t) {
   uuidBox.textContent = `${t.common.uuidPrefix}: ${uuid}`;
 
   function setStatus(message, state = "") {
-    statusEl.textContent = message;
-    statusEl.dataset.state = state;
+    setStatusMessage(statusEl, message, state);
   }
 
   form.addEventListener("change", (event) => {
-    const container = getFieldContainer(event.target);
-    if (container) {
-      container.classList.remove("is-invalid");
-      container.querySelectorAll(".field-error").forEach((node) => node.remove());
-    }
+    clearFieldErrorState(event.target);
   });
   form.addEventListener("input", (event) => {
-    const container = getFieldContainer(event.target);
-    if (container) {
-      container.classList.remove("is-invalid");
-      container.querySelectorAll(".field-error").forEach((node) => node.remove());
-    }
+    clearFieldErrorState(event.target);
   });
 
   form.addEventListener("submit", async (event) => {
@@ -4297,7 +4361,7 @@ function render() {
   if (page === "stat") {
     root.innerHTML = `
       ${nav("stat", lang, t)}
-      <main class="section">
+      <main id="main-content" class="section" tabindex="-1">
         <div class="shell">
           <div class="panel"><p>${t.statPage.loading}</p></div>
         </div>
@@ -4311,7 +4375,7 @@ function render() {
       .catch(() => {
         root.innerHTML = `
           ${nav("stat", lang, t)}
-          <main class="section">
+          <main id="main-content" class="section" tabindex="-1">
             <div class="shell">
               <div class="panel"><p>${t.statPage.error}</p></div>
             </div>
