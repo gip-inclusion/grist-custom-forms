@@ -143,6 +143,14 @@
       background: linear-gradient(180deg, rgba(220, 233, 255, 0.8), rgba(255, 255, 255, 0.75));
     }
 
+    .matching-card[data-role="candidate"] .matching-summary {
+      background: linear-gradient(180deg, rgba(227, 239, 255, 0.95), rgba(255, 255, 255, 0.82));
+    }
+
+    .matching-card[data-role="employer"] .matching-summary {
+      background: linear-gradient(180deg, rgba(234, 246, 236, 0.95), rgba(255, 255, 255, 0.82));
+    }
+
     .matching-summary h2 {
       margin: 0 0 0.4rem;
       font-size: 1.35rem;
@@ -208,6 +216,18 @@
       background: #fff4e8;
       color: #8d5311;
       border-color: #e7bc77;
+    }
+
+    .pill.role-candidate {
+      background: #e6f0ff;
+      color: #0d4a8f;
+      border-color: #9fc0ea;
+    }
+
+    .pill.role-employer {
+      background: #ebf8ef;
+      color: #19663c;
+      border-color: #90c8a6;
     }
 
     .summary-score {
@@ -285,6 +305,16 @@
     .compare-card h3 {
       margin: 0 0 0.9rem;
       font-size: 1.15rem;
+    }
+
+    .matching-card[data-role="candidate"] .compare-card:first-child {
+      border-color: #9fc0ea;
+      background: linear-gradient(180deg, rgba(240, 246, 255, 0.92), rgba(255, 255, 255, 0.96));
+    }
+
+    .matching-card[data-role="employer"] .compare-card:first-child {
+      border-color: #90c8a6;
+      background: linear-gradient(180deg, rgba(241, 250, 243, 0.92), rgba(255, 255, 255, 0.96));
     }
 
     .detail-list {
@@ -1602,7 +1632,7 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
                 <h2>${esc(row.title || (isCandidate ? "Candidat" : "Employeur"))}</h2>
                 <p>${esc((isCandidate ? "Candidat" : "Employeur") + (row.subtitle ? ` · ${row.subtitle}` : ""))}</p>
                 <div class="summary-tags">
-                  <span class="pill">${esc(isCandidate ? "Candidat" : "Employeur")}</span>
+                  <span class="pill ${isCandidate ? "role-candidate" : "role-employer"}">${esc(isCandidate ? "Candidat" : "Employeur")}</span>
                   <span class="pill ${row.notification_status === "sent" ? "accepted" : row.notification_status === "dismissed" ? "refused" : "pending"}">Statut : ${esc(noMatchStatusLabel(row.notification_status))}</span>
                   <span class="pill">Destinataire : ${esc(row.recipient_email || "email manquant")}</span>
                 </div>
