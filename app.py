@@ -55,6 +55,7 @@ app.config.update(
 
 _ADMIN_MAGIC_LINK_REQUESTS: dict[tuple[str, str], float] = {}
 _ADMIN_MAGIC_LINK_USED: dict[str, float] = {}
+_EURES_PUBLIC_WRITE_ATTEMPTS: dict[tuple[str, str], list[float]] = {}
 
 GRIST_BASE_URL = os.environ.get('GRIST_BASE_URL', 'https://grist.numerique.gouv.fr').rstrip('/')
 _TABLE_COLUMNS_CACHE: dict[tuple[str, str], dict[str, object]] = {}
@@ -957,6 +958,113 @@ def get_eures_email_action_serializer() -> URLSafeSerializer:
     return URLSafeSerializer(secret_key=secret, salt='eures-email-action')
 
 
+def get_eures_public_write_serializer() -> URLSafeTimedSerializer:
+    secret = (
+        os.environ.get('EURES_PUBLIC_WRITE_SECRET', '').strip()
+        or app.config.get('SECRET_KEY', '')
+    )
+    if not secret:
+        raise RuntimeError('Missing EURES public write secret configuration.')
+    return URLSafeTimedSerializer(secret_key=secret, salt='eures-public-write')
+
+
+def get_eures_public_write_ttl_seconds() -> int:
+    raw = str(os.environ.get('EURES_PUBLIC_WRITE_TTL_SECONDS', '21600')).strip()
+    try:
+        value = int(raw)
+    except Exception:
+        value = 21600
+    return max(300, value)
+
+
+def get_eures_public_write_rate_limit() -> tuple[int, int]:
+    raw_window = str(os.environ.get('EURES_PUBLIC_WRITE_RATE_LIMIT_WINDOW_SECONDS', '3600')).strip()
+    raw_max = str(os.environ.get('EURES_PUBLIC_WRITE_RATE_LIMIT_MAX', '20')).strip()
+    try:
+        window_seconds = int(raw_window)
+    except Exception:
+        window_seconds = 3600
+    try:
+        max_attempts = int(raw_max)
+    except Exception:
+        max_attempts = 20
+    return max(60, window_seconds), max(1, max_attempts)
+
+
+def _eures_public_write_session_key(role: str) -> str:
+    return f'eures_public_write:{role}'
+
+
+def _get_client_ip() -> str:
+    forwarded = str(request.headers.get('X-Forwarded-For') or '').strip()
+    if forwarded:
+        return forwarded.split(',', 1)[0].strip()
+    return str(request.remote_addr or '').strip()
+
+
+def _issue_eures_public_write_token(role: str) -> str:
+    normalized_role = _normalize_eures_invitation_role(role)
+    if not normalized_role:
+        raise ValueError('Invalid role')
+    nonce = secrets.token_urlsafe(18)
+    session[_eures_public_write_session_key(normalized_role)] = {
+        'nonce': nonce,
+        'issued_at': datetime.now(timezone.utc).isoformat(),
+    }
+    session.modified = True
+    return get_eures_public_write_serializer().dumps({
+        'form_id': 'eures-beta',
+        'role': normalized_role,
+        'nonce': nonce,
+    })
+
+
+def _validate_eures_public_write_token(role: str, token: str) -> tuple[bool, str]:
+    normalized_role = _normalize_eures_invitation_role(role)
+    if not normalized_role:
+        return False, 'Role invalide.'
+    if not token:
+        return False, 'Session du formulaire invalide ou expirée. Rechargez la page avant de renvoyer.'
+    try:
+        payload = get_eures_public_write_serializer().loads(
+            token,
+            max_age=get_eures_public_write_ttl_seconds(),
+        )
+    except SignatureExpired:
+        return False, 'Session du formulaire expirée. Rechargez la page avant de renvoyer.'
+    except BadSignature:
+        return False, 'Session du formulaire invalide. Rechargez la page avant de renvoyer.'
+    except Exception:
+        app.logger.exception('EURES public write token decode failed')
+        return False, 'Impossible de vérifier la session du formulaire. Rechargez la page puis réessayez.'
+
+    if str(payload.get('form_id') or '') != 'eures-beta':
+        return False, 'Jeton de formulaire invalide.'
+    if _normalize_eures_invitation_role(payload.get('role') or '') != normalized_role:
+        return False, 'Jeton de formulaire invalide pour ce parcours.'
+    nonce = str(payload.get('nonce') or '').strip()
+    session_payload = session.get(_eures_public_write_session_key(normalized_role)) or {}
+    if str(session_payload.get('nonce') or '').strip() != nonce:
+        return False, 'Session du formulaire expirée. Rechargez la page avant de renvoyer.'
+    return True, ''
+
+
+def _check_eures_public_write_rate_limit(role: str) -> tuple[bool, int]:
+    normalized_role = _normalize_eures_invitation_role(role)
+    if not normalized_role:
+        return False, 0
+    window_seconds, max_attempts = get_eures_public_write_rate_limit()
+    key = (_get_client_ip(), normalized_role)
+    now = time.time()
+    bucket = [ts for ts in _EURES_PUBLIC_WRITE_ATTEMPTS.get(key, []) if now - ts < window_seconds]
+    if len(bucket) >= max_attempts:
+        _EURES_PUBLIC_WRITE_ATTEMPTS[key] = bucket
+        return False, int(max(1, window_seconds - (now - bucket[0])))
+    bucket.append(now)
+    _EURES_PUBLIC_WRITE_ATTEMPTS[key] = bucket
+    return True, 0
+
+
 def _generate_eures_invitation_token() -> str:
     return secrets.token_urlsafe(24)
 
@@ -1365,6 +1473,10 @@ def build_brevo_invitation_email(invitation_row: dict) -> tuple[str, str, str, s
             )
 
         title_block = f"{title}\n\n" if title else ""
+        title_html = (
+            f'<h1 style="margin:0;font-size:28px;line-height:1.18;font-weight:700;color:#16253d;">{escape(title)}</h1>'
+            if title else ''
+        )
         text_body = (
             f"{hello}\n\n"
             f"{title_block}"
@@ -1391,7 +1503,7 @@ def build_brevo_invitation_email(invitation_row: dict) -> tuple[str, str, str, s
             <tr>
               <td style="padding:24px 28px 8px;">
                 <p style="margin:0 0 10px;font-size:16px;line-height:1.6;color:#324765;">{escape(hello)}</p>
-                {"<h1 style=\"margin:0;font-size:28px;line-height:1.18;font-weight:700;color:#16253d;\">" + escape(title) + "</h1>" if title else ""}
+                {title_html}
               </td>
             </tr>
             <tr>
@@ -1469,6 +1581,10 @@ def build_brevo_invitation_email(invitation_row: dict) -> tuple[str, str, str, s
         )
 
     title_block = f"{title}\n\n" if title else ""
+    title_html = (
+        f'<h1 style="margin:0;font-size:28px;line-height:1.18;font-weight:700;color:#16253d;">{escape(title)}</h1>'
+        if title else ''
+    )
     text_body = (
         f"{hello}\n\n"
         f"{title_block}"
@@ -1495,7 +1611,7 @@ def build_brevo_invitation_email(invitation_row: dict) -> tuple[str, str, str, s
             <tr>
               <td style="padding:24px 28px 8px;">
                 <p style="margin:0 0 10px;font-size:16px;line-height:1.6;color:#324765;">{escape(hello)}</p>
-                {"<h1 style=\"margin:0;font-size:28px;line-height:1.18;font-weight:700;color:#16253d;\">" + escape(title) + "</h1>" if title else ""}
+                {title_html}
               </td>
             </tr>
             <tr>
@@ -3529,6 +3645,29 @@ def get_record(form_id: str):
         return jsonify({'error': str(e)}), 500
 
 
+@app.route('/api/forms/<form_id>/write-token', methods=['GET'])
+def issue_public_write_token(form_id: str):
+    """Issue a short-lived public write token for EURES beta public forms."""
+    proxied = maybe_proxy_eures_request(form_id)
+    if proxied:
+        return proxied
+    if form_id != 'eures-beta':
+        return jsonify({'error': 'Write token endpoint is not enabled for this form.'}), 404
+    role = _normalize_eures_invitation_role(request.args.get('role') or '')
+    if role not in {'candidate', 'employer'}:
+        return jsonify({'error': 'Invalid role'}), 400
+    try:
+        token = _issue_eures_public_write_token(role)
+    except Exception as e:
+        return jsonify({'error': f'Unable to issue write token: {e}'}), 500
+    return jsonify({
+        'ok': True,
+        'role': role,
+        'token': token,
+        'expires_in_seconds': get_eures_public_write_ttl_seconds(),
+    }), 200
+
+
 @app.route('/api/forms/<form_id>/record', methods=['POST'])
 def save_record(form_id: str):
     """Create or update a record."""
@@ -3542,6 +3681,18 @@ def save_record(form_id: str):
     fields = data['fields']
     if not isinstance(fields, dict):
         return jsonify({'error': 'Invalid fields payload'}), 400
+    if form_id == 'eures-beta':
+        role = str(fields.get('flow_role') or '')
+        write_token = str(fields.get('write_token') or request.headers.get('X-Eures-Write-Token') or '').strip()
+        is_valid, message = _validate_eures_public_write_token(role, write_token)
+        if not is_valid:
+            return jsonify({'error': message}), 403
+        allowed, retry_after = _check_eures_public_write_rate_limit(role)
+        if not allowed:
+            return jsonify({
+                'error': f'Trop de tentatives pour ce formulaire. Réessayez dans {retry_after} secondes.',
+            }), 429
+        fields = {k: v for k, v in fields.items() if k != 'write_token'}
     config = get_form_config(form_id, fields.get('flow_role'))
     if not config:
         return jsonify({'error': f'Unknown form: {form_id}'}), 404

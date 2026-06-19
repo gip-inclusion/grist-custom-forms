@@ -39,6 +39,7 @@ const copy = {
       saving: "Enregistrement en cours...",
       saved: "Réponses enregistrées.",
       saveErrorPrefix: "Échec de l’enregistrement",
+      writeTokenError: "La session du formulaire a expiré. Rechargez la page puis renvoyez le formulaire.",
       uuidPrefix: "Identifiant de reprise",
       questionnaireNote: "Le questionnaire est volontairement resserré pour cette première version. Il reprend la logique des Tally de référence sans les recopier entièrement.",
       validation: {
@@ -366,6 +367,7 @@ const copy = {
       saving: "Saving...",
       saved: "Answers saved.",
       saveErrorPrefix: "Save failed",
+      writeTokenError: "The form session expired. Reload the page and submit again.",
       uuidPrefix: "Resume identifier",
       questionnaireNote: "This questionnaire is intentionally compact for the first version. It follows the logic of the reference Tally forms without copying them in full.",
       validation: {
@@ -693,6 +695,7 @@ const copy = {
       saving: "Speicherung läuft...",
       saved: "Antworten gespeichert.",
       saveErrorPrefix: "Speichern fehlgeschlagen",
+      writeTokenError: "Die Formularsitzung ist abgelaufen. Laden Sie die Seite neu und senden Sie das Formular erneut.",
       uuidPrefix: "Wiederaufnahme-ID",
       questionnaireNote: "Dieser Fragebogen ist für die erste Version bewusst kompakt. Er orientiert sich an den vorhandenen Tally-Formularen, ohne sie vollständig zu kopieren.",
       validation: {
@@ -1946,6 +1949,39 @@ function currentInviteToken() {
   const params = new URLSearchParams(window.location.search);
   const inviteToken = (params.get("invite_token") || "").trim();
   return inviteToken || "";
+}
+
+const writeTokenCache = new Map();
+
+async function getWriteToken(role, t) {
+  const normalizedRole = role === "candidate" || role === "employer" ? role : "";
+  if (!normalizedRole) {
+    throw new Error(t.common.writeTokenError);
+  }
+  if (!writeTokenCache.has(normalizedRole)) {
+    const promise = fetch(`/api/forms/${FORM_ID}/write-token?role=${encodeURIComponent(normalizedRole)}`, {
+      headers: { Accept: "application/json" }
+    })
+      .then(async (response) => {
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok || !payload.token) {
+          throw new Error(payload.error || t.common.writeTokenError);
+        }
+        return payload.token;
+      })
+      .catch((error) => {
+        writeTokenCache.delete(normalizedRole);
+        throw error;
+      });
+    writeTokenCache.set(normalizedRole, promise);
+  }
+  return writeTokenCache.get(normalizedRole);
+}
+
+function resetWriteToken(role) {
+  if (role) {
+    writeTokenCache.delete(role);
+  }
 }
 
 function setDocumentLang(lang) {
@@ -3771,6 +3807,7 @@ function attachEmployerTallyBehavior(lang, t) {
     setStatus(t.common.saving);
 
     try {
+      fields.write_token = await getWriteToken("employer", t);
       const response = await fetch(`/api/forms/${FORM_ID}/record`, {
         method: "POST",
         headers: {
@@ -3781,6 +3818,9 @@ function attachEmployerTallyBehavior(lang, t) {
       });
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) {
+        if (response.status === 403) {
+          resetWriteToken("employer");
+        }
         throw new Error(payload.error || `${t.common.saveErrorPrefix} (${response.status})`);
       }
       setStatus(t.common.saved, "success");
@@ -4009,6 +4049,7 @@ function attachCandidateTallyBehavior(lang, t) {
     setStatus(t.common.saving);
 
     try {
+      fields.write_token = await getWriteToken("candidate", t);
       const response = await fetch(`/api/forms/${FORM_ID}/record`, {
         method: "POST",
         headers: {
@@ -4019,6 +4060,9 @@ function attachCandidateTallyBehavior(lang, t) {
       });
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) {
+        if (response.status === 403) {
+          resetWriteToken("candidate");
+        }
         throw new Error(payload.error || `${t.common.saveErrorPrefix} (${response.status})`);
       }
       setStatus(t.common.saved, "success");
@@ -4354,6 +4398,7 @@ function attachQuestionnaireBehavior(page, lang, t) {
     setStatus(t.common.saving);
 
     try {
+      fields.write_token = await getWriteToken(role, t);
       const response = await fetch(`/api/forms/${FORM_ID}/record`, {
         method: "POST",
         headers: {
@@ -4364,6 +4409,9 @@ function attachQuestionnaireBehavior(page, lang, t) {
       });
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) {
+        if (response.status === 403) {
+          resetWriteToken(role);
+        }
         throw new Error(payload.error || `${t.common.saveErrorPrefix} (${response.status})`);
       }
       setStatus(t.common.saved, "success");
