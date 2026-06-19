@@ -2314,21 +2314,21 @@ function renderBreakdownList(rows, emptyLabel) {
   }
   const max = Math.max(...rows.map((row) => Number(row.count || 0)), 1);
   return `
-    <div class="breakdown-list">
+    <ul class="breakdown-list">
       ${rows.map((row) => {
         const count = Number(row.count || 0);
         const width = Math.max(8, Math.round((count / max) * 100));
         return `
-          <div class="breakdown-row">
+          <li class="breakdown-row">
             <div class="breakdown-head">
               <span>${escapeHtml(row.label)}</span>
               <strong>${count}</strong>
             </div>
             <div class="breakdown-bar"><span style="width:${width}%"></span></div>
-          </div>
+          </li>
         `;
       }).join("")}
-    </div>
+    </ul>
   `;
 }
 
@@ -2361,7 +2361,7 @@ function statTemplate(lang, t, data) {
 
   const breakdownPanels = Object.entries(t.statPage.breakdownLabels).map(([key, label]) => `
     <article class="panel breakdown-panel">
-      <h2>${label}</h2>
+      <h3>${label}</h3>
       ${renderBreakdownList(breakdowns[key], t.statPage.emptyBreakdown)}
     </article>
   `).join("");
@@ -2384,7 +2384,7 @@ function statTemplate(lang, t, data) {
     }
   ].map(({ title, text, content }) => `
     <article class="surface-card">
-      <h2>${title}</h2>
+      <h3>${title}</h3>
       <p>${text}</p>
       ${content}
     </article>
@@ -2392,7 +2392,7 @@ function statTemplate(lang, t, data) {
 
   const learningPanels = t.statPage.learnings.map(([title, text]) => `
     <article class="surface-card">
-      <h2>${title}</h2>
+      <h3>${title}</h3>
       <p>${text}</p>
     </article>
   `).join("");
@@ -2401,14 +2401,14 @@ function statTemplate(lang, t, data) {
     const row = durations[key] || {};
     return `
       <article class="panel breakdown-panel">
-        <h2>${label}</h2>
-        <div class="breakdown-list">
-          <div class="breakdown-row"><div class="breakdown-head"><span>${t.statPage.durationMetrics.count}</span><strong>${Number(row.count || 0).toLocaleString(lang)}</strong></div></div>
-          <div class="breakdown-row"><div class="breakdown-head"><span>${t.statPage.durationMetrics.avg}</span><strong>${formatDurationHours(row.avg_hours, lang, t)}</strong></div></div>
-          <div class="breakdown-row"><div class="breakdown-head"><span>${t.statPage.durationMetrics.median}</span><strong>${formatDurationHours(row.median_hours, lang, t)}</strong></div></div>
-          <div class="breakdown-row"><div class="breakdown-head"><span>${t.statPage.durationMetrics.min}</span><strong>${formatDurationHours(row.min_hours, lang, t)}</strong></div></div>
-          <div class="breakdown-row"><div class="breakdown-head"><span>${t.statPage.durationMetrics.max}</span><strong>${formatDurationHours(row.max_hours, lang, t)}</strong></div></div>
-        </div>
+        <h3>${label}</h3>
+        <ul class="breakdown-list">
+          <li class="breakdown-row"><div class="breakdown-head"><span>${t.statPage.durationMetrics.count}</span><strong>${Number(row.count || 0).toLocaleString(lang)}</strong></div></li>
+          <li class="breakdown-row"><div class="breakdown-head"><span>${t.statPage.durationMetrics.avg}</span><strong>${formatDurationHours(row.avg_hours, lang, t)}</strong></div></li>
+          <li class="breakdown-row"><div class="breakdown-head"><span>${t.statPage.durationMetrics.median}</span><strong>${formatDurationHours(row.median_hours, lang, t)}</strong></div></li>
+          <li class="breakdown-row"><div class="breakdown-head"><span>${t.statPage.durationMetrics.min}</span><strong>${formatDurationHours(row.min_hours, lang, t)}</strong></div></li>
+          <li class="breakdown-row"><div class="breakdown-head"><span>${t.statPage.durationMetrics.max}</span><strong>${formatDurationHours(row.max_hours, lang, t)}</strong></div></li>
+        </ul>
       </article>
     `;
   }).join("");
@@ -2491,14 +2491,14 @@ function statTemplate(lang, t, data) {
               <caption class="sr-only">${t.statPage.monthlyTitle}</caption>
               <thead>
                 <tr>
-                  ${Object.values(t.statPage.monthlyColumns).map((label) => `<th>${label}</th>`).join("")}
+                  ${Object.values(t.statPage.monthlyColumns).map((label) => `<th scope="col">${label}</th>`).join("")}
                 </tr>
               </thead>
               <tbody>
                 ${monthly.map((row) => `
                   <tr>
                     ${monthlyColumnKeys.map((key, index) => index === 0
-                      ? `<th>${formatMonth(row[key], lang)}</th>`
+                      ? `<th scope="row">${formatMonth(row[key], lang)}</th>`
                       : `<td>${Number(row[key] || 0).toLocaleString(lang)}</td>`).join("")}
                   </tr>
                 `).join("")}
@@ -2520,7 +2520,7 @@ function statTemplate(lang, t, data) {
       <section class="section">
         <div class="shell">
           <details class="panel" open>
-            <summary><strong>${t.statPage.methodologyTitle}</strong></summary>
+            <summary><span class="summary-title">${t.statPage.methodologyTitle}</span></summary>
             <div style="margin-top: 1rem;">
               <p>${t.statPage.methodology}</p>
               <p>${manualConfigured ? t.statPage.manualNote : t.statPage.manualMissing}</p>
