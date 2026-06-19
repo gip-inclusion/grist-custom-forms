@@ -2234,12 +2234,12 @@ function nav(page, lang, t) {
     <a class="skip-link" href="#main-content">Aller au contenu</a>
     <header class="site-header">
       <div class="shell">
-        <a class="brand" href="${pageUrl("home", lang)}">
+        <div class="brand" aria-label="${t.common.brandTitle}">
           <span class="brand-copy">
             <strong>${t.common.brandTitle}</strong>
             <span>${t.common.brandSubtitle}</span>
           </span>
-        </a>
+        </div>
         <nav class="nav" aria-label="Primary">
           <div class="nav-links">
             ${navItems.map(([key, label]) => `
