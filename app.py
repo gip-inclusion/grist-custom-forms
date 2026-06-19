@@ -1319,6 +1319,20 @@ def update_eures_invitation_record_by_id(record_id: int, fields: dict, headers: 
     return resp
 
 
+def delete_eures_invitation_record_by_id(record_id: int, headers: dict | None = None):
+    """Delete one invitation record by Grist record id."""
+    config = get_eures_invitations_config()
+    if not config:
+        raise RuntimeError('EURES invitations configuration is incomplete.')
+    if headers is None:
+        headers = _eures_admin_headers(config)
+    base_url = f"{GRIST_BASE_URL}/api/docs/{config['doc_id']}/tables/{config['table_id']}/records"
+    resp = write_grist_records('DELETE', base_url, {'records': [int(record_id)]}, headers)
+    if resp.status_code != 200:
+        raise RuntimeError(f'Failed to delete invitation: HTTP {resp.status_code} - {resp.text}')
+    return resp
+
+
 def find_eures_invitation_by_token(invite_token: str, headers: dict | None = None) -> dict | None:
     """Find one invitation row by invite token."""
     token = str(invite_token or '').strip()
@@ -4809,6 +4823,45 @@ def admin_eures_invitation_update(form_id: str, record_id: int):
         }), 200
     except Exception as e:
         app.logger.exception('EURES invitation update failed')
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/forms/<form_id>/admin/invitations/<int:record_id>', methods=['DELETE'])
+@admin_required
+def admin_eures_invitation_delete(form_id: str, record_id: int):
+    """Admin API: delete one invitation row in error state."""
+    proxied = maybe_proxy_eures_request(form_id)
+    if proxied:
+        return proxied
+    if form_id != 'eures-beta':
+        return jsonify({'error': f'Unknown invitation delete form: {form_id}'}), 404
+
+    config = get_eures_invitations_config()
+    if not config:
+        return jsonify({'error': 'EURES invitations configuration is incomplete.'}), 500
+
+    headers = _eures_admin_headers(config)
+    try:
+        existing = fetch_record_by_id(config['doc_id'], config['table_id'], record_id, headers)
+        if not existing:
+            return jsonify({'error': 'Invitation not found'}), 404
+        fields = existing.get('fields', {}) if isinstance(existing.get('fields'), dict) else {}
+        current_status = str(fields.get('invitation_status') or '').strip().lower()
+        if current_status != 'erreur_envoi':
+            return jsonify({'error': "Seules les invitations en erreur d'envoi peuvent être supprimées."}), 400
+
+        delete_eures_invitation_record_by_id(record_id, headers=headers)
+        app.logger.info(
+            'EURES invitation deleted',
+            extra={'form_id': form_id, 'record_id': record_id, 'status': current_status},
+        )
+        return jsonify({
+            'ok': True,
+            'record_id': record_id,
+            'deleted': True,
+        }), 200
+    except Exception as e:
+        app.logger.exception('EURES invitation delete failed')
         return jsonify({'error': str(e)}), 500
 
 

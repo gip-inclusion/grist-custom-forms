@@ -1557,10 +1557,25 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
                 <span>${esc(row.matching_status || "-")}</span>
               </div>
             </div>
+            ${row.invitation_status === "erreur_envoi" ? `
+              <div class="inline-actions" style="margin-top:0.9rem;">
+                <button class="btn-refuse" type="button" data-delete-invitation="${esc(row.record_id)}">Supprimer cette erreur</button>
+              </div>
+            ` : ""}
             ${row.invite_link ? `<pre class="code-block">${esc(row.invite_link)}</pre>` : ""}
           </article>
         `;
       }).join("");
+
+      for (const button of list.querySelectorAll("[data-delete-invitation]")) {
+        button.addEventListener("click", async (event) => {
+          const recordId = event.currentTarget.dataset.deleteInvitation;
+          if (!recordId) return;
+          const confirmed = window.confirm("Supprimer définitivement cette invitation en erreur d’envoi ?");
+          if (!confirmed) return;
+          await deleteInvitationError(recordId);
+        });
+      }
       updatePendingSendPanel();
     }
 
@@ -1690,6 +1705,28 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
         await loadInvitations();
       } catch (error) {
         setStatus("invite-status-line", `Erreur : ${error.message || "envoi impossible"}`);
+      }
+    }
+
+    async function deleteInvitationError(recordId) {
+      setStatus("invite-status-line", "Suppression de l’invitation en erreur...");
+      try {
+        const response = await fetch(apiUrl(`/admin/invitations/${recordId}`), {
+          method: "DELETE",
+          credentials: "same-origin",
+          headers: {
+            "Accept": "application/json",
+          },
+        });
+        const payload = await response.json();
+        if (!response.ok || !payload.ok) {
+          throw new Error(payload.error || `Erreur API (${response.status})`);
+        }
+        setStatus("invite-status-line", "Invitation en erreur supprimée.");
+        await loadInvitations();
+        await loadCockpit();
+      } catch (error) {
+        setStatus("invite-status-line", `Erreur : ${error.message || "suppression impossible"}`);
       }
     }
 
