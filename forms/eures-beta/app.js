@@ -3282,10 +3282,10 @@ function employerTallyQuestionnaireTemplate(lang, t) {
             `).join("")}
 
             <section class="form-section">
-              <label class="field">
-                <span>${content.questions.q20Extra}</span>
-                <textarea name="tally_q20_extra" rows="3"></textarea>
-              </label>
+              <div class="field">
+                <label for="tally_q20_extra">${content.questions.q20Extra}</label>
+                <textarea id="tally_q20_extra" name="tally_q20_extra" rows="3"></textarea>
+              </div>
             </section>
 
             <section class="form-section">
