@@ -1995,16 +1995,20 @@ function getFieldLabel(element) {
     }
   }
 
+  const field = element.closest(".field, .field-stack, .question-block, fieldset, .panel");
+  const scopedLabel = cleanLabelText(
+    field?.querySelector("label, legend, h3, h4, .section-title")?.textContent
+  );
+  if ((element.type === "radio" || element.type === "checkbox") && scopedLabel) {
+    return scopedLabel;
+  }
+
   const wrappingLabel = element.closest("label");
   const wrappingText = cleanLabelText(wrappingLabel?.textContent);
   if (wrappingText) {
     return wrappingText;
   }
 
-  const field = element.closest(".field, .field-stack, .question-block, fieldset, .panel");
-  const scopedLabel = cleanLabelText(
-    field?.querySelector("label, legend, h3, h4, .section-title")?.textContent
-  );
   if (scopedLabel) {
     return scopedLabel;
   }
@@ -2206,7 +2210,18 @@ function validateVisibleCheckboxGroup(form, name, label, setStatus, t, min = 1, 
   return true;
 }
 
+function navSectionPage(page) {
+  if (page === "candidate-questionnaire") {
+    return "candidate-landing";
+  }
+  if (page === "employer-questionnaire") {
+    return "employer-landing";
+  }
+  return page;
+}
+
 function nav(page, lang, t) {
+  const currentPage = navSectionPage(page);
   const navItems = [
     ["home", t.common.navHome],
     ["candidate-landing", t.common.navCandidate],
@@ -2226,7 +2241,7 @@ function nav(page, lang, t) {
         <nav class="nav" aria-label="Primary">
           <div class="nav-links">
             ${navItems.map(([key, label]) => `
-              <a class="nav-pill${key === page ? " is-active" : ""}" href="${pageUrl(key, lang)}"${key === page ? ' aria-current="page"' : ""}>${label}</a>
+              <a class="nav-pill${key === currentPage ? " is-active" : ""}" href="${pageUrl(key, lang)}"${key === currentPage ? ' aria-current="page"' : ""}>${label}</a>
             `).join("")}
           </div>
           <div class="lang-switch" aria-label="${t.common.langLabel}">
@@ -2758,7 +2773,7 @@ function matrixQuestion(title, rows, columns, hint = "", inputType = "checkbox",
           <caption id="${captionId}" class="sr-only">${title}</caption>
           <thead>
             <tr>
-              <th></th>
+              <th scope="col"><span class="sr-only">${title}</span></th>
               ${columns.map((column) => {
                 const item = typeof column === "string" ? { value: column, label: column } : column;
                 return `<th scope="col">${item.label}</th>`;
@@ -3044,24 +3059,24 @@ function candidateTallyQuestionnaireTemplate(lang, t) {
               <div class="form-grid">
                 <label class="field">
                   <span>${content.questions.firstName}</span>
-                  <input type="text" name="tally_q31" required>
+                  <input type="text" name="tally_q31" autocomplete="given-name" required>
                 </label>
                 <label class="field">
                   <span>${content.questions.lastName}</span>
-                  <input type="text" name="tally_q32" required>
+                  <input type="text" name="tally_q32" autocomplete="family-name" required>
                 </label>
                 <label class="field">
                   <span>${content.questions.email}</span>
-                  <input type="email" name="tally_q33" required>
+                  <input type="email" name="tally_q33" autocomplete="email" inputmode="email" required>
                 </label>
                 <label class="field">
                   <span>${content.questions.phone}</span>
-                  <input type="tel" name="tally_q34" required>
+                  <input type="tel" name="tally_q34" autocomplete="tel" inputmode="tel" required>
                 </label>
               </div>
               <label class="field">
                 <span>${content.questions.city}</span>
-                <input type="text" name="tally_q35" required>
+                <input type="text" name="tally_q35" autocomplete="address-level2" required>
               </label>
               <label class="field">
                 <span>${content.questions.cv}</span>
@@ -3283,19 +3298,19 @@ function employerTallyQuestionnaireTemplate(lang, t) {
               <div class="form-grid">
                 <label class="field">
                   <span>${content.questions.q16}</span>
-                  <input type="text" name="tally_q16" required>
+                  <input type="text" name="tally_q16" autocomplete="name" required>
                 </label>
                 <label class="field">
                   <span>${content.questions.q17}</span>
-                  <input type="text" name="tally_q17" required>
+                  <input type="text" name="tally_q17" autocomplete="organization" required>
                 </label>
                 <label class="field">
                   <span>${content.questions.q18}</span>
-                  <input type="email" name="tally_q18" required>
+                  <input type="email" name="tally_q18" autocomplete="email" inputmode="email" required>
                 </label>
                 <label class="field">
                   <span>${content.questions.q19}</span>
-                  <input type="tel" name="tally_q19" required>
+                  <input type="tel" name="tally_q19" autocomplete="tel" inputmode="tel" required>
                 </label>
               </div>
             </section>
@@ -4071,19 +4086,19 @@ function questionnaireTemplate(page, lang, t, data) {
                 <div class="form-grid">
                   <label class="field">
                     <span>${data.fields.fullName}</span>
-                    <input type="text" name="candidate_full_name" required>
+                    <input type="text" name="candidate_full_name" autocomplete="name" required>
                   </label>
                   <label class="field">
                     <span>${data.fields.email}</span>
-                    <input type="email" name="email" required>
+                    <input type="email" name="email" autocomplete="email" inputmode="email" required>
                   </label>
                   <label class="field">
                     <span>${data.fields.phone}</span>
-                    <input type="tel" name="candidate_phone" required>
+                    <input type="tel" name="candidate_phone" autocomplete="tel" inputmode="tel" required>
                   </label>
                   <label class="field">
                     <span>${data.fields.city}</span>
-                    <input type="text" name="candidate_city" required>
+                    <input type="text" name="candidate_city" autocomplete="address-level2" required>
                   </label>
                 </div>
                 <label class="field">
@@ -4097,7 +4112,7 @@ function questionnaireTemplate(page, lang, t, data) {
                 <div class="form-grid">
                   <label class="field">
                     <span>${data.fields.companyName}</span>
-                    <input type="text" name="employer_company_name" required>
+                    <input type="text" name="employer_company_name" autocomplete="organization" required>
                   </label>
                   <label class="field">
                     <span>${data.fields.workLocation}</span>
@@ -4161,15 +4176,15 @@ function questionnaireTemplate(page, lang, t, data) {
                 <div class="form-grid">
                   <label class="field">
                     <span>${data.fields.contactName}</span>
-                    <input type="text" name="employer_contact_name" required>
+                    <input type="text" name="employer_contact_name" autocomplete="name" required>
                   </label>
                   <label class="field">
                     <span>${data.fields.email}</span>
-                    <input type="email" name="email" required>
+                    <input type="email" name="email" autocomplete="email" inputmode="email" required>
                   </label>
                   <label class="field">
                     <span>${data.fields.phone}</span>
-                    <input type="tel" name="employer_phone" required>
+                    <input type="tel" name="employer_phone" autocomplete="tel" inputmode="tel" required>
                   </label>
                 </div>
                 <label class="field">
