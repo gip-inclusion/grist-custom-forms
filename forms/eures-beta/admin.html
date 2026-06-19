@@ -166,6 +166,19 @@
       border-bottom: 1px solid rgba(0, 0, 0, 0.06);
     }
 
+    .metric-row.actionable {
+      cursor: pointer;
+      border-radius: 14px;
+      padding: 0.55rem 0.7rem;
+      margin: 0 -0.2rem;
+      transition: background 120ms ease, transform 120ms ease;
+    }
+
+    .metric-row.actionable:hover {
+      background: rgba(15, 39, 66, 0.06);
+      transform: translateY(-1px);
+    }
+
     .metric-row:last-child,
     .activity-row:last-child {
       border-bottom: none;
@@ -1374,6 +1387,7 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
       const newJob = row.new_job || {};
       const haystack = [
         row.task_type,
+        taskTypeLabel(row.task_type),
         row.title,
         row.subtitle,
         row.summary,
@@ -1719,8 +1733,8 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
       const delays = data.delays || {};
       const activity = Array.isArray(data.recent_activity) ? data.recent_activity : [];
 
-      const metricRows = (rows) => rows.map((row) => `
-        <div class="metric-row">
+      const metricRows = (rows, options = {}) => rows.map((row) => `
+        <div class="metric-row ${options.actionable ? "actionable" : ""}" ${options.actionable ? `data-priority-target="${esc(row.target || "")}"` : ""}>
           <span>${esc(row.label)}</span>
           <strong>${esc(row.value)}</strong>
         </div>
@@ -1740,11 +1754,11 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
           <h3>Priorités</h3>
           <div class="metric-list">
             ${metricRows([
-              { label: "Matchings à valider", value: priorities.matching_review ?? 0 },
-              { label: "Sans matching à notifier", value: priorities.no_match_followup ?? 0 },
-              { label: "Demandes de nouveaux métiers", value: priorities.new_job_request ?? 0 },
-              { label: "Erreurs d’envoi", value: priorities.invitation_errors ?? 0 },
-            ])}
+              { label: "Matchings à valider", value: priorities.matching_review ?? 0, target: "matching_review" },
+              { label: "Sans matching à notifier", value: priorities.no_match_followup ?? 0, target: "no_match_followup" },
+              { label: "Demandes de nouveaux métiers", value: priorities.new_job_request ?? 0, target: "new_job_request" },
+              { label: "Erreurs d’envoi", value: priorities.invitation_errors ?? 0, target: "invitation_errors" },
+            ], { actionable: true })}
           </div>
         </article>
 
@@ -1792,6 +1806,31 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
           <div class="activity-list">${activityRows}</div>
         </article>
       `;
+
+      for (const row of container.querySelectorAll("[data-priority-target]")) {
+        row.addEventListener("click", async (event) => {
+          const target = event.currentTarget.dataset.priorityTarget || "";
+          await openPriorityTarget(target);
+        });
+      }
+    }
+
+    async function openPriorityTarget(target) {
+      if (target === "invitation_errors") {
+        activateTab("invitations");
+        document.getElementById("invite-filter-status").value = "erreur_envoi";
+        await loadInvitations();
+        return;
+      }
+      activateTab("tasks");
+      document.getElementById("task-filter-status").value = "pending";
+      const searchMap = {
+        matching_review: "matching",
+        no_match_followup: "sans matching",
+        new_job_request: "nouveau métier",
+      };
+      document.getElementById("task-filter-search").value = searchMap[target] || "";
+      await loadTasks();
     }
 
     function renderTaskRows() {
