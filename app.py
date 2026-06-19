@@ -2562,7 +2562,6 @@ def build_eures_public_stats() -> dict:
         'candidats': 0,
         'besoins_employeurs': 0,
         'matchings': 0,
-        'invitations_candidats_envoyees': 0,
         'candidats_contactes': 0,
         'candidatures_transmises_employeur': 0,
         'contacts_acceptes_employeur': 0,
@@ -2617,7 +2616,7 @@ def build_eures_public_stats() -> dict:
         sent_month = _month_key(row.get('sent_at'))
         if sent_month:
             monthly[sent_month]['mois'] = sent_month
-            monthly[sent_month]['invitations_candidats_envoyees'] += 1
+            monthly[sent_month]['candidats_contactes'] += 1
 
     for rec in matchings:
         fields = rec.get('fields', {}) if isinstance(rec, dict) else {}
@@ -2713,7 +2712,6 @@ def build_eures_public_stats() -> dict:
         'candidats': len(candidats),
         'besoins_employeurs': len(besoins),
         'matchings': len(matchings),
-        'invitations_candidats_envoyees': sum(int(row['invitations_candidats_envoyees']) for row in monthly_rows),
         'candidats_contactes': sum(int(row['candidats_contactes']) for row in monthly_rows),
         'candidatures_transmises_employeur': sum(int(row['candidatures_transmises_employeur']) for row in monthly_rows),
         'contacts_acceptes_employeur': sum(int(row['contacts_acceptes_employeur']) for row in monthly_rows),
@@ -4149,7 +4147,7 @@ def build_eures_cockpit_summary() -> dict:
         },
         'funnel': {
             'besoins_recus': len(besoins),
-            'invitations_candidats_envoyees': candidate_invitations_sent,
+            'candidats_contactes': candidate_invitations_sent,
             'candidats_recus': len(candidats),
             'matchings_exploitables': len(matchings_all),
             'matchings_valides': accepted_count,
