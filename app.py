@@ -3905,6 +3905,235 @@ def list_eures_admin_matchings(status: str = 'all') -> list[dict]:
     return rows
 
 
+def _parse_iso_datetime(value) -> datetime | None:
+    raw = str(value or '').strip()
+    if not raw:
+        return None
+    try:
+        if raw.endswith('Z'):
+            return datetime.fromisoformat(raw.replace('Z', '+00:00'))
+        dt = datetime.fromisoformat(raw)
+        if dt.tzinfo is None:
+            return dt.replace(tzinfo=timezone.utc)
+        return dt
+    except Exception:
+        return None
+
+
+def _same_utc_day(value, target_day: datetime | None = None) -> bool:
+    dt = _parse_iso_datetime(value)
+    if not dt:
+        return False
+    target = target_day or datetime.now(timezone.utc)
+    return dt.astimezone(timezone.utc).date() == target.astimezone(timezone.utc).date()
+
+
+def _mean_hours(values: list[float]) -> float | None:
+    if not values:
+        return None
+    return round(sum(values) / len(values), 1)
+
+
+def _compute_eures_delay_hours(start_value, end_value) -> float | None:
+    start_dt = _parse_iso_datetime(start_value)
+    end_dt = _parse_iso_datetime(end_value)
+    if not start_dt or not end_dt:
+        return None
+    delta = (end_dt - start_dt).total_seconds() / 3600
+    if delta < 0:
+        return None
+    return delta
+
+
+def build_eures_admin_tasks(status: str = 'pending') -> list[dict]:
+    """Return one unified admin task list for the cockpit."""
+    rows = []
+
+    for row in list_eures_admin_matchings(status='all'):
+        task_status = 'pending'
+        if row.get('admin_status') == 'accepted':
+            task_status = 'done'
+        elif row.get('admin_status') == 'refused':
+            task_status = 'dismissed'
+        if status != 'all' and task_status != status:
+            continue
+        rows.append({
+            'task_type': 'matching_review',
+            'status': task_status,
+            'priority': 'high' if row.get('scoring_status') == 'auto_envoyable' else 'normal',
+            'created_at': row.get('date_calcul', ''),
+            'updated_at': row.get('admin_decision_at') or row.get('workflow_status_updated_at') or row.get('date_calcul', ''),
+            'record_id': row.get('record_id'),
+            'title': f"{row.get('employeur', {}).get('poste') or 'Poste non renseigné'} · {row.get('candidat', {}).get('nom') or 'Candidat'}",
+            'subtitle': f"{row.get('employeur', {}).get('employeur') or 'Entreprise non renseignée'} · score {row.get('score', 0)}",
+            'summary': 'Validation manuelle du matching proposée.',
+            'matching': row,
+        })
+
+    for row in list_eures_admin_no_match_notifications(status='all'):
+        task_status = 'pending'
+        if row.get('notification_status') == 'sent':
+            task_status = 'done'
+        elif row.get('notification_status') == 'dismissed':
+            task_status = 'dismissed'
+        if status != 'all' and task_status != status:
+            continue
+        rows.append({
+            'task_type': 'no_match_followup',
+            'status': task_status,
+            'priority': 'normal',
+            'created_at': row.get('created_at', ''),
+            'updated_at': row.get('sent_at') or row.get('dismissed_at') or row.get('created_at', ''),
+            'record_id': row.get('record_id'),
+            'role': row.get('role'),
+            'title': row.get('title') or ('Candidat' if row.get('role') == 'candidate' else 'Employeur'),
+            'subtitle': row.get('subtitle') or row.get('recipient_email') or '',
+            'summary': 'Aucun matching immédiat: notification manuelle à valider.',
+            'no_match': row,
+        })
+
+    for row in list_eures_admin_new_job_requests(status='all'):
+        task_status = 'pending'
+        if row.get('request_status') == 'processed':
+            task_status = 'done'
+        elif row.get('request_status') == 'dismissed':
+            task_status = 'dismissed'
+        if status != 'all' and task_status != status:
+            continue
+        rows.append({
+            'task_type': 'new_job_request',
+            'status': task_status,
+            'priority': 'normal',
+            'created_at': row.get('created_at', ''),
+            'updated_at': row.get('processed_at') or row.get('created_at', ''),
+            'record_id': row.get('record_id'),
+            'title': row.get('employeur') or 'Entreprise non renseignée',
+            'subtitle': row.get('poste') or 'Poste non renseigné',
+            'summary': row.get('requested_jobs') or 'Demande de nouveaux métiers',
+            'new_job': row,
+        })
+
+    priority_rank = {'high': 0, 'normal': 1, 'low': 2}
+    status_rank = {'pending': 0, 'done': 1, 'dismissed': 2}
+    rows.sort(
+        key=lambda row: (
+            status_rank.get(str(row.get('status') or ''), 9),
+            priority_rank.get(str(row.get('priority') or ''), 9),
+            str(row.get('created_at') or ''),
+            int(row.get('record_id') or 0),
+        ),
+        reverse=False,
+    )
+    return rows
+
+
+def build_eures_cockpit_summary() -> dict:
+    """Build a compact cockpit payload for the EURES beta admin home."""
+    matchings_all = list_eures_admin_matchings(status='all')
+    tasks_pending = build_eures_admin_tasks(status='pending')
+    no_match_all = list_eures_admin_no_match_notifications(status='all')
+    new_jobs_all = list_eures_admin_new_job_requests(status='all')
+    invitations = list_eures_invitations()
+
+    candidate_config = _get_eures_role_table_config('candidate')
+    employer_config = _get_eures_role_table_config('employer')
+    candidate_headers = _eures_admin_headers(candidate_config) if candidate_config else {}
+    employer_headers = _eures_admin_headers(employer_config) if employer_config else {}
+    candidats = fetch_table_records(candidate_config['doc_id'], candidate_config['table_id'], candidate_headers) if candidate_config else []
+    besoins = fetch_table_records(employer_config['doc_id'], employer_config['table_id'], employer_headers) if employer_config else []
+
+    today = datetime.now(timezone.utc)
+    delays_matching_to_validation = []
+    delays_validation_to_send = []
+    delays_send_to_response = []
+    delays_response_to_relation = []
+    recent_activity = []
+
+    for row in matchings_all:
+        d1 = _compute_eures_delay_hours(row.get('date_calcul'), row.get('admin_decision_at'))
+        if d1 is not None:
+            delays_matching_to_validation.append(d1)
+        d2 = _compute_eures_delay_hours(row.get('admin_decision_at'), row.get('sent_to_employer_at'))
+        if d2 is not None:
+            delays_validation_to_send.append(d2)
+        d3 = _compute_eures_delay_hours(row.get('sent_to_employer_at'), row.get('employer_response_at'))
+        if d3 is not None:
+            delays_send_to_response.append(d3)
+        d4 = _compute_eures_delay_hours(row.get('employer_response_at'), row.get('mise_en_relation_at'))
+        if d4 is not None:
+            delays_response_to_relation.append(d4)
+
+        if row.get('admin_decision_at'):
+            recent_activity.append({
+                'at': row.get('admin_decision_at'),
+                'type': 'matching_decision',
+                'label': f"Matching {('accepté' if row.get('admin_status') == 'accepted' else 'refusé')} · {row.get('employeur', {}).get('employeur') or 'Entreprise'}",
+            })
+        if row.get('employer_response_at'):
+            recent_activity.append({
+                'at': row.get('employer_response_at'),
+                'type': 'employer_response',
+                'label': f"Retour employeur · {row.get('employeur', {}).get('employeur') or 'Entreprise'}",
+            })
+
+    for row in no_match_all:
+        recent_activity.append({
+            'at': row.get('sent_at') or row.get('created_at'),
+            'type': 'no_match',
+            'label': f"Sans matching · {row.get('title') or 'Entrée'}",
+        })
+
+    for row in new_jobs_all:
+        recent_activity.append({
+            'at': row.get('processed_at') or row.get('created_at'),
+            'type': 'new_job_request',
+            'label': f"Nouveau métier demandé · {row.get('employeur') or 'Entreprise'}",
+        })
+
+    accepted_count = sum(1 for row in matchings_all if row.get('admin_status') == 'accepted')
+    sent_count = sum(1 for row in matchings_all if row.get('workflow_status') in {'envoye_employeur', 'accepte_employeur', 'refuse_employeur', 'mise_en_relation_faite', 'embauche_confirmee'})
+    relation_count = sum(1 for row in matchings_all if row.get('workflow_status') in {'mise_en_relation_faite', 'embauche_confirmee'})
+    hire_count = sum(1 for row in matchings_all if row.get('workflow_status') == 'embauche_confirmee')
+    matchings_today = sum(1 for row in matchings_all if _same_utc_day(row.get('date_calcul'), today))
+    invitation_emails_today = sum(1 for row in invitations if _same_utc_day(row.get('sent_at'), today))
+    no_match_today = sum(1 for row in no_match_all if _same_utc_day(row.get('created_at'), today))
+    new_jobs_today = sum(1 for row in new_jobs_all if _same_utc_day(row.get('created_at'), today))
+
+    recent_activity.sort(key=lambda row: str(row.get('at') or ''), reverse=True)
+    recent_activity = [row for row in recent_activity if row.get('at')][:12]
+
+    return {
+        'priorities': {
+            'matching_review': sum(1 for row in tasks_pending if row.get('task_type') == 'matching_review'),
+            'no_match_followup': sum(1 for row in tasks_pending if row.get('task_type') == 'no_match_followup'),
+            'new_job_request': sum(1 for row in tasks_pending if row.get('task_type') == 'new_job_request'),
+            'invitation_errors': sum(1 for row in invitations if str(row.get('invitation_status') or '') == 'erreur_envoi'),
+        },
+        'today_flow': {
+            'matchings_calcules': matchings_today,
+            'emails_envoyes': invitation_emails_today,
+            'sans_matching_crees': no_match_today,
+            'nouveaux_metiers_recus': new_jobs_today,
+        },
+        'funnel': {
+            'besoins_recus': len(besoins),
+            'candidats_recus': len(candidats),
+            'matchings_exploitables': len(matchings_all),
+            'matchings_valides': accepted_count,
+            'envoyes_employeurs': sent_count,
+            'mises_en_relation': relation_count,
+            'embauches_confirmees': hire_count,
+        },
+        'delays': {
+            'matching_to_validation_hours': _mean_hours(delays_matching_to_validation),
+            'validation_to_send_hours': _mean_hours(delays_validation_to_send),
+            'send_to_response_hours': _mean_hours(delays_send_to_response),
+            'response_to_relation_hours': _mean_hours(delays_response_to_relation),
+        },
+        'recent_activity': recent_activity,
+    }
+
+
 def normalize_finess(value) -> str:
     """Normalize FINESS value for duplicate checks."""
     raw = str(value or '').strip()
@@ -4680,6 +4909,60 @@ def admin_eures_invitations_send(form_id: str):
         }), 200
     except Exception as e:
         app.logger.exception('EURES invitations send failed')
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/forms/<form_id>/admin/cockpit', methods=['GET'])
+@admin_required
+def admin_eures_cockpit(form_id: str):
+    """Admin API: compact cockpit summary for EURES beta."""
+    proxied = maybe_proxy_eures_request(form_id)
+    if proxied:
+        return proxied
+    if form_id != 'eures-beta':
+        return jsonify({'error': f'Unknown cockpit admin form: {form_id}'}), 404
+
+    try:
+        return jsonify({
+            'ok': True,
+            'form_id': form_id,
+            'cockpit': build_eures_cockpit_summary(),
+        }), 200
+    except Exception as e:
+        app.logger.exception('EURES cockpit summary failed')
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/forms/<form_id>/admin/tasks', methods=['GET'])
+@admin_required
+def admin_eures_tasks(form_id: str):
+    """Admin API: unified pending work queue for EURES beta."""
+    proxied = maybe_proxy_eures_request(form_id)
+    if proxied:
+        return proxied
+    if form_id != 'eures-beta':
+        return jsonify({'error': f'Unknown tasks admin form: {form_id}'}), 404
+
+    status = str(request.args.get('status', 'pending') or 'pending').strip().lower()
+    if status not in {'all', 'pending', 'done', 'dismissed'}:
+        return jsonify({'error': 'Invalid status filter'}), 400
+
+    try:
+        rows = build_eures_admin_tasks(status=status)
+        stats = Counter(str(row.get('status') or 'pending') for row in rows)
+        return jsonify({
+            'ok': True,
+            'form_id': form_id,
+            'stats': {
+                'total': len(rows),
+                'pending': stats.get('pending', 0),
+                'done': stats.get('done', 0),
+                'dismissed': stats.get('dismissed', 0),
+            },
+            'rows': rows,
+        }), 200
+    except Exception as e:
+        app.logger.exception('EURES tasks list failed')
         return jsonify({'error': str(e)}), 500
 
 

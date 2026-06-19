@@ -126,6 +126,65 @@
       margin-top: 1rem;
     }
 
+    .cockpit-grid {
+      display: grid;
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      gap: 1rem;
+    }
+
+    .cockpit-card {
+      grid-column: span 6;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.92);
+      border-radius: 24px;
+      padding: 1rem 1.1rem;
+      box-shadow: var(--shadow);
+    }
+
+    .cockpit-card.full {
+      grid-column: 1 / -1;
+    }
+
+    .cockpit-card h3 {
+      margin: 0 0 0.9rem;
+      font-size: 1.1rem;
+    }
+
+    .metric-list,
+    .activity-list {
+      display: grid;
+      gap: 0.7rem;
+    }
+
+    .metric-row,
+    .activity-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+      align-items: start;
+      padding-bottom: 0.7rem;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    }
+
+    .metric-row:last-child,
+    .activity-row:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+
+    .metric-row strong,
+    .activity-row strong {
+      color: var(--accent-strong);
+    }
+
+    .task-type-label {
+      font-size: 0.82rem;
+      color: var(--muted);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
     .matching-card {
       border: 1px solid var(--line);
       background: var(--panel);
@@ -806,7 +865,9 @@
 
     <section class="admin-card">
       <div class="tabs">
-        <button class="tab-btn active" type="button" data-tab="invitations">Invitations</button>
+        <button class="tab-btn active" type="button" data-tab="cockpit">Cockpit</button>
+        <button class="tab-btn" type="button" data-tab="tasks">À traiter</button>
+        <button class="tab-btn" type="button" data-tab="invitations">Invitations</button>
         <button class="tab-btn" type="button" data-tab="matchings">Matchings</button>
         <button class="tab-btn" type="button" data-tab="no-match">Sans matching</button>
         <button class="tab-btn" type="button" data-tab="new-jobs">Nouveaux métiers</button>
@@ -814,6 +875,59 @@
     </section>
 
     <div class="panel-stack">
+      <section class="panel" id="panel-cockpit">
+        <section class="admin-top">
+          <div class="admin-card">
+            <div class="toolbar">
+              <div class="section-title">Cockpit de suivi EURES beta</div>
+              <div></div>
+              <button id="cockpit-reload-btn" type="button">Rafraîchir</button>
+            </div>
+            <div class="status-line" id="cockpit-status-line">Chargement...</div>
+          </div>
+          <section class="cockpit-grid" id="cockpit-grid"></section>
+        </section>
+      </section>
+
+      <section class="panel" id="panel-tasks" hidden>
+        <section class="admin-top">
+          <div class="admin-card">
+            <div class="kpis">
+              <div class="kpi">
+                <div class="kpi-label">Total affiché</div>
+                <div class="kpi-value" id="task-kpi-total">0</div>
+              </div>
+              <div class="kpi">
+                <div class="kpi-label">À traiter</div>
+                <div class="kpi-value" id="task-kpi-pending">0</div>
+              </div>
+              <div class="kpi">
+                <div class="kpi-label">Traités</div>
+                <div class="kpi-value" id="task-kpi-done">0</div>
+              </div>
+              <div class="kpi">
+                <div class="kpi-label">Ignorés</div>
+                <div class="kpi-value" id="task-kpi-dismissed">0</div>
+              </div>
+            </div>
+          </div>
+          <div class="admin-card">
+            <div class="toolbar">
+              <select id="task-filter-status">
+                <option value="pending">À traiter</option>
+                <option value="all">Tous</option>
+                <option value="done">Traités</option>
+                <option value="dismissed">Ignorés</option>
+              </select>
+              <input id="task-filter-search" type="search" placeholder="Rechercher un candidat, une entreprise, un poste, un email">
+              <button id="task-reload-btn" type="button">Rafraîchir</button>
+            </div>
+            <div class="status-line" id="task-status-line">Chargement...</div>
+          </div>
+          <section class="matching-list" id="task-list"></section>
+        </section>
+      </section>
+
       <section class="panel" id="panel-invitations">
         <section class="admin-top">
           <div class="admin-card">
@@ -1077,7 +1191,15 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
 
   <script>
     const state = {
-      activeTab: "invitations",
+      activeTab: "cockpit",
+      cockpit: {
+        data: null,
+        loading: false,
+      },
+      tasks: {
+        rows: [],
+        loading: false,
+      },
       invitations: {
         rows: [],
         loading: false,
@@ -1179,6 +1301,20 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
       return status || "inconnu";
     }
 
+    function taskStatusLabel(status) {
+      if (status === "pending") return "à traiter";
+      if (status === "done") return "traité";
+      if (status === "dismissed") return "ignoré";
+      return status || "inconnu";
+    }
+
+    function taskTypeLabel(type) {
+      if (type === "matching_review") return "Matching";
+      if (type === "no_match_followup") return "Sans matching";
+      if (type === "new_job_request") return "Nouveau métier";
+      return type || "Tâche";
+    }
+
     function normalizeText(value) {
       return String(value || "").toLowerCase();
     }
@@ -1227,6 +1363,27 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
         row.poste,
         row.pays,
         row.requested_jobs,
+      ].map(normalizeText).join(" ");
+      return haystack.includes(search);
+    }
+
+    function taskMatchesSearch(row, search) {
+      if (!search) return true;
+      const matching = row.matching || {};
+      const noMatch = row.no_match || {};
+      const newJob = row.new_job || {};
+      const haystack = [
+        row.task_type,
+        row.title,
+        row.subtitle,
+        row.summary,
+        matching?.candidat?.nom,
+        matching?.candidat?.email,
+        matching?.employeur?.employeur,
+        matching?.employeur?.poste,
+        noMatch?.recipient_email,
+        newJob?.email,
+        newJob?.requested_jobs,
       ].map(normalizeText).join(" ");
       return haystack.includes(search);
     }
@@ -1393,6 +1550,55 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
       updatePendingSendPanel();
     }
 
+    async function loadCockpit() {
+      if (state.cockpit.loading) return;
+      state.cockpit.loading = true;
+      setStatus("cockpit-status-line", "Chargement du cockpit...");
+      try {
+        const response = await fetch(apiUrl("/admin/cockpit"), { credentials: "same-origin" });
+        const payload = await response.json();
+        if (!response.ok || !payload.ok) {
+          throw new Error(payload.error || `Erreur API (${response.status})`);
+        }
+        state.cockpit.data = payload.cockpit || null;
+        renderCockpit();
+        setStatus("cockpit-status-line", "Cockpit chargé.");
+      } catch (error) {
+        document.getElementById("cockpit-grid").innerHTML = `<div class="empty-state">${esc(error.message || "Erreur de chargement")}</div>`;
+        setStatus("cockpit-status-line", `Erreur : ${error.message || "chargement impossible"}`);
+      } finally {
+        state.cockpit.loading = false;
+      }
+    }
+
+    async function loadTasks() {
+      if (state.tasks.loading) return;
+      state.tasks.loading = true;
+      setStatus("task-status-line", "Chargement des tâches...");
+      const status = document.getElementById("task-filter-status").value;
+      const url = new URL(apiUrl("/admin/tasks"), window.location.origin);
+      if (status) url.searchParams.set("status", status);
+      try {
+        const response = await fetch(url.toString(), { credentials: "same-origin" });
+        const payload = await response.json();
+        if (!response.ok || !payload.ok) {
+          throw new Error(payload.error || `Erreur API (${response.status})`);
+        }
+        state.tasks.rows = Array.isArray(payload.rows) ? payload.rows : [];
+        document.getElementById("task-kpi-total").textContent = payload.stats?.total ?? 0;
+        document.getElementById("task-kpi-pending").textContent = payload.stats?.pending ?? 0;
+        document.getElementById("task-kpi-done").textContent = payload.stats?.done ?? 0;
+        document.getElementById("task-kpi-dismissed").textContent = payload.stats?.dismissed ?? 0;
+        renderTaskRows();
+        setStatus("task-status-line", `${state.tasks.rows.length} tâche(s) chargée(s).`);
+      } catch (error) {
+        document.getElementById("task-list").innerHTML = `<div class="empty-state">${esc(error.message || "Erreur de chargement")}</div>`;
+        setStatus("task-status-line", `Erreur : ${error.message || "chargement impossible"}`);
+      } finally {
+        state.tasks.loading = false;
+      }
+    }
+
     async function loadInvitations() {
       if (state.invitations.loading) return;
       state.invitations.loading = true;
@@ -1497,6 +1703,256 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
 
     function sampleCsv() {
       return document.getElementById("csv-example").textContent.trim();
+    }
+
+    function renderCockpit() {
+      const container = document.getElementById("cockpit-grid");
+      const data = state.cockpit.data;
+      if (!data) {
+        container.innerHTML = `<div class="empty-state">Aucune donnée cockpit disponible.</div>`;
+        return;
+      }
+
+      const priorities = data.priorities || {};
+      const todayFlow = data.today_flow || {};
+      const funnel = data.funnel || {};
+      const delays = data.delays || {};
+      const activity = Array.isArray(data.recent_activity) ? data.recent_activity : [];
+
+      const metricRows = (rows) => rows.map((row) => `
+        <div class="metric-row">
+          <span>${esc(row.label)}</span>
+          <strong>${esc(row.value)}</strong>
+        </div>
+      `).join("");
+
+      const activityRows = activity.length
+        ? activity.map((row) => `
+            <div class="activity-row">
+              <span>${esc(row.label || "-")}</span>
+              <strong>${esc(row.at || "-")}</strong>
+            </div>
+          `).join("")
+        : `<div class="empty-state">Aucune activité récente.</div>`;
+
+      container.innerHTML = `
+        <article class="cockpit-card">
+          <h3>Priorités</h3>
+          <div class="metric-list">
+            ${metricRows([
+              { label: "Matchings à valider", value: priorities.matching_review ?? 0 },
+              { label: "Sans matching à notifier", value: priorities.no_match_followup ?? 0 },
+              { label: "Demandes de nouveaux métiers", value: priorities.new_job_request ?? 0 },
+              { label: "Erreurs d’envoi", value: priorities.invitation_errors ?? 0 },
+            ])}
+          </div>
+        </article>
+
+        <article class="cockpit-card">
+          <h3>Flux du jour</h3>
+          <div class="metric-list">
+            ${metricRows([
+              { label: "Matchings calculés", value: todayFlow.matchings_calcules ?? 0 },
+              { label: "Emails envoyés", value: todayFlow.emails_envoyes ?? 0 },
+              { label: "Cas sans matching", value: todayFlow.sans_matching_crees ?? 0 },
+              { label: "Nouveaux métiers demandés", value: todayFlow.nouveaux_metiers_recus ?? 0 },
+            ])}
+          </div>
+        </article>
+
+        <article class="cockpit-card">
+          <h3>Entonnoir</h3>
+          <div class="metric-list">
+            ${metricRows([
+              { label: "Besoins reçus", value: funnel.besoins_recus ?? 0 },
+              { label: "Candidats reçus", value: funnel.candidats_recus ?? 0 },
+              { label: "Matchings exploitables", value: funnel.matchings_exploitables ?? 0 },
+              { label: "Matchings validés", value: funnel.matchings_valides ?? 0 },
+              { label: "Envoyés aux employeurs", value: funnel.envoyes_employeurs ?? 0 },
+              { label: "Mises en relation", value: funnel.mises_en_relation ?? 0 },
+              { label: "Embauches confirmées", value: funnel.embauches_confirmees ?? 0 },
+            ])}
+          </div>
+        </article>
+
+        <article class="cockpit-card">
+          <h3>Délais moyens</h3>
+          <div class="metric-list">
+            ${metricRows([
+              { label: "Matching -> validation admin", value: delays.matching_to_validation_hours != null ? `${delays.matching_to_validation_hours} h` : "-" },
+              { label: "Validation -> envoi employeur", value: delays.validation_to_send_hours != null ? `${delays.validation_to_send_hours} h` : "-" },
+              { label: "Envoi -> retour employeur", value: delays.send_to_response_hours != null ? `${delays.send_to_response_hours} h` : "-" },
+              { label: "Retour -> mise en relation", value: delays.response_to_relation_hours != null ? `${delays.response_to_relation_hours} h` : "-" },
+            ])}
+          </div>
+        </article>
+
+        <article class="cockpit-card full">
+          <h3>Activité récente</h3>
+          <div class="activity-list">${activityRows}</div>
+        </article>
+      `;
+    }
+
+    function renderTaskRows() {
+      const list = document.getElementById("task-list");
+      const search = normalizeText(document.getElementById("task-filter-search").value.trim());
+      const filtered = state.tasks.rows.filter((row) => taskMatchesSearch(row, search));
+
+      if (!filtered.length) {
+        list.innerHTML = `<div class="empty-state">Aucune tâche ne correspond aux filtres actuels.</div>`;
+        return;
+      }
+
+      list.innerHTML = filtered.map((row) => {
+        const statusClass = row.status === "done" ? "accepted" : row.status === "dismissed" ? "refused" : "pending";
+        const priorityLabel = row.priority === "high" ? "priorité haute" : "priorité normale";
+        let body = "";
+        let actions = "";
+        let noteId = `task-note-${row.task_type}-${row.record_id}`;
+
+        if (row.task_type === "matching_review") {
+          const matching = row.matching || {};
+          body = `
+            <div class="compare-grid">
+              <section class="compare-card">
+                <h3>Candidat</h3>
+                <dl class="detail-list">
+                  <div class="detail-row"><dt>Nom</dt><dd>${esc(matching.candidat?.nom || "-")}</dd></div>
+                  <div class="detail-row"><dt>Email</dt><dd>${esc(matching.candidat?.email || "-")}</dd></div>
+                  <div class="detail-row"><dt>Métiers</dt><dd>${esc(matching.candidat?.metier || "-")}</dd></div>
+                  <div class="detail-row"><dt>Langues</dt><dd>${esc(matching.candidat?.langues || "-")}</dd></div>
+                </dl>
+              </section>
+              <section class="compare-card">
+                <h3>Besoin</h3>
+                <dl class="detail-list">
+                  <div class="detail-row"><dt>Entreprise</dt><dd>${esc(matching.employeur?.employeur || "-")}</dd></div>
+                  <div class="detail-row"><dt>Poste</dt><dd>${esc(matching.employeur?.poste || "-")}</dd></div>
+                  <div class="detail-row"><dt>Pays</dt><dd>${esc(matching.employeur?.pays || "-")}</dd></div>
+                  <div class="detail-row"><dt>Score</dt><dd>${esc(matching.score ?? 0)}</dd></div>
+                </dl>
+              </section>
+            </div>
+          `;
+          actions = `
+            <button class="btn-accept" type="button" data-task-matching-action="accepted">Accepter</button>
+            <button class="btn-refuse" type="button" data-task-matching-action="refused">Refuser</button>
+          `;
+        } else if (row.task_type === "no_match_followup") {
+          const noMatch = row.no_match || {};
+          body = `
+            <div class="compare-grid">
+              <section class="compare-card">
+                <h3>Entrée</h3>
+                <dl class="detail-list">
+                  <div class="detail-row"><dt>Type</dt><dd>${esc(noMatch.role === "candidate" ? "Candidat" : "Employeur")}</dd></div>
+                  <div class="detail-row"><dt>Nom / Structure</dt><dd>${esc(noMatch.title || "-")}</dd></div>
+                  <div class="detail-row"><dt>Email</dt><dd>${esc(noMatch.recipient_email || "-")}</dd></div>
+                </dl>
+              </section>
+              <section class="compare-card">
+                <h3>Action attendue</h3>
+                <p style="margin:0; line-height:1.7;">Notification manuelle à envoyer pour signaler qu’aucun matching immédiat n’a été trouvé.</p>
+              </section>
+            </div>
+          `;
+          actions = `
+            <button class="btn-accept" type="button" data-task-no-match-action="send" data-role="${esc(noMatch.role)}">Envoyer l’email</button>
+            <button class="btn-refuse" type="button" data-task-no-match-action="dismiss" data-role="${esc(noMatch.role)}">Ignorer</button>
+          `;
+        } else if (row.task_type === "new_job_request") {
+          const newJob = row.new_job || {};
+          body = `
+            <div class="compare-grid">
+              <section class="compare-card">
+                <h3>Employeur</h3>
+                <dl class="detail-list">
+                  <div class="detail-row"><dt>Entreprise</dt><dd>${esc(newJob.employeur || "-")}</dd></div>
+                  <div class="detail-row"><dt>Poste</dt><dd>${esc(newJob.poste || "-")}</dd></div>
+                  <div class="detail-row"><dt>Email</dt><dd>${esc(newJob.email || "-")}</dd></div>
+                </dl>
+              </section>
+              <section class="compare-card">
+                <h3>Nouveaux métiers souhaités</h3>
+                <p style="margin:0; line-height:1.7;">${esc(newJob.requested_jobs || "-")}</p>
+              </section>
+            </div>
+          `;
+          actions = `
+            <button class="btn-accept" type="button" data-task-new-job-action="processed">Marquer traité</button>
+            <button class="btn-refuse" type="button" data-task-new-job-action="dismissed">Ignorer</button>
+          `;
+        }
+
+        return `
+          <article class="matching-card" data-task-type="${esc(row.task_type)}" data-record-id="${esc(row.record_id)}">
+            <div class="matching-summary">
+              <div>
+                <div class="task-type-label">${esc(taskTypeLabel(row.task_type))}</div>
+                <h2>${esc(row.title || "-")}</h2>
+                <p>${esc(row.subtitle || "-")}</p>
+                <div class="summary-tags">
+                  <span class="pill ${statusClass}">Statut : ${esc(taskStatusLabel(row.status))}</span>
+                  <span class="pill">${esc(priorityLabel)}</span>
+                  <span class="pill">Créé le : ${esc(row.created_at || "-")}</span>
+                </div>
+              </div>
+            </div>
+            <div class="matching-body">
+              <p style="margin:0; line-height:1.7;">${esc(row.summary || "-")}</p>
+              ${body}
+              <section class="notes-box">
+                <h4>Note admin</h4>
+                <textarea id="${esc(noteId)}" placeholder="Ajouter une note interne...">${esc(row.matching?.admin_decision_note || row.no_match?.note || row.new_job?.note || "")}</textarea>
+                <div class="hero-actions">${actions}</div>
+              </section>
+            </div>
+          </article>
+        `;
+      }).join("");
+
+      for (const button of list.querySelectorAll("[data-task-matching-action]")) {
+        button.addEventListener("click", async (event) => {
+          const card = event.currentTarget.closest(".matching-card");
+          const recordId = card?.dataset.recordId;
+          const decision = event.currentTarget.dataset.taskMatchingAction;
+          const note = document.getElementById(`task-note-matching_review-${recordId}`)?.value || "";
+          if (!recordId || !decision) return;
+          await submitDecision(recordId, decision, note);
+          await loadTasks();
+          await loadCockpit();
+        });
+      }
+      for (const button of list.querySelectorAll("[data-task-no-match-action]")) {
+        button.addEventListener("click", async (event) => {
+          const card = event.currentTarget.closest(".matching-card");
+          const recordId = card?.dataset.recordId;
+          const role = event.currentTarget.dataset.role;
+          const action = event.currentTarget.dataset.taskNoMatchAction;
+          const note = document.getElementById(`task-note-no_match_followup-${recordId}`)?.value || "";
+          if (!recordId || !role || !action) return;
+          if (action === "send") {
+            await submitNoMatchSend(role, recordId, note);
+          } else {
+            await submitNoMatchDismiss(role, recordId, note);
+          }
+          await loadTasks();
+          await loadCockpit();
+        });
+      }
+      for (const button of list.querySelectorAll("[data-task-new-job-action]")) {
+        button.addEventListener("click", async (event) => {
+          const card = event.currentTarget.closest(".matching-card");
+          const recordId = card?.dataset.recordId;
+          const status = event.currentTarget.dataset.taskNewJobAction;
+          const note = document.getElementById(`task-note-new_job_request-${recordId}`)?.value || "";
+          if (!recordId || !status) return;
+          await submitNewJobStatus(recordId, status, note);
+          await loadTasks();
+          await loadCockpit();
+        });
+      }
     }
 
     function renderMatchingRows() {
@@ -1941,6 +2397,8 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
         }
         setStatus("status-line", `Décision enregistrée : ${decision}.`);
         await loadMatchings();
+        await loadTasks();
+        await loadCockpit();
       } catch (error) {
         setStatus("status-line", `Erreur : ${error.message || "mise à jour impossible"}`);
       }
@@ -1987,6 +2445,8 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
         }
         setStatus("no-match-status-line", `Email envoyé à ${payload.email || "le destinataire"}.`);
         await loadNoMatch();
+        await loadTasks();
+        await loadCockpit();
       } catch (error) {
         setStatus("no-match-status-line", `Erreur : ${error.message || "envoi impossible"}`);
       }
@@ -2010,6 +2470,8 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
         }
         setStatus("no-match-status-line", "Entrée ignorée.");
         await loadNoMatch();
+        await loadTasks();
+        await loadCockpit();
       } catch (error) {
         setStatus("no-match-status-line", `Erreur : ${error.message || "mise à jour impossible"}`);
       }
@@ -2033,6 +2495,8 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
         }
         setStatus("new-job-status-line", `Demande marquée comme ${newJobStatusLabel(payload.status)}.`);
         await loadNewJobs();
+        await loadTasks();
+        await loadCockpit();
       } catch (error) {
         setStatus("new-job-status-line", `Erreur : ${error.message || "mise à jour impossible"}`);
       }
@@ -2040,6 +2504,8 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
 
     function activateTab(tabName) {
       state.activeTab = tabName;
+      document.getElementById("panel-cockpit").hidden = tabName !== "cockpit";
+      document.getElementById("panel-tasks").hidden = tabName !== "tasks";
       document.getElementById("panel-invitations").hidden = tabName !== "invitations";
       document.getElementById("panel-matchings").hidden = tabName !== "matchings";
       document.getElementById("panel-no-match").hidden = tabName !== "no-match";
@@ -2096,6 +2562,13 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
       document.getElementById("csv-text").value = text;
       setStatus("invite-status-line", `Fichier chargé : ${file.name}`);
     });
+    document.getElementById("cockpit-reload-btn").addEventListener("click", async () => {
+      await loadCockpit();
+      await loadTasks();
+    });
+    document.getElementById("task-reload-btn").addEventListener("click", loadTasks);
+    document.getElementById("task-filter-status").addEventListener("change", loadTasks);
+    document.getElementById("task-filter-search").addEventListener("input", renderTaskRows);
     document.getElementById("invite-reload-btn").addEventListener("click", loadInvitations);
     document.getElementById("invite-filter-status").addEventListener("change", loadInvitations);
     document.getElementById("invite-filter-search").addEventListener("input", renderInvitations);
@@ -2114,7 +2587,9 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
     for (const button of document.querySelectorAll("[data-tab]")) {
       button.addEventListener("click", () => activateTab(button.dataset.tab));
     }
-    activateTab("invitations");
+    activateTab("cockpit");
+    loadCockpit();
+    loadTasks();
     loadInvitations();
     loadBrevoHealth();
     loadMatchings();
