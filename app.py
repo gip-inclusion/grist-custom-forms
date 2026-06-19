@@ -2555,12 +2555,14 @@ def build_eures_public_stats() -> dict:
     candidats = fetch_table_records(candidate_config['doc_id'], EURES_CANDIDATS_TABLE, candidate_headers)
     besoins = fetch_table_records(employer_config['doc_id'], EURES_BESOINS_TABLE, employer_headers)
     matchings = fetch_table_records(candidate_config['doc_id'], EURES_MATCHINGS_TABLE, candidate_headers)
+    invitations = list_eures_invitations()
 
     monthly: dict[str, dict[str, int | str]] = defaultdict(lambda: {
         'mois': '',
         'candidats': 0,
         'besoins_employeurs': 0,
         'matchings': 0,
+        'invitations_candidats_envoyees': 0,
         'candidats_contactes': 0,
         'candidatures_transmises_employeur': 0,
         'contacts_acceptes_employeur': 0,
@@ -2606,6 +2608,16 @@ def build_eures_public_stats() -> dict:
             _add_public_counter(besoins_par_pays, 'besoins_par_pays', label)
         for label in _eures_public_sector_labels(fields.get('poste')):
             _add_public_counter(secteurs, 'secteurs', label)
+
+    for row in invitations:
+        if str(row.get('role') or '').strip().lower() != 'candidate':
+            continue
+        if str(row.get('invitation_status') or '').strip().lower() != 'invitation_envoyee':
+            continue
+        sent_month = _month_key(row.get('sent_at'))
+        if sent_month:
+            monthly[sent_month]['mois'] = sent_month
+            monthly[sent_month]['invitations_candidats_envoyees'] += 1
 
     for rec in matchings:
         fields = rec.get('fields', {}) if isinstance(rec, dict) else {}
@@ -2701,6 +2713,7 @@ def build_eures_public_stats() -> dict:
         'candidats': len(candidats),
         'besoins_employeurs': len(besoins),
         'matchings': len(matchings),
+        'invitations_candidats_envoyees': sum(int(row['invitations_candidats_envoyees']) for row in monthly_rows),
         'candidats_contactes': sum(int(row['candidats_contactes']) for row in monthly_rows),
         'candidatures_transmises_employeur': sum(int(row['candidatures_transmises_employeur']) for row in monthly_rows),
         'contacts_acceptes_employeur': sum(int(row['contacts_acceptes_employeur']) for row in monthly_rows),
@@ -4110,6 +4123,11 @@ def build_eures_cockpit_summary() -> dict:
     hire_count = sum(1 for row in matchings_all if row.get('workflow_status') == 'embauche_confirmee')
     matchings_today = sum(1 for row in matchings_all if _same_utc_day(row.get('date_calcul'), today))
     invitation_emails_today = sum(1 for row in invitations if _same_utc_day(row.get('sent_at'), today))
+    candidate_invitations_sent = sum(
+        1 for row in invitations
+        if str(row.get('role') or '').strip().lower() == 'candidate'
+        and str(row.get('invitation_status') or '').strip().lower() == 'invitation_envoyee'
+    )
     no_match_today = sum(1 for row in no_match_all if _same_utc_day(row.get('created_at'), today))
     new_jobs_today = sum(1 for row in new_jobs_all if _same_utc_day(row.get('created_at'), today))
 
@@ -4131,6 +4149,7 @@ def build_eures_cockpit_summary() -> dict:
         },
         'funnel': {
             'besoins_recus': len(besoins),
+            'invitations_candidats_envoyees': candidate_invitations_sent,
             'candidats_recus': len(candidats),
             'matchings_exploitables': len(matchings_all),
             'matchings_valides': accepted_count,
