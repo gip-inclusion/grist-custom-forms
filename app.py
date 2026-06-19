@@ -98,6 +98,18 @@ EURES_MATCHING_ADMIN_FIELDS = {
     'embauche_confirmee_at',
     'embauche_confirmee_by',
 }
+EURES_NO_MATCH_NOTIFICATION_FIELDS = {
+    'no_match_notification_status',
+    'no_match_notification_reason',
+    'no_match_notification_created_at',
+    'no_match_notification_created_by',
+    'no_match_notification_sent_at',
+    'no_match_notification_sent_by',
+    'no_match_notification_dismissed_at',
+    'no_match_notification_dismissed_by',
+    'no_match_notification_note',
+}
+EURES_NO_MATCH_ALLOWED_STATUSES = {'pending', 'sent', 'dismissed'}
 EURES_INVITATION_FIELDS = {
     'role',
     'email',
@@ -842,6 +854,13 @@ def get_eures_mail_signature_role() -> str:
     return os.environ.get('EURES_SIGNATURE_ROLE', 'Conseiller EURES - France Travail').strip() or 'Conseiller EURES - France Travail'
 
 
+def get_eures_privacy_url(lang: str = 'fr') -> str:
+    normalized_lang = str(lang or 'fr').strip().lower()
+    if normalized_lang not in {'fr', 'en', 'de'}:
+        normalized_lang = 'fr'
+    return f"{get_public_app_base_url()}/forms/eures-beta/privacy?lang={normalized_lang}"
+
+
 def get_public_app_base_url() -> str:
     configured = os.environ.get('PUBLIC_APP_BASE_URL', '').strip()
     if configured:
@@ -1424,6 +1443,7 @@ def build_brevo_invitation_email(invitation_row: dict) -> tuple[str, str, str, s
     invite_link = str(invitation_row.get('invite_link') or '').strip() or _build_eures_invitation_link(role, language, invite_token)
     signature_name = get_eures_mail_signature_name()
     signature_role = get_eures_mail_signature_role()
+    privacy_url = get_eures_privacy_url(language)
     if language == 'en':
         hello = "Hello,"
     elif language == 'de':
@@ -1481,7 +1501,7 @@ def build_brevo_invitation_email(invitation_row: dict) -> tuple[str, str, str, s
             f"{hello}\n\n"
             f"{title_block}"
             + "\n\n".join(body_lines)
-            + f"\n\n{cta}: {invite_link}\n\n{cta_note}\n\n{footer}\n\nCordialement,\n\n{signature_name}\n{signature_role}\n"
+            + f"\n\n{cta}: {invite_link}\n\n{cta_note}\n\n{footer}\n\nInformations sur vos données : {privacy_url}\n\nCordialement,\n\n{signature_name}\n{signature_role}\n"
         )
         body_html = f"""
 <!doctype html>
@@ -1526,6 +1546,7 @@ def build_brevo_invitation_email(invitation_row: dict) -> tuple[str, str, str, s
             <tr>
               <td style="padding:18px 28px 24px;border-top:1px solid #e7ecf4;">
                 <p style="margin:0 0 10px;font-size:13px;line-height:1.6;color:#627892;">{escape(footer)}</p>
+                <p style="margin:0 0 10px;font-size:13px;line-height:1.6;color:#627892;">Informations sur le traitement de vos données : <a href="{escape(privacy_url)}" style="color:#004494;">consulter la notice de confidentialité</a>.</p>
                 <p style="margin:0;font-size:13px;line-height:1.6;color:#627892;">Cordialement,<br><br>{escape(signature_name)}<br>{escape(signature_role)}</p>
               </td>
             </tr>
@@ -1589,7 +1610,7 @@ def build_brevo_invitation_email(invitation_row: dict) -> tuple[str, str, str, s
         f"{hello}\n\n"
         f"{title_block}"
         + "\n\n".join(body_lines)
-        + f"\n\n{cta}: {invite_link}\n\n{cta_note}\n\n{footer}\n\nCordialement,\n\n{signature_name}\n{signature_role}\n"
+        + f"\n\n{cta}: {invite_link}\n\n{cta_note}\n\n{footer}\n\nInformations sur vos données : {privacy_url}\n\nCordialement,\n\n{signature_name}\n{signature_role}\n"
     )
     html_body = f"""
 <!doctype html>
@@ -1634,6 +1655,7 @@ def build_brevo_invitation_email(invitation_row: dict) -> tuple[str, str, str, s
             <tr>
               <td style="padding:18px 28px 24px;border-top:1px solid #e7ecf4;">
                 <p style="margin:0 0 10px;font-size:13px;line-height:1.6;color:#627892;">{escape(footer)}</p>
+                <p style="margin:0 0 10px;font-size:13px;line-height:1.6;color:#627892;">Informations sur le traitement de vos données : <a href="{escape(privacy_url)}" style="color:#004494;">consulter la notice de confidentialité</a>.</p>
                 <p style="margin:0;font-size:13px;line-height:1.6;color:#627892;">Cordialement,<br><br>{escape(signature_name)}<br>{escape(signature_role)}</p>
               </td>
             </tr>
@@ -2755,6 +2777,20 @@ def update_matching_record_by_id(doc_id: str, record_id: int, fields: dict, head
     return resp
 
 
+def update_table_record_by_id(config: dict, record_id: int, fields: dict, headers: dict, allowed_fields: set[str] | None = None):
+    """Patch one Grist record by id on any configured table."""
+    field_names = set(fields.keys()) if allowed_fields is None else (set(fields.keys()) & allowed_fields)
+    ensure_table_columns(config, field_names, headers)
+    allowed_columns = get_table_columns(config, headers)
+    filtered_fields = {k: v for k, v in fields.items() if k in allowed_columns}
+    base_url = f"{GRIST_BASE_URL}/api/docs/{config['doc_id']}/tables/{config['table_id']}/records"
+    payload = {'records': [{'id': record_id, 'fields': filtered_fields}]}
+    resp = write_grist_records('PATCH', base_url, payload, headers)
+    if resp.status_code != 200:
+        raise RuntimeError(f'Failed to update {config["table_id"]}: HTTP {resp.status_code} - {resp.text}')
+    return resp
+
+
 def fetch_record_by_id(doc_id: str, table_id: str, record_id: int, headers: dict):
     """Read one Grist record by numeric id."""
     url = f"{GRIST_BASE_URL}/api/docs/{doc_id}/tables/{table_id}/records"
@@ -3047,6 +3083,7 @@ def run_eures_matching_for_saved_record(form_id: str, role: str, saved_record: d
     saved_fields = saved_record.get('fields', {}) if isinstance(saved_record.get('fields'), dict) else {}
 
     writes = 0
+    qualifying_matches = 0
     if role == 'candidate':
         for besoin in all_besoins:
             besoin_fields = besoin.get('fields', {}) if isinstance(besoin.get('fields'), dict) else {}
@@ -3055,6 +3092,8 @@ def run_eures_matching_for_saved_record(form_id: str, role: str, saved_record: d
             if not candidat_id or not besoin_id:
                 continue
             matching = compute_eures_matching(besoin_fields, saved_fields)
+            if str(matching.get('statut') or '').strip().lower() in {'a_valider', 'auto_envoyable'}:
+                qualifying_matches += 1
             payload = {'besoin_id': besoin_id, 'candidat_id': candidat_id, **matching}
             upsert_matching_record(config['doc_id'], payload, headers)
             writes += 1
@@ -3066,11 +3105,19 @@ def run_eures_matching_for_saved_record(form_id: str, role: str, saved_record: d
             if not candidat_id or not besoin_id:
                 continue
             matching = compute_eures_matching(saved_fields, candidat_fields)
+            if str(matching.get('statut') or '').strip().lower() in {'a_valider', 'auto_envoyable'}:
+                qualifying_matches += 1
             payload = {'besoin_id': besoin_id, 'candidat_id': candidat_id, **matching}
             upsert_matching_record(config['doc_id'], payload, headers)
             writes += 1
 
-    return {'processed': True, 'writes': writes, 'role': role}
+    return {
+        'processed': True,
+        'writes': writes,
+        'role': role,
+        'qualifying_matches': qualifying_matches,
+        'no_immediate_match': qualifying_matches == 0,
+    }
 
 
 def _eures_admin_headers(config: dict) -> dict:
@@ -3157,6 +3204,117 @@ def _format_email_multiline(value: str) -> str:
     return '<br>'.join(escape(part.strip()) for part in text.split('|') if part.strip()) or escape(text)
 
 
+def _normalize_eures_no_match_status(value: str) -> str:
+    status = str(value or '').strip().lower()
+    return status if status in EURES_NO_MATCH_ALLOWED_STATUSES else ''
+
+
+def _get_eures_role_table_config(role: str) -> dict | None:
+    normalized_role = _normalize_eures_invitation_role(role)
+    if not normalized_role:
+        return None
+    base = get_form_config('eures-beta', normalized_role)
+    if not base:
+        return None
+    return {
+        'doc_id': base['doc_id'],
+        'table_id': EURES_CANDIDATS_TABLE if normalized_role == 'candidate' else EURES_BESOINS_TABLE,
+        'api_key': base.get('api_key'),
+    }
+
+
+def queue_eures_no_match_notification(role: str, record_id: int):
+    """Mark a record for manual follow-up when no immediate match exists."""
+    config = _get_eures_role_table_config(role)
+    if not config:
+        raise RuntimeError('EURES role table configuration is incomplete.')
+    headers = _eures_admin_headers(config)
+    update_table_record_by_id(
+        config,
+        record_id,
+        {
+            'no_match_notification_status': 'pending',
+            'no_match_notification_reason': 'no_immediate_match',
+            'no_match_notification_created_at': _now_iso_utc(),
+            'no_match_notification_created_by': 'system_matching',
+            'no_match_notification_note': '',
+        },
+        headers,
+        EURES_NO_MATCH_NOTIFICATION_FIELDS,
+    )
+
+
+def _build_eures_no_match_row(role: str, rec: dict) -> dict | None:
+    fields = rec.get('fields', {}) if isinstance(rec, dict) else {}
+    if not isinstance(fields, dict):
+        return None
+    status = _normalize_eures_no_match_status(fields.get('no_match_notification_status', ''))
+    if not status:
+        return None
+
+    normalized_role = _normalize_eures_invitation_role(role)
+    is_candidate = normalized_role == 'candidate'
+    recipient = normalize_email(fields.get('email', '')) if is_candidate else _resolve_employer_recipient(fields)
+    title = (
+        str(fields.get('nom') or fields.get('email') or 'Candidat')
+        if is_candidate else
+        str(fields.get('employeur') or fields.get('poste') or recipient or 'Employeur')
+    )
+    subtitle = str(fields.get('metier') or '') if is_candidate else str(fields.get('poste') or '')
+    return {
+        'role': normalized_role,
+        'record_id': rec.get('id'),
+        'record_key': fields.get('id_tally') or fields.get('uuid') or '',
+        'notification_status': status,
+        'reason': fields.get('no_match_notification_reason', ''),
+        'created_at': fields.get('no_match_notification_created_at', ''),
+        'created_by': fields.get('no_match_notification_created_by', ''),
+        'sent_at': fields.get('no_match_notification_sent_at', ''),
+        'sent_by': fields.get('no_match_notification_sent_by', ''),
+        'dismissed_at': fields.get('no_match_notification_dismissed_at', ''),
+        'dismissed_by': fields.get('no_match_notification_dismissed_by', ''),
+        'note': fields.get('no_match_notification_note', ''),
+        'title': title,
+        'subtitle': subtitle,
+        'recipient_email': recipient,
+        'payload': {
+            'nom': fields.get('nom', ''),
+            'email': fields.get('email', ''),
+            'telephone': fields.get('telephone', ''),
+            'pays': fields.get('pays', ''),
+            'metier': fields.get('metier', ''),
+            'langues': fields.get('langues', ''),
+            'mobilite': fields.get('mobilite', ''),
+            'disponibilite': fields.get('disponibilite', ''),
+            'employeur': fields.get('employeur', ''),
+            'contact': fields.get('contact', ''),
+            'poste': fields.get('poste', ''),
+            'competences_clefs': fields.get('competences_clefs', ''),
+            'langues_requises': fields.get('langues_requises', ''),
+            'date_debut': fields.get('date_debut', ''),
+        },
+    }
+
+
+def list_eures_admin_no_match_notifications(status: str = 'all') -> list[dict]:
+    """Return candidate/employer rows needing a no-match email review."""
+    rows = []
+    for role in ('candidate', 'employer'):
+        config = _get_eures_role_table_config(role)
+        if not config:
+            continue
+        headers = _eures_admin_headers(config)
+        for rec in fetch_table_records(config['doc_id'], config['table_id'], headers):
+            row = _build_eures_no_match_row(role, rec)
+            if not row:
+                continue
+            if status in EURES_NO_MATCH_ALLOWED_STATUSES and row['notification_status'] != status:
+                continue
+            rows.append(row)
+    rows.sort(key=lambda row: (str(row.get('created_at') or ''), int(row.get('record_id') or 0)), reverse=True)
+    return rows
+
+
 def _build_eures_feedback_url(record_id: int, response: str) -> str:
     token = get_eures_email_action_serializer().dumps({
         'record_id': int(record_id),
@@ -3190,6 +3348,7 @@ def build_brevo_matching_email(row: dict) -> tuple[str, str, str, str]:
     candidate_phone = str(candidat.get('telephone') or 'Non renseigné')
     candidate_city = str(candidat.get('ville') or 'Non renseignée')
     signature_name = get_eures_mail_signature_name()
+    privacy_url = get_eures_privacy_url('fr')
     contact_yes_url = _build_eures_feedback_url(int(row.get('record_id') or 0), 'contact')
     contact_no_url = _build_eures_feedback_url(int(row.get('record_id') or 0), 'not_contact')
     body_text = (
@@ -3215,6 +3374,7 @@ def build_brevo_matching_email(row: dict) -> tuple[str, str, str, str]:
         f"- Je vais le contacter : {contact_yes_url}\n"
         f"- Je ne vais pas le contacter : {contact_no_url}\n\n"
         "Vous pouvez aussi répondre directement à cet email afin que nous poursuivions la mise en relation.\n\n"
+        f"Informations sur vos données : {privacy_url}\n\n"
         "Cordialement,\n"
         f"{signature_name}\n"
         "EURES beta\n"
@@ -3323,6 +3483,10 @@ def build_brevo_matching_email(row: dict) -> tuple[str, str, str, str]:
                   <strong>{escape(signature_name)}</strong><br>
                   EURES beta
                 </p>
+                <p style="margin:18px 0 0;font-size:13px;line-height:1.7;color:#6b6256;">
+                  Informations sur le traitement de vos données :
+                  <a href="{escape(privacy_url)}" style="color:#103a2b;">consulter la notice de confidentialité</a>.
+                </p>
               </td>
             </tr>
           </table>
@@ -3348,6 +3512,7 @@ def build_brevo_candidate_matching_notification_email(row: dict) -> tuple[str, s
     hello = "Bonjour,"
     if candidate_name:
         hello = "Bonjour,"
+    privacy_url = get_eures_privacy_url('fr')
 
     subject = f"[EURES beta] Votre candidature a ete transmise a {employeur_name}"
     body_text = (
@@ -3358,6 +3523,7 @@ def build_brevo_candidate_matching_notification_email(row: dict) -> tuple[str, s
         "- repondre aux appels masques ou aux numeros inconnus,\n"
         "- verifier regulierement votre boite e-mail,\n"
         "- consulter egalement vos courriers indesirables ou spams.\n\n"
+        f"Informations sur vos donnees : {privacy_url}\n\n"
         "Cordialement,\n"
         f"{get_eures_mail_signature_name()}\n"
         "EURES beta\n"
@@ -3397,6 +3563,10 @@ def build_brevo_candidate_matching_notification_email(row: dict) -> tuple[str, s
                 </div>
                 <p style="margin:22px 0 0;font-size:15px;line-height:1.7;">
                   Cordialement,<br><br>{escape(get_eures_mail_signature_name())}<br>EURES beta
+                </p>
+                <p style="margin:18px 0 0;font-size:13px;line-height:1.7;color:#6b6256;">
+                  Informations sur le traitement de vos données :
+                  <a href="{escape(privacy_url)}" style="color:#004494;">consulter la notice de confidentialité</a>.
                 </p>
               </td>
             </tr>
@@ -3439,6 +3609,121 @@ def send_brevo_transactional_email(to_email: str, subject: str, text_body: str, 
     if resp.status_code not in {200, 201, 202}:
         raise RuntimeError(f'Brevo send failed: HTTP {resp.status_code} - {resp.text}')
     return _parse_response_json_safe(resp)
+
+
+def build_brevo_candidate_no_match_email(row: dict) -> tuple[str, str, str, str]:
+    payload = row.get('payload', {}) if isinstance(row.get('payload'), dict) else {}
+    recipient = normalize_email(payload.get('email', ''))
+    if not recipient:
+        raise RuntimeError('Candidate email is missing for no-match notification.')
+    privacy_url = get_eures_privacy_url('fr')
+    subject = "[EURES beta] Aucune mise en relation immédiate pour le moment"
+    body_text = (
+        "Bonjour,\n\n"
+        "Nous vous confirmons la bonne réception de votre questionnaire EURES beta.\n\n"
+        "A ce stade, aucun matching n'a pu être réalisé immédiatement selon vos critères.\n"
+        "Votre profil reste pris en compte et vous serez prévenu dès qu'une mise en relation pertinente pourra être opérée.\n\n"
+        f"Informations sur vos données : {privacy_url}\n\n"
+        "Cordialement,\n"
+        f"{get_eures_mail_signature_name()}\n"
+        f"{get_eures_mail_signature_role()}\n"
+        "EURES beta\n"
+    )
+    body_html = f"""
+<!doctype html>
+<html lang="fr">
+  <body style="margin:0;padding:0;background:#f4efe6;font-family:Georgia,'Times New Roman',serif;color:#1f1f1f;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f4efe6;padding:24px 12px;">
+      <tr>
+        <td align="center">
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:680px;background:#fffdf9;border:1px solid #e7dcc7;border-radius:18px;overflow:hidden;">
+            <tr>
+              <td style="padding:28px 32px;background:linear-gradient(135deg,#0f2742 0%,#004494 100%);color:#ffffff;">
+                <div style="font-size:13px;letter-spacing:1.6px;text-transform:uppercase;opacity:0.82;">EURES beta</div>
+                <h1 style="margin:10px 0 0;font-size:30px;line-height:1.2;font-weight:700;">Suivi de votre candidature</h1>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:28px 32px;">
+                <p style="margin:0 0 18px;font-size:16px;line-height:1.7;">Bonjour,</p>
+                <p style="margin:0 0 18px;font-size:16px;line-height:1.7;">Nous vous confirmons la bonne réception de votre questionnaire EURES beta.</p>
+                <p style="margin:0 0 18px;font-size:16px;line-height:1.7;">À ce stade, aucun matching n'a pu être réalisé immédiatement selon vos critères.</p>
+                <p style="margin:0 0 18px;font-size:16px;line-height:1.7;">Votre profil reste pris en compte et vous serez prévenu dès qu'une mise en relation pertinente pourra être opérée.</p>
+                <p style="margin:18px 0 0;font-size:13px;line-height:1.7;color:#6b6256;">
+                  Informations sur le traitement de vos données :
+                  <a href="{escape(privacy_url)}" style="color:#004494;">consulter la notice de confidentialité</a>.
+                </p>
+                <p style="margin:22px 0 0;font-size:15px;line-height:1.7;">
+                  Cordialement,<br><br>{escape(get_eures_mail_signature_name())}<br>{escape(get_eures_mail_signature_role())}<br>EURES beta
+                </p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
+""".strip()
+    return recipient, subject, body_text, body_html
+
+
+def build_brevo_employer_no_match_email(row: dict) -> tuple[str, str, str, str]:
+    payload = row.get('payload', {}) if isinstance(row.get('payload'), dict) else {}
+    recipient = _resolve_employer_recipient(payload)
+    if not recipient:
+        raise RuntimeError('Employer email is missing for no-match notification.')
+    privacy_url = get_eures_privacy_url('fr')
+    poste = str(payload.get('poste') or 'votre besoin').strip()
+    subject = f"[EURES beta] Suivi de votre besoin de recrutement - {poste}"
+    body_text = (
+        "Bonjour,\n\n"
+        "Nous vous confirmons la bonne réception de votre questionnaire EURES beta.\n\n"
+        "A ce stade, aucun matching n'a pu être généré immédiatement pour votre besoin.\n"
+        "Nous allons poursuivre la recherche de profils pertinents dans la base EURES et reviendrons vers vous dès qu'une candidature adaptée pourra être proposée.\n\n"
+        f"Informations sur vos données : {privacy_url}\n\n"
+        "Cordialement,\n"
+        f"{get_eures_mail_signature_name()}\n"
+        f"{get_eures_mail_signature_role()}\n"
+        "EURES beta\n"
+    )
+    body_html = f"""
+<!doctype html>
+<html lang="fr">
+  <body style="margin:0;padding:0;background:#f4efe6;font-family:Georgia,'Times New Roman',serif;color:#1f1f1f;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f4efe6;padding:24px 12px;">
+      <tr>
+        <td align="center">
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:680px;background:#fffdf9;border:1px solid #e7dcc7;border-radius:18px;overflow:hidden;">
+            <tr>
+              <td style="padding:28px 32px;background:linear-gradient(135deg,#103a2b 0%,#1f5a45 100%);color:#ffffff;">
+                <div style="font-size:13px;letter-spacing:1.6px;text-transform:uppercase;opacity:0.82;">EURES beta</div>
+                <h1 style="margin:10px 0 0;font-size:30px;line-height:1.2;font-weight:700;">Suivi de votre besoin</h1>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:28px 32px;">
+                <p style="margin:0 0 18px;font-size:16px;line-height:1.7;">Bonjour,</p>
+                <p style="margin:0 0 18px;font-size:16px;line-height:1.7;">Nous vous confirmons la bonne réception de votre questionnaire EURES beta.</p>
+                <p style="margin:0 0 18px;font-size:16px;line-height:1.7;">À ce stade, aucun matching n'a pu être généré immédiatement pour votre besoin.</p>
+                <p style="margin:0 0 18px;font-size:16px;line-height:1.7;">Nous allons poursuivre la recherche de profils pertinents dans la base EURES et reviendrons vers vous dès qu'une candidature adaptée pourra être proposée.</p>
+                <p style="margin:18px 0 0;font-size:13px;line-height:1.7;color:#6b6256;">
+                  Informations sur le traitement de vos données :
+                  <a href="{escape(privacy_url)}" style="color:#103a2b;">consulter la notice de confidentialité</a>.
+                </p>
+                <p style="margin:22px 0 0;font-size:15px;line-height:1.7;">
+                  Cordialement,<br><br>{escape(get_eures_mail_signature_name())}<br>{escape(get_eures_mail_signature_role())}<br>EURES beta
+                </p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
+""".strip()
+    return recipient, subject, body_text, body_html
 
 
 def list_eures_admin_matchings(status: str = 'all') -> list[dict]:
@@ -3783,6 +4068,7 @@ def save_record(form_id: str):
 
         matching_result = None
         invitation_linking = None
+        no_match_notification = None
         if form_id == 'eures-beta':
             if action == 'created':
                 matching_result = run_eures_matching_for_saved_record(
@@ -3798,6 +4084,17 @@ def save_record(form_id: str):
                     'reason': 'existing_record_update',
                     'role': str(fields.get('flow_role') or ''),
                 }
+            if (
+                action == 'created'
+                and isinstance(matching_result, dict)
+                and matching_result.get('processed')
+                and matching_result.get('no_immediate_match')
+            ):
+                queue_eures_no_match_notification(str(fields.get('flow_role') or ''), int(saved_record.get('id') or 0))
+                no_match_notification = {
+                    'queued': True,
+                    'status': 'pending',
+                }
             invitation_linking = link_eures_invitation_after_save(
                 role=str(fields.get('flow_role') or ''),
                 request_fields=fields,
@@ -3812,6 +4109,7 @@ def save_record(form_id: str):
             'record_key': record_key,
             'record_id': saved_record.get('id'),
             'matching': matching_result,
+            'no_match_notification': no_match_notification,
             'invitation_linking': invitation_linking,
         }), 200
     except Exception as e:
@@ -4291,6 +4589,153 @@ def admin_eures_invitations_send(form_id: str):
         }), 200
     except Exception as e:
         app.logger.exception('EURES invitations send failed')
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/forms/<form_id>/admin/no-match', methods=['GET'])
+@admin_required
+def admin_eures_no_match(form_id: str):
+    """Admin API: list candidate/employer rows with no immediate matching."""
+    proxied = maybe_proxy_eures_request(form_id)
+    if proxied:
+        return proxied
+    if form_id != 'eures-beta':
+        return jsonify({'error': f'Unknown no-match admin form: {form_id}'}), 404
+
+    status = str(request.args.get('status', 'pending') or 'pending').strip().lower()
+    if status != 'all' and status not in EURES_NO_MATCH_ALLOWED_STATUSES:
+        return jsonify({'error': 'Invalid status filter'}), 400
+
+    try:
+        rows = list_eures_admin_no_match_notifications(status=status)
+        stats = Counter(row['notification_status'] for row in rows)
+        return jsonify({
+            'ok': True,
+            'form_id': form_id,
+            'stats': {
+                'total': len(rows),
+                'pending': stats.get('pending', 0),
+                'sent': stats.get('sent', 0),
+                'dismissed': stats.get('dismissed', 0),
+            },
+            'rows': rows,
+        }), 200
+    except Exception as e:
+        app.logger.exception('EURES no-match list failed')
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/forms/<form_id>/admin/no-match/<role>/<int:record_id>/send', methods=['POST'])
+@admin_required
+def admin_eures_no_match_send(form_id: str, role: str, record_id: int):
+    """Admin API: send one no-match follow-up email."""
+    proxied = maybe_proxy_eures_request(form_id)
+    if proxied:
+        return proxied
+    if form_id != 'eures-beta':
+        return jsonify({'error': f'Unknown no-match admin form: {form_id}'}), 404
+
+    normalized_role = _normalize_eures_invitation_role(role)
+    if normalized_role not in {'candidate', 'employer'}:
+        return jsonify({'error': 'Invalid role'}), 400
+
+    data = request.get_json() or {}
+    note = str(data.get('note') or '').strip()
+    config = _get_eures_role_table_config(normalized_role)
+    if not config:
+        return jsonify({'error': 'EURES role configuration is incomplete.'}), 500
+
+    headers = _eures_admin_headers(config)
+    actor = get_admin_actor(form_id)
+    try:
+        ensure_brevo_ready(check_api=True)
+        record = fetch_record_by_id(config['doc_id'], config['table_id'], record_id, headers)
+        row = _build_eures_no_match_row(normalized_role, record or {})
+        if not row:
+            return jsonify({'error': 'No-match entry not found'}), 404
+
+        if normalized_role == 'candidate':
+            recipient, subject, text_body, html_body = build_brevo_candidate_no_match_email(row)
+        else:
+            recipient, subject, text_body, html_body = build_brevo_employer_no_match_email(row)
+        brevo_result = send_brevo_transactional_email(recipient, subject, text_body, html_body)
+
+        update_table_record_by_id(
+            config,
+            record_id,
+            {
+                'no_match_notification_status': 'sent',
+                'no_match_notification_sent_at': _now_iso_utc(),
+                'no_match_notification_sent_by': actor,
+                'no_match_notification_note': note,
+            },
+            headers,
+            EURES_NO_MATCH_NOTIFICATION_FIELDS,
+        )
+        app.logger.info(
+            'EURES no-match notification sent',
+            extra={'form_id': form_id, 'role': normalized_role, 'record_id': record_id, 'to_email': recipient},
+        )
+        return jsonify({
+            'ok': True,
+            'record_id': record_id,
+            'role': normalized_role,
+            'notification_status': 'sent',
+            'email': recipient,
+            'email_result': brevo_result,
+        }), 200
+    except Exception as e:
+        app.logger.exception('EURES no-match notification send failed')
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/forms/<form_id>/admin/no-match/<role>/<int:record_id>/dismiss', methods=['POST'])
+@admin_required
+def admin_eures_no_match_dismiss(form_id: str, role: str, record_id: int):
+    """Admin API: dismiss one no-match follow-up without sending email."""
+    proxied = maybe_proxy_eures_request(form_id)
+    if proxied:
+        return proxied
+    if form_id != 'eures-beta':
+        return jsonify({'error': f'Unknown no-match admin form: {form_id}'}), 404
+
+    normalized_role = _normalize_eures_invitation_role(role)
+    if normalized_role not in {'candidate', 'employer'}:
+        return jsonify({'error': 'Invalid role'}), 400
+
+    data = request.get_json() or {}
+    note = str(data.get('note') or '').strip()
+    config = _get_eures_role_table_config(normalized_role)
+    if not config:
+        return jsonify({'error': 'EURES role configuration is incomplete.'}), 500
+
+    headers = _eures_admin_headers(config)
+    actor = get_admin_actor(form_id)
+    try:
+        update_table_record_by_id(
+            config,
+            record_id,
+            {
+                'no_match_notification_status': 'dismissed',
+                'no_match_notification_dismissed_at': _now_iso_utc(),
+                'no_match_notification_dismissed_by': actor,
+                'no_match_notification_note': note,
+            },
+            headers,
+            EURES_NO_MATCH_NOTIFICATION_FIELDS,
+        )
+        app.logger.info(
+            'EURES no-match notification dismissed',
+            extra={'form_id': form_id, 'role': normalized_role, 'record_id': record_id},
+        )
+        return jsonify({
+            'ok': True,
+            'record_id': record_id,
+            'role': normalized_role,
+            'notification_status': 'dismissed',
+        }), 200
+    except Exception as e:
+        app.logger.exception('EURES no-match notification dismiss failed')
         return jsonify({'error': str(e)}), 500
 
 

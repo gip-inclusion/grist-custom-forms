@@ -778,6 +778,7 @@
       <div class="tabs">
         <button class="tab-btn active" type="button" data-tab="invitations">Invitations</button>
         <button class="tab-btn" type="button" data-tab="matchings">Matchings</button>
+        <button class="tab-btn" type="button" data-tab="no-match">Sans matching</button>
       </div>
     </section>
 
@@ -958,6 +959,47 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
 
         <section class="matching-list" id="matching-list"></section>
       </section>
+
+      <section class="panel" id="panel-no-match" hidden>
+        <section class="admin-top">
+          <div class="admin-card">
+            <div class="kpis">
+              <div class="kpi">
+                <div class="kpi-label">Total affiché</div>
+                <div class="kpi-value" id="no-match-kpi-total">0</div>
+              </div>
+              <div class="kpi">
+                <div class="kpi-label">À traiter</div>
+                <div class="kpi-value" id="no-match-kpi-pending">0</div>
+              </div>
+              <div class="kpi">
+                <div class="kpi-label">Emails envoyés</div>
+                <div class="kpi-value" id="no-match-kpi-sent">0</div>
+              </div>
+              <div class="kpi">
+                <div class="kpi-label">Ignorés</div>
+                <div class="kpi-value" id="no-match-kpi-dismissed">0</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="admin-card">
+            <div class="toolbar">
+              <select id="no-match-filter-status">
+                <option value="pending">À traiter</option>
+                <option value="all">Tous</option>
+                <option value="sent">Emails envoyés</option>
+                <option value="dismissed">Ignorés</option>
+              </select>
+              <input id="no-match-filter-search" type="search" placeholder="Rechercher un nom, une entreprise, un poste, un email">
+              <button id="no-match-reload-btn" type="button">Rafraîchir</button>
+            </div>
+            <div class="status-line" id="no-match-status-line">Chargement...</div>
+          </div>
+        </section>
+
+        <section class="matching-list" id="no-match-list"></section>
+      </section>
     </div>
   </div>
 
@@ -971,6 +1013,10 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
         selectedIds: [],
       },
       matchings: {
+        rows: [],
+        loading: false,
+      },
+      noMatch: {
         rows: [],
         loading: false,
       },
@@ -1043,6 +1089,13 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
       return status || "inconnu";
     }
 
+    function noMatchStatusLabel(status) {
+      if (status === "pending") return "à traiter";
+      if (status === "sent") return "email envoyé";
+      if (status === "dismissed") return "ignoré";
+      return status || "inconnu";
+    }
+
     function normalizeText(value) {
       return String(value || "").toLowerCase();
     }
@@ -1059,6 +1112,25 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
         row.employeur?.pays,
         row.besoin_id,
         row.candidat_id,
+      ].map(normalizeText).join(" ");
+      return haystack.includes(search);
+    }
+
+    function noMatchSearch(row, search) {
+      if (!search) return true;
+      const payload = row.payload || {};
+      const haystack = [
+        row.role,
+        row.title,
+        row.subtitle,
+        row.recipient_email,
+        payload.nom,
+        payload.email,
+        payload.metier,
+        payload.employeur,
+        payload.contact,
+        payload.poste,
+        payload.pays,
       ].map(normalizeText).join(" ");
       return haystack.includes(search);
     }
@@ -1470,6 +1542,113 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
       }
     }
 
+    function renderNoMatchRows() {
+      const list = document.getElementById("no-match-list");
+      const search = normalizeText(document.getElementById("no-match-filter-search").value.trim());
+      const filtered = state.noMatch.rows.filter((row) => noMatchSearch(row, search));
+
+      if (!filtered.length) {
+        list.innerHTML = `<div class="empty-state">Aucune entrée ne correspond aux filtres actuels.</div>`;
+        return;
+      }
+
+      list.innerHTML = filtered.map((row) => {
+        const payload = row.payload || {};
+        const note = row.note || "";
+        const isCandidate = row.role === "candidate";
+        const details = isCandidate ? `
+          <div class="compare-grid">
+            <section class="compare-card">
+              <h3>Candidat</h3>
+              <dl class="detail-list">
+                <div class="detail-row"><dt>Nom</dt><dd>${esc(payload.nom || "-")}</dd></div>
+                <div class="detail-row"><dt>Email</dt><dd>${esc(payload.email || "-")}</dd></div>
+                <div class="detail-row"><dt>Pays</dt><dd>${esc(payload.pays || "-")}</dd></div>
+                <div class="detail-row"><dt>Métiers</dt><dd>${esc(payload.metier || "-")}</dd></div>
+                <div class="detail-row"><dt>Langues</dt><dd>${esc(payload.langues || "-")}</dd></div>
+                <div class="detail-row"><dt>Mobilité</dt><dd>${esc(payload.mobilite || "-")}</dd></div>
+                <div class="detail-row"><dt>Disponibilité</dt><dd>${esc(payload.disponibilite || "-")}</dd></div>
+              </dl>
+            </section>
+            <section class="compare-card">
+              <h3>Message prévu</h3>
+              <p>Aucun matching n’a pu être réalisé immédiatement selon ses critères. Le candidat sera recontacté dès qu’une mise en relation pertinente pourra être opérée.</p>
+            </section>
+          </div>
+        ` : `
+          <div class="compare-grid">
+            <section class="compare-card">
+              <h3>Employeur / besoin</h3>
+              <dl class="detail-list">
+                <div class="detail-row"><dt>Entreprise</dt><dd>${esc(payload.employeur || "-")}</dd></div>
+                <div class="detail-row"><dt>Contact</dt><dd>${esc(payload.contact || "-")}</dd></div>
+                <div class="detail-row"><dt>Poste</dt><dd>${esc(payload.poste || "-")}</dd></div>
+                <div class="detail-row"><dt>Pays</dt><dd>${esc(payload.pays || "-")}</dd></div>
+                <div class="detail-row"><dt>Langues requises</dt><dd>${esc(payload.langues_requises || "-")}</dd></div>
+                <div class="detail-row"><dt>Date de début</dt><dd>${esc(payload.date_debut || "-")}</dd></div>
+              </dl>
+            </section>
+            <section class="compare-card">
+              <h3>Message prévu</h3>
+              <p>Aucun matching n’a pu être généré immédiatement. Une nouvelle recherche de profils sera menée dans la base EURES et l’employeur sera recontacté dès qu’une candidature adaptée pourra être proposée.</p>
+            </section>
+          </div>
+        `;
+
+        return `
+          <article class="matching-card" data-role="${esc(row.role)}" data-record-id="${esc(row.record_id)}">
+            <div class="matching-summary">
+              <div>
+                <h2>${esc(row.title || (isCandidate ? "Candidat" : "Employeur"))}</h2>
+                <p>${esc((isCandidate ? "Candidat" : "Employeur") + (row.subtitle ? ` · ${row.subtitle}` : ""))}</p>
+                <div class="summary-tags">
+                  <span class="pill">${esc(isCandidate ? "Candidat" : "Employeur")}</span>
+                  <span class="pill ${row.notification_status === "sent" ? "accepted" : row.notification_status === "dismissed" ? "refused" : "pending"}">Statut : ${esc(noMatchStatusLabel(row.notification_status))}</span>
+                  <span class="pill">Destinataire : ${esc(row.recipient_email || "email manquant")}</span>
+                </div>
+              </div>
+
+              <div class="summary-score">
+                <div class="score-box">
+                  <strong>${esc(row.notification_status === "sent" ? "OK" : row.notification_status === "dismissed" ? "N/A" : "0")}</strong>
+                  <span>matching immédiat</span>
+                </div>
+                <div class="decision-actions">
+                  <button class="btn-accept" type="button" data-no-match-action="send">Envoyer l’email</button>
+                  <button class="btn-refuse" type="button" data-no-match-action="dismiss">Ignorer</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="matching-body">
+              ${details}
+              <section class="notes-box">
+                <h4>Note admin</h4>
+                <textarea id="no-match-note-${esc(row.role)}-${esc(row.record_id)}" placeholder="Ajouter une note interne...">${esc(note)}</textarea>
+                <div class="decision-meta">Créé le : ${esc(row.created_at || "-")}<br>Par : ${esc(row.created_by || "-")}<br>Dernier envoi : ${esc(row.sent_at || "-")}</div>
+              </section>
+            </div>
+          </article>
+        `;
+      }).join("");
+
+      for (const button of list.querySelectorAll("[data-no-match-action]")) {
+        button.addEventListener("click", async (event) => {
+          const card = event.currentTarget.closest(".matching-card");
+          const recordId = card?.dataset.recordId;
+          const role = card?.dataset.role;
+          const action = event.currentTarget.dataset.noMatchAction;
+          const note = document.getElementById(`no-match-note-${role}-${recordId}`)?.value || "";
+          if (!recordId || !role || !action) return;
+          if (action === "send") {
+            await submitNoMatchSend(role, recordId, note);
+          } else {
+            await submitNoMatchDismiss(role, recordId, note);
+          }
+        });
+      }
+    }
+
     async function loadMatchings() {
       if (state.matchings.loading) return;
       state.matchings.loading = true;
@@ -1510,6 +1689,36 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
         renderBrevoStatus(health);
       } catch (error) {
         setStatus("brevo-status-line", `Brevo : vérification impossible. ${error.message || "erreur réseau"}`);
+      }
+    }
+
+    async function loadNoMatch() {
+      if (state.noMatch.loading) return;
+      state.noMatch.loading = true;
+      setStatus("no-match-status-line", "Chargement des entrées sans matching...");
+
+      const status = document.getElementById("no-match-filter-status").value;
+      const url = new URL(apiUrl("/admin/no-match"), window.location.origin);
+      if (status) url.searchParams.set("status", status);
+
+      try {
+        const response = await fetch(url.toString(), { credentials: "same-origin" });
+        const payload = await response.json();
+        if (!response.ok || !payload.ok) {
+          throw new Error(payload.error || `Erreur API (${response.status})`);
+        }
+        state.noMatch.rows = Array.isArray(payload.rows) ? payload.rows : [];
+        document.getElementById("no-match-kpi-total").textContent = payload.stats?.total ?? 0;
+        document.getElementById("no-match-kpi-pending").textContent = payload.stats?.pending ?? 0;
+        document.getElementById("no-match-kpi-sent").textContent = payload.stats?.sent ?? 0;
+        document.getElementById("no-match-kpi-dismissed").textContent = payload.stats?.dismissed ?? 0;
+        renderNoMatchRows();
+        setStatus("no-match-status-line", `${state.noMatch.rows.length} entrée(s) chargée(s).`);
+      } catch (error) {
+        document.getElementById("no-match-list").innerHTML = `<div class="empty-state">${esc(error.message || "Erreur de chargement")}</div>`;
+        setStatus("no-match-status-line", `Erreur : ${error.message || "chargement impossible"}`);
+      } finally {
+        state.noMatch.loading = false;
       }
     }
 
@@ -1559,10 +1768,57 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
       }
     }
 
+    async function submitNoMatchSend(role, recordId, note) {
+      setStatus("no-match-status-line", "Envoi de l’email en cours...");
+      try {
+        const response = await fetch(apiUrl(`/admin/no-match/${role}/${recordId}/send`), {
+          method: "POST",
+          credentials: "same-origin",
+          headers: {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+          },
+          body: JSON.stringify({ note }),
+        });
+        const payload = await response.json();
+        if (!response.ok || !payload.ok) {
+          throw new Error(payload.error || `Erreur API (${response.status})`);
+        }
+        setStatus("no-match-status-line", `Email envoyé à ${payload.email || "le destinataire"}.`);
+        await loadNoMatch();
+      } catch (error) {
+        setStatus("no-match-status-line", `Erreur : ${error.message || "envoi impossible"}`);
+      }
+    }
+
+    async function submitNoMatchDismiss(role, recordId, note) {
+      setStatus("no-match-status-line", "Mise à jour en cours...");
+      try {
+        const response = await fetch(apiUrl(`/admin/no-match/${role}/${recordId}/dismiss`), {
+          method: "POST",
+          credentials: "same-origin",
+          headers: {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+          },
+          body: JSON.stringify({ note }),
+        });
+        const payload = await response.json();
+        if (!response.ok || !payload.ok) {
+          throw new Error(payload.error || `Erreur API (${response.status})`);
+        }
+        setStatus("no-match-status-line", "Entrée ignorée.");
+        await loadNoMatch();
+      } catch (error) {
+        setStatus("no-match-status-line", `Erreur : ${error.message || "mise à jour impossible"}`);
+      }
+    }
+
     function activateTab(tabName) {
       state.activeTab = tabName;
       document.getElementById("panel-invitations").hidden = tabName !== "invitations";
       document.getElementById("panel-matchings").hidden = tabName !== "matchings";
+      document.getElementById("panel-no-match").hidden = tabName !== "no-match";
       for (const button of document.querySelectorAll("[data-tab]")) {
         button.classList.toggle("active", button.dataset.tab === tabName);
       }
@@ -1624,6 +1880,9 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
     });
     document.getElementById("filter-status").addEventListener("change", loadMatchings);
     document.getElementById("filter-search").addEventListener("input", renderMatchingRows);
+    document.getElementById("no-match-reload-btn").addEventListener("click", loadNoMatch);
+    document.getElementById("no-match-filter-status").addEventListener("change", loadNoMatch);
+    document.getElementById("no-match-filter-search").addEventListener("input", renderNoMatchRows);
     for (const button of document.querySelectorAll("[data-tab]")) {
       button.addEventListener("click", () => activateTab(button.dataset.tab));
     }
@@ -1631,6 +1890,7 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
     loadInvitations();
     loadBrevoHealth();
     loadMatchings();
+    loadNoMatch();
   </script>
 </body>
 </html>
