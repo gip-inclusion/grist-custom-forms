@@ -110,6 +110,15 @@ EURES_NO_MATCH_NOTIFICATION_FIELDS = {
     'no_match_notification_note',
 }
 EURES_NO_MATCH_ALLOWED_STATUSES = {'pending', 'sent', 'dismissed'}
+EURES_NEW_JOB_REQUEST_FIELDS = {
+    'new_job_request_status',
+    'new_job_request_created_at',
+    'new_job_request_created_by',
+    'new_job_request_processed_at',
+    'new_job_request_processed_by',
+    'new_job_request_note',
+}
+EURES_NEW_JOB_REQUEST_ALLOWED_STATUSES = {'pending', 'processed', 'dismissed'}
 EURES_INVITATION_FIELDS = {
     'role',
     'email',
@@ -3209,6 +3218,11 @@ def _normalize_eures_no_match_status(value: str) -> str:
     return status if status in EURES_NO_MATCH_ALLOWED_STATUSES else ''
 
 
+def _normalize_eures_new_job_request_status(value: str) -> str:
+    status = str(value or '').strip().lower()
+    return status if status in EURES_NEW_JOB_REQUEST_ALLOWED_STATUSES else ''
+
+
 def _get_eures_role_table_config(role: str) -> dict | None:
     normalized_role = _normalize_eures_invitation_role(role)
     if not normalized_role:
@@ -3311,6 +3325,71 @@ def list_eures_admin_no_match_notifications(status: str = 'all') -> list[dict]:
             if status in EURES_NO_MATCH_ALLOWED_STATUSES and row['notification_status'] != status:
                 continue
             rows.append(row)
+    rows.sort(key=lambda row: (str(row.get('created_at') or ''), int(row.get('record_id') or 0)), reverse=True)
+    return rows
+
+
+def queue_eures_new_job_request(record_id: int):
+    """Mark an employer need when additional desired jobs were requested."""
+    config = _get_eures_role_table_config('employer')
+    if not config:
+        raise RuntimeError('EURES employer table configuration is incomplete.')
+    headers = _eures_admin_headers(config)
+    update_table_record_by_id(
+        config,
+        record_id,
+        {
+            'new_job_request_status': 'pending',
+            'new_job_request_created_at': _now_iso_utc(),
+            'new_job_request_created_by': 'system_questionnaire_submission',
+            'new_job_request_note': '',
+        },
+        headers,
+        EURES_NEW_JOB_REQUEST_FIELDS,
+    )
+
+
+def _build_eures_new_job_request_row(rec: dict) -> dict | None:
+    fields = rec.get('fields', {}) if isinstance(rec, dict) else {}
+    if not isinstance(fields, dict):
+        return None
+    status = _normalize_eures_new_job_request_status(fields.get('new_job_request_status', ''))
+    requested_jobs = str(fields.get('autres_metiers_souhaites') or '').strip()
+    if not status or not requested_jobs:
+        return None
+    recipient = _resolve_employer_recipient(fields)
+    return {
+        'record_id': rec.get('id'),
+        'record_key': fields.get('id_tally') or fields.get('uuid') or '',
+        'request_status': status,
+        'created_at': fields.get('new_job_request_created_at', ''),
+        'created_by': fields.get('new_job_request_created_by', ''),
+        'processed_at': fields.get('new_job_request_processed_at', ''),
+        'processed_by': fields.get('new_job_request_processed_by', ''),
+        'note': fields.get('new_job_request_note', ''),
+        'employeur': fields.get('employeur', ''),
+        'contact': fields.get('contact', ''),
+        'email': recipient,
+        'poste': fields.get('poste', ''),
+        'pays': fields.get('pays', ''),
+        'requested_jobs': requested_jobs,
+    }
+
+
+def list_eures_admin_new_job_requests(status: str = 'all') -> list[dict]:
+    """Return employer rows requesting additional job families."""
+    config = _get_eures_role_table_config('employer')
+    if not config:
+        return []
+    headers = _eures_admin_headers(config)
+    rows = []
+    for rec in fetch_table_records(config['doc_id'], config['table_id'], headers):
+        row = _build_eures_new_job_request_row(rec)
+        if not row:
+            continue
+        if status in EURES_NEW_JOB_REQUEST_ALLOWED_STATUSES and row['request_status'] != status:
+            continue
+        rows.append(row)
     rows.sort(key=lambda row: (str(row.get('created_at') or ''), int(row.get('record_id') or 0)), reverse=True)
     return rows
 
@@ -4069,6 +4148,7 @@ def save_record(form_id: str):
         matching_result = None
         invitation_linking = None
         no_match_notification = None
+        new_job_request = None
         if form_id == 'eures-beta':
             if action == 'created':
                 matching_result = run_eures_matching_for_saved_record(
@@ -4095,6 +4175,16 @@ def save_record(form_id: str):
                     'queued': True,
                     'status': 'pending',
                 }
+            if (
+                action == 'created'
+                and str(fields.get('flow_role') or '') == 'employer'
+                and str(saved_fields.get('autres_metiers_souhaites') or '').strip()
+            ):
+                queue_eures_new_job_request(int(saved_record.get('id') or 0))
+                new_job_request = {
+                    'queued': True,
+                    'status': 'pending',
+                }
             invitation_linking = link_eures_invitation_after_save(
                 role=str(fields.get('flow_role') or ''),
                 request_fields=fields,
@@ -4110,6 +4200,7 @@ def save_record(form_id: str):
             'record_id': saved_record.get('id'),
             'matching': matching_result,
             'no_match_notification': no_match_notification,
+            'new_job_request': new_job_request,
             'invitation_linking': invitation_linking,
         }), 200
     except Exception as e:
@@ -4736,6 +4827,88 @@ def admin_eures_no_match_dismiss(form_id: str, role: str, record_id: int):
         }), 200
     except Exception as e:
         app.logger.exception('EURES no-match notification dismiss failed')
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/forms/<form_id>/admin/new-job-requests', methods=['GET'])
+@admin_required
+def admin_eures_new_job_requests(form_id: str):
+    """Admin API: list employer requests for additional job families."""
+    proxied = maybe_proxy_eures_request(form_id)
+    if proxied:
+        return proxied
+    if form_id != 'eures-beta':
+        return jsonify({'error': f'Unknown new-job admin form: {form_id}'}), 404
+
+    status = str(request.args.get('status', 'pending') or 'pending').strip().lower()
+    if status != 'all' and status not in EURES_NEW_JOB_REQUEST_ALLOWED_STATUSES:
+        return jsonify({'error': 'Invalid status filter'}), 400
+
+    try:
+        rows = list_eures_admin_new_job_requests(status=status)
+        stats = Counter(row['request_status'] for row in rows)
+        return jsonify({
+            'ok': True,
+            'form_id': form_id,
+            'stats': {
+                'total': len(rows),
+                'pending': stats.get('pending', 0),
+                'processed': stats.get('processed', 0),
+                'dismissed': stats.get('dismissed', 0),
+            },
+            'rows': rows,
+        }), 200
+    except Exception as e:
+        app.logger.exception('EURES new job requests list failed')
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/forms/<form_id>/admin/new-job-requests/<int:record_id>/status', methods=['POST'])
+@admin_required
+def admin_eures_new_job_request_status(form_id: str, record_id: int):
+    """Admin API: mark one employer new-job request as processed or dismissed."""
+    proxied = maybe_proxy_eures_request(form_id)
+    if proxied:
+        return proxied
+    if form_id != 'eures-beta':
+        return jsonify({'error': f'Unknown new-job admin form: {form_id}'}), 404
+
+    data = request.get_json() or {}
+    status = _normalize_eures_new_job_request_status(data.get('status') or '')
+    note = str(data.get('note') or '').strip()
+    if status not in {'processed', 'dismissed'}:
+        return jsonify({'error': 'Status must be processed or dismissed'}), 400
+
+    config = _get_eures_role_table_config('employer')
+    if not config:
+        return jsonify({'error': 'EURES employer configuration is incomplete.'}), 500
+
+    headers = _eures_admin_headers(config)
+    actor = get_admin_actor(form_id)
+    try:
+        update_table_record_by_id(
+            config,
+            record_id,
+            {
+                'new_job_request_status': status,
+                'new_job_request_processed_at': _now_iso_utc(),
+                'new_job_request_processed_by': actor,
+                'new_job_request_note': note,
+            },
+            headers,
+            EURES_NEW_JOB_REQUEST_FIELDS,
+        )
+        app.logger.info(
+            'EURES new job request status updated',
+            extra={'form_id': form_id, 'record_id': record_id, 'status': status},
+        )
+        return jsonify({
+            'ok': True,
+            'record_id': record_id,
+            'status': status,
+        }), 200
+    except Exception as e:
+        app.logger.exception('EURES new job request status update failed')
         return jsonify({'error': str(e)}), 500
 
 

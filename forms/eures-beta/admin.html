@@ -809,6 +809,7 @@
         <button class="tab-btn active" type="button" data-tab="invitations">Invitations</button>
         <button class="tab-btn" type="button" data-tab="matchings">Matchings</button>
         <button class="tab-btn" type="button" data-tab="no-match">Sans matching</button>
+        <button class="tab-btn" type="button" data-tab="new-jobs">Nouveaux métiers</button>
       </div>
     </section>
 
@@ -1030,6 +1031,47 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
 
         <section class="matching-list" id="no-match-list"></section>
       </section>
+
+      <section class="panel" id="panel-new-jobs" hidden>
+        <section class="admin-top">
+          <div class="admin-card">
+            <div class="kpis">
+              <div class="kpi">
+                <div class="kpi-label">Total affiché</div>
+                <div class="kpi-value" id="new-job-kpi-total">0</div>
+              </div>
+              <div class="kpi">
+                <div class="kpi-label">À traiter</div>
+                <div class="kpi-value" id="new-job-kpi-pending">0</div>
+              </div>
+              <div class="kpi">
+                <div class="kpi-label">Traités</div>
+                <div class="kpi-value" id="new-job-kpi-processed">0</div>
+              </div>
+              <div class="kpi">
+                <div class="kpi-label">Ignorés</div>
+                <div class="kpi-value" id="new-job-kpi-dismissed">0</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="admin-card">
+            <div class="toolbar">
+              <select id="new-job-filter-status">
+                <option value="pending">À traiter</option>
+                <option value="all">Tous</option>
+                <option value="processed">Traités</option>
+                <option value="dismissed">Ignorés</option>
+              </select>
+              <input id="new-job-filter-search" type="search" placeholder="Rechercher une entreprise, un contact, un poste, un email">
+              <button id="new-job-reload-btn" type="button">Rafraîchir</button>
+            </div>
+            <div class="status-line" id="new-job-status-line">Chargement...</div>
+          </div>
+        </section>
+
+        <section class="matching-list" id="new-job-list"></section>
+      </section>
     </div>
   </div>
 
@@ -1047,6 +1089,10 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
         loading: false,
       },
       noMatch: {
+        rows: [],
+        loading: false,
+      },
+      newJobs: {
         rows: [],
         loading: false,
       },
@@ -1126,6 +1172,13 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
       return status || "inconnu";
     }
 
+    function newJobStatusLabel(status) {
+      if (status === "pending") return "à traiter";
+      if (status === "processed") return "traité";
+      if (status === "dismissed") return "ignoré";
+      return status || "inconnu";
+    }
+
     function normalizeText(value) {
       return String(value || "").toLowerCase();
     }
@@ -1161,6 +1214,19 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
         payload.contact,
         payload.poste,
         payload.pays,
+      ].map(normalizeText).join(" ");
+      return haystack.includes(search);
+    }
+
+    function newJobSearch(row, search) {
+      if (!search) return true;
+      const haystack = [
+        row.employeur,
+        row.contact,
+        row.email,
+        row.poste,
+        row.pays,
+        row.requested_jobs,
       ].map(normalizeText).join(" ");
       return haystack.includes(search);
     }
@@ -1679,6 +1745,81 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
       }
     }
 
+    function renderNewJobRows() {
+      const list = document.getElementById("new-job-list");
+      const search = normalizeText(document.getElementById("new-job-filter-search").value.trim());
+      const filtered = state.newJobs.rows.filter((row) => newJobSearch(row, search));
+
+      if (!filtered.length) {
+        list.innerHTML = `<div class="empty-state">Aucune demande ne correspond aux filtres actuels.</div>`;
+        return;
+      }
+
+      list.innerHTML = filtered.map((row) => `
+        <article class="matching-card" data-record-id="${esc(row.record_id)}">
+          <div class="matching-summary">
+            <div>
+              <h2>${esc(row.employeur || "Entreprise non renseignée")}</h2>
+              <p>${esc(row.poste || "Poste non renseigné")} · ${esc(row.pays || "Lieu non renseigné")}</p>
+              <div class="summary-tags">
+                <span class="pill role-employer">Employeur</span>
+                <span class="pill ${row.request_status === "processed" ? "accepted" : row.request_status === "dismissed" ? "refused" : "pending"}">Statut : ${esc(newJobStatusLabel(row.request_status))}</span>
+                <span class="pill">Contact : ${esc(row.email || row.contact || "non renseigné")}</span>
+              </div>
+            </div>
+
+            <div class="summary-score">
+              <div class="score-box">
+                <strong>+</strong>
+                <span>métier demandé</span>
+              </div>
+              <div class="decision-actions">
+                <button class="btn-accept" type="button" data-new-job-action="processed">Marquer traité</button>
+                <button class="btn-refuse" type="button" data-new-job-action="dismissed">Ignorer</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="matching-body">
+            <div class="compare-grid">
+              <section class="compare-card">
+                <h3>Besoin employeur</h3>
+                <dl class="detail-list">
+                  <div class="detail-row"><dt>Entreprise</dt><dd>${esc(row.employeur || "-")}</dd></div>
+                  <div class="detail-row"><dt>Contact</dt><dd>${esc(row.contact || "-")}</dd></div>
+                  <div class="detail-row"><dt>Email</dt><dd>${esc(row.email || "-")}</dd></div>
+                  <div class="detail-row"><dt>Poste</dt><dd>${esc(row.poste || "-")}</dd></div>
+                  <div class="detail-row"><dt>Pays</dt><dd>${esc(row.pays || "-")}</dd></div>
+                </dl>
+              </section>
+
+              <section class="compare-card">
+                <h3>Nouveaux métiers souhaités</h3>
+                <p style="margin:0; line-height:1.7;">${esc(row.requested_jobs || "-")}</p>
+              </section>
+            </div>
+
+            <section class="notes-box">
+              <h4>Note admin</h4>
+              <textarea id="new-job-note-${esc(row.record_id)}" placeholder="Ajouter une note interne...">${esc(row.note || "")}</textarea>
+              <div class="decision-meta">Créé le : ${esc(row.created_at || "-")}<br>Par : ${esc(row.created_by || "-")}<br>Traité le : ${esc(row.processed_at || "-")}<br>Par : ${esc(row.processed_by || "-")}</div>
+            </section>
+          </div>
+        </article>
+      `).join("");
+
+      for (const button of list.querySelectorAll("[data-new-job-action]")) {
+        button.addEventListener("click", async (event) => {
+          const card = event.currentTarget.closest(".matching-card");
+          const recordId = card?.dataset.recordId;
+          const status = event.currentTarget.dataset.newJobAction;
+          const note = document.getElementById(`new-job-note-${recordId}`)?.value || "";
+          if (!recordId || !status) return;
+          await submitNewJobStatus(recordId, status, note);
+        });
+      }
+    }
+
     async function loadMatchings() {
       if (state.matchings.loading) return;
       state.matchings.loading = true;
@@ -1749,6 +1890,36 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
         setStatus("no-match-status-line", `Erreur : ${error.message || "chargement impossible"}`);
       } finally {
         state.noMatch.loading = false;
+      }
+    }
+
+    async function loadNewJobs() {
+      if (state.newJobs.loading) return;
+      state.newJobs.loading = true;
+      setStatus("new-job-status-line", "Chargement des demandes de nouveaux métiers...");
+
+      const status = document.getElementById("new-job-filter-status").value;
+      const url = new URL(apiUrl("/admin/new-job-requests"), window.location.origin);
+      if (status) url.searchParams.set("status", status);
+
+      try {
+        const response = await fetch(url.toString(), { credentials: "same-origin" });
+        const payload = await response.json();
+        if (!response.ok || !payload.ok) {
+          throw new Error(payload.error || `Erreur API (${response.status})`);
+        }
+        state.newJobs.rows = Array.isArray(payload.rows) ? payload.rows : [];
+        document.getElementById("new-job-kpi-total").textContent = payload.stats?.total ?? 0;
+        document.getElementById("new-job-kpi-pending").textContent = payload.stats?.pending ?? 0;
+        document.getElementById("new-job-kpi-processed").textContent = payload.stats?.processed ?? 0;
+        document.getElementById("new-job-kpi-dismissed").textContent = payload.stats?.dismissed ?? 0;
+        renderNewJobRows();
+        setStatus("new-job-status-line", `${state.newJobs.rows.length} demande(s) chargée(s).`);
+      } catch (error) {
+        document.getElementById("new-job-list").innerHTML = `<div class="empty-state">${esc(error.message || "Erreur de chargement")}</div>`;
+        setStatus("new-job-status-line", `Erreur : ${error.message || "chargement impossible"}`);
+      } finally {
+        state.newJobs.loading = false;
       }
     }
 
@@ -1844,11 +2015,35 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
       }
     }
 
+    async function submitNewJobStatus(recordId, status, note) {
+      setStatus("new-job-status-line", "Mise à jour en cours...");
+      try {
+        const response = await fetch(apiUrl(`/admin/new-job-requests/${recordId}/status`), {
+          method: "POST",
+          credentials: "same-origin",
+          headers: {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+          },
+          body: JSON.stringify({ status, note }),
+        });
+        const payload = await response.json();
+        if (!response.ok || !payload.ok) {
+          throw new Error(payload.error || `Erreur API (${response.status})`);
+        }
+        setStatus("new-job-status-line", `Demande marquée comme ${newJobStatusLabel(payload.status)}.`);
+        await loadNewJobs();
+      } catch (error) {
+        setStatus("new-job-status-line", `Erreur : ${error.message || "mise à jour impossible"}`);
+      }
+    }
+
     function activateTab(tabName) {
       state.activeTab = tabName;
       document.getElementById("panel-invitations").hidden = tabName !== "invitations";
       document.getElementById("panel-matchings").hidden = tabName !== "matchings";
       document.getElementById("panel-no-match").hidden = tabName !== "no-match";
+      document.getElementById("panel-new-jobs").hidden = tabName !== "new-jobs";
       for (const button of document.querySelectorAll("[data-tab]")) {
         button.classList.toggle("active", button.dataset.tab === tabName);
       }
@@ -1913,6 +2108,9 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
     document.getElementById("no-match-reload-btn").addEventListener("click", loadNoMatch);
     document.getElementById("no-match-filter-status").addEventListener("change", loadNoMatch);
     document.getElementById("no-match-filter-search").addEventListener("input", renderNoMatchRows);
+    document.getElementById("new-job-reload-btn").addEventListener("click", loadNewJobs);
+    document.getElementById("new-job-filter-status").addEventListener("change", loadNewJobs);
+    document.getElementById("new-job-filter-search").addEventListener("input", renderNewJobRows);
     for (const button of document.querySelectorAll("[data-tab]")) {
       button.addEventListener("click", () => activateTab(button.dataset.tab));
     }
@@ -1921,6 +2119,7 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
     loadBrevoHealth();
     loadMatchings();
     loadNoMatch();
+    loadNewJobs();
   </script>
 </body>
 </html>
