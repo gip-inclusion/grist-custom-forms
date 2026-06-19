@@ -2813,15 +2813,15 @@ function rankingQuestion(content) {
       <p class="mini-note">${content.rankingHint}</p>
       <div class="ranking-grid">
         ${content.rankingDisplayOptions.map((option, index) => `
-          <label class="field rank-field">
-            <span>${option}</span>
-            <select name="rank__tally_q17__${index}" required>
+          <div class="field rank-field">
+            <label for="rank__tally_q17__${index}">${option}</label>
+            <select id="rank__tally_q17__${index}" name="rank__tally_q17__${index}" required>
               <option value=""></option>
               ${content.rankingDisplayOptions.map((_, rankIndex) => `
                 <option value="${rankIndex + 1}">${rankIndex + 1}</option>
               `).join("")}
             </select>
-          </label>
+          </div>
         `).join("")}
       </div>
     </fieldset>
