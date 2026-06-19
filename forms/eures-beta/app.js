@@ -2766,8 +2766,8 @@ function radioPills(name, options) {
 function matrixQuestion(title, rows, columns, hint = "", inputType = "checkbox", mobileHint = "") {
   const captionId = nextFieldErrorId();
   return `
-    <div class="field">
-      <span>${title}</span>
+    <fieldset class="fieldset matrix-question">
+      <legend>${title}</legend>
       ${hint ? `<p class="mini-note">${hint}</p>` : ""}
       ${mobileHint ? `<p class="mini-note matrix-mobile-hint">${mobileHint}</p>` : ""}
       <div class="matrix-wrap">
@@ -2802,14 +2802,14 @@ function matrixQuestion(title, rows, columns, hint = "", inputType = "checkbox",
           </tbody>
         </table>
       </div>
-    </div>
+    </fieldset>
   `;
 }
 
 function rankingQuestion(content) {
   return `
-    <div class="field">
-      <span>${content.rankingTitle}</span>
+    <fieldset class="fieldset rank-question">
+      <legend>${content.rankingTitle}</legend>
       <p class="mini-note">${content.rankingHint}</p>
       <div class="ranking-grid">
         ${content.rankingDisplayOptions.map((option, index) => `
@@ -2824,7 +2824,7 @@ function rankingQuestion(content) {
           </label>
         `).join("")}
       </div>
-    </div>
+    </fieldset>
   `;
 }
 
@@ -2834,10 +2834,10 @@ function salaryExpectationFields(baseName, content) {
       <p class="mini-note">${content.salaryExpectationIntro}</p>
     </div>
     <div class="form-grid">
-      <div class="field">
-        <span>${content.salaryFields.type}</span>
+      <fieldset class="fieldset">
+        <legend>${content.salaryFields.type}</legend>
         ${radioPills(`${baseName}_salary_type`, content.salaryUnits)}
-      </div>
+      </fieldset>
       <label class="field">
         <span>${content.salaryFields.min}</span>
         <input type="number" name="${baseName}_salary_min" min="0" step="0.01" required>
@@ -2893,7 +2893,7 @@ function candidateTallyQuestionnaireTemplate(lang, t) {
 
           <form class="questionnaire-form" id="candidate-tally-form" data-role="candidate" novalidate>
             <section class="form-section">
-              <h3>${content.overviewTitle}</h3>
+              <h2>${content.overviewTitle}</h2>
               ${matrixQuestion(
                 content.overviewMatrixTitle,
                 content.countryRows,
@@ -2903,31 +2903,31 @@ function candidateTallyQuestionnaireTemplate(lang, t) {
                 content.matrixMobileHint
               )}
 
-              <div class="field">
-                <span>${content.mobilityTypeTitle}</span>
+              <fieldset class="fieldset">
+                <legend>${content.mobilityTypeTitle}</legend>
                 <p class="mini-note">${content.mobilityTypeHint}</p>
                 ${choicePills("tally_q02", content.mobilityTypeOptions)}
-              </div>
+              </fieldset>
             </section>
 
             <section class="form-section" data-condition="transfrontaliere">
-              <h3>${content.crossBorderTitle}</h3>
-              <div class="field">
-                <span>${content.questions.q03}</span>
+              <h2>${content.crossBorderTitle}</h2>
+              <fieldset class="fieldset">
+                <legend>${content.questions.q03}</legend>
                 ${radioPills("tally_q03", localizeOptions(["Oui", "Non"], content.options.yesNo))}
-              </div>
-              <div class="field">
-                <span>${content.questions.q04}</span>
+              </fieldset>
+              <fieldset class="fieldset">
+                <legend>${content.questions.q04}</legend>
                 ${radioPills("tally_q04", localizeOptions(["30 min", "1h", "1h30", "2h", "Plus de 2h"], content.options.commute))}
-              </div>
+              </fieldset>
               <fieldset class="fieldset">
                 <legend>${content.questions.q05}</legend>
                 ${choicePills("tally_q05", localizeOptions(["Voiture", "Train", "Bus", "Covoiturage", "Je ne sais pas encore"], content.options.transport))}
               </fieldset>
-              <div class="field">
-                <span>${content.questions.q06}</span>
+              <fieldset class="fieldset">
+                <legend>${content.questions.q06}</legend>
                 ${radioPills("tally_q06", localizeOptions(["Je suis disponible sur des horaires variés", "J’ai des contraintes ou préférences horaires"], content.options.schedule))}
-              </div>
+              </fieldset>
               <div data-condition="horaire-precis">
                 ${matrixQuestion(content.questions.q07, content.scheduleRows, content.scheduleColumns, "", "checkbox", content.matrixMobileHint)}
               </div>
@@ -2935,10 +2935,10 @@ function candidateTallyQuestionnaireTemplate(lang, t) {
                 <legend>${content.questions.q08}</legend>
                 ${choicePills("tally_q08", localizeOptions(["CDI", "CDD", "Intérim", "Saisonnier", "Temps plein", "Temps partiel"], content.options.contracts))}
               </fieldset>
-              <div class="field">
-                <span>${content.questions.q09}</span>
+              <fieldset class="fieldset">
+                <legend>${content.questions.q09}</legend>
                 ${radioPills("tally_q09", localizeOptions(["Dès que possible", "Dans les prochains jours", "Dans les prochaines semaines", "Dans 1 à 3 mois", "Je ne sais pas encore"], content.options.startDate))}
-              </div>
+              </fieldset>
               ${matrixQuestion(
                 content.questions.q10,
                 content.documentsRows,
@@ -2947,39 +2947,39 @@ function candidateTallyQuestionnaireTemplate(lang, t) {
                 "radio",
                 content.matrixMobileHint
               )}
-              <div class="field" data-condition="show-lu-social">
-                <span>${content.questions.q11}</span>
+              <fieldset class="fieldset" data-condition="show-lu-social">
+                <legend>${content.questions.q11}</legend>
                 ${radioPills("tally_q11", localizeOptions(["Oui", "Non", "Je ne sais pas"], content.options.yesNoUnknown))}
-              </div>
-              <div class="field" data-condition="show-de-social">
-                <span>${content.questions.q12}</span>
+              </fieldset>
+              <fieldset class="fieldset" data-condition="show-de-social">
+                <legend>${content.questions.q12}</legend>
                 ${radioPills("raw_tally_q12", localizeOptions(["Oui", "Non", "Je ne sais pas"], content.options.yesNoUnknown))}
-              </div>
-              <div class="field" data-condition="show-fr-social">
-                <span>${content.questions.q13}</span>
+              </fieldset>
+              <fieldset class="fieldset" data-condition="show-fr-social">
+                <legend>${content.questions.q13}</legend>
                 ${radioPills("raw_tally_q13", localizeOptions(["Oui", "Non", "Je ne sais pas"], content.options.yesNoUnknown))}
-              </div>
+              </fieldset>
             </section>
 
             <section class="form-section" data-condition="expatriation">
-              <h3>${content.expatriationTitle}</h3>
-              <div class="field">
-                <span>${content.questions.q14}</span>
+              <h2>${content.expatriationTitle}</h2>
+              <fieldset class="fieldset">
+                <legend>${content.questions.q14}</legend>
                 ${radioPills("tally_q14", localizeOptions(["Oui", "Non"], content.options.yesNo))}
-              </div>
-              <div class="field">
-                <span>${content.questions.q15}</span>
+              </fieldset>
+              <fieldset class="fieldset">
+                <legend>${content.questions.q15}</legend>
                 ${radioPills("tally_q15", localizeOptions(["Dès que possible", "D'ici 3 mois", "Entre 3 et 6 mois", "Dans  plus de 6 mois", "Je ne sais pas"], content.options.departWhen))}
-              </div>
-              <div class="field">
-                <span>${content.questions.q16}</span>
+              </fieldset>
+              <fieldset class="fieldset">
+                <legend>${content.questions.q16}</legend>
                 ${radioPills("tally_q16", localizeOptions(["Uniquement vous", "En couple", "En famille"], content.options.departWith))}
-              </div>
+              </fieldset>
               ${rankingQuestion(content)}
             </section>
 
             <section class="form-section">
-              <h3>${content.professionalTitle}</h3>
+              <h2>${content.professionalTitle}</h2>
               ${matrixQuestion(content.questions.q18, content.languageRows, content.languageColumns, "", "radio", content.matrixMobileHint)}
               <fieldset class="fieldset">
                 <legend>${content.questions.q19}</legend>
@@ -2993,10 +2993,10 @@ function candidateTallyQuestionnaireTemplate(lang, t) {
                 <legend>${content.sectorLegends.vente} <span class="mini-note">${content.questions.sectorHint}</span></legend>
                 ${choicePills("tally_q20", localizeOptions(candidateTallyCopy.fr.sectorChoices.vente, content.sectorChoices.vente))}
               </fieldset>
-              <div class="field">
-                <span>${content.questions.q21}</span>
+              <fieldset class="fieldset">
+                <legend>${content.questions.q21}</legend>
                 ${radioPills("tally_q21", localizeOptions(["Oui, plus de 2 ans", "Oui, entre 6 mois et 2 ans", "Oui, moins de 6 mois", "Non, mais je suis intéressé(e) par le secteur"], content.options.experience))}
-              </div>
+              </fieldset>
               ${salaryExpectationFields("tally_q20", content)}
             </section>
 
@@ -3006,14 +3006,14 @@ function candidateTallyQuestionnaireTemplate(lang, t) {
                 <legend>${content.sectorLegends.nettoyage} <span class="mini-note">${content.questions.sectorHint}</span></legend>
                 ${choicePills("tally_q22", localizeOptions(candidateTallyCopy.fr.sectorChoices.nettoyage, content.sectorChoices.nettoyage))}
               </fieldset>
-              <div class="field">
-                <span>${content.questions.q23}</span>
+              <fieldset class="fieldset">
+                <legend>${content.questions.q23}</legend>
                 ${radioPills("tally_q23", localizeOptions(["Oui, plus de 2 ans", "Oui, entre 6 mois et 2 ans", "Oui, moins de 6 mois", "Non, mais je suis intéressé(e) par le secteur"], content.options.experience))}
-              </div>
-              <div class="field">
-                <span>${content.questions.q24}</span>
+              </fieldset>
+              <fieldset class="fieldset">
+                <legend>${content.questions.q24}</legend>
                 ${radioPills("tally_q24", localizeOptions(["Oui", "Non", "Je peux en faire la demande rapidement", "Je ne sais pas"], content.options.backgroundCheck))}
-              </div>
+              </fieldset>
               ${salaryExpectationFields("tally_q22", content)}
             </section>
 
@@ -3023,10 +3023,10 @@ function candidateTallyQuestionnaireTemplate(lang, t) {
                 <legend>${content.sectorLegends.hotel} <span class="mini-note">${content.questions.sectorHint}</span></legend>
                 ${choicePills("tally_q25", localizeOptions(candidateTallyCopy.fr.sectorChoices.hotel, content.sectorChoices.hotel))}
               </fieldset>
-              <div class="field">
-                <span>${content.questions.q26}</span>
+              <fieldset class="fieldset">
+                <legend>${content.questions.q26}</legend>
                 ${radioPills("tally_q26", localizeOptions(["Oui, plus de 2 ans", "Oui, entre 6 mois et 2 ans", "Oui, moins de 6 mois", "Non, mais je suis intéressé(e) par le secteur"], content.options.experience))}
-              </div>
+              </fieldset>
               ${salaryExpectationFields("tally_q25", content)}
             </section>
 
@@ -3036,10 +3036,10 @@ function candidateTallyQuestionnaireTemplate(lang, t) {
                 <legend>${content.sectorLegends.agri} <span class="mini-note">${content.questions.sectorHint}</span></legend>
                 ${choicePills("tally_q27", localizeOptions(candidateTallyCopy.fr.sectorChoices.agri, content.sectorChoices.agri))}
               </fieldset>
-              <div class="field">
-                <span>${content.questions.q28}</span>
+              <fieldset class="fieldset">
+                <legend>${content.questions.q28}</legend>
                 ${radioPills("tally_q28", localizeOptions(["Oui, plus de 2 ans", "Oui, entre 6 mois et 2 ans", "Oui, moins de 6 mois", "Non, mais je suis intéressé(e) par le secteur"], content.options.experience))}
-              </div>
+              </fieldset>
               ${salaryExpectationFields("tally_q27", content)}
             </section>
 
@@ -3049,15 +3049,15 @@ function candidateTallyQuestionnaireTemplate(lang, t) {
                 <legend>${content.sectorLegends.polyvalent} <span class="mini-note">${content.questions.sectorHint}</span></legend>
                 ${choicePills("tally_q29", localizeOptions(candidateTallyCopy.fr.sectorChoices.polyvalent, content.sectorChoices.polyvalent))}
               </fieldset>
-              <div class="field">
-                <span>${content.questions.q30}</span>
+              <fieldset class="fieldset">
+                <legend>${content.questions.q30}</legend>
                 ${radioPills("tally_q30", localizeOptions(["Oui, plus de 2 ans", "Oui, entre 6 mois et 2 ans", "Oui, moins de 6 mois", "Non, mais je suis intéressé(e) par le secteur"], content.options.experience))}
-              </div>
+              </fieldset>
               ${salaryExpectationFields("tally_q29", content)}
             </section>
 
             <section class="form-section">
-              <h3>${content.contactTitle}</h3>
+              <h2>${content.contactTitle}</h2>
               <div class="form-grid">
                 <label class="field">
                   <span>${content.questions.firstName}</span>
