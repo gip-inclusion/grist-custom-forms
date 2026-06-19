@@ -2243,7 +2243,10 @@ function nav(page, lang, t) {
         <nav class="nav" aria-label="Primary">
           <div class="nav-links">
             ${navItems.map(([key, label]) => `
-              <a class="nav-pill${key === currentPage ? " is-active" : ""}" href="${pageUrl(key, lang)}"${key === currentPage ? ' aria-current="page"' : ""}>${label}</a>
+              ${key === currentPage
+                ? `<span class="nav-pill is-active" aria-current="page">${label}</span>`
+                : `<a class="nav-pill" href="${pageUrl(key, lang)}">${label}</a>`
+              }
             `).join("")}
           </div>
           <div class="lang-switch" aria-label="${t.common.langLabel}">
