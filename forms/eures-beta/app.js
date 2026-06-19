@@ -2874,7 +2874,7 @@ function candidateTallyQuestionnaireTemplate(lang, t) {
             <div class="candidate-highlight">${content.heroHighlight}</div>
           </div>
 
-          <form class="questionnaire-form" id="candidate-tally-form" data-role="candidate">
+          <form class="questionnaire-form" id="candidate-tally-form" data-role="candidate" novalidate>
             <section class="form-section">
               <h3>${content.overviewTitle}</h3>
               ${matrixQuestion(
@@ -3197,7 +3197,7 @@ function employerTallyQuestionnaireTemplate(lang, t) {
             <div class="candidate-highlight">${content.heroHighlight}</div>
           </div>
 
-          <form class="questionnaire-form" id="employer-tally-form" data-role="employer">
+          <form class="questionnaire-form" id="employer-tally-form" data-role="employer" novalidate>
             <section class="form-section">
               <h3>${content.sections.need}</h3>
               <div class="section-intro">
@@ -4015,7 +4015,7 @@ function questionnaireTemplate(page, lang, t, data) {
           </div>
           <p class="mini-note">${t.common.questionnaireNote}</p>
 
-          <form class="questionnaire-form" id="questionnaire-form" data-role="${isCandidate ? "candidate" : "employer"}">
+          <form class="questionnaire-form" id="questionnaire-form" data-role="${isCandidate ? "candidate" : "employer"}" novalidate>
             ${isCandidate ? `
               <section class="form-section">
                 <h3>${data.sections.mobility}</h3>
