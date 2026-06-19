@@ -493,6 +493,12 @@ textarea {
   gap: 0.55rem;
   flex-wrap: wrap;
   margin-top: 1rem;
+  padding: 0;
+  list-style: none;
+}
+
+.tag-row li {
+  margin: 0;
 }
 
 .tag {

@@ -13,6 +13,8 @@ const copy = {
       navEmployer: "Employeur",
       navStats: "Statistiques",
       langLabel: "Langue",
+      partnersLabel: "Partenaires",
+      tagsLabel: "Repères",
       footer: "Expérimentation EURES beta pour faciliter la mobilité professionnelle et les recrutements dans la Grande Région.",
       ctaStartCandidate: "Commencer côté candidat",
       ctaStartEmployer: "Commencer côté employeur",
@@ -338,6 +340,8 @@ const copy = {
       navEmployer: "Employer",
       navStats: "Stats",
       langLabel: "Language",
+      partnersLabel: "Partners",
+      tagsLabel: "Tags",
       footer: "EURES beta experiment to support professional mobility and recruitment across the Greater Region.",
       ctaStartCandidate: "Start as candidate",
       ctaStartEmployer: "Start as employer",
@@ -663,6 +667,8 @@ const copy = {
       navEmployer: "Arbeitgeber",
       navStats: "Statistik",
       langLabel: "Sprache",
+      partnersLabel: "Partner",
+      tagsLabel: "Stichworte",
       footer: "EURES-beta-Experiment zur Unterstützung beruflicher Mobilität und Rekrutierung in der Großregion.",
       ctaStartCandidate: "Als Kandidat starten",
       ctaStartEmployer: "Als Arbeitgeber starten",
@@ -2637,7 +2643,7 @@ function landingTemplate(page, lang, t, data) {
       <main id="main-content" class="section candidate-landing-page" tabindex="-1">
         <div class="shell candidate-landing-layout">
           <article class="candidate-letter">
-            <div class="candidate-logos" aria-label="Partners">
+            <div class="candidate-logos" role="group" aria-label="${t.common.partnersLabel}">
               <img src="${data.logos.eures.src}" alt="${data.logos.eures.alt}" class="logo-eures">
               <div class="candidate-badge">
                 <img src="${data.logos.franceTravail.src}" alt="${data.logos.franceTravail.alt}" class="logo-france-travail">
@@ -2673,9 +2679,9 @@ function landingTemplate(page, lang, t, data) {
               <h2>${data.bulletsTitle}</h2>
               ${data.bulletsLead ? `<p>${data.bulletsLead}</p>` : ""}
               ${list(data.bullets)}
-              <div class="tag-row">
-                ${data.tags.map((tag) => `<span class="tag">${tag}</span>`).join("")}
-              </div>
+              <ul class="tag-row" aria-label="${t.common.tagsLabel}">
+                ${data.tags.map((tag) => `<li><span class="tag">${tag}</span></li>`).join("")}
+              </ul>
             </article>
 
             <article class="surface-card candidate-info-card">
@@ -2703,9 +2709,9 @@ function landingTemplate(page, lang, t, data) {
           <div class="kicker">${data.kicker}</div>
           <h1>${data.title}</h1>
           <p class="lede">${data.lede}</p>
-          <div class="tag-row">
-            ${data.tags.map((tag) => `<span class="tag">${tag}</span>`).join("")}
-          </div>
+          <ul class="tag-row" aria-label="${t.common.tagsLabel}">
+            ${data.tags.map((tag) => `<li><span class="tag">${tag}</span></li>`).join("")}
+          </ul>
           <div class="landing-actions">
             <a class="primary-action" href="${pageUrl(questionnairePage, lang)}">${t.common.ctaQuestionnaire}</a>
             <a class="secondary-action" href="${pageUrl("home", lang)}">${t.common.ctaBackHome}</a>
@@ -3138,7 +3144,7 @@ function employerLandingTemplate(lang, t) {
     <main id="main-content" class="section candidate-landing-page" tabindex="-1">
       <div class="shell candidate-landing-layout">
         <article class="candidate-letter">
-          <div class="candidate-logos" aria-label="Partners">
+          <div class="candidate-logos" role="group" aria-label="${t.common.partnersLabel}">
             <img src="${logos.eures.src}" alt="${logos.eures.alt}" class="logo-eures">
             <div class="candidate-badge">
               <img src="${logos.franceTravail.src}" alt="${logos.franceTravail.alt}" class="logo-france-travail">
@@ -3176,9 +3182,9 @@ function employerLandingTemplate(lang, t) {
             <h2>${data.bulletsTitle}</h2>
             ${data.bulletsLead ? `<p>${data.bulletsLead}</p>` : ""}
             ${list(data.bullets)}
-            <div class="tag-row">
-              ${data.tags.map((tag) => `<span class="tag">${tag}</span>`).join("")}
-            </div>
+            <ul class="tag-row" aria-label="${t.common.tagsLabel}">
+              ${data.tags.map((tag) => `<li><span class="tag">${tag}</span></li>`).join("")}
+            </ul>
           </article>
 
           <article class="surface-card candidate-info-card">
