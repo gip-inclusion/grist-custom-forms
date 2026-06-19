@@ -1500,16 +1500,16 @@ def build_brevo_invitation_email(invitation_row: dict) -> tuple[str, str, str, s
             cta_note = f"Falls die Schaltfläche nicht funktioniert, kopieren Sie diese Adresse in Ihren Browser: {invite_link}"
             footer = "EURES beta ist ein experimenteller Service von EURES und France Travail zur Unterstützung von Rekrutierung und beruflicher Mobilität in der Großregion."
         else:
-            subject = "[EURES / France Travail] Questionnaire employeur - expérimentation EURES beta"
-            preheader = "Dans le cadre de ma mission de conseiller EURES au sein de France Travail, je vous invite à compléter un court questionnaire."
+            subject = "[EURES / France Travail] Recrutement : identification de profils adaptes a votre besoin"
+            preheader = "Dans le cadre de ma mission de conseiller EURES au sein de France Travail, je vous contacte pour vous proposer un repérage plus rapide de profils susceptibles de correspondre."
             body_lines = [
                 "Je me permets de vous contacter dans le cadre de ma mission de conseiller EURES au sein de France Travail.",
-                "Dans le cadre d'une expérimentation EURES actuellement menée autour des besoins de recrutement et de la mobilité professionnelle dans la Grande Région, nous recueillons des besoins d'employeurs partenaires afin d'identifier plus facilement des profils susceptibles de correspondre.",
-                "Pour cela, je vous invite à compléter le court formulaire ci-dessous. Il vous prendra seulement quelques minutes.",
+                "Dans le cadre d'une expérimentation menée avec EURES dans la Grande Région, nous accompagnons des employeurs ayant des besoins de recrutement en leur proposant un repérage plus rapide de profils susceptibles de correspondre.",
+                "Si vous avez un besoin de recrutement en cours ou à venir, je vous invite à compléter le court formulaire ci-dessous. Il vous prendra seulement quelques minutes.",
             ]
             title = ""
             cta = "Accéder au formulaire"
-            cta_note = "Le questionnaire permet de préciser votre besoin, vos contraintes de recrutement et les conditions proposées afin d'étudier ensuite d'éventuelles mises en relation."
+            cta_note = "Ce questionnaire permet de préciser votre besoin, vos contraintes de recrutement et les conditions proposées, afin d'étudier ensuite d'éventuelles mises en relation avec des candidats pertinents."
             footer = (
                 "EURES est le réseau européen de coopération pour l'emploi, qui facilite les recrutements "
                 "et les opportunités professionnelles en Europe."
