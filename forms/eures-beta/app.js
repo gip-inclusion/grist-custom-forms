@@ -4393,7 +4393,10 @@ function render() {
       ${nav("stat", lang, t)}
       <main id="main-content" class="section" tabindex="-1">
         <div class="shell">
-          <div class="panel"><p>${t.statPage.loading}</p></div>
+          <div class="panel">
+            <h1>${t.statPage.title}</h1>
+            <p>${t.statPage.loading}</p>
+          </div>
         </div>
       </main>
       ${footer(t)}
@@ -4407,7 +4410,10 @@ function render() {
           ${nav("stat", lang, t)}
           <main id="main-content" class="section" tabindex="-1">
             <div class="shell">
-              <div class="panel"><p>${t.statPage.error}</p></div>
+              <div class="panel">
+                <h1>${t.statPage.title}</h1>
+                <p>${t.statPage.error}</p>
+              </div>
             </div>
           </main>
           ${footer(t)}
