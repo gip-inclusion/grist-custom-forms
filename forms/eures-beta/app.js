@@ -1997,7 +1997,9 @@ function getFieldLabel(element) {
 
   const field = element.closest(".field, .field-stack, .question-block, fieldset, .panel");
   const scopedLabel = cleanLabelText(
-    field?.querySelector("label, legend, h3, h4, .section-title")?.textContent
+    field?.querySelector(":scope > span, :scope > legend, :scope > h3, :scope > h4, :scope > .section-title")?.textContent
+  ) || cleanLabelText(
+    field?.querySelector("legend, h3, h4, .section-title, span, label")?.textContent
   );
   if ((element.type === "radio" || element.type === "checkbox") && scopedLabel) {
     return scopedLabel;
