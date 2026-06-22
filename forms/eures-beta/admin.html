@@ -1342,6 +1342,7 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
       if (type === "matching_review") return "Matching";
       if (type === "no_match_followup") return "Sans matching";
       if (type === "new_job_request") return "Nouveau métier";
+      if (type === "new_employer_alert") return "Nouvel employeur";
       return type || "Tâche";
     }
 
@@ -1402,6 +1403,7 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
       const matching = row.matching || {};
       const noMatch = row.no_match || {};
       const newJob = row.new_job || {};
+      const newEmployer = row.new_employer || {};
       const haystack = [
         row.task_type,
         taskTypeLabel(row.task_type),
@@ -1415,6 +1417,12 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
         noMatch?.recipient_email,
         newJob?.email,
         newJob?.requested_jobs,
+        newEmployer?.employeur,
+        newEmployer?.contact,
+        newEmployer?.email,
+        newEmployer?.sponsor_company_name,
+        newEmployer?.sponsor_email,
+        newEmployer?.source_invitation_scope,
       ].map(normalizeText).join(" ");
       return haystack.includes(search);
     }
@@ -1882,6 +1890,7 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
               { label: "Matchings à valider", value: priorities.matching_review ?? 0, target: "matching_review" },
               { label: "Sans matching à notifier", value: priorities.no_match_followup ?? 0, target: "no_match_followup" },
               { label: "Demandes de nouveaux métiers", value: priorities.new_job_request ?? 0, target: "new_job_request" },
+              { label: "Nouveaux employeurs", value: priorities.new_employer_alert ?? 0, target: "new_employer_alert" },
               { label: "Erreurs d’envoi", value: priorities.invitation_errors ?? 0, target: "invitation_errors" },
             ], { actionable: true })}
           </div>
@@ -1954,6 +1963,7 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
         matching_review: "matching",
         no_match_followup: "sans matching",
         new_job_request: "nouveau métier",
+        new_employer_alert: "nouvel employeur",
       };
       document.getElementById("task-filter-search").value = searchMap[target] || "";
       await loadTasks();
@@ -2048,6 +2058,33 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
             <button class="btn-accept" type="button" data-task-new-job-action="processed">Marquer traité</button>
             <button class="btn-refuse" type="button" data-task-new-job-action="dismissed">Ignorer</button>
           `;
+        } else if (row.task_type === "new_employer_alert") {
+          const newEmployer = row.new_employer || {};
+          body = `
+            <div class="compare-grid">
+              <section class="compare-card">
+                <h3>Employeur déposant</h3>
+                <dl class="detail-list">
+                  <div class="detail-row"><dt>Entreprise</dt><dd>${esc(newEmployer.employeur || "-")}</dd></div>
+                  <div class="detail-row"><dt>Contact</dt><dd>${esc(newEmployer.contact || "-")}</dd></div>
+                  <div class="detail-row"><dt>Email</dt><dd>${esc(newEmployer.email || "-")}</dd></div>
+                  <div class="detail-row"><dt>Poste</dt><dd>${esc(newEmployer.poste || "-")}</dd></div>
+                </dl>
+              </section>
+              <section class="compare-card">
+                <h3>Entreprise marraine</h3>
+                <dl class="detail-list">
+                  <div class="detail-row"><dt>Entreprise source</dt><dd>${esc(newEmployer.sponsor_company_name || newEmployer.source_invitation_company || "-")}</dd></div>
+                  <div class="detail-row"><dt>Email source</dt><dd>${esc(newEmployer.sponsor_email || newEmployer.source_invitation_email || "-")}</dd></div>
+                  <div class="detail-row"><dt>Type d’invitation</dt><dd>${esc(newEmployer.source_invitation_scope === "same_company" ? "Collaborateur" : "Autre entreprise")}</dd></div>
+                </dl>
+              </section>
+            </div>
+          `;
+          actions = `
+            <button class="btn-accept" type="button" data-task-new-employer-action="reviewed">Marquer surveillé</button>
+            <button class="btn-refuse" type="button" data-task-new-employer-action="dismissed">Ignorer</button>
+          `;
         }
 
         return `
@@ -2069,7 +2106,7 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
               ${body}
               <section class="notes-box">
                 <h4>Note admin</h4>
-                <textarea id="${esc(noteId)}" placeholder="Ajouter une note interne...">${esc(row.matching?.admin_decision_note || row.no_match?.note || row.new_job?.note || "")}</textarea>
+                <textarea id="${esc(noteId)}" placeholder="Ajouter une note interne...">${esc(row.matching?.admin_decision_note || row.no_match?.note || row.new_job?.note || row.new_employer?.note || "")}</textarea>
                 <div class="hero-actions">${actions}</div>
               </section>
             </div>
@@ -2114,6 +2151,18 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
           const note = document.getElementById(`task-note-new_job_request-${recordId}`)?.value || "";
           if (!recordId || !status) return;
           await submitNewJobStatus(recordId, status, note);
+          await loadTasks();
+          await loadCockpit();
+        });
+      }
+      for (const button of list.querySelectorAll("[data-task-new-employer-action]")) {
+        button.addEventListener("click", async (event) => {
+          const card = event.currentTarget.closest(".matching-card");
+          const recordId = card?.dataset.recordId;
+          const status = event.currentTarget.dataset.taskNewEmployerAction;
+          const note = document.getElementById(`task-note-new_employer_alert-${recordId}`)?.value || "";
+          if (!recordId || !status) return;
+          await submitNewEmployerAlertStatus(recordId, status, note);
           await loadTasks();
           await loadCockpit();
         });
@@ -2664,6 +2713,28 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
         await loadCockpit();
       } catch (error) {
         setStatus("new-job-status-line", `Erreur : ${error.message || "mise à jour impossible"}`);
+      }
+    }
+
+    async function submitNewEmployerAlertStatus(recordId, status, note) {
+      setStatus("task-status-line", "Mise à jour en cours...");
+      try {
+        const response = await fetch(apiUrl(`/admin/new-employer-alerts/${recordId}/status`), {
+          method: "POST",
+          credentials: "same-origin",
+          headers: {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+          },
+          body: JSON.stringify({ status, note }),
+        });
+        const payload = await response.json();
+        if (!response.ok || !payload.ok) {
+          throw new Error(payload.error || `Erreur API (${response.status})`);
+        }
+        setStatus("task-status-line", `Alerte nouvel employeur marquée comme ${status === "reviewed" ? "surveillée" : "ignorée"}.`);
+      } catch (error) {
+        setStatus("task-status-line", `Erreur : ${error.message || "mise à jour impossible"}`);
       }
     }
 

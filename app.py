@@ -119,6 +119,21 @@ EURES_NEW_JOB_REQUEST_FIELDS = {
     'new_job_request_note',
 }
 EURES_NEW_JOB_REQUEST_ALLOWED_STATUSES = {'pending', 'processed', 'dismissed'}
+EURES_NEW_EMPLOYER_ALERT_FIELDS = {
+    'new_employer_alert_status',
+    'new_employer_alert_created_at',
+    'new_employer_alert_created_by',
+    'new_employer_alert_processed_at',
+    'new_employer_alert_processed_by',
+    'new_employer_alert_note',
+    'source_invitation_record_id',
+    'source_invitation_email',
+    'source_invitation_company',
+    'source_invitation_scope',
+    'sponsor_email',
+    'sponsor_company_name',
+}
+EURES_NEW_EMPLOYER_ALERT_ALLOWED_STATUSES = {'pending', 'reviewed', 'dismissed'}
 EURES_INVITATION_FIELDS = {
     'role',
     'email',
@@ -143,6 +158,14 @@ EURES_INVITATION_FIELDS = {
     'last_reminder_at',
     'last_reminder_by',
     'last_reminder_message_id',
+    'sponsor_invitation_record_id',
+    'sponsor_email',
+    'sponsor_company_name',
+    'invited_by_type',
+    'invite_scope',
+    'first_submission_at',
+    'last_submission_at',
+    'submission_count',
     'answered_at',
     'linked_form_role',
     'linked_record_id',
@@ -1213,6 +1236,11 @@ def _normalize_eures_invitation_row(row: dict, actor: str, batch_id: str) -> dic
         'import_batch_id': batch_id,
         'imported_at': _now_iso_utc(),
         'imported_by': actor,
+        'sponsor_invitation_record_id': _coalesce_row_value(row, 'sponsor_invitation_record_id'),
+        'sponsor_email': normalize_email(_coalesce_row_value(row, 'sponsor_email')),
+        'sponsor_company_name': _coalesce_row_value(row, 'sponsor_company_name'),
+        'invited_by_type': _coalesce_row_value(row, 'invited_by_type') or 'admin',
+        'invite_scope': _coalesce_row_value(row, 'invite_scope') or '',
         'notes': _coalesce_row_value(row, 'notes', 'note', 'comment', 'commentaire'),
     }
 
@@ -1247,6 +1275,14 @@ def list_eures_invitations() -> list[dict]:
             'reminder_count': _safe_int(fields.get('reminder_count')),
             'last_reminder_at': fields.get('last_reminder_at', ''),
             'last_reminder_by': fields.get('last_reminder_by', ''),
+            'sponsor_invitation_record_id': fields.get('sponsor_invitation_record_id', ''),
+            'sponsor_email': fields.get('sponsor_email', ''),
+            'sponsor_company_name': fields.get('sponsor_company_name', ''),
+            'invited_by_type': fields.get('invited_by_type', ''),
+            'invite_scope': fields.get('invite_scope', ''),
+            'first_submission_at': fields.get('first_submission_at', ''),
+            'last_submission_at': fields.get('last_submission_at', ''),
+            'submission_count': _safe_int(fields.get('submission_count')),
             'linked_form_role': fields.get('linked_form_role', ''),
             'linked_record_id': fields.get('linked_record_id', ''),
             'linked_record_key': fields.get('linked_record_key', ''),
@@ -1391,6 +1427,23 @@ def find_eures_invitation_by_role_email(role: str, email: str, headers: dict | N
     return None
 
 
+def get_eures_active_employer_invitation(invite_token: str) -> tuple[dict | None, str]:
+    """Validate one employer invitation link for public self-service actions."""
+    config = get_eures_invitations_config()
+    if not config:
+        return None, 'EURES invitations configuration is incomplete.'
+    headers = _eures_admin_headers(config)
+    invitation = find_eures_invitation_by_token(invite_token, headers=headers)
+    if not invitation:
+        return None, "Lien d'invitation introuvable."
+    fields = invitation.get('fields', {}) if isinstance(invitation.get('fields'), dict) else {}
+    if _normalize_eures_invitation_role(fields.get('role', '')) != 'employer':
+        return None, "Ce lien n'autorise pas l'accès employeur."
+    if str(fields.get('invitation_status') or '').strip().lower() == 'desactivee':
+        return None, 'Ce lien a été désactivé.'
+    return invitation, ''
+
+
 def link_eures_invitation_after_save(role: str, request_fields: dict, saved_record: dict, matching_result: dict | None = None) -> dict:
     """Link a saved EURES questionnaire to its invitation when possible."""
     if _normalize_eures_invitation_role(role) not in EURES_INVITATION_ALLOWED_ROLES:
@@ -1445,6 +1498,9 @@ def link_eures_invitation_after_save(role: str, request_fields: dict, saved_reco
 
     update_fields = {
         'answered_at': now,
+        'first_submission_at': invitation_fields.get('first_submission_at') or now,
+        'last_submission_at': now,
+        'submission_count': _safe_int(invitation_fields.get('submission_count')) + 1,
         'linked_form_role': _normalize_eures_invitation_role(role),
         'linked_record_id': str(saved_record.get('id') or ''),
         'linked_record_key': saved_record_key,
@@ -1466,6 +1522,10 @@ def link_eures_invitation_after_save(role: str, request_fields: dict, saved_reco
         'linked_record_id': saved_record.get('id'),
         'linked_record_key': saved_record_key,
         'email': email,
+        'invite_scope': str(invitation_fields.get('invite_scope') or ''),
+        'company_name': str(invitation_fields.get('company_name') or ''),
+        'sponsor_email': str(invitation_fields.get('sponsor_email') or ''),
+        'sponsor_company_name': str(invitation_fields.get('sponsor_company_name') or ''),
     }
 
 
@@ -3366,6 +3426,11 @@ def _normalize_eures_new_job_request_status(value: str) -> str:
     return status if status in EURES_NEW_JOB_REQUEST_ALLOWED_STATUSES else ''
 
 
+def _normalize_eures_new_employer_alert_status(value: str) -> str:
+    status = str(value or '').strip().lower()
+    return status if status in EURES_NEW_EMPLOYER_ALERT_ALLOWED_STATUSES else ''
+
+
 def _get_eures_role_table_config(role: str) -> dict | None:
     normalized_role = _normalize_eures_invitation_role(role)
     if not normalized_role:
@@ -3531,6 +3596,80 @@ def list_eures_admin_new_job_requests(status: str = 'all') -> list[dict]:
         if not row:
             continue
         if status in EURES_NEW_JOB_REQUEST_ALLOWED_STATUSES and row['request_status'] != status:
+            continue
+        rows.append(row)
+    rows.sort(key=lambda row: (str(row.get('created_at') or ''), int(row.get('record_id') or 0)), reverse=True)
+    return rows
+
+
+def queue_eures_new_employer_alert(record_id: int, invitation_linking: dict | None = None):
+    """Mark an employer need submitted from a referred new company for admin vigilance."""
+    config = _get_eures_role_table_config('employer')
+    if not config:
+        raise RuntimeError('EURES employer table configuration is incomplete.')
+    headers = _eures_admin_headers(config)
+    invitation_linking = invitation_linking if isinstance(invitation_linking, dict) else {}
+    update_table_record_by_id(
+        config,
+        record_id,
+        {
+            'new_employer_alert_status': 'pending',
+            'new_employer_alert_created_at': _now_iso_utc(),
+            'new_employer_alert_created_by': 'system_questionnaire_submission',
+            'new_employer_alert_note': '',
+            'source_invitation_record_id': str(invitation_linking.get('invitation_record_id') or ''),
+            'source_invitation_email': str(invitation_linking.get('email') or ''),
+            'source_invitation_company': str(invitation_linking.get('company_name') or ''),
+            'source_invitation_scope': str(invitation_linking.get('invite_scope') or ''),
+            'sponsor_email': str(invitation_linking.get('sponsor_email') or ''),
+            'sponsor_company_name': str(invitation_linking.get('sponsor_company_name') or ''),
+        },
+        headers,
+        EURES_NEW_EMPLOYER_ALERT_FIELDS,
+    )
+
+
+def _build_eures_new_employer_alert_row(rec: dict) -> dict | None:
+    fields = rec.get('fields', {}) if isinstance(rec, dict) else {}
+    if not isinstance(fields, dict):
+        return None
+    status = _normalize_eures_new_employer_alert_status(fields.get('new_employer_alert_status', ''))
+    if not status:
+        return None
+    return {
+        'record_id': rec.get('id'),
+        'alert_status': status,
+        'created_at': fields.get('new_employer_alert_created_at', ''),
+        'created_by': fields.get('new_employer_alert_created_by', ''),
+        'processed_at': fields.get('new_employer_alert_processed_at', ''),
+        'processed_by': fields.get('new_employer_alert_processed_by', ''),
+        'note': fields.get('new_employer_alert_note', ''),
+        'employeur': fields.get('employeur', ''),
+        'contact': fields.get('contact', ''),
+        'email': _resolve_employer_recipient(fields),
+        'poste': fields.get('poste', ''),
+        'pays': fields.get('pays', ''),
+        'source_invitation_record_id': fields.get('source_invitation_record_id', ''),
+        'source_invitation_email': fields.get('source_invitation_email', ''),
+        'source_invitation_company': fields.get('source_invitation_company', ''),
+        'source_invitation_scope': fields.get('source_invitation_scope', ''),
+        'sponsor_email': fields.get('sponsor_email', ''),
+        'sponsor_company_name': fields.get('sponsor_company_name', ''),
+    }
+
+
+def list_eures_admin_new_employer_alerts(status: str = 'all') -> list[dict]:
+    """Return employer needs submitted by newly referred employers."""
+    config = _get_eures_role_table_config('employer')
+    if not config:
+        return []
+    headers = _eures_admin_headers(config)
+    rows = []
+    for rec in fetch_table_records(config['doc_id'], config['table_id'], headers):
+        row = _build_eures_new_employer_alert_row(rec)
+        if not row:
+            continue
+        if status in EURES_NEW_EMPLOYER_ALERT_ALLOWED_STATUSES and row['alert_status'] != status:
             continue
         rows.append(row)
     rows.sort(key=lambda row: (str(row.get('created_at') or ''), int(row.get('record_id') or 0)), reverse=True)
@@ -4156,6 +4295,27 @@ def build_eures_admin_tasks(status: str = 'pending') -> list[dict]:
             'new_job': row,
         })
 
+    for row in list_eures_admin_new_employer_alerts(status='all'):
+        task_status = 'pending'
+        if row.get('alert_status') == 'reviewed':
+            task_status = 'done'
+        elif row.get('alert_status') == 'dismissed':
+            task_status = 'dismissed'
+        if status != 'all' and task_status != status:
+            continue
+        rows.append({
+            'task_type': 'new_employer_alert',
+            'status': task_status,
+            'priority': 'high',
+            'created_at': row.get('created_at', ''),
+            'updated_at': row.get('processed_at') or row.get('created_at', ''),
+            'record_id': row.get('record_id'),
+            'title': row.get('employeur') or 'Nouvel employeur',
+            'subtitle': row.get('poste') or 'Besoin employeur',
+            'summary': 'Besoin déposé par un employeur recommandé: vigilance manuelle demandée.',
+            'new_employer': row,
+        })
+
     priority_rank = {'high': 0, 'normal': 1, 'low': 2}
     status_rank = {'pending': 0, 'done': 1, 'dismissed': 2}
     rows.sort(
@@ -4176,6 +4336,7 @@ def build_eures_cockpit_summary() -> dict:
     tasks_pending = build_eures_admin_tasks(status='pending')
     no_match_all = list_eures_admin_no_match_notifications(status='all')
     new_jobs_all = list_eures_admin_new_job_requests(status='all')
+    new_employers_all = list_eures_admin_new_employer_alerts(status='all')
     invitations = list_eures_invitations()
 
     candidate_config = _get_eures_role_table_config('candidate')
@@ -4233,6 +4394,13 @@ def build_eures_cockpit_summary() -> dict:
             'label': f"Nouveau métier demandé · {row.get('employeur') or 'Entreprise'}",
         })
 
+    for row in new_employers_all:
+        recent_activity.append({
+            'at': row.get('processed_at') or row.get('created_at'),
+            'type': 'new_employer_alert',
+            'label': f"Nouvel employeur recommandé · {row.get('employeur') or 'Entreprise'}",
+        })
+
     accepted_count = sum(1 for row in matchings_all if row.get('admin_status') == 'accepted')
     sent_count = sum(1 for row in matchings_all if row.get('workflow_status') in {'envoye_employeur', 'accepte_employeur', 'refuse_employeur', 'mise_en_relation_faite', 'embauche_confirmee'})
     relation_count = sum(1 for row in matchings_all if row.get('workflow_status') in {'mise_en_relation_faite', 'embauche_confirmee'})
@@ -4255,6 +4423,7 @@ def build_eures_cockpit_summary() -> dict:
             'matching_review': sum(1 for row in tasks_pending if row.get('task_type') == 'matching_review'),
             'no_match_followup': sum(1 for row in tasks_pending if row.get('task_type') == 'no_match_followup'),
             'new_job_request': sum(1 for row in tasks_pending if row.get('task_type') == 'new_job_request'),
+            'new_employer_alert': sum(1 for row in tasks_pending if row.get('task_type') == 'new_employer_alert'),
             'invitation_errors': sum(1 for row in invitations if str(row.get('invitation_status') or '') == 'erreur_envoi'),
         },
         'today_flow': {
@@ -4410,6 +4579,113 @@ def issue_public_write_token(form_id: str):
     }), 200
 
 
+@app.route('/api/forms/<form_id>/employer-referrals', methods=['POST'])
+def create_eures_employer_referral(form_id: str):
+    """Create and send one employer invitation from an existing employer link."""
+    proxied = maybe_proxy_eures_request(form_id)
+    if proxied:
+        return proxied
+    if form_id != 'eures-beta':
+        return jsonify({'error': 'Referral endpoint is not enabled for this form.'}), 404
+
+    data = request.get_json() or {}
+    invite_token = str(data.get('invite_token') or '').strip()
+    write_token = str(data.get('write_token') or '').strip()
+    is_valid, message = _validate_eures_public_write_token('employer', write_token)
+    if not is_valid:
+        return jsonify({'error': message}), 403
+    allowed, retry_after = _check_eures_public_write_rate_limit('employer')
+    if not allowed:
+        return jsonify({'error': f'Trop de tentatives. Réessayez dans {retry_after} secondes.'}), 429
+
+    sponsor_invitation, sponsor_error = get_eures_active_employer_invitation(invite_token)
+    if not sponsor_invitation:
+        return jsonify({'error': sponsor_error}), 403
+
+    sponsor_fields = sponsor_invitation.get('fields', {}) if isinstance(sponsor_invitation.get('fields'), dict) else {}
+    sponsor_company = str(sponsor_fields.get('company_name') or '').strip()
+    sponsor_email = normalize_email(sponsor_fields.get('email', ''))
+
+    invite_scope = str(data.get('invite_scope') or '').strip().lower()
+    if invite_scope not in {'same_company', 'new_company'}:
+        return jsonify({'error': "invite_scope doit valoir 'same_company' ou 'new_company'."}), 400
+
+    recipient_email = normalize_email(data.get('email', ''))
+    if not recipient_email:
+        return jsonify({'error': 'Email destinataire manquant.'}), 400
+
+    company_name = str(data.get('company_name') or '').strip()
+    if invite_scope == 'same_company' and not company_name:
+        company_name = sponsor_company
+    if invite_scope == 'new_company' and not company_name:
+        return jsonify({'error': "Le nom de l'entreprise est requis pour inviter une autre entreprise."}), 400
+
+    row = {
+        'role': 'employer',
+        'email': recipient_email,
+        'first_name': str(data.get('first_name') or '').strip(),
+        'last_name': str(data.get('last_name') or '').strip(),
+        'company_name': company_name,
+        'language': str(data.get('language') or sponsor_fields.get('language') or 'fr').strip().lower(),
+        'source': 'employer_referral',
+        'external_ref': str(data.get('external_ref') or '').strip(),
+        'notes': str(data.get('notes') or '').strip(),
+        'invitation_status': 'invitation_a_envoyer',
+        'sponsor_invitation_record_id': str(sponsor_invitation.get('id') or ''),
+        'sponsor_email': sponsor_email,
+        'sponsor_company_name': sponsor_company,
+        'invited_by_type': 'employer_self_service',
+        'invite_scope': invite_scope,
+    }
+
+    try:
+        upsert_eures_invitation_rows([row], actor='public_employer_referral')
+        config = get_eures_invitations_config()
+        if not config:
+            return jsonify({'error': 'EURES invitations configuration is incomplete.'}), 500
+        headers = _eures_admin_headers(config)
+        invitation = find_eures_invitation_by_role_email('employer', recipient_email, headers=headers)
+        if not invitation:
+            return jsonify({'error': "Invitation créée mais introuvable pour l'envoi."}), 500
+        record_id = int(invitation.get('id') or 0)
+        fields = invitation.get('fields', {}) if isinstance(invitation.get('fields'), dict) else {}
+        current_status = str(fields.get('invitation_status') or '').strip().lower()
+        if current_status == 'desactivee':
+            return jsonify({'error': 'Cette invitation a été désactivée.'}), 400
+
+        recipient, subject, text_body, html_body, new_invite_token, invite_link = build_brevo_invitation_email(fields)
+        brevo_result = send_brevo_transactional_email(recipient, subject, text_body, html_body)
+        update_fields = {
+            'invite_token': new_invite_token,
+            'invite_link': invite_link,
+            'invitation_status_updated_at': _now_iso_utc(),
+            'invitation_status_updated_by': 'public_employer_referral',
+            'sent_at': _now_iso_utc(),
+            'sent_by': 'public_employer_referral',
+            'brevo_message_id': str((brevo_result or {}).get('messageId') or ''),
+            'sponsor_invitation_record_id': str(sponsor_invitation.get('id') or ''),
+            'sponsor_email': sponsor_email,
+            'sponsor_company_name': sponsor_company,
+            'invited_by_type': 'employer_self_service',
+            'invite_scope': invite_scope,
+            'company_name': company_name,
+        }
+        if not str(fields.get('answered_at') or '').strip():
+            update_fields['invitation_status'] = 'invitation_envoyee'
+        update_eures_invitation_record_by_id(record_id, update_fields, headers=headers)
+        return jsonify({
+            'ok': True,
+            'record_id': record_id,
+            'email': recipient_email,
+            'invite_scope': invite_scope,
+            'invite_link': invite_link,
+            'message_id': str((brevo_result or {}).get('messageId') or ''),
+        }), 200
+    except Exception as e:
+        app.logger.exception('EURES employer referral invite failed')
+        return jsonify({'error': str(e)}), 500
+
+
 @app.route('/api/forms/<form_id>/record', methods=['POST'])
 def save_record(form_id: str):
     """Create or update a record."""
@@ -4527,6 +4803,7 @@ def save_record(form_id: str):
         invitation_linking = None
         no_match_notification = None
         new_job_request = None
+        new_employer_alert = None
         if form_id == 'eures-beta':
             if action == 'created':
                 matching_result = run_eures_matching_for_saved_record(
@@ -4569,6 +4846,18 @@ def save_record(form_id: str):
                 saved_record=saved_record,
                 matching_result=matching_result,
             )
+            if (
+                action == 'created'
+                and str(fields.get('flow_role') or '') == 'employer'
+                and isinstance(invitation_linking, dict)
+                and invitation_linking.get('linked')
+                and str(invitation_linking.get('invite_scope') or '') == 'new_company'
+            ):
+                queue_eures_new_employer_alert(int(saved_record.get('id') or 0), invitation_linking)
+                new_employer_alert = {
+                    'queued': True,
+                    'status': 'pending',
+                }
 
         return jsonify({
             'ok': True,
@@ -4579,6 +4868,7 @@ def save_record(form_id: str):
             'matching': matching_result,
             'no_match_notification': no_match_notification,
             'new_job_request': new_job_request,
+            'new_employer_alert': new_employer_alert,
             'invitation_linking': invitation_linking,
         }), 200
     except Exception as e:
@@ -5475,6 +5765,55 @@ def admin_eures_new_job_request_status(form_id: str, record_id: int):
         }), 200
     except Exception as e:
         app.logger.exception('EURES new job request status update failed')
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/forms/<form_id>/admin/new-employer-alerts/<int:record_id>/status', methods=['POST'])
+@admin_required
+def admin_eures_new_employer_alert_status(form_id: str, record_id: int):
+    """Admin API: mark one newly referred employer alert as reviewed or dismissed."""
+    proxied = maybe_proxy_eures_request(form_id)
+    if proxied:
+        return proxied
+    if form_id != 'eures-beta':
+        return jsonify({'error': f'Unknown new-employer admin form: {form_id}'}), 404
+
+    data = request.get_json() or {}
+    status = _normalize_eures_new_employer_alert_status(data.get('status') or '')
+    note = str(data.get('note') or '').strip()
+    if status not in {'reviewed', 'dismissed'}:
+        return jsonify({'error': 'Status must be reviewed or dismissed'}), 400
+
+    config = _get_eures_role_table_config('employer')
+    if not config:
+        return jsonify({'error': 'EURES employer configuration is incomplete.'}), 500
+
+    headers = _eures_admin_headers(config)
+    actor = get_admin_actor(form_id)
+    try:
+        update_table_record_by_id(
+            config,
+            record_id,
+            {
+                'new_employer_alert_status': status,
+                'new_employer_alert_processed_at': _now_iso_utc(),
+                'new_employer_alert_processed_by': actor,
+                'new_employer_alert_note': note,
+            },
+            headers,
+            EURES_NEW_EMPLOYER_ALERT_FIELDS,
+        )
+        app.logger.info(
+            'EURES new employer alert status updated',
+            extra={'form_id': form_id, 'record_id': record_id, 'status': status},
+        )
+        return jsonify({
+            'ok': True,
+            'record_id': record_id,
+            'status': status,
+        }), 200
+    except Exception as e:
+        app.logger.exception('EURES new employer alert status update failed')
         return jsonify({'error': str(e)}), 500
 
 

@@ -174,6 +174,21 @@ const copy = {
         "3. Proposition de mises en relation lorsque des candidats correspondent.",
         "4. Amélioration progressive du service."
       ],
+      inviteTitle: "Inviter un collaborateur ou une autre entreprise",
+      inviteLead: "Si vous utilisez déjà le service, vous pouvez partager un accès direct avec un collaborateur de votre structure ou avec une autre entreprise.",
+      inviteScopeLabel: "Type d'invitation",
+      inviteScopeOptions: {
+        same_company: "Un collaborateur de ma structure",
+        new_company: "Une autre entreprise"
+      },
+      inviteFirstName: "Prénom",
+      inviteLastName: "Nom",
+      inviteEmail: "Adresse e-mail",
+      inviteCompany: "Entreprise",
+      inviteNote: "Note (optionnel)",
+      inviteSend: "Envoyer l'invitation",
+      inviteHint: "Le lien reçu restera réutilisable pour déposer plusieurs besoins.",
+      inviteCompanyHint: "Pour un collaborateur, le nom de votre entreprise sera repris automatiquement si vous laissez ce champ vide.",
       tags: ["EURES", "France Travail", "Union européenne", "Luxembourg", "Recrutement"]
     },
     candidateQuestionnaire: {
@@ -541,6 +556,21 @@ const copy = {
         "3. Suggested introductions when candidates match.",
         "4. Progressive improvement of the service."
       ],
+      inviteTitle: "Invite a colleague or another company",
+      inviteLead: "If you already use the service, you can share direct access with a colleague in your organisation or with another company.",
+      inviteScopeLabel: "Invitation type",
+      inviteScopeOptions: {
+        same_company: "A colleague from my organisation",
+        new_company: "Another company"
+      },
+      inviteFirstName: "First name",
+      inviteLastName: "Last name",
+      inviteEmail: "Email address",
+      inviteCompany: "Company",
+      inviteNote: "Note (optional)",
+      inviteSend: "Send invitation",
+      inviteHint: "The link received will remain reusable to submit multiple hiring needs.",
+      inviteCompanyHint: "For a colleague, your company name will be reused automatically if you leave this field blank.",
       tags: ["EURES", "France Travail", "European Union", "Luxembourg", "Recruitment"]
     },
     candidateQuestionnaire: {
@@ -908,6 +938,21 @@ const copy = {
         "3. Vorschläge für Vermittlungen, wenn Kandidatinnen und Kandidaten passen.",
         "4. Schrittweise Verbesserung des Dienstes."
       ],
+      inviteTitle: "Einen Kollegen oder ein anderes Unternehmen einladen",
+      inviteLead: "Wenn Sie den Dienst bereits nutzen, können Sie einem Kollegen in Ihrer Struktur oder einem anderen Unternehmen einen direkten Zugang senden.",
+      inviteScopeLabel: "Einladungstyp",
+      inviteScopeOptions: {
+        same_company: "Ein Kollege aus meiner Struktur",
+        new_company: "Ein anderes Unternehmen"
+      },
+      inviteFirstName: "Vorname",
+      inviteLastName: "Name",
+      inviteEmail: "E-Mail-Adresse",
+      inviteCompany: "Unternehmen",
+      inviteNote: "Notiz (optional)",
+      inviteSend: "Einladung senden",
+      inviteHint: "Der erhaltene Link bleibt wiederverwendbar, um mehrere Personalbedarfe zu übermitteln.",
+      inviteCompanyHint: "Für einen Kollegen wird Ihr Unternehmensname automatisch übernommen, wenn Sie dieses Feld leer lassen.",
       tags: ["EURES", "France Travail", "Europäische Union", "Luxemburg", "Rekrutierung"]
     },
     candidateQuestionnaire: {
@@ -3386,6 +3431,50 @@ function candidateTallyQuestionnaireTemplate(lang, t) {
 function employerLandingTemplate(lang, t) {
   const data = t.employerLanding;
   const logos = t.candidateLanding.logos;
+  const inviteToken = currentInviteToken();
+  const inviteSection = inviteToken ? `
+          <section class="candidate-about">
+            <h2>${data.inviteTitle}</h2>
+            <p>${data.inviteLead}</p>
+            <form class="questionnaire-form" id="employer-referral-form" novalidate>
+              <div class="form-grid">
+                <label class="field">
+                  <span>${data.inviteScopeLabel}</span>
+                  <select name="invite_scope" required>
+                    <option value="same_company">${data.inviteScopeOptions.same_company}</option>
+                    <option value="new_company">${data.inviteScopeOptions.new_company}</option>
+                  </select>
+                </label>
+                <label class="field">
+                  <span>${data.inviteFirstName}</span>
+                  <input type="text" name="first_name">
+                </label>
+                <label class="field">
+                  <span>${data.inviteLastName}</span>
+                  <input type="text" name="last_name">
+                </label>
+                <label class="field">
+                  <span>${data.inviteEmail}</span>
+                  <input type="email" name="email" autocomplete="email" required>
+                </label>
+                <label class="field">
+                  <span>${data.inviteCompany}</span>
+                  <input type="text" name="company_name" autocomplete="organization">
+                </label>
+              </div>
+              <label class="field">
+                <span>${data.inviteNote}</span>
+                <textarea name="notes" rows="3"></textarea>
+              </label>
+              <div class="questionnaire-actions">
+                <button class="primary-action" type="submit" id="employer-referral-submit">${data.inviteSend}</button>
+              </div>
+              <p class="mini-note">${data.inviteHint}</p>
+              <p class="mini-note">${data.inviteCompanyHint}</p>
+              <div class="status" id="employer-referral-status" role="status" aria-live="polite"></div>
+            </form>
+          </section>
+  ` : "";
   return `
     ${nav("employer-landing", lang, t)}
     <main id="main-content" class="section candidate-landing-page" tabindex="-1">
@@ -3422,6 +3511,7 @@ function employerLandingTemplate(lang, t) {
             <h2>${data.benefitsTitle || data.sideTitle}</h2>
             ${data.benefits ? list(data.benefits) : `<p>${data.sideText}</p>`}
           </section>
+          ${inviteSection}
         </article>
 
         <aside class="candidate-sidebar">
@@ -3449,6 +3539,90 @@ function employerLandingTemplate(lang, t) {
     </main>
     ${footer(t)}
   `;
+}
+
+function attachEmployerLandingBehavior(lang, t) {
+  const form = document.getElementById("employer-referral-form");
+  if (!form) {
+    return;
+  }
+  const statusEl = document.getElementById("employer-referral-status");
+  const submitBtn = document.getElementById("employer-referral-submit");
+  const messages = lang === "en"
+    ? {
+        email: "Enter a valid email address.",
+        company: "Enter the invited company name.",
+        success: "Invitation sent. The recipient receives a reusable link to submit multiple hiring needs."
+      }
+    : (lang === "de"
+      ? {
+          email: "Geben Sie eine gültige E-Mail-Adresse ein.",
+          company: "Geben Sie den Namen des eingeladenen Unternehmens ein.",
+          success: "Einladung gesendet. Der Empfänger erhält einen wiederverwendbaren Link, um mehrere Personalbedarfe zu übermitteln."
+        }
+      : {
+          email: "Indiquez une adresse e-mail valide.",
+          company: "Indiquez le nom de l'entreprise invitée.",
+          success: "Invitation envoyée. Le destinataire reçoit un lien réutilisable pour déposer plusieurs besoins."
+        });
+
+  function setStatus(message, state = "") {
+    setStatusMessage(statusEl, message, state);
+  }
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const data = new FormData(form);
+    const inviteScope = String(data.get("invite_scope") || "same_company").trim();
+    const email = String(data.get("email") || "").trim();
+    const companyName = String(data.get("company_name") || "").trim();
+    if (!email) {
+      setStatus(messages.email, "error");
+      return;
+    }
+    if (inviteScope === "new_company" && !companyName) {
+      setStatus(messages.company, "error");
+      return;
+    }
+
+    submitBtn.disabled = true;
+    setStatus(t.common.saving);
+    try {
+      const writeToken = await getWriteToken("employer", t);
+      const response = await fetch(`/api/forms/${FORM_ID}/employer-referrals`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json"
+        },
+        body: JSON.stringify({
+          invite_token: currentInviteToken(),
+          write_token: writeToken,
+          invite_scope: inviteScope,
+          email,
+          first_name: String(data.get("first_name") || "").trim(),
+          last_name: String(data.get("last_name") || "").trim(),
+          company_name: companyName,
+          notes: String(data.get("notes") || "").trim(),
+          language: lang,
+        })
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        if (response.status === 403) {
+          resetWriteToken("employer");
+        }
+        throw new Error(payload.error || `${t.common.saveErrorPrefix} (${response.status})`);
+      }
+      form.reset();
+      setStatus(messages.success, "success");
+    } catch (error) {
+      const message = error && error.message ? error.message : t.common.saveErrorPrefix;
+      setStatus(`${t.common.saveErrorPrefix}: ${message}`, "error");
+    } finally {
+      submitBtn.disabled = false;
+    }
+  });
 }
 
 function employerTallyQuestionnaireTemplate(lang, t) {
@@ -3877,11 +4051,16 @@ function attachEmployerTallyBehavior(lang, t) {
   }
   const content = getEmployerTallyContent(lang);
   const inviteToken = currentInviteToken();
-  const uuid = getUuid("employer");
+  let uuid = getUuid("employer");
   const statusEl = document.getElementById("status");
   const uuidBox = document.getElementById("uuid-box");
   const saveBtn = document.getElementById("save-btn");
   uuidBox.textContent = `${t.common.uuidPrefix}: ${uuid}`;
+  const reuseSuccessMessage = lang === "en"
+    ? "Need saved. You can submit another need with this same link or invite a colleague / another company from the employer page."
+    : (lang === "de"
+      ? "Der Bedarf wurde gespeichert. Sie können mit demselben Link einen weiteren Bedarf einreichen oder von der Arbeitgeberseite aus einen Kollegen / ein anderes Unternehmen einladen."
+      : "Besoin enregistré. Vous pouvez déposer un nouveau besoin avec ce même lien ou inviter un collaborateur / une autre entreprise depuis la page employeur.");
 
   function setStatus(message, state = "") {
     setStatusMessage(statusEl, message, state);
@@ -4034,7 +4213,11 @@ function attachEmployerTallyBehavior(lang, t) {
         }
         throw new Error(payload.error || `${t.common.saveErrorPrefix} (${response.status})`);
       }
-      setStatus(t.common.saved, "success");
+      uuid = resetUuid("employer");
+      uuidBox.textContent = `${t.common.uuidPrefix}: ${uuid}`;
+      form.reset();
+      toggleEmployerConditionBlocks(form);
+      setStatus(reuseSuccessMessage, "success");
     } catch (error) {
       const message = error && error.message ? error.message : t.common.saveErrorPrefix;
       setStatus(`${t.common.saveErrorPrefix}: ${message}`, "error");
@@ -4519,6 +4702,15 @@ function getUuid(role) {
   return uuid;
 }
 
+function setUuid(role, uuid) {
+  localStorage.setItem(storageKey(role), uuid);
+  return uuid;
+}
+
+function resetUuid(role) {
+  return setUuid(role, createUuid());
+}
+
 function aggregateFormData(form) {
   const data = new FormData(form);
   const result = {};
@@ -4693,6 +4885,7 @@ function render() {
 
   if (page === "employer-landing") {
     root.innerHTML = employerLandingTemplate(lang, t);
+    attachEmployerLandingBehavior(lang, t);
     return;
   }
 
