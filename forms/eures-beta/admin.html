@@ -1199,6 +1199,7 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
             </div>
             <div class="inline-actions" style="margin-top:0.9rem;">
               <button id="manual-match-create-btn" type="button">Créer le matching</button>
+              <button class="btn-secondary" id="manual-match-send-btn" type="button">Créer et envoyer directement</button>
             </div>
             <div class="status-line" id="manual-match-status-line"></div>
           </div>
@@ -1854,7 +1855,7 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
       }
     }
 
-    async function createManualMatching() {
+    async function createManualMatching(sendDirectly = false) {
       const candidateRecordId = Number(document.getElementById("manual-match-candidate").value || 0);
       const employerRecordId = Number(document.getElementById("manual-match-employer").value || 0);
       const note = document.getElementById("manual-match-note").value.trim();
@@ -1863,7 +1864,7 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
         return;
       }
 
-      setStatus("manual-match-status-line", "Création du matching manuel...");
+      setStatus("manual-match-status-line", sendDirectly ? "Création et envoi du matching..." : "Création du matching manuel...");
       try {
         const response = await fetch(apiUrl("/admin/matchings/manual"), {
           method: "POST",
@@ -1876,18 +1877,24 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
             candidate_record_id: candidateRecordId,
             employer_record_id: employerRecordId,
             note,
+            send_directly: sendDirectly,
           }),
         });
         const payload = await response.json();
         if (!response.ok || !payload.ok) {
           throw new Error(payload.error || `Erreur API (${response.status})`);
         }
-        setStatus("manual-match-status-line", `Matching créé : score ${payload.score ?? 0}, statut ${payload.statut || "-"}.`);
+        setStatus(
+          "manual-match-status-line",
+          sendDirectly
+            ? `Matching créé et envoyé : score ${payload.score ?? 0}, statut ${payload.statut || "-"}.`
+            : `Matching créé : score ${payload.score ?? 0}, statut ${payload.statut || "-"}.`
+        );
         await loadMatchings();
         await loadTasks();
         await loadCockpit();
       } catch (error) {
-        setStatus("manual-match-status-line", `Erreur : ${error.message || "création impossible"}`);
+        setStatus("manual-match-status-line", `Erreur : ${error.message || (sendDirectly ? "création / envoi impossible" : "création impossible")}`);
       }
     }
 
@@ -3066,7 +3073,8 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
       await loadBrevoHealth();
       await loadMatchings();
     });
-    document.getElementById("manual-match-create-btn").addEventListener("click", createManualMatching);
+    document.getElementById("manual-match-create-btn").addEventListener("click", () => createManualMatching(false));
+    document.getElementById("manual-match-send-btn").addEventListener("click", () => createManualMatching(true));
     document.getElementById("filter-status").addEventListener("change", loadMatchings);
     document.getElementById("filter-search").addEventListener("input", renderMatchingRows);
     document.getElementById("no-match-reload-btn").addEventListener("click", loadNoMatch);

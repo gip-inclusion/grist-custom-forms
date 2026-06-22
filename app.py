@@ -6286,6 +6286,7 @@ def admin_eures_manual_matching(form_id: str):
     candidat_record_id = int(data.get('candidate_record_id') or 0)
     employeur_record_id = int(data.get('employer_record_id') or 0)
     note = str(data.get('note') or '').strip()
+    send_directly = bool(data.get('send_directly'))
     if not candidat_record_id or not employeur_record_id:
         return jsonify({'error': 'Candidate and employer selections are required'}), 400
 
@@ -6301,6 +6302,8 @@ def admin_eures_manual_matching(form_id: str):
     actor = get_admin_actor(form_id)
 
     try:
+        if send_directly:
+            ensure_brevo_ready(check_api=True)
         candidat_record = fetch_record_by_id(candidate_config['doc_id'], EURES_CANDIDATS_TABLE, candidat_record_id, candidate_headers)
         employeur_record = fetch_record_by_id(employer_config['doc_id'], EURES_BESOINS_TABLE, employeur_record_id, employer_headers)
         if not candidat_record:
@@ -6328,6 +6331,37 @@ def admin_eures_manual_matching(form_id: str):
         upsert_matching_record(matching_config['doc_id'], payload, headers)
         existing = fetch_matching_record(matching_config['doc_id'], besoin_id, candidat_id, headers)
         record_id = int((existing or {}).get('id') or 0)
+        brevo_result = None
+        candidate_brevo_result = None
+
+        if send_directly:
+            decision_fields = {
+                'admin_status': 'accepted',
+                'admin_decision_at': _now_iso_utc(),
+                'admin_decision_by': actor,
+                'admin_decision_note': note,
+                **_matching_workflow_update_fields('valide_admin', actor),
+            }
+            update_matching_record_by_id(matching_config['doc_id'], record_id, decision_fields, headers)
+            matching_rows = list_eures_admin_matchings(status='all')
+            matching_row = next((row for row in matching_rows if int(row.get('record_id') or 0) == record_id), None)
+            if not matching_row:
+                raise RuntimeError('Manual matching could not be reloaded for direct email delivery.')
+            to_email, subject, text_body, html_body = build_brevo_matching_email(matching_row)
+            brevo_result = send_brevo_transactional_email(to_email, subject, text_body, html_body)
+            candidate_to_email, candidate_subject, candidate_text_body, candidate_html_body = build_brevo_candidate_matching_notification_email(matching_row)
+            candidate_brevo_result = send_brevo_transactional_email(
+                candidate_to_email,
+                candidate_subject,
+                candidate_text_body,
+                candidate_html_body,
+            )
+            update_matching_record_by_id(
+                matching_config['doc_id'],
+                record_id,
+                _matching_workflow_update_fields('envoye_employeur', actor),
+                headers,
+            )
 
         app.logger.info(
             'EURES manual matching created',
@@ -6337,6 +6371,7 @@ def admin_eures_manual_matching(form_id: str):
                 'besoin_id': besoin_id,
                 'candidat_id': candidat_id,
                 'created_by': actor,
+                'send_directly': send_directly,
             },
         )
         return jsonify({
@@ -6346,6 +6381,9 @@ def admin_eures_manual_matching(form_id: str):
             'candidat_id': candidat_id,
             'score': matching.get('score', 0),
             'statut': matching.get('statut', ''),
+            'sent_directly': send_directly,
+            'email_result': brevo_result,
+            'candidate_email_result': candidate_brevo_result,
         }), 200
     except Exception as e:
         app.logger.exception('EURES manual matching failed')
