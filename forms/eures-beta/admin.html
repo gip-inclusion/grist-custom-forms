@@ -71,6 +71,10 @@
       align-items: center;
     }
 
+    #panel-matchings .toolbar {
+      grid-template-columns: 220px 220px minmax(0, 1fr) auto;
+    }
+
     .toolbar select,
     .toolbar input,
     .toolbar button,
@@ -1170,6 +1174,11 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
                 <option value="accepted">Acceptés</option>
                 <option value="refused">Refusés</option>
               </select>
+              <select id="filter-source">
+                <option value="all">Toutes les sources</option>
+                <option value="manual">Matchings manuels</option>
+                <option value="auto">Matchings automatiques</option>
+              </select>
               <input id="filter-search" type="search" placeholder="Rechercher un nom, une entreprise, un poste, un email">
               <button id="reload-btn" type="button">Rafraîchir</button>
             </div>
@@ -1967,18 +1976,28 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
       }
       if (target === "matchings-all") {
         document.getElementById("filter-status").value = "all";
+        document.getElementById("filter-source").value = "all";
         activateTab("matchings");
         loadMatchings();
         return;
       }
       if (target === "matchings-pending") {
         document.getElementById("filter-status").value = "pending";
+        document.getElementById("filter-source").value = "all";
         activateTab("matchings");
         loadMatchings();
         return;
       }
       if (target === "matchings-accepted") {
         document.getElementById("filter-status").value = "accepted";
+        document.getElementById("filter-source").value = "all";
+        activateTab("matchings");
+        loadMatchings();
+        return;
+      }
+      if (target === "matchings-manual-sent") {
+        document.getElementById("filter-status").value = "accepted";
+        document.getElementById("filter-source").value = "manual";
         activateTab("matchings");
         loadMatchings();
         return;
@@ -2243,7 +2262,7 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
           <div class="metric-list">
             ${metricRows([
               { label: "Matchings calculés", value: todayFlow.matchings_calcules ?? 0, target: "matchings-all" },
-              { label: "Matchings manuels envoyés", value: todayFlow.matchings_manuels_envoyes ?? 0, target: "matchings-accepted" },
+              { label: "Matchings manuels envoyés", value: todayFlow.matchings_manuels_envoyes ?? 0, target: "matchings-manual-sent" },
               { label: "Emails envoyés", value: todayFlow.emails_envoyes ?? 0, target: "invitations" },
               { label: "Cas sans matching", value: todayFlow.sans_matching_crees ?? 0, target: "tasks" },
               { label: "Nouveaux métiers demandés", value: todayFlow.nouveaux_metiers_recus ?? 0, target: "tasks" },
@@ -2260,7 +2279,7 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
               { label: "Candidats reçus", value: funnel.candidats_recus ?? 0, target: "candidate-responses" },
               { label: "Matchings exploitables", value: funnel.matchings_exploitables ?? 0, target: "matchings-all" },
               { label: "Matchings validés", value: funnel.matchings_valides ?? 0, target: "matchings-accepted" },
-              { label: "Matchings manuels envoyés", value: funnel.matchings_manuels_envoyes ?? 0, target: "matchings-accepted" },
+              { label: "Matchings manuels envoyés", value: funnel.matchings_manuels_envoyes ?? 0, target: "matchings-manual-sent" },
               { label: "Envoyés aux employeurs", value: funnel.envoyes_employeurs ?? 0, target: "matchings-accepted" },
               { label: "Mises en relation", value: funnel.mises_en_relation ?? 0, target: "matchings-accepted" },
               { label: "Embauches confirmées", value: funnel.embauches_confirmees ?? 0, target: "matchings-accepted" },
@@ -2522,7 +2541,20 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
     function renderMatchingRows() {
       const list = document.getElementById("matching-list");
       const search = normalizeText(document.getElementById("filter-search").value.trim());
-      const filtered = state.matchings.rows.filter((row) => matchesSearch(row, search));
+      const sourceFilter = document.getElementById("filter-source").value;
+      const filtered = state.matchings.rows.filter((row) => {
+        if (!matchesSearch(row, search)) {
+          return false;
+        }
+        const isManual = String(row.manual_matching_source || "").trim().toLowerCase() === "admin_manual";
+        if (sourceFilter === "manual" && !isManual) {
+          return false;
+        }
+        if (sourceFilter === "auto" && isManual) {
+          return false;
+        }
+        return true;
+      });
 
       if (!filtered.length) {
         list.innerHTML = `<div class="empty-state">Aucun matching ne correspond aux filtres actuels.</div>`;
@@ -3178,6 +3210,7 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
     document.getElementById("manual-match-candidate").addEventListener("change", renderManualMatchingPreview);
     document.getElementById("manual-match-employer").addEventListener("change", renderManualMatchingPreview);
     document.getElementById("filter-status").addEventListener("change", loadMatchings);
+    document.getElementById("filter-source").addEventListener("change", renderMatchingRows);
     document.getElementById("filter-search").addEventListener("input", renderMatchingRows);
     document.getElementById("no-match-reload-btn").addEventListener("click", loadNoMatch);
     document.getElementById("no-match-filter-status").addEventListener("change", loadNoMatch);
