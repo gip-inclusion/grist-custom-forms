@@ -881,6 +881,8 @@
         <button class="tab-btn active" type="button" data-tab="cockpit">Cockpit</button>
         <button class="tab-btn" type="button" data-tab="tasks">À traiter</button>
         <button class="tab-btn" type="button" data-tab="invitations">Invitations</button>
+        <button class="tab-btn" type="button" data-tab="candidate-responses">Réponses candidats</button>
+        <button class="tab-btn" type="button" data-tab="employer-responses">Réponses employeurs</button>
         <button class="tab-btn" type="button" data-tab="matchings">Matchings</button>
         <button class="tab-btn" type="button" data-tab="no-match">Sans matching</button>
         <button class="tab-btn" type="button" data-tab="new-jobs">Nouveaux métiers</button>
@@ -1093,6 +1095,50 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
         </section>
       </section>
 
+      <section class="panel" id="panel-candidate-responses" hidden>
+        <section class="admin-top">
+          <div class="admin-card">
+            <div class="kpis">
+              <div class="kpi">
+                <div class="kpi-label">Total affiché</div>
+                <div class="kpi-value" id="candidate-response-kpi-total">0</div>
+              </div>
+            </div>
+          </div>
+          <div class="admin-card">
+            <div class="toolbar">
+              <div></div>
+              <input id="candidate-response-filter-search" type="search" placeholder="Rechercher un nom, un email, un métier, un pays">
+              <button id="candidate-response-reload-btn" type="button">Rafraîchir</button>
+            </div>
+            <div class="status-line" id="candidate-response-status-line">Chargement...</div>
+            <section class="matching-list" id="candidate-response-list"></section>
+          </div>
+        </section>
+      </section>
+
+      <section class="panel" id="panel-employer-responses" hidden>
+        <section class="admin-top">
+          <div class="admin-card">
+            <div class="kpis">
+              <div class="kpi">
+                <div class="kpi-label">Total affiché</div>
+                <div class="kpi-value" id="employer-response-kpi-total">0</div>
+              </div>
+            </div>
+          </div>
+          <div class="admin-card">
+            <div class="toolbar">
+              <div></div>
+              <input id="employer-response-filter-search" type="search" placeholder="Rechercher une entreprise, un contact, un poste, un pays">
+              <button id="employer-response-reload-btn" type="button">Rafraîchir</button>
+            </div>
+            <div class="status-line" id="employer-response-status-line">Chargement...</div>
+            <section class="matching-list" id="employer-response-list"></section>
+          </div>
+        </section>
+      </section>
+
       <section class="panel" id="panel-matchings" hidden>
         <section class="admin-top">
           <div class="admin-card">
@@ -1235,6 +1281,14 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
         loading: false,
         selectionMode: false,
         selectedIds: [],
+      },
+      candidateResponses: {
+        rows: [],
+        loading: false,
+      },
+      employerResponses: {
+        rows: [],
+        loading: false,
       },
       matchings: {
         rows: [],
@@ -1646,6 +1700,100 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
       }
       updatePendingSendPanel();
       updateReminderPanel();
+    }
+
+    function questionnaireResponseMatchesSearch(row, search) {
+      if (!search) return true;
+      const haystack = [
+        row.title,
+        row.subtitle,
+        row.summary,
+        row.record_key,
+        ...(Array.isArray(row.fields) ? row.fields.flatMap((field) => [field.label, field.value]) : []),
+      ].map(normalizeText).join(" ");
+      return haystack.includes(search);
+    }
+
+    function renderQuestionnaireResponses(role) {
+      const isCandidate = role === "candidate";
+      const stateKey = isCandidate ? "candidateResponses" : "employerResponses";
+      const listId = isCandidate ? "candidate-response-list" : "employer-response-list";
+      const searchId = isCandidate ? "candidate-response-filter-search" : "employer-response-filter-search";
+      const list = document.getElementById(listId);
+      const search = normalizeText(document.getElementById(searchId).value.trim());
+      const filtered = state[stateKey].rows.filter((row) => questionnaireResponseMatchesSearch(row, search));
+
+      if (!filtered.length) {
+        list.innerHTML = `<div class="empty-state">Aucune réponse ne correspond aux filtres actuels.</div>`;
+        return;
+      }
+
+      list.innerHTML = filtered.map((row) => `
+        <article class="matching-card" data-role="${esc(role)}">
+          <div class="matching-summary">
+            <div>
+              <h2>${esc(row.title || (isCandidate ? "Candidat" : "Employeur"))}</h2>
+              <p>${esc(row.subtitle || (isCandidate ? "Réponse candidat" : "Réponse employeur"))}</p>
+              <div class="summary-tags">
+                <span class="pill ${isCandidate ? "role-candidate" : "role-employer"}">${esc(isCandidate ? "Candidat" : "Employeur")}</span>
+                <span class="pill">Soumis le : ${esc(row.submitted_at || "-")}</span>
+                <span class="pill">Clé : ${esc(row.record_key || row.record_id || "-")}</span>
+              </div>
+              ${row.summary ? `<div class="detail-tags"><span class="pill">${esc(row.summary)}</span></div>` : ""}
+            </div>
+            <div class="summary-score">
+              <div class="score-box">
+                <strong>${esc(Array.isArray(row.fields) ? row.fields.length : 0)}</strong>
+                <span>champs non vides</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="matching-body">
+            <section class="compare-card" style="grid-column: 1 / -1;">
+              <h3>${esc(isCandidate ? "Réponse complète du candidat" : "Réponse complète de l’employeur")}</h3>
+              <dl class="detail-list">
+                ${(Array.isArray(row.fields) ? row.fields : []).map((field) => `
+                  <div class="detail-row">
+                    <dt>${esc(field.label || field.key || "-")}</dt>
+                    <dd>${esc(field.value || "-")}</dd>
+                  </div>
+                `).join("")}
+              </dl>
+            </section>
+          </div>
+        </article>
+      `).join("");
+    }
+
+    async function loadQuestionnaireResponses(role) {
+      const isCandidate = role === "candidate";
+      const stateKey = isCandidate ? "candidateResponses" : "employerResponses";
+      const statusId = isCandidate ? "candidate-response-status-line" : "employer-response-status-line";
+      const listId = isCandidate ? "candidate-response-list" : "employer-response-list";
+      const kpiId = isCandidate ? "candidate-response-kpi-total" : "employer-response-kpi-total";
+      const label = isCandidate ? "candidats" : "employeurs";
+
+      if (state[stateKey].loading) return;
+      state[stateKey].loading = true;
+      setStatus(statusId, `Chargement des réponses ${label}...`);
+
+      try {
+        const response = await fetch(apiUrl(`/admin/questionnaires/${role}`), { credentials: "same-origin" });
+        const payload = await response.json();
+        if (!response.ok || !payload.ok) {
+          throw new Error(payload.error || `Erreur API (${response.status})`);
+        }
+        state[stateKey].rows = Array.isArray(payload.rows) ? payload.rows : [];
+        document.getElementById(kpiId).textContent = payload.stats?.total ?? 0;
+        renderQuestionnaireResponses(role);
+        setStatus(statusId, `${state[stateKey].rows.length} réponse(s) ${label} chargée(s).`);
+      } catch (error) {
+        document.getElementById(listId).innerHTML = `<div class="empty-state">${esc(error.message || "Erreur de chargement")}</div>`;
+        setStatus(statusId, `Erreur : ${error.message || "chargement impossible"}`);
+      } finally {
+        state[stateKey].loading = false;
+      }
     }
 
     async function loadCockpit() {
@@ -2743,6 +2891,8 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
       document.getElementById("panel-cockpit").hidden = tabName !== "cockpit";
       document.getElementById("panel-tasks").hidden = tabName !== "tasks";
       document.getElementById("panel-invitations").hidden = tabName !== "invitations";
+      document.getElementById("panel-candidate-responses").hidden = tabName !== "candidate-responses";
+      document.getElementById("panel-employer-responses").hidden = tabName !== "employer-responses";
       document.getElementById("panel-matchings").hidden = tabName !== "matchings";
       document.getElementById("panel-no-match").hidden = tabName !== "no-match";
       document.getElementById("panel-new-jobs").hidden = tabName !== "new-jobs";
@@ -2811,6 +2961,10 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
     document.getElementById("invite-reload-btn").addEventListener("click", loadInvitations);
     document.getElementById("invite-filter-status").addEventListener("change", loadInvitations);
     document.getElementById("invite-filter-search").addEventListener("input", renderInvitations);
+    document.getElementById("candidate-response-reload-btn").addEventListener("click", () => loadQuestionnaireResponses("candidate"));
+    document.getElementById("candidate-response-filter-search").addEventListener("input", () => renderQuestionnaireResponses("candidate"));
+    document.getElementById("employer-response-reload-btn").addEventListener("click", () => loadQuestionnaireResponses("employer"));
+    document.getElementById("employer-response-filter-search").addEventListener("input", () => renderQuestionnaireResponses("employer"));
     document.getElementById("reload-btn").addEventListener("click", async () => {
       await loadBrevoHealth();
       await loadMatchings();
@@ -2830,6 +2984,8 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
     loadCockpit();
     loadTasks();
     loadInvitations();
+    loadQuestionnaireResponses("candidate");
+    loadQuestionnaireResponses("employer");
     loadBrevoHealth();
     loadMatchings();
     loadNoMatch();

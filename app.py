@@ -3537,6 +3537,174 @@ def list_eures_admin_no_match_notifications(status: str = 'all') -> list[dict]:
     return rows
 
 
+def _eures_questionnaire_field_label(key: str) -> str:
+    labels = {
+        'id_tally': 'Identifiant',
+        'uuid': 'UUID',
+        'nom': 'Nom',
+        'email': 'Email',
+        'telephone': 'Téléphone',
+        'ville': 'Ville',
+        'pays': 'Pays',
+        'metier': 'Métier',
+        'langues': 'Langues',
+        'mobilite': 'Mobilité',
+        'disponibilite': 'Disponibilité',
+        'competences': 'Compétences',
+        'employeur': 'Entreprise',
+        'contact': 'Contact',
+        'poste': 'Poste',
+        'langues_requises': 'Langues requises',
+        'date_debut': 'Date de début',
+        'competences_clefs': 'Compétences clefs',
+        'contraintes_travail': 'Contraintes de travail',
+        'created_at': 'Créé le',
+        'updated_at': 'Mis à jour le',
+        'tally_submitted_at': 'Soumis le',
+    }
+    if key in labels:
+        return labels[key]
+    return str(key or '').replace('_', ' ').strip().capitalize()
+
+
+def _eures_questionnaire_field_value(value) -> str:
+    if value is None:
+        return ''
+    if isinstance(value, bool):
+        return 'Oui' if value else 'Non'
+    if isinstance(value, (list, tuple)):
+        return ', '.join(str(item).strip() for item in value if str(item).strip())
+    if isinstance(value, dict):
+        return json.dumps(value, ensure_ascii=False, sort_keys=True)
+    return str(value).strip()
+
+
+def _eures_questionnaire_field_order(role: str) -> list[str]:
+    if role == 'candidate':
+        return [
+            'nom', 'email', 'telephone', 'ville', 'pays', 'metier', 'competences',
+            'langues', 'mobilite', 'disponibilite', 'id_tally', 'uuid',
+            'tally_submitted_at', 'created_at', 'updated_at',
+        ]
+    return [
+        'employeur', 'contact', 'email', 'telephone', 'pays', 'poste',
+        'competences_clefs', 'langues_requises', 'date_debut',
+        'id_tally', 'uuid', 'tally_submitted_at', 'created_at', 'updated_at',
+    ]
+
+
+def _build_eures_questionnaire_response_row(role: str, rec: dict) -> dict | None:
+    fields = rec.get('fields', {}) if isinstance(rec, dict) else {}
+    if not isinstance(fields, dict):
+        return None
+
+    normalized_role = _normalize_eures_invitation_role(role)
+    if normalized_role not in {'candidate', 'employer'}:
+        return None
+
+    hidden_exact = {
+        'tally_raw_json',
+        'matchings_json',
+    }
+    hidden_prefixes = (
+        'admin_',
+        'no_match_notification_',
+        'new_job_request_',
+        'new_employer_alert_',
+        'linked_invitation_',
+        'reminder_',
+        'source_invitation_',
+    )
+    hidden_suffixes = (
+        '_by',
+        '_note',
+        '_status',
+    )
+
+    preferred = _eures_questionnaire_field_order(normalized_role)
+    candidate_keys = []
+    seen = set()
+    for key in fields.keys():
+        key_str = str(key or '').strip()
+        if not key_str or key_str in hidden_exact:
+            continue
+        if any(key_str.startswith(prefix) for prefix in hidden_prefixes):
+            continue
+        if key_str.startswith('employer_response'):
+            continue
+        if key_str not in {'tally_submitted_at', 'created_at', 'updated_at'} and any(key_str.endswith(suffix) for suffix in hidden_suffixes):
+            continue
+        if key_str in seen:
+            continue
+        seen.add(key_str)
+        candidate_keys.append(key_str)
+
+    ordered_keys = [key for key in preferred if key in candidate_keys]
+    ordered_keys.extend(sorted(key for key in candidate_keys if key not in preferred))
+
+    field_items = []
+    for key in ordered_keys:
+        value = _eures_questionnaire_field_value(fields.get(key))
+        if not value:
+            continue
+        field_items.append({
+            'key': key,
+            'label': _eures_questionnaire_field_label(key),
+            'value': value,
+        })
+
+    if normalized_role == 'candidate':
+        title = str(fields.get('nom') or fields.get('email') or 'Candidat').strip()
+        subtitle_parts = [fields.get('metier', ''), fields.get('pays', '')]
+        summary_parts = [fields.get('langues', ''), fields.get('mobilite', ''), fields.get('disponibilite', '')]
+    else:
+        title = str(fields.get('employeur') or fields.get('poste') or _resolve_employer_recipient(fields) or 'Employeur').strip()
+        subtitle_parts = [fields.get('poste', ''), fields.get('pays', '')]
+        summary_parts = [fields.get('langues_requises', ''), fields.get('date_debut', ''), fields.get('competences_clefs', '')]
+
+    submitted_at = (
+        str(fields.get('tally_submitted_at') or '').strip()
+        or str(fields.get('created_at') or '').strip()
+        or str(fields.get('updated_at') or '').strip()
+    )
+
+    return {
+        'role': normalized_role,
+        'record_id': rec.get('id'),
+        'record_key': fields.get('id_tally') or fields.get('uuid') or '',
+        'title': title or ('Candidat' if normalized_role == 'candidate' else 'Employeur'),
+        'subtitle': ' · '.join(str(part).strip() for part in subtitle_parts if str(part).strip()),
+        'summary': ' · '.join(str(part).strip() for part in summary_parts if str(part).strip()),
+        'submitted_at': submitted_at,
+        'updated_at': str(fields.get('updated_at') or '').strip(),
+        'fields': field_items,
+    }
+
+
+def list_eures_admin_questionnaire_responses(role: str) -> list[dict]:
+    """Return raw questionnaire responses from the candidate/employer Grist tables."""
+    config = _get_eures_role_table_config(role)
+    normalized_role = _normalize_eures_invitation_role(role)
+    if not config or normalized_role not in {'candidate', 'employer'}:
+        raise RuntimeError('EURES role table configuration is incomplete.')
+
+    headers = _eures_admin_headers(config)
+    rows = []
+    for rec in fetch_table_records(config['doc_id'], config['table_id'], headers):
+        row = _build_eures_questionnaire_response_row(normalized_role, rec)
+        if row:
+            rows.append(row)
+
+    rows.sort(
+        key=lambda row: (
+            _parse_iso_datetime(row.get('submitted_at')) or datetime.min.replace(tzinfo=timezone.utc),
+            int(row.get('record_id') or 0),
+        ),
+        reverse=True,
+    )
+    return rows
+
+
 def queue_eures_new_job_request(record_id: int):
     """Mark an employer need when additional desired jobs were requested."""
     config = _get_eures_role_table_config('employer')
@@ -5536,6 +5704,36 @@ def admin_eures_tasks(form_id: str):
         }), 200
     except Exception as e:
         app.logger.exception('EURES tasks list failed')
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/forms/<form_id>/admin/questionnaires/<role>', methods=['GET'])
+@admin_required
+def admin_eures_questionnaire_responses(form_id: str, role: str):
+    """Admin API: list raw candidate or employer questionnaire responses."""
+    proxied = maybe_proxy_eures_request(form_id)
+    if proxied:
+        return proxied
+    if form_id != 'eures-beta':
+        return jsonify({'error': f'Unknown questionnaire admin form: {form_id}'}), 404
+
+    normalized_role = _normalize_eures_invitation_role(role)
+    if normalized_role not in {'candidate', 'employer'}:
+        return jsonify({'error': 'Invalid questionnaire role'}), 400
+
+    try:
+        rows = list_eures_admin_questionnaire_responses(normalized_role)
+        return jsonify({
+            'ok': True,
+            'form_id': form_id,
+            'role': normalized_role,
+            'stats': {
+                'total': len(rows),
+            },
+            'rows': rows,
+        }), 200
+    except Exception as e:
+        app.logger.exception('EURES questionnaire response list failed')
         return jsonify({'error': str(e)}), 500
 
 
