@@ -182,6 +182,20 @@ textarea {
   grid-template-columns: minmax(0, 1fr);
 }
 
+.hero-card-stat {
+  max-width: 62rem;
+}
+
+.hero-card-stat h1 {
+  max-width: 11ch;
+  font-size: clamp(2.8rem, 4.2vw, 4.7rem);
+  line-height: 0.98;
+}
+
+.hero-card-stat .lede {
+  max-width: 44rem;
+}
+
 .story-card-stat {
   max-width: 38rem;
 }

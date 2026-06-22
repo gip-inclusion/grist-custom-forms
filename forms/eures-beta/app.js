@@ -2624,7 +2624,7 @@ function statTemplate(lang, t, data) {
     <main id="main-content" tabindex="-1">
       <section class="hero">
         <div class="shell hero-grid hero-grid-stat">
-          <article class="hero-card hero">
+          <article class="hero-card hero hero-card-stat">
             <div class="eyebrow">${t.statPage.eyebrow}</div>
             <h1>${t.statPage.title}</h1>
             <div class="lede">${introParagraphs}</div>
