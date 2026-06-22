@@ -178,6 +178,14 @@ textarea {
   align-items: stretch;
 }
 
+.hero-grid-stat {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.story-card-stat {
+  max-width: 38rem;
+}
+
 .hero-card,
 .story-card,
 .surface-card,

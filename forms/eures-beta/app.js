@@ -2623,7 +2623,7 @@ function statTemplate(lang, t, data) {
     ${nav("stat", lang, t)}
     <main id="main-content" tabindex="-1">
       <section class="hero">
-        <div class="shell hero-grid">
+        <div class="shell hero-grid hero-grid-stat">
           <article class="hero-card hero">
             <div class="eyebrow">${t.statPage.eyebrow}</div>
             <h1>${t.statPage.title}</h1>
@@ -2637,7 +2637,7 @@ function statTemplate(lang, t, data) {
               <div>${manualConfigured ? t.statPage.manualNote : t.statPage.manualMissing}</div>
             </div>
           </article>
-          <aside class="story-card">
+          <aside class="story-card story-card-stat">
             <h2>${t.statPage.keyFiguresTitle}</h2>
             <p>${t.statPage.keyFiguresLead}</p>
           </aside>
