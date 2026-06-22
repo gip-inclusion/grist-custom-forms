@@ -1197,6 +1197,18 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
               <label for="manual-match-note">Note interne</label>
               <textarea id="manual-match-note" placeholder="Optionnel"></textarea>
             </div>
+            <section class="matching-body" id="manual-match-preview" hidden style="margin-top:1rem;">
+              <div class="compare-grid">
+                <section class="compare-card">
+                  <h3>Candidat sélectionné</h3>
+                  <dl class="detail-list" id="manual-match-candidate-preview"></dl>
+                </section>
+                <section class="compare-card">
+                  <h3>Besoin employeur sélectionné</h3>
+                  <dl class="detail-list" id="manual-match-employer-preview"></dl>
+                </section>
+              </div>
+            </section>
             <div class="inline-actions" style="margin-top:0.9rem;">
               <button id="manual-match-create-btn" type="button">Créer le matching</button>
               <button class="btn-secondary" id="manual-match-send-btn" type="button">Créer et envoyer directement</button>
@@ -1770,6 +1782,45 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
       if (state.employerResponses.rows.some((row) => String(row.record_id) === currentEmployer)) {
         employerSelect.value = currentEmployer;
       }
+      renderManualMatchingPreview();
+    }
+
+    function renderQuestionnairePreviewFields(fields, limit = 999) {
+      const rows = Array.isArray(fields) ? fields.slice(0, limit) : [];
+      if (!rows.length) {
+        return `<div class="detail-row"><dt>Aperçu</dt><dd>Aucune donnée disponible</dd></div>`;
+      }
+      return rows.map((field) => `
+        <div class="detail-row">
+          <dt>${esc(field.label || field.key || "-")}</dt>
+          <dd>${esc(field.value || "-")}</dd>
+        </div>
+      `).join("");
+    }
+
+    function renderManualMatchingPreview() {
+      const candidateRecordId = String(document.getElementById("manual-match-candidate").value || "");
+      const employerRecordId = String(document.getElementById("manual-match-employer").value || "");
+      const preview = document.getElementById("manual-match-preview");
+      const candidateTarget = document.getElementById("manual-match-candidate-preview");
+      const employerTarget = document.getElementById("manual-match-employer-preview");
+      const candidateRow = state.candidateResponses.rows.find((row) => String(row.record_id) === candidateRecordId);
+      const employerRow = state.employerResponses.rows.find((row) => String(row.record_id) === employerRecordId);
+
+      if (!candidateRow && !employerRow) {
+        preview.hidden = true;
+        candidateTarget.innerHTML = "";
+        employerTarget.innerHTML = "";
+        return;
+      }
+
+      preview.hidden = false;
+      candidateTarget.innerHTML = candidateRow
+        ? renderQuestionnairePreviewFields(candidateRow.fields)
+        : `<div class="detail-row"><dt>Sélection</dt><dd>Aucun candidat sélectionné</dd></div>`;
+      employerTarget.innerHTML = employerRow
+        ? renderQuestionnairePreviewFields(employerRow.fields)
+        : `<div class="detail-row"><dt>Sélection</dt><dd>Aucun besoin employeur sélectionné</dd></div>`;
     }
 
     function renderQuestionnaireResponses(role) {
@@ -1895,6 +1946,47 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
         await loadCockpit();
       } catch (error) {
         setStatus("manual-match-status-line", `Erreur : ${error.message || (sendDirectly ? "création / envoi impossible" : "création impossible")}`);
+      }
+    }
+
+    function openAdminList(target) {
+      if (target === "invitations") {
+        activateTab("invitations");
+        loadInvitations();
+        return;
+      }
+      if (target === "candidate-responses") {
+        activateTab("candidate-responses");
+        loadQuestionnaireResponses("candidate");
+        return;
+      }
+      if (target === "employer-responses") {
+        activateTab("employer-responses");
+        loadQuestionnaireResponses("employer");
+        return;
+      }
+      if (target === "matchings-all") {
+        document.getElementById("filter-status").value = "all";
+        activateTab("matchings");
+        loadMatchings();
+        return;
+      }
+      if (target === "matchings-pending") {
+        document.getElementById("filter-status").value = "pending";
+        activateTab("matchings");
+        loadMatchings();
+        return;
+      }
+      if (target === "matchings-accepted") {
+        document.getElementById("filter-status").value = "accepted";
+        activateTab("matchings");
+        loadMatchings();
+        return;
+      }
+      if (target === "tasks") {
+        activateTab("tasks");
+        loadTasks();
+        return;
       }
     }
 
@@ -2117,7 +2209,7 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
       const activity = Array.isArray(data.recent_activity) ? data.recent_activity : [];
 
       const metricRows = (rows, options = {}) => rows.map((row) => `
-        <div class="metric-row ${options.actionable ? "actionable" : ""}" ${options.actionable ? `data-priority-target="${esc(row.target || "")}"` : ""}>
+        <div class="metric-row ${options.actionable ? "actionable" : ""}" ${options.actionable ? `data-${esc(options.targetAttr || "priority-target")}="${esc(row.target || "")}"` : ""}>
           <span>${esc(row.label)}</span>
           <strong>${esc(row.value)}</strong>
         </div>
@@ -2150,11 +2242,12 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
           <h3>Flux du jour</h3>
           <div class="metric-list">
             ${metricRows([
-              { label: "Matchings calculés", value: todayFlow.matchings_calcules ?? 0 },
-              { label: "Emails envoyés", value: todayFlow.emails_envoyes ?? 0 },
-              { label: "Cas sans matching", value: todayFlow.sans_matching_crees ?? 0 },
-              { label: "Nouveaux métiers demandés", value: todayFlow.nouveaux_metiers_recus ?? 0 },
-            ])}
+              { label: "Matchings calculés", value: todayFlow.matchings_calcules ?? 0, target: "matchings-all" },
+              { label: "Matchings manuels envoyés", value: todayFlow.matchings_manuels_envoyes ?? 0, target: "matchings-accepted" },
+              { label: "Emails envoyés", value: todayFlow.emails_envoyes ?? 0, target: "invitations" },
+              { label: "Cas sans matching", value: todayFlow.sans_matching_crees ?? 0, target: "tasks" },
+              { label: "Nouveaux métiers demandés", value: todayFlow.nouveaux_metiers_recus ?? 0, target: "tasks" },
+            ], { actionable: true, targetAttr: "open-list" })}
           </div>
         </article>
 
@@ -2162,15 +2255,16 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
           <h3>Entonnoir</h3>
           <div class="metric-list">
             ${metricRows([
-              { label: "Besoins reçus", value: funnel.besoins_recus ?? 0 },
-              { label: "Candidats contactés", value: funnel.candidats_contactes ?? 0 },
-              { label: "Candidats reçus", value: funnel.candidats_recus ?? 0 },
-              { label: "Matchings exploitables", value: funnel.matchings_exploitables ?? 0 },
-              { label: "Matchings validés", value: funnel.matchings_valides ?? 0 },
-              { label: "Envoyés aux employeurs", value: funnel.envoyes_employeurs ?? 0 },
-              { label: "Mises en relation", value: funnel.mises_en_relation ?? 0 },
-              { label: "Embauches confirmées", value: funnel.embauches_confirmees ?? 0 },
-            ])}
+              { label: "Besoins reçus", value: funnel.besoins_recus ?? 0, target: "employer-responses" },
+              { label: "Candidats contactés", value: funnel.candidats_contactes ?? 0, target: "invitations" },
+              { label: "Candidats reçus", value: funnel.candidats_recus ?? 0, target: "candidate-responses" },
+              { label: "Matchings exploitables", value: funnel.matchings_exploitables ?? 0, target: "matchings-all" },
+              { label: "Matchings validés", value: funnel.matchings_valides ?? 0, target: "matchings-accepted" },
+              { label: "Matchings manuels envoyés", value: funnel.matchings_manuels_envoyes ?? 0, target: "matchings-accepted" },
+              { label: "Envoyés aux employeurs", value: funnel.envoyes_employeurs ?? 0, target: "matchings-accepted" },
+              { label: "Mises en relation", value: funnel.mises_en_relation ?? 0, target: "matchings-accepted" },
+              { label: "Embauches confirmées", value: funnel.embauches_confirmees ?? 0, target: "matchings-accepted" },
+            ], { actionable: true, targetAttr: "open-list" })}
           </div>
         </article>
 
@@ -2196,6 +2290,12 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
         row.addEventListener("click", async (event) => {
           const target = event.currentTarget.dataset.priorityTarget || "";
           await openPriorityTarget(target);
+        });
+      }
+      for (const row of container.querySelectorAll("[data-open-list]")) {
+        row.addEventListener("click", async (event) => {
+          const target = event.currentTarget.dataset.openList || "";
+          openAdminList(target);
         });
       }
     }
@@ -3075,6 +3175,8 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
     });
     document.getElementById("manual-match-create-btn").addEventListener("click", () => createManualMatching(false));
     document.getElementById("manual-match-send-btn").addEventListener("click", () => createManualMatching(true));
+    document.getElementById("manual-match-candidate").addEventListener("change", renderManualMatchingPreview);
+    document.getElementById("manual-match-employer").addEventListener("change", renderManualMatchingPreview);
     document.getElementById("filter-status").addEventListener("change", loadMatchings);
     document.getElementById("filter-search").addEventListener("input", renderMatchingRows);
     document.getElementById("no-match-reload-btn").addEventListener("click", loadNoMatch);

@@ -3676,6 +3676,13 @@ EURES_CANDIDATE_TALLY_LABELS = {
     'tally_q29': 'Atouts recherchés · Missions polyvalentes et emplois accessibles rapidement',
     'tally_q29_job_title': 'Intitulé du poste visé · Missions polyvalentes et emplois accessibles rapidement',
     'tally_q30': 'Expérience · Missions polyvalentes et emplois accessibles rapidement',
+    'tally_q31': 'Prénom',
+    'tally_q32': 'Nom',
+    'tally_q33': 'Adresse e-mail',
+    'tally_q34': 'Téléphone',
+    'tally_q35': 'Ville de résidence actuelle',
+    'tally_q36': 'CV transmis',
+    'tally_q37': 'Consentement RGPD',
 }
 
 EURES_EMPLOYER_TALLY_LABELS = {
@@ -4537,6 +4544,10 @@ def list_eures_admin_matchings(status: str = 'all') -> list[dict]:
             'admin_decision_at': fields.get('admin_decision_at', ''),
             'admin_decision_by': fields.get('admin_decision_by', ''),
             'admin_decision_note': fields.get('admin_decision_note', ''),
+            'manual_matching_source': fields.get('manual_matching_source', ''),
+            'manual_matching_created_at': fields.get('manual_matching_created_at', ''),
+            'manual_matching_created_by': fields.get('manual_matching_created_by', ''),
+            'manual_matching_note': fields.get('manual_matching_note', ''),
             'workflow_status_updated_at': fields.get('workflow_status_updated_at', ''),
             'workflow_status_updated_by': fields.get('workflow_status_updated_by', ''),
             'sent_to_employer_at': fields.get('sent_to_employer_at', ''),
@@ -4794,9 +4805,19 @@ def build_eures_cockpit_summary() -> dict:
 
     accepted_count = sum(1 for row in matchings_all if row.get('admin_status') == 'accepted')
     sent_count = sum(1 for row in matchings_all if row.get('workflow_status') in {'envoye_employeur', 'accepte_employeur', 'refuse_employeur', 'mise_en_relation_faite', 'embauche_confirmee'})
+    manual_sent_count = sum(
+        1 for row in matchings_all
+        if str(row.get('manual_matching_source') or '').strip().lower() == 'admin_manual'
+        and row.get('workflow_status') in {'envoye_employeur', 'accepte_employeur', 'refuse_employeur', 'mise_en_relation_faite', 'embauche_confirmee'}
+    )
     relation_count = sum(1 for row in matchings_all if row.get('workflow_status') in {'mise_en_relation_faite', 'embauche_confirmee'})
     hire_count = sum(1 for row in matchings_all if row.get('workflow_status') == 'embauche_confirmee')
     matchings_today = sum(1 for row in matchings_all if _same_utc_day(row.get('date_calcul'), today))
+    manual_sent_today = sum(
+        1 for row in matchings_all
+        if str(row.get('manual_matching_source') or '').strip().lower() == 'admin_manual'
+        and _same_utc_day(row.get('sent_to_employer_at'), today)
+    )
     invitation_emails_today = sum(1 for row in invitations if _same_utc_day(row.get('sent_at'), today))
     candidate_invitations_sent = sum(
         1 for row in invitations
@@ -4819,6 +4840,7 @@ def build_eures_cockpit_summary() -> dict:
         },
         'today_flow': {
             'matchings_calcules': matchings_today,
+            'matchings_manuels_envoyes': manual_sent_today,
             'emails_envoyes': invitation_emails_today,
             'sans_matching_crees': no_match_today,
             'nouveaux_metiers_recus': new_jobs_today,
@@ -4829,6 +4851,7 @@ def build_eures_cockpit_summary() -> dict:
             'candidats_recus': len(candidats),
             'matchings_exploitables': len(matchings_all),
             'matchings_valides': accepted_count,
+            'matchings_manuels_envoyes': manual_sent_count,
             'envoyes_employeurs': sent_count,
             'mises_en_relation': relation_count,
             'embauches_confirmees': hire_count,
