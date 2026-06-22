@@ -2637,10 +2637,6 @@ function statTemplate(lang, t, data) {
               <div>${manualConfigured ? t.statPage.manualNote : t.statPage.manualMissing}</div>
             </div>
           </article>
-          <aside class="story-card story-card-stat">
-            <h2>${t.statPage.keyFiguresTitle}</h2>
-            <p>${t.statPage.keyFiguresLead}</p>
-          </aside>
         </div>
       </section>
 
