@@ -86,6 +86,10 @@ EURES_MATCHING_ADMIN_FIELDS = {
     'admin_decision_at',
     'admin_decision_by',
     'admin_decision_note',
+    'manual_matching_source',
+    'manual_matching_created_at',
+    'manual_matching_created_by',
+    'manual_matching_note',
     'workflow_status',
     'workflow_status_updated_at',
     'workflow_status_updated_by',
@@ -6265,6 +6269,86 @@ def admin_eures_matchings(form_id: str):
         }), 200
     except Exception as e:
         app.logger.exception('EURES admin matchings list failed')
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/forms/<form_id>/admin/matchings/manual', methods=['POST'])
+@admin_required
+def admin_eures_manual_matching(form_id: str):
+    """Admin API: create or refresh one matching manually from selected records."""
+    proxied = maybe_proxy_eures_request(form_id)
+    if proxied:
+        return proxied
+    if form_id != 'eures-beta':
+        return jsonify({'error': f'Unknown admin matching form: {form_id}'}), 404
+
+    data = request.get_json() or {}
+    candidat_record_id = int(data.get('candidate_record_id') or 0)
+    employeur_record_id = int(data.get('employer_record_id') or 0)
+    note = str(data.get('note') or '').strip()
+    if not candidat_record_id or not employeur_record_id:
+        return jsonify({'error': 'Candidate and employer selections are required'}), 400
+
+    matching_config = get_eures_matching_config()
+    candidate_config = get_form_config('eures-beta', 'candidate')
+    employer_config = get_form_config('eures-beta', 'employer')
+    if not matching_config or not candidate_config or not employer_config:
+        return jsonify({'error': 'EURES beta matching configuration is incomplete.'}), 500
+
+    headers = _eures_admin_headers(matching_config)
+    candidate_headers = _eures_admin_headers(candidate_config)
+    employer_headers = _eures_admin_headers(employer_config)
+    actor = get_admin_actor(form_id)
+
+    try:
+        candidat_record = fetch_record_by_id(candidate_config['doc_id'], EURES_CANDIDATS_TABLE, candidat_record_id, candidate_headers)
+        employeur_record = fetch_record_by_id(employer_config['doc_id'], EURES_BESOINS_TABLE, employeur_record_id, employer_headers)
+        if not candidat_record:
+            return jsonify({'error': 'Candidate record not found'}), 404
+        if not employeur_record:
+            return jsonify({'error': 'Employer record not found'}), 404
+
+        candidat_fields = candidat_record.get('fields', {}) if isinstance(candidat_record.get('fields'), dict) else {}
+        employeur_fields = employeur_record.get('fields', {}) if isinstance(employeur_record.get('fields'), dict) else {}
+        candidat_id = str(candidat_fields.get('id_tally') or candidat_fields.get('uuid') or '').strip()
+        besoin_id = str(employeur_fields.get('id_tally') or employeur_fields.get('uuid') or '').strip()
+        if not candidat_id or not besoin_id:
+            return jsonify({'error': 'Matching keys are missing on the selected records'}), 400
+
+        matching = compute_eures_matching(employeur_fields, candidat_fields)
+        payload = {
+            'besoin_id': besoin_id,
+            'candidat_id': candidat_id,
+            'manual_matching_source': 'admin_manual',
+            'manual_matching_created_at': _now_iso_utc(),
+            'manual_matching_created_by': actor,
+            'manual_matching_note': note,
+            **matching,
+        }
+        upsert_matching_record(matching_config['doc_id'], payload, headers)
+        existing = fetch_matching_record(matching_config['doc_id'], besoin_id, candidat_id, headers)
+        record_id = int((existing or {}).get('id') or 0)
+
+        app.logger.info(
+            'EURES manual matching created',
+            extra={
+                'form_id': form_id,
+                'record_id': record_id,
+                'besoin_id': besoin_id,
+                'candidat_id': candidat_id,
+                'created_by': actor,
+            },
+        )
+        return jsonify({
+            'ok': True,
+            'record_id': record_id,
+            'besoin_id': besoin_id,
+            'candidat_id': candidat_id,
+            'score': matching.get('score', 0),
+            'statut': matching.get('statut', ''),
+        }), 200
+    except Exception as e:
+        app.logger.exception('EURES manual matching failed')
         return jsonify({'error': str(e)}), 500
 
 

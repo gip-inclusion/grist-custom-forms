@@ -1176,6 +1176,32 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
             <div class="status-line" id="status-line">Chargement...</div>
             <div class="status-line" id="brevo-status-line">Vérification Brevo...</div>
           </div>
+
+          <div class="admin-card">
+            <div class="section-title">Créer un matching manuel</div>
+            <div class="form-grid">
+              <label class="field">
+                <span>Candidat</span>
+                <select id="manual-match-candidate">
+                  <option value="">Sélectionner un candidat</option>
+                </select>
+              </label>
+              <label class="field">
+                <span>Besoin employeur</span>
+                <select id="manual-match-employer">
+                  <option value="">Sélectionner un besoin employeur</option>
+                </select>
+              </label>
+            </div>
+            <div class="field-stack" style="margin-top:0.9rem;">
+              <label for="manual-match-note">Note interne</label>
+              <textarea id="manual-match-note" placeholder="Optionnel"></textarea>
+            </div>
+            <div class="inline-actions" style="margin-top:0.9rem;">
+              <button id="manual-match-create-btn" type="button">Créer le matching</button>
+            </div>
+            <div class="status-line" id="manual-match-status-line"></div>
+          </div>
         </section>
 
         <section class="matching-list" id="matching-list"></section>
@@ -1714,6 +1740,37 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
       return haystack.includes(search);
     }
 
+    function optionLabelForCandidate(row) {
+      const parts = [row.title, row.subtitle, row.summary].filter(Boolean);
+      return parts.join(" · ") || row.record_key || "Candidat";
+    }
+
+    function optionLabelForEmployer(row) {
+      const parts = [row.title, row.subtitle, row.summary].filter(Boolean);
+      return parts.join(" · ") || row.record_key || "Employeur";
+    }
+
+    function renderManualMatchingOptions() {
+      const candidateSelect = document.getElementById("manual-match-candidate");
+      const employerSelect = document.getElementById("manual-match-employer");
+      const currentCandidate = candidateSelect.value;
+      const currentEmployer = employerSelect.value;
+
+      candidateSelect.innerHTML = `<option value="">Sélectionner un candidat</option>` + state.candidateResponses.rows.map((row) => `
+        <option value="${esc(row.record_id)}">${esc(optionLabelForCandidate(row))}</option>
+      `).join("");
+      employerSelect.innerHTML = `<option value="">Sélectionner un besoin employeur</option>` + state.employerResponses.rows.map((row) => `
+        <option value="${esc(row.record_id)}">${esc(optionLabelForEmployer(row))}</option>
+      `).join("");
+
+      if (state.candidateResponses.rows.some((row) => String(row.record_id) === currentCandidate)) {
+        candidateSelect.value = currentCandidate;
+      }
+      if (state.employerResponses.rows.some((row) => String(row.record_id) === currentEmployer)) {
+        employerSelect.value = currentEmployer;
+      }
+    }
+
     function renderQuestionnaireResponses(role) {
       const isCandidate = role === "candidate";
       const stateKey = isCandidate ? "candidateResponses" : "employerResponses";
@@ -1787,12 +1844,50 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
         state[stateKey].rows = Array.isArray(payload.rows) ? payload.rows : [];
         document.getElementById(kpiId).textContent = payload.stats?.total ?? 0;
         renderQuestionnaireResponses(role);
+        renderManualMatchingOptions();
         setStatus(statusId, `${state[stateKey].rows.length} réponse(s) ${label} chargée(s).`);
       } catch (error) {
         document.getElementById(listId).innerHTML = `<div class="empty-state">${esc(error.message || "Erreur de chargement")}</div>`;
         setStatus(statusId, `Erreur : ${error.message || "chargement impossible"}`);
       } finally {
         state[stateKey].loading = false;
+      }
+    }
+
+    async function createManualMatching() {
+      const candidateRecordId = Number(document.getElementById("manual-match-candidate").value || 0);
+      const employerRecordId = Number(document.getElementById("manual-match-employer").value || 0);
+      const note = document.getElementById("manual-match-note").value.trim();
+      if (!candidateRecordId || !employerRecordId) {
+        setStatus("manual-match-status-line", "Erreur : sélectionnez un candidat et un besoin employeur.");
+        return;
+      }
+
+      setStatus("manual-match-status-line", "Création du matching manuel...");
+      try {
+        const response = await fetch(apiUrl("/admin/matchings/manual"), {
+          method: "POST",
+          credentials: "same-origin",
+          headers: {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+          },
+          body: JSON.stringify({
+            candidate_record_id: candidateRecordId,
+            employer_record_id: employerRecordId,
+            note,
+          }),
+        });
+        const payload = await response.json();
+        if (!response.ok || !payload.ok) {
+          throw new Error(payload.error || `Erreur API (${response.status})`);
+        }
+        setStatus("manual-match-status-line", `Matching créé : score ${payload.score ?? 0}, statut ${payload.statut || "-"}.`);
+        await loadMatchings();
+        await loadTasks();
+        await loadCockpit();
+      } catch (error) {
+        setStatus("manual-match-status-line", `Erreur : ${error.message || "création impossible"}`);
       }
     }
 
@@ -2971,6 +3066,7 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
       await loadBrevoHealth();
       await loadMatchings();
     });
+    document.getElementById("manual-match-create-btn").addEventListener("click", createManualMatching);
     document.getElementById("filter-status").addEventListener("change", loadMatchings);
     document.getElementById("filter-search").addEventListener("input", renderMatchingRows);
     document.getElementById("no-match-reload-btn").addEventListener("click", loadNoMatch);
