@@ -3473,6 +3473,7 @@ def _resolve_employer_recipient(employeur: dict) -> str:
 
     direct_candidates = [
         employeur.get('contact', ''),
+        employeur.get('tally_q18', ''),
         employeur.get('email', ''),
         employeur.get('mail', ''),
         employeur.get('contact_email', ''),
@@ -4562,7 +4563,7 @@ def list_eures_admin_matchings(status: str = 'all') -> list[dict]:
             'employeur': {
                 'employeur': besoin.get('employeur', ''),
                 'contact': besoin.get('contact', ''),
-                'email': _coalesce_row_value(besoin, 'email', 'mail', 'contact_email', 'email_contact'),
+                'email': _resolve_employer_recipient(besoin),
                 'pays': besoin.get('pays', ''),
                 'poste': besoin.get('poste', ''),
                 'intitules_poste': employeur_job_titles,
