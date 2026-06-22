@@ -17,6 +17,7 @@ import json
 import time
 import csv
 import secrets
+import unicodedata
 from html import escape
 from collections import Counter, defaultdict
 from datetime import datetime, timedelta, timezone
@@ -217,12 +218,26 @@ EURES_CANDIDAT_SECTOR_SALARY_FIELDS = {
     'agriculture': ('tally_q27_salary_type', 'tally_q27_salary_min'),
     'polyvalent': ('tally_q29_salary_type', 'tally_q29_salary_min'),
 }
+EURES_CANDIDAT_SECTOR_JOB_TITLE_FIELDS = {
+    'vente': 'tally_q20_job_title',
+    'nettoyage': 'tally_q22_job_title',
+    'hotellerie': 'tally_q25_job_title',
+    'agriculture': 'tally_q27_job_title',
+    'polyvalent': 'tally_q29_job_title',
+}
 EURES_EMPLOYEUR_SECTOR_SALARY_FIELDS = {
     'vente': ('tally_q10_salary_type', 'tally_q10_salary_min', 'tally_q10_salary_max'),
     'nettoyage': ('tally_q11_salary_type', 'tally_q11_salary_min', 'tally_q11_salary_max'),
     'hotellerie': ('tally_q12_salary_type', 'tally_q12_salary_min', 'tally_q12_salary_max'),
     'agriculture': ('tally_q13_salary_type', 'tally_q13_salary_min', 'tally_q13_salary_max'),
     'polyvalent': ('tally_q14_salary_type', 'tally_q14_salary_min', 'tally_q14_salary_max'),
+}
+EURES_EMPLOYEUR_SECTOR_JOB_TITLE_FIELDS = {
+    'vente': 'tally_q10_job_title',
+    'nettoyage': 'tally_q11_job_title',
+    'hotellerie': 'tally_q12_job_title',
+    'agriculture': 'tally_q13_job_title',
+    'polyvalent': 'tally_q14_job_title',
 }
 EURES_PUBLIC_SECTOR_LABELS = {
     'vente': 'Vente et commerce',
@@ -3018,6 +3033,27 @@ def eures_normalize_text(value) -> str:
     return str(value or '').strip().lower()
 
 
+def eures_fold_text(value) -> str:
+    text = str(value or '').strip().lower()
+    if not text:
+        return ''
+    return ''.join(
+        char for char in unicodedata.normalize('NFKD', text)
+        if not unicodedata.combining(char)
+    )
+
+
+def eures_tokenize_text(value) -> list[str]:
+    stopwords = {
+        'de', 'du', 'des', 'la', 'le', 'les', 'un', 'une', 'et', 'en', 'au', 'aux',
+        'pour', 'avec', 'dans', 'sur', 'the', 'and', 'for', 'mit', 'und', 'fur', 'fuer',
+    }
+    return [
+        token for token in re.split(r'[^a-z0-9]+', eures_fold_text(value))
+        if len(token) >= 2 and token not in stopwords
+    ]
+
+
 def eures_canonical_sector(value: str) -> str:
     value_l = eures_normalize_text(value)
     for token, sector in EURES_SECTOR_CANONICAL_MAP.items():
@@ -3120,8 +3156,8 @@ def eures_score_sector_fit(expected: str, actual: str) -> tuple[int, str]:
         return 0, 'metier: secteur candidat absent'
     if expected_sector in candidate_sectors:
         if len(candidate_sectors) == 1:
-            return 30, f'metier: secteur exact ({expected_sector})'
-        return 20, f'metier: secteur present ({expected_sector})'
+            return 18, f'metier: secteur exact ({expected_sector})'
+        return 12, f'metier: secteur present ({expected_sector})'
     return 0, f'metier: secteur non aligne ({expected_sector})'
 
 
@@ -3193,6 +3229,11 @@ def eures_candidate_salary_expectation(secteur: str, fields: dict):
     return salary_type, salary_min
 
 
+def eures_candidate_job_title(secteur: str, fields: dict) -> str:
+    field_name = EURES_CANDIDAT_SECTOR_JOB_TITLE_FIELDS.get(secteur)
+    return str(fields.get(field_name) or '').strip() if field_name else ''
+
+
 def eures_employer_salary_offer(secteur: str, fields: dict):
     salary_fields = EURES_EMPLOYEUR_SECTOR_SALARY_FIELDS.get(secteur)
     if not salary_fields:
@@ -3204,6 +3245,34 @@ def eures_employer_salary_offer(secteur: str, fields: dict):
     if salary_min is None and salary_max is None:
         return None
     return salary_type, salary_min, salary_max
+
+
+def eures_employer_job_title(secteur: str, fields: dict) -> str:
+    field_name = EURES_EMPLOYEUR_SECTOR_JOB_TITLE_FIELDS.get(secteur)
+    return str(fields.get(field_name) or '').strip() if field_name else ''
+
+
+def eures_score_job_title(expected: str, actual: str) -> tuple[int, str]:
+    expected_tokens = eures_tokenize_text(expected)
+    actual_tokens = eures_tokenize_text(actual)
+    if not expected_tokens or not actual_tokens:
+        return 0, 'intitule: information manquante'
+
+    expected_folded = eures_fold_text(expected)
+    actual_folded = eures_fold_text(actual)
+    if expected_folded and actual_folded and expected_folded == actual_folded:
+        return 12, f'intitule: exact ({expected.strip()})'
+
+    common = sorted(set(expected_tokens) & set(actual_tokens))
+    if not common:
+        return 0, 'intitule: aucun recoupement'
+
+    ratio = len(common) / max(len(set(expected_tokens)), len(set(actual_tokens)), 1)
+    if ratio >= 0.6:
+        return 10, 'intitule: proche (' + ', '.join(common) + ')'
+    if ratio >= 0.3:
+        return 6, 'intitule: partiel (' + ', '.join(common) + ')'
+    return 3, 'intitule: faible recoupement (' + ', '.join(common) + ')'
 
 
 def eures_score_salary(secteur: str, candidat_fields: dict, besoin_fields: dict) -> tuple[int, str]:
@@ -3237,11 +3306,18 @@ def compute_eures_matching(besoin_fields: dict, candidat_fields: dict) -> dict:
     besoin_country = besoin_fields.get('pays_normalise') or besoin_fields.get('pays') or ''
     candidat_country = candidat_fields.get('pays_normalise') or candidat_fields.get('pays') or ''
     secteur = eures_canonical_sector(str(besoin_fields.get('poste') or ''))
+    employeur_job_title = eures_employer_job_title(secteur, besoin_fields)
+    candidat_job_title = eures_candidate_job_title(secteur, candidat_fields)
 
-    score_metier, raison_metier = eures_score_sector_fit(
+    score_metier_sector, raison_metier_sector = eures_score_sector_fit(
         str(besoin_fields.get('poste') or ''),
         str(candidat_fields.get('metier') or ''),
     )
+    score_metier_title, raison_metier_title = eures_score_job_title(
+        employeur_job_title,
+        candidat_job_title,
+    )
+    score_metier = min(30, score_metier_sector + score_metier_title)
     score_langues, raison_langues = eures_score_languages(
         str(besoin_fields.get('langues_requises') or ''),
         str(candidat_fields.get('langues') or ''),
@@ -3260,7 +3336,8 @@ def compute_eures_matching(besoin_fields: dict, candidat_fields: dict) -> dict:
     reasons = []
     weaknesses = []
     for points, text in [
-        (score_metier, raison_metier),
+        (score_metier_sector, raison_metier_sector),
+        (score_metier_title, raison_metier_title),
         (score_langues, raison_langues),
         (score_mobilite, raison_mobilite),
         (score_disponibilite, raison_disponibilite),
@@ -3579,15 +3656,20 @@ EURES_CANDIDATE_TALLY_LABELS = {
     'tally_q18_f04': 'Compétences linguistiques · Luxembourgeois',
     'tally_q19': 'Secteurs recherchés',
     'tally_q20': 'Atouts recherchés · Vente et commerce',
+    'tally_q20_job_title': 'Intitulé du poste visé · Vente et commerce',
     'tally_q21': 'Expérience · Vente et commerce',
     'tally_q22': 'Atouts recherchés · Nettoyage et entretien',
+    'tally_q22_job_title': 'Intitulé du poste visé · Nettoyage et entretien',
     'tally_q23': 'Expérience · Nettoyage et entretien',
     'tally_q24': 'Casier judiciaire de moins de 3 mois',
     'tally_q25': 'Atouts recherchés · Hôtellerie et restauration',
+    'tally_q25_job_title': 'Intitulé du poste visé · Hôtellerie et restauration',
     'tally_q26': 'Expérience · Hôtellerie et restauration',
     'tally_q27': 'Atouts recherchés · Agriculture et récolte',
+    'tally_q27_job_title': 'Intitulé du poste visé · Agriculture et récolte',
     'tally_q28': 'Expérience · Agriculture et récolte',
     'tally_q29': 'Atouts recherchés · Missions polyvalentes et emplois accessibles rapidement',
+    'tally_q29_job_title': 'Intitulé du poste visé · Missions polyvalentes et emplois accessibles rapidement',
     'tally_q30': 'Expérience · Missions polyvalentes et emplois accessibles rapidement',
 }
 
@@ -3606,10 +3688,15 @@ EURES_EMPLOYER_TALLY_LABELS = {
     'tally_q08': "Aides à l'arrivée ou à l'installation",
     'tally_q09': 'Critères indispensables',
     'tally_q10': 'Priorités métier · Vente et commerce',
+    'tally_q10_job_title': 'Intitulé du poste proposé · Vente et commerce',
     'tally_q11': 'Priorités métier · Nettoyage et entretien',
+    'tally_q11_job_title': 'Intitulé du poste proposé · Nettoyage et entretien',
     'tally_q12': 'Priorités métier · Hôtellerie et restauration',
+    'tally_q12_job_title': 'Intitulé du poste proposé · Hôtellerie et restauration',
     'tally_q13': 'Priorités métier · Agriculture et récolte',
+    'tally_q13_job_title': 'Intitulé du poste proposé · Agriculture et récolte',
     'tally_q14': 'Priorités métier · Missions polyvalentes et emplois accessibles rapidement',
+    'tally_q14_job_title': 'Intitulé du poste proposé · Missions polyvalentes et emplois accessibles rapidement',
     'tally_q15': 'Conditions de travail à connaître',
     'tally_q16': 'Prénom du contact',
     'tally_q17': "Nom de l'entreprise",
@@ -3674,6 +3761,15 @@ def _eures_questionnaire_field_label(key: str, role: str = '') -> str:
             'note': 'Précision salaire',
         }.get(salary_match.group(2), salary_match.group(2))
         return f"Salaire · {sector_label} · {suffix_label}"
+    job_title_match = re.match(r'^(tally_q\d+)_job_title$', str(key or ''))
+    if job_title_match:
+        sector_label = EURES_TALLY_SECTOR_LABELS.get(job_title_match.group(1), job_title_match.group(1))
+        prefix = 'Intitulé du poste'
+        if role == 'candidate':
+            prefix = 'Intitulé du poste visé'
+        elif role == 'employer':
+            prefix = 'Intitulé du poste proposé'
+        return f"{prefix} · {sector_label}"
     return str(key or '').replace('_', ' ').strip().capitalize()
 
 
@@ -4406,6 +4502,16 @@ def list_eures_admin_matchings(status: str = 'all') -> list[dict]:
         candidat_id = str(fields.get('candidat_id') or '')
         candidat = candidats_by_id.get(candidat_id, {})
         besoin = besoins_by_id.get(besoin_id, {})
+        candidat_job_titles = ' | '.join(
+            str(candidat.get(field_name) or '').strip()
+            for field_name in EURES_CANDIDAT_SECTOR_JOB_TITLE_FIELDS.values()
+            if str(candidat.get(field_name) or '').strip()
+        )
+        employeur_job_titles = ' | '.join(
+            str(besoin.get(field_name) or '').strip()
+            for field_name in EURES_EMPLOYEUR_SECTOR_JOB_TITLE_FIELDS.values()
+            if str(besoin.get(field_name) or '').strip()
+        )
 
         rows.append({
             'record_id': rec.get('id'),
@@ -4443,6 +4549,7 @@ def list_eures_admin_matchings(status: str = 'all') -> list[dict]:
                 'ville': candidat.get('ville', ''),
                 'pays': candidat.get('pays', ''),
                 'metier': candidat.get('metier', ''),
+                'intitules_poste': candidat_job_titles,
                 'langues': candidat.get('langues', ''),
                 'mobilite': candidat.get('mobilite', ''),
                 'disponibilite': candidat.get('disponibilite', ''),
@@ -4454,6 +4561,7 @@ def list_eures_admin_matchings(status: str = 'all') -> list[dict]:
                 'email': _coalesce_row_value(besoin, 'email', 'mail', 'contact_email', 'email_contact'),
                 'pays': besoin.get('pays', ''),
                 'poste': besoin.get('poste', ''),
+                'intitules_poste': employeur_job_titles,
                 'langues_requises': besoin.get('langues_requises', ''),
                 'date_debut': besoin.get('date_debut', ''),
                 'competences_clefs': besoin.get('competences_clefs', ''),
@@ -5008,6 +5116,8 @@ def save_record(form_id: str):
 
     # Keep only fields that exist in target table (prod/local may differ).
     try:
+        if form_id == 'eures-beta':
+            ensure_table_columns(config, set(str(key) for key in fields.keys()), headers)
         allowed_columns = get_table_columns(config, headers)
         filtered_fields = {k: v for k, v in fields.items() if str(k) in allowed_columns}
         record_key = resolve_record_key(allowed_columns)

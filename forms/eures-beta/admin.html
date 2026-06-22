@@ -2375,6 +2375,7 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
                     <div class="detail-row"><dt>Email</dt><dd>${esc(row.candidat?.email || "-")}</dd></div>
                     <div class="detail-row"><dt>Pays</dt><dd>${esc(row.candidat?.pays || "-")}</dd></div>
                     <div class="detail-row"><dt>Métiers</dt><dd>${esc(row.candidat?.metier || "-")}</dd></div>
+                    <div class="detail-row"><dt>Intitulés visés</dt><dd>${esc(row.candidat?.intitules_poste || "-")}</dd></div>
                     <div class="detail-row"><dt>Compétences</dt><dd>${esc(row.candidat?.competences || "-")}</dd></div>
                     <div class="detail-row"><dt>Langues</dt><dd>${esc(row.candidat?.langues || "-")}</dd></div>
                     <div class="detail-row"><dt>Mobilité</dt><dd>${esc(row.candidat?.mobilite || "-")}</dd></div>
@@ -2389,6 +2390,7 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
                     <div class="detail-row"><dt>Contact</dt><dd>${esc(row.employeur?.contact || "-")}</dd></div>
                     <div class="detail-row"><dt>Pays / lieu</dt><dd>${esc(row.employeur?.pays || "-")}</dd></div>
                     <div class="detail-row"><dt>Poste</dt><dd>${esc(row.employeur?.poste || "-")}</dd></div>
+                    <div class="detail-row"><dt>Intitulés proposés</dt><dd>${esc(row.employeur?.intitules_poste || "-")}</dd></div>
                     <div class="detail-row"><dt>Compétences clés</dt><dd>${esc(row.employeur?.competences_clefs || "-")}</dd></div>
                     <div class="detail-row"><dt>Langues requises</dt><dd>${esc(row.employeur?.langues_requises || "-")}</dd></div>
                     <div class="detail-row"><dt>Date de début</dt><dd>${esc(row.employeur?.date_debut || "-")}</dd></div>

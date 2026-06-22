@@ -1304,6 +1304,7 @@ const candidateTallyCopy = {
       q26: "Avez-vous une expérience professionnelle dans le secteur de l'hôtellerie et de la restauration?",
       q28: "Avez-vous une expérience professionnelle dans le secteur de l'agriculture et de la récolte?",
       q30: "Avez-vous une expérience professionnelle ?",
+      jobTitle: "Quel intitulé de poste recherchez-vous pour ce métier ?",
       salaryType: "Sous quelle forme pensez-vous à votre salaire ?",
       salaryMin: "Quel est le minimum que vous souhaiteriez pour ce métier, en euros bruts ou nets ?",
       firstName: "Prénom",
@@ -1504,6 +1505,7 @@ const candidateTallyCopy = {
       q26: "Do you have work experience in hospitality and food service?",
       q28: "Do you have work experience in agriculture and harvesting?",
       q30: "Do you have work experience?",
+      jobTitle: "What job title are you looking for in this occupation?",
       salaryType: "How do you think about your salary?",
       salaryMin: "What is the minimum you would like for this role, in gross or net euros?",
       firstName: "First name",
@@ -1644,6 +1646,7 @@ const candidateTallyCopy = {
       q26: "Haben Sie Berufserfahrung in Hotellerie und Gastronomie?",
       q28: "Haben Sie Berufserfahrung in Landwirtschaft und Ernte?",
       q30: "Haben Sie Berufserfahrung?",
+      jobTitle: "Welche konkrete Stellenbezeichnung suchen Sie für diesen Beruf?",
       salaryType: "In welcher Form denken Sie an Ihr Gehalt?",
       salaryMin: "Was ist das Minimum, das Sie für diesen Beruf in Euro brutto oder netto erwarten würden?",
       firstName: "Vorname",
@@ -1843,6 +1846,7 @@ const employerTallyCopy = {
       q19: "Téléphone",
       q20: "Lieux de travail",
       q20Extra: "Quels autres métiers souhaiteriez-vous voir proposés ici à l'avenir ?",
+      jobTitle: "Quel est l’intitulé du poste pour ce recrutement ?",
       salaryType: "Sous quelle forme exprimez-vous le salaire proposé ?",
       salaryMin: "Montant minimum proposé, en euros bruts ou nets",
       salaryMax: "Montant maximum proposé, en euros bruts ou nets",
@@ -1926,6 +1930,7 @@ const employerTallyCopy = {
       q19: "Phone",
       q20: "Work locations",
       q20Extra: "Which other occupations would you like to see included here in the future?",
+      jobTitle: "What is the job title for this recruitment?",
       salaryType: "How do you express the salary offered?",
       salaryMin: "Minimum amount offered, in gross or net euros",
       salaryMax: "Maximum amount offered, in gross or net euros",
@@ -2018,6 +2023,7 @@ const employerTallyCopy = {
       q19: "Telefon",
       q20: "Arbeitsorte",
       q20Extra: "Welche anderen Berufe würden Sie hier künftig gerne sehen?",
+      jobTitle: "Wie lautet die konkrete Stellenbezeichnung für diese Einstellung?",
       salaryType: "In welcher Form geben Sie das angebotene Gehalt an?",
       salaryMin: "Angebotener Mindestbetrag in Euro brutto oder netto",
       salaryMax: "Angebotener Höchstbetrag in Euro brutto oder netto",
@@ -3147,6 +3153,15 @@ function salaryExpectationFields(baseName, content) {
   `;
 }
 
+function jobTitleField(baseName, label) {
+  return `
+    <label class="field">
+      <span>${label}</span>
+      <input type="text" name="${baseName}_job_title" required>
+    </label>
+  `;
+}
+
 function salaryOfferFields(baseName, content) {
   return `
     <div class="section-intro">
@@ -3290,6 +3305,7 @@ function candidateTallyQuestionnaireTemplate(lang, t) {
 
             <section class="form-section" data-condition="sector-vente">
               <h3>${content.sectorTitles.vente}</h3>
+              ${jobTitleField("tally_q20", content.questions.jobTitle)}
               <fieldset class="fieldset">
                 <legend>${content.sectorLegends.vente} <span class="mini-note">${content.questions.sectorHint}</span></legend>
                 ${choicePills("tally_q20", localizeOptions(candidateTallyCopy.fr.sectorChoices.vente, content.sectorChoices.vente))}
@@ -3303,6 +3319,7 @@ function candidateTallyQuestionnaireTemplate(lang, t) {
 
             <section class="form-section" data-condition="sector-nettoyage">
               <h3>${content.sectorTitles.nettoyage}</h3>
+              ${jobTitleField("tally_q22", content.questions.jobTitle)}
               <fieldset class="fieldset">
                 <legend>${content.sectorLegends.nettoyage} <span class="mini-note">${content.questions.sectorHint}</span></legend>
                 ${choicePills("tally_q22", localizeOptions(candidateTallyCopy.fr.sectorChoices.nettoyage, content.sectorChoices.nettoyage))}
@@ -3320,6 +3337,7 @@ function candidateTallyQuestionnaireTemplate(lang, t) {
 
             <section class="form-section" data-condition="sector-hotel">
               <h3>${content.sectorTitles.hotel}</h3>
+              ${jobTitleField("tally_q25", content.questions.jobTitle)}
               <fieldset class="fieldset">
                 <legend>${content.sectorLegends.hotel} <span class="mini-note">${content.questions.sectorHint}</span></legend>
                 ${choicePills("tally_q25", localizeOptions(candidateTallyCopy.fr.sectorChoices.hotel, content.sectorChoices.hotel))}
@@ -3333,6 +3351,7 @@ function candidateTallyQuestionnaireTemplate(lang, t) {
 
             <section class="form-section" data-condition="sector-agri">
               <h3>${content.sectorTitles.agri}</h3>
+              ${jobTitleField("tally_q27", content.questions.jobTitle)}
               <fieldset class="fieldset">
                 <legend>${content.sectorLegends.agri} <span class="mini-note">${content.questions.sectorHint}</span></legend>
                 ${choicePills("tally_q27", localizeOptions(candidateTallyCopy.fr.sectorChoices.agri, content.sectorChoices.agri))}
@@ -3346,6 +3365,7 @@ function candidateTallyQuestionnaireTemplate(lang, t) {
 
             <section class="form-section" data-condition="sector-polyvalent">
               <h3>${content.sectorTitles.polyvalent}</h3>
+              ${jobTitleField("tally_q29", content.questions.jobTitle)}
               <fieldset class="fieldset">
                 <legend>${content.sectorLegends.polyvalent} <span class="mini-note">${content.questions.sectorHint}</span></legend>
                 ${choicePills("tally_q29", localizeOptions(candidateTallyCopy.fr.sectorChoices.polyvalent, content.sectorChoices.polyvalent))}
@@ -3700,6 +3720,7 @@ function employerTallyQuestionnaireTemplate(lang, t) {
             ${["tally_q10", "tally_q11", "tally_q12", "tally_q13", "tally_q14"].map((name, index) => `
               <section class="form-section" data-condition="employer-sector-${index}">
                 <h3>${content.sectorTitles[name]}</h3>
+                ${jobTitleField(name, content.questions.jobTitle)}
                 <fieldset class="fieldset">
                   <legend>${index === 4 ? content.questions.q14 : content.questions[`q${10 + index}`]} <span class="mini-note">${content.questions.q14Hint}</span></legend>
                   ${choicePills(name, content.sectorPriorityOptions[name])}
@@ -3890,27 +3911,32 @@ function humanizeCandidateRawAnswers(fields, fileMeta, rankingSummary) {
     },
     secteurs: fields.tally_q19 || [],
     vente: {
+      intitule_poste: fields.tally_q20_job_title || "",
       qualites: fields.tally_q20 || [],
       experience: fields.tally_q21 || "",
       salaire: { type: fields.tally_q20_salary_type || "", minimum: fields.tally_q20_salary_min || "", note: fields.tally_q20_salary_note || "" }
     },
     nettoyage: {
+      intitule_poste: fields.tally_q22_job_title || "",
       qualites: fields.tally_q22 || [],
       experience: fields.tally_q23 || "",
       casier: fields.tally_q24 || "",
       salaire: { type: fields.tally_q22_salary_type || "", minimum: fields.tally_q22_salary_min || "", note: fields.tally_q22_salary_note || "" }
     },
     hotel_restaurant: {
+      intitule_poste: fields.tally_q25_job_title || "",
       qualites: fields.tally_q25 || [],
       experience: fields.tally_q26 || "",
       salaire: { type: fields.tally_q25_salary_type || "", minimum: fields.tally_q25_salary_min || "", note: fields.tally_q25_salary_note || "" }
     },
     agriculture: {
+      intitule_poste: fields.tally_q27_job_title || "",
       qualites: fields.tally_q27 || [],
       experience: fields.tally_q28 || "",
       salaire: { type: fields.tally_q27_salary_type || "", minimum: fields.tally_q27_salary_min || "", note: fields.tally_q27_salary_note || "" }
     },
     missions_polyvalentes: {
+      intitule_poste: fields.tally_q29_job_title || "",
       qualites: fields.tally_q29 || [],
       experience: fields.tally_q30 || "",
       salaire: { type: fields.tally_q29_salary_type || "", minimum: fields.tally_q29_salary_min || "", note: fields.tally_q29_salary_note || "" }
@@ -4008,22 +4034,27 @@ function humanizeEmployerRawAnswers(fields) {
     aides_installation: fields.tally_q08 || [],
     indispensables: fields.tally_q09 || [],
     priorites_vente: {
+      intitule_poste: fields.tally_q10_job_title || "",
       choix: fields.tally_q10 || [],
       salaire: { type: fields.tally_q10_salary_type || "", minimum: fields.tally_q10_salary_min || "", maximum: fields.tally_q10_salary_max || "", note: fields.tally_q10_salary_note || "" }
     },
     priorites_nettoyage: {
+      intitule_poste: fields.tally_q11_job_title || "",
       choix: fields.tally_q11 || [],
       salaire: { type: fields.tally_q11_salary_type || "", minimum: fields.tally_q11_salary_min || "", maximum: fields.tally_q11_salary_max || "", note: fields.tally_q11_salary_note || "" }
     },
     priorites_hotel: {
+      intitule_poste: fields.tally_q12_job_title || "",
       choix: fields.tally_q12 || [],
       salaire: { type: fields.tally_q12_salary_type || "", minimum: fields.tally_q12_salary_min || "", maximum: fields.tally_q12_salary_max || "", note: fields.tally_q12_salary_note || "" }
     },
     priorites_agriculture: {
+      intitule_poste: fields.tally_q13_job_title || "",
       choix: fields.tally_q13 || [],
       salaire: { type: fields.tally_q13_salary_type || "", minimum: fields.tally_q13_salary_min || "", maximum: fields.tally_q13_salary_max || "", note: fields.tally_q13_salary_note || "" }
     },
     priorites_polyvalent: {
+      intitule_poste: fields.tally_q14_job_title || "",
       choix: fields.tally_q14 || [],
       salaire: { type: fields.tally_q14_salary_type || "", minimum: fields.tally_q14_salary_min || "", maximum: fields.tally_q14_salary_max || "", note: fields.tally_q14_salary_note || "" }
     },
@@ -4177,7 +4208,7 @@ function attachEmployerTallyBehavior(lang, t) {
       flow_role: "employer",
       ui_language: lang,
       source_page: "employer-questionnaire",
-      form_version: "2026-06-tally-employer-v1",
+      form_version: "2026-06-tally-employer-v2",
       ...Object.fromEntries(
         Object.entries(normalized).map(([key, value]) => [
           key,
@@ -4420,7 +4451,7 @@ function attachCandidateTallyBehavior(lang, t) {
       langues: languageSummary.join(" | "),
       mobilite: Array.isArray(normalized.tally_q02) ? normalized.tally_q02.join(" | ") : (normalized.tally_q02 || ""),
       disponibilite: [normalized.tally_q09 || "", ...(Array.isArray(normalized.tally_q08) ? normalized.tally_q08 : [])].filter(Boolean).join(" | "),
-      form_version: "2026-06-tally-candidate-v1",
+      form_version: "2026-06-tally-candidate-v2",
       source_page: "candidate-questionnaire",
       ui_language: lang,
       flow_role: "candidate",
