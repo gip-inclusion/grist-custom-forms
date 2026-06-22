@@ -3537,7 +3537,104 @@ def list_eures_admin_no_match_notifications(status: str = 'all') -> list[dict]:
     return rows
 
 
-def _eures_questionnaire_field_label(key: str) -> str:
+EURES_CANDIDATE_TALLY_LABELS = {
+    'tally_q01': 'Projet de mobilité par pays',
+    'tally_q01_f01': 'Projet de mobilité par pays · Allemagne',
+    'tally_q01_f02': 'Projet de mobilité par pays · France',
+    'tally_q01_f03': 'Projet de mobilité par pays · Luxembourg',
+    'tally_q01_f04': "Projet de mobilité par pays · Un autre pays de l'UE",
+    'tally_q01_f05': 'Projet de mobilité par pays · Un autre pays hors UE',
+    'tally_q02': 'Type de mobilité envisagé',
+    'tally_q03': 'Expérience sous statut frontalier',
+    'tally_q04': 'Temps de trajet maximum accepté',
+    'tally_q05': 'Moyens de déplacement envisagés',
+    'tally_q06': 'Disponibilités horaires',
+    'tally_q07': 'Disponibilités détaillées',
+    'tally_q07_f01': 'Disponibilités détaillées · Lundi',
+    'tally_q07_f02': 'Disponibilités détaillées · Mardi',
+    'tally_q07_f03': 'Disponibilités détaillées · Mercredi',
+    'tally_q07_f04': 'Disponibilités détaillées · Jeudi',
+    'tally_q07_f05': 'Disponibilités détaillées · Vendredi',
+    'tally_q07_f06': 'Disponibilités détaillées · Samedi',
+    'tally_q07_f07': 'Disponibilités détaillées · Dimanche',
+    'tally_q08': 'Types de contrats acceptés',
+    'tally_q09': 'Date de disponibilité',
+    'tally_q10': 'Préparation des documents',
+    'tally_q10_f01': "Préparation des documents · Carte d'identité ou passeport",
+    'tally_q10_f02': 'Préparation des documents · CV à jour',
+    'tally_q10_f03': 'Préparation des documents · Diplômes ou qualifications',
+    'tally_q10_f04': 'Préparation des documents · Compte bancaire / IBAN',
+    'tally_q10_f05': "Préparation des documents · Attestation d'affiliation à la sécurité sociale",
+    'tally_q11': 'Sécurité sociale luxembourgeoise',
+    'tally_q12': 'Sécurité sociale allemande',
+    'tally_q13': 'Sécurité sociale française',
+    'tally_q14': "Expérience de vie et de travail dans un autre pays",
+    'tally_q15': 'Date de départ souhaitée',
+    'tally_q16': 'Conditions de départ',
+    'tally_q17': 'Priorités de départ',
+    'tally_q18': 'Compétences linguistiques',
+    'tally_q18_f01': 'Compétences linguistiques · Allemand',
+    'tally_q18_f02': 'Compétences linguistiques · Anglais',
+    'tally_q18_f03': 'Compétences linguistiques · Français',
+    'tally_q18_f04': 'Compétences linguistiques · Luxembourgeois',
+    'tally_q19': 'Secteurs recherchés',
+    'tally_q20': 'Atouts recherchés · Vente et commerce',
+    'tally_q21': 'Expérience · Vente et commerce',
+    'tally_q22': 'Atouts recherchés · Nettoyage et entretien',
+    'tally_q23': 'Expérience · Nettoyage et entretien',
+    'tally_q24': 'Casier judiciaire de moins de 3 mois',
+    'tally_q25': 'Atouts recherchés · Hôtellerie et restauration',
+    'tally_q26': 'Expérience · Hôtellerie et restauration',
+    'tally_q27': 'Atouts recherchés · Agriculture et récolte',
+    'tally_q28': 'Expérience · Agriculture et récolte',
+    'tally_q29': 'Atouts recherchés · Missions polyvalentes et emplois accessibles rapidement',
+    'tally_q30': 'Expérience · Missions polyvalentes et emplois accessibles rapidement',
+}
+
+EURES_EMPLOYER_TALLY_LABELS = {
+    'tally_q01': 'Secteur de recrutement',
+    'tally_q02': 'Langues impératives',
+    'tally_q02_f01': 'Langues impératives · Allemand',
+    'tally_q02_f02': 'Langues impératives · Anglais',
+    'tally_q02_f03': 'Langues impératives · Français',
+    'tally_q02_f04': 'Langues impératives · Luxembourgeois',
+    'tally_q03': 'Nombre de recrutements souhaités',
+    'tally_q04': 'Date de besoin',
+    'tally_q05': 'Durée de contrat proposée',
+    'tally_q06': 'Volume hebdomadaire proposé',
+    'tally_q07': 'Profils que vous êtes prêt à recruter',
+    'tally_q08': "Aides à l'arrivée ou à l'installation",
+    'tally_q09': 'Critères indispensables',
+    'tally_q10': 'Priorités métier · Vente et commerce',
+    'tally_q11': 'Priorités métier · Nettoyage et entretien',
+    'tally_q12': 'Priorités métier · Hôtellerie et restauration',
+    'tally_q13': 'Priorités métier · Agriculture et récolte',
+    'tally_q14': 'Priorités métier · Missions polyvalentes et emplois accessibles rapidement',
+    'tally_q15': 'Conditions de travail à connaître',
+    'tally_q16': 'Prénom du contact',
+    'tally_q17': "Nom de l'entreprise",
+    'tally_q18': 'Adresse e-mail',
+    'tally_q19': 'Téléphone',
+    'tally_q20': 'Lieux de travail',
+    'tally_q20_extra': 'Autres métiers souhaités à l’avenir',
+    'tally_q21': 'Consentement RGPD',
+}
+
+EURES_TALLY_SECTOR_LABELS = {
+    'tally_q10': 'Vente et commerce',
+    'tally_q11': 'Nettoyage et entretien',
+    'tally_q12': 'Hôtellerie et restauration',
+    'tally_q13': 'Agriculture et récolte',
+    'tally_q14': 'Missions polyvalentes et emplois accessibles rapidement',
+    'tally_q20': 'Vente et commerce',
+    'tally_q22': 'Nettoyage et entretien',
+    'tally_q25': 'Hôtellerie et restauration',
+    'tally_q27': 'Agriculture et récolte',
+    'tally_q29': 'Missions polyvalentes et emplois accessibles rapidement',
+}
+
+
+def _eures_questionnaire_field_label(key: str, role: str = '') -> str:
     labels = {
         'id_tally': 'Identifiant',
         'uuid': 'UUID',
@@ -3564,6 +3661,19 @@ def _eures_questionnaire_field_label(key: str) -> str:
     }
     if key in labels:
         return labels[key]
+    tally_labels = EURES_CANDIDATE_TALLY_LABELS if role == 'candidate' else EURES_EMPLOYER_TALLY_LABELS if role == 'employer' else {}
+    if key in tally_labels:
+        return tally_labels[key]
+    salary_match = re.match(r'^(tally_q\d+)_salary_(type|min|max|note)$', str(key or ''))
+    if salary_match:
+        sector_label = EURES_TALLY_SECTOR_LABELS.get(salary_match.group(1), salary_match.group(1))
+        suffix_label = {
+            'type': 'Type de salaire',
+            'min': 'Salaire minimum',
+            'max': 'Salaire maximum',
+            'note': 'Précision salaire',
+        }.get(salary_match.group(2), salary_match.group(2))
+        return f"Salaire · {sector_label} · {suffix_label}"
     return str(key or '').replace('_', ' ').strip().capitalize()
 
 
@@ -3649,7 +3759,7 @@ def _build_eures_questionnaire_response_row(role: str, rec: dict) -> dict | None
             continue
         field_items.append({
             'key': key,
-            'label': _eures_questionnaire_field_label(key),
+            'label': _eures_questionnaire_field_label(key, normalized_role),
             'value': value,
         })
 
