@@ -126,6 +126,45 @@
       min-height: 1.2rem;
     }
 
+    .global-watch {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.9rem;
+      margin-top: 0.9rem;
+      padding: 0.9rem 1rem;
+      border: 1px solid rgba(21, 86, 192, 0.16);
+      border-radius: 18px;
+      background: linear-gradient(180deg, rgba(227, 239, 255, 0.72), rgba(255, 255, 255, 0.92));
+    }
+
+    .global-watch[hidden] {
+      display: none;
+    }
+
+    .global-watch strong {
+      color: var(--accent-strong);
+    }
+
+    .global-watch-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.6rem;
+    }
+
+    .global-watch-actions button {
+      min-height: 42px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.95);
+      color: var(--accent-strong);
+      padding: 0.7rem 1rem;
+      cursor: pointer;
+      font: inherit;
+      font-weight: 700;
+    }
+
     .matching-list {
       display: grid;
       gap: 1rem;
@@ -900,6 +939,13 @@
     <section class="admin-card admin-head">
       <h1>Admin EURES beta</h1>
       <p>Piloter les invitations et valider les matchings entre candidats et entreprises. Vous pouvez importer des contacts, envoyer les invitations, puis suivre les réponses et les mises en relation.</p>
+      <div class="global-watch" id="global-response-watch" hidden>
+        <div class="status-line" id="global-response-watch-text"></div>
+        <div class="global-watch-actions">
+          <button id="global-watch-open-candidates" type="button">Voir les réponses candidats</button>
+          <button id="global-watch-open-employers" type="button">Voir les réponses employeurs</button>
+        </div>
+      </div>
     </section>
 
     <section class="admin-card">
@@ -1373,11 +1419,15 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
         rows: [],
         loading: false,
         signature: "",
+        unseenCount: 0,
+        initialized: false,
       },
       employerResponses: {
         rows: [],
         loading: false,
         signature: "",
+        unseenCount: 0,
+        initialized: false,
       },
       matchings: {
         rows: [],
@@ -1410,6 +1460,47 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
 
     function setStatus(targetId, message) {
       document.getElementById(targetId).textContent = message;
+    }
+
+    function responseWatchLabel(count, singular, plural) {
+      return `${count} ${count > 1 ? plural : singular}`;
+    }
+
+    function renderGlobalResponseWatch() {
+      const candidateCount = Number(state.candidateResponses.unseenCount || 0);
+      const employerCount = Number(state.employerResponses.unseenCount || 0);
+      const total = candidateCount + employerCount;
+      const panel = document.getElementById("global-response-watch");
+      const text = document.getElementById("global-response-watch-text");
+      const candidateButton = document.getElementById("global-watch-open-candidates");
+      const employerButton = document.getElementById("global-watch-open-employers");
+      if (!panel || !text || !candidateButton || !employerButton) return;
+
+      if (!total) {
+        panel.hidden = true;
+        text.textContent = "";
+        candidateButton.hidden = true;
+        employerButton.hidden = true;
+        return;
+      }
+
+      const parts = [];
+      if (candidateCount) {
+        parts.push(responseWatchLabel(candidateCount, "nouvelle réponse candidat", "nouvelles réponses candidats"));
+      }
+      if (employerCount) {
+        parts.push(responseWatchLabel(employerCount, "nouvelle réponse employeur", "nouvelles réponses employeurs"));
+      }
+      panel.hidden = false;
+      text.innerHTML = `<strong>Nouvelles réponses détectées :</strong> ${esc(parts.join(" · "))}`;
+      candidateButton.hidden = candidateCount === 0;
+      employerButton.hidden = employerCount === 0;
+    }
+
+    function clearResponseWatch(role) {
+      const stateKey = role === "candidate" ? "candidateResponses" : "employerResponses";
+      state[stateKey].unseenCount = 0;
+      renderGlobalResponseWatch();
     }
 
     function questionnaireResponseSignature(rows) {
@@ -2074,6 +2165,7 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
       const kpiDisabledId = isCandidate ? "candidate-response-kpi-disabled" : "employer-response-kpi-disabled";
       const label = isCandidate ? "candidats" : "employeurs";
       const silent = Boolean(options.silent);
+      const shouldClearUnseen = Boolean(options.clearUnseen);
 
       if (state[stateKey].loading) return;
       state[stateKey].loading = true;
@@ -2093,16 +2185,24 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
         const previousCount = Array.isArray(state[stateKey].rows) ? state[stateKey].rows.length : 0;
         const nextCount = nextRows.length;
         const hasChanged = previousSignature !== nextSignature;
+        const initialized = Boolean(state[stateKey].initialized);
 
         state[stateKey].rows = nextRows;
         state[stateKey].signature = nextSignature;
+        state[stateKey].initialized = true;
         document.getElementById(kpiId).textContent = payload.stats?.total ?? 0;
         document.getElementById(kpiActiveId).textContent = payload.stats?.active ?? 0;
         document.getElementById(kpiDisabledId).textContent = payload.stats?.disabled ?? 0;
+        if (shouldClearUnseen) {
+          state[stateKey].unseenCount = 0;
+        } else if (silent && initialized && hasChanged && nextCount > previousCount) {
+          state[stateKey].unseenCount += nextCount - previousCount;
+        }
         if (!silent || hasChanged) {
           renderQuestionnaireResponses(role);
           renderManualMatchingOptions();
         }
+        renderGlobalResponseWatch();
         if (!silent) {
           setStatus(statusId, `${state[stateKey].rows.length} réponse(s) ${label} chargée(s).`);
         } else if (hasChanged && nextCount > previousCount) {
@@ -2124,13 +2224,8 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
       }
       state.questionnaireAutoRefreshTimer = window.setInterval(() => {
         if (document.hidden) return;
-        if (state.activeTab === "candidate-responses") {
-          loadQuestionnaireResponses("candidate", { silent: true });
-          return;
-        }
-        if (state.activeTab === "employer-responses") {
-          loadQuestionnaireResponses("employer", { silent: true });
-        }
+        loadQuestionnaireResponses("candidate", { silent: true });
+        loadQuestionnaireResponses("employer", { silent: true });
       }, 30000);
     }
 
@@ -3502,6 +3597,14 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
       for (const button of document.querySelectorAll("[data-tab]")) {
         button.classList.toggle("active", button.dataset.tab === tabName);
       }
+      if (tabName === "candidate-responses") {
+        clearResponseWatch("candidate");
+        loadQuestionnaireResponses("candidate", { clearUnseen: true });
+      }
+      if (tabName === "employer-responses") {
+        clearResponseWatch("employer");
+        loadQuestionnaireResponses("employer", { clearUnseen: true });
+      }
     }
 
     document.getElementById("single-save-btn").addEventListener("click", async () => {
@@ -3564,10 +3667,12 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
     document.getElementById("invite-reload-btn").addEventListener("click", loadInvitations);
     document.getElementById("invite-filter-status").addEventListener("change", loadInvitations);
     document.getElementById("invite-filter-search").addEventListener("input", renderInvitations);
-    document.getElementById("candidate-response-reload-btn").addEventListener("click", () => loadQuestionnaireResponses("candidate"));
+    document.getElementById("candidate-response-reload-btn").addEventListener("click", () => loadQuestionnaireResponses("candidate", { clearUnseen: true }));
     document.getElementById("candidate-response-filter-search").addEventListener("input", () => renderQuestionnaireResponses("candidate"));
-    document.getElementById("employer-response-reload-btn").addEventListener("click", () => loadQuestionnaireResponses("employer"));
+    document.getElementById("employer-response-reload-btn").addEventListener("click", () => loadQuestionnaireResponses("employer", { clearUnseen: true }));
     document.getElementById("employer-response-filter-search").addEventListener("input", () => renderQuestionnaireResponses("employer"));
+    document.getElementById("global-watch-open-candidates").addEventListener("click", () => activateTab("candidate-responses"));
+    document.getElementById("global-watch-open-employers").addEventListener("click", () => activateTab("employer-responses"));
     document.getElementById("reload-btn").addEventListener("click", async () => {
       await loadBrevoHealth();
       await loadMatchings();
