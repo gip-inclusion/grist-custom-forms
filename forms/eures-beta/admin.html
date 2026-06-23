@@ -1548,8 +1548,12 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
               </label>
             </div>
             <div class="field-stack" style="margin-top:0.9rem;">
-              <label for="manual-match-note">Commentaire intégré au mail</label>
-              <textarea id="manual-match-note" placeholder="Optionnel. Si vous écrivez ici, le commentaire sera ajouté aux emails envoyés."></textarea>
+              <label for="manual-match-employer-comment">Commentaire employeur</label>
+              <textarea id="manual-match-employer-comment" placeholder="Optionnel. Ajouté uniquement au mail envoyé à l’employeur."></textarea>
+            </div>
+            <div class="field-stack" style="margin-top:0.9rem;">
+              <label for="manual-match-candidate-comment">Commentaire candidat</label>
+              <textarea id="manual-match-candidate-comment" placeholder="Optionnel. Ajouté uniquement au mail envoyé au candidat."></textarea>
             </div>
             <section class="matching-body" id="manual-match-preview" hidden style="margin-top:1rem;">
               <div class="compare-grid">
@@ -2562,7 +2566,8 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
     async function createManualMatching(sendDirectly = false) {
       const candidateRecordId = Number(document.getElementById("manual-match-candidate").value || 0);
       const employerRecordId = Number(document.getElementById("manual-match-employer").value || 0);
-      const note = document.getElementById("manual-match-note").value.trim();
+      const employerEmailComment = document.getElementById("manual-match-employer-comment").value.trim();
+      const candidateEmailComment = document.getElementById("manual-match-candidate-comment").value.trim();
       if (!candidateRecordId || !employerRecordId) {
         setStatus("manual-match-status-line", "Erreur : sélectionnez un candidat et un besoin employeur.");
         return;
@@ -2580,7 +2585,8 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
           body: JSON.stringify({
             candidate_record_id: candidateRecordId,
             employer_record_id: employerRecordId,
-            note,
+            employer_email_comment: employerEmailComment,
+            candidate_email_comment: candidateEmailComment,
             send_directly: sendDirectly,
           }),
         });
@@ -3458,6 +3464,17 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
               <section class="notes-box">
                 <h4>Note admin</h4>
                 <textarea id="${esc(noteId)}" placeholder="Ajouter une note interne...">${esc(row.matching?.admin_decision_note || row.no_match?.note || row.new_job?.note || row.new_employer?.note || row.duplicate_followup?.duplicate_followup_note || "")}</textarea>
+                ${row.task_type === "matching_review" ? `
+                <div class="notes-grid" style="margin-top:0.9rem;">
+                  <section class="notes-box" style="margin:0;">
+                    <h4>Commentaire employeur</h4>
+                    <textarea id="task-employer-comment-matching_review-${esc(row.record_id)}" placeholder="Optionnel. Ajouté uniquement au mail employeur.">${esc(row.matching?.employer_email_comment || "")}</textarea>
+                  </section>
+                  <section class="notes-box" style="margin:0;">
+                    <h4>Commentaire candidat</h4>
+                    <textarea id="task-candidate-comment-matching_review-${esc(row.record_id)}" placeholder="Optionnel. Ajouté uniquement au mail candidat.">${esc(row.matching?.candidate_email_comment || "")}</textarea>
+                  </section>
+                </div>` : ""}
                 <div class="hero-actions">${actions}</div>
               </section>
             </div>
@@ -3471,8 +3488,10 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
           const recordId = card?.dataset.recordId;
           const decision = event.currentTarget.dataset.taskMatchingAction;
           const note = document.getElementById(`task-note-matching_review-${recordId}`)?.value || "";
+          const employerEmailComment = document.getElementById(`task-employer-comment-matching_review-${recordId}`)?.value || "";
+          const candidateEmailComment = document.getElementById(`task-candidate-comment-matching_review-${recordId}`)?.value || "";
           if (!recordId || !decision) return;
-          await submitDecision(recordId, decision, note);
+          await submitDecision(recordId, decision, note, employerEmailComment, candidateEmailComment);
           await loadTasks();
           await loadCockpit();
         });
@@ -3645,8 +3664,19 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
               </div>
 
               <section class="notes-box">
-                <h4>Commentaire intégré au mail</h4>
-                <textarea id="note-${esc(row.record_id)}" placeholder="Optionnel. Si vous écrivez ici, le commentaire sera ajouté aux emails envoyés.">${esc(row.admin_decision_note || "")}</textarea>
+                <h4>Commentaires sortants</h4>
+                <div class="notes-grid">
+                  <section class="notes-box" style="margin:0;">
+                    <h4>Commentaire employeur</h4>
+                    <textarea id="employer-comment-${esc(row.record_id)}" placeholder="Optionnel. Ajouté uniquement au mail employeur.">${esc(row.employer_email_comment || "")}</textarea>
+                  </section>
+                  <section class="notes-box" style="margin:0;">
+                    <h4>Commentaire candidat</h4>
+                    <textarea id="candidate-comment-${esc(row.record_id)}" placeholder="Optionnel. Ajouté uniquement au mail candidat.">${esc(row.candidate_email_comment || "")}</textarea>
+                  </section>
+                </div>
+                <h4 style="margin-top:1rem;">Note interne / workflow</h4>
+                <textarea id="note-${esc(row.record_id)}" placeholder="Optionnel. Note interne conservée dans l’admin.">${esc(row.admin_decision_note || "")}</textarea>
                 <div class="hero-actions">
                   <button class="btn-neutral" type="button" data-action="accepted">Enregistrer comme accepté</button>
                   <button class="btn-refuse" type="button" data-action="refused">Enregistrer comme refusé</button>
@@ -3668,8 +3698,10 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
           const recordId = card?.dataset.recordId;
           const decision = event.currentTarget.dataset.action;
           const note = document.getElementById(`note-${recordId}`)?.value || "";
+          const employerEmailComment = document.getElementById(`employer-comment-${recordId}`)?.value || "";
+          const candidateEmailComment = document.getElementById(`candidate-comment-${recordId}`)?.value || "";
           if (!recordId || !decision) return;
-          await submitDecision(recordId, decision, note);
+          await submitDecision(recordId, decision, note, employerEmailComment, candidateEmailComment);
         });
       }
       for (const button of list.querySelectorAll("[data-workflow]")) {
@@ -3972,7 +4004,7 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
       }
     }
 
-    async function submitDecision(recordId, decision, note) {
+    async function submitDecision(recordId, decision, note, employerEmailComment = "", candidateEmailComment = "") {
       setStatus("status-line", `Enregistrement de la décision ${decision}...`);
       try {
         const response = await fetch(apiUrl(`/admin/matchings/${recordId}/decision`), {
@@ -3982,7 +4014,7 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
             "Content-Type": "application/json",
             "Accept": "application/json",
           },
-          body: JSON.stringify({ decision, note }),
+          body: JSON.stringify({ decision, note, employer_email_comment: employerEmailComment, candidate_email_comment: candidateEmailComment }),
         });
         const payload = await response.json();
         if (!response.ok || !payload.ok) {

@@ -87,6 +87,8 @@ EURES_MATCHING_ADMIN_FIELDS = {
     'admin_decision_at',
     'admin_decision_by',
     'admin_decision_note',
+    'employer_email_comment',
+    'candidate_email_comment',
     'manual_matching_source',
     'manual_matching_created_at',
     'manual_matching_created_by',
@@ -4487,10 +4489,15 @@ def _build_eures_feedback_url(record_id: int, response: str) -> str:
     return f"{get_public_app_base_url()}/eures-beta/matching-feedback?token={token}"
 
 
-def _matching_outgoing_comment(row: dict) -> str:
+def _matching_outgoing_comment(row: dict, recipient: str) -> str:
     """Return the optional admin comment to inject into outgoing matching emails."""
     if not isinstance(row, dict):
         return ''
+    recipient_key = 'employer_email_comment' if recipient == 'employer' else 'candidate_email_comment'
+    if recipient_key in row:
+        return str(row.get(recipient_key) or '').strip()
+    # Backward compatibility only for legacy row payloads that do not expose
+    # recipient-specific fields yet.
     comment = str(row.get('admin_decision_note') or '').strip()
     if comment:
         return comment
@@ -4536,7 +4543,7 @@ def build_brevo_matching_email(row: dict) -> tuple[str, str, str, str]:
         f"<p style=\"margin:10px 0 0;font-size:14px;line-height:1.7;color:#e6efe9;\">CV joint : {escape(cv_file_name)}</p>"
         if cv_file_name else ""
     )
-    outgoing_comment = _matching_outgoing_comment(row)
+    outgoing_comment = _matching_outgoing_comment(row, 'employer')
     outgoing_comment_text = _format_email_comment_text(outgoing_comment)
     outgoing_comment_html = _format_email_comment_html(outgoing_comment)
     comment_block_text = (
@@ -4721,7 +4728,7 @@ def build_brevo_candidate_matching_notification_email(row: dict) -> tuple[str, s
     hello = "Bonjour,"
     if candidate_name:
         hello = "Bonjour,"
-    outgoing_comment = _matching_outgoing_comment(row)
+    outgoing_comment = _matching_outgoing_comment(row, 'candidate')
     outgoing_comment_text = _format_email_comment_text(outgoing_comment)
     outgoing_comment_html = _format_email_comment_html(outgoing_comment)
     comment_block_text = (
@@ -5036,6 +5043,8 @@ def list_eures_admin_matchings(status: str = 'all', include_candidate_cv: bool =
             'admin_decision_at': fields.get('admin_decision_at', ''),
             'admin_decision_by': fields.get('admin_decision_by', ''),
             'admin_decision_note': fields.get('admin_decision_note', ''),
+            'employer_email_comment': fields.get('employer_email_comment', ''),
+            'candidate_email_comment': fields.get('candidate_email_comment', ''),
             'manual_matching_source': fields.get('manual_matching_source', ''),
             'manual_matching_created_at': fields.get('manual_matching_created_at', ''),
             'manual_matching_created_by': fields.get('manual_matching_created_by', ''),
@@ -7106,7 +7115,8 @@ def admin_eures_manual_matching(form_id: str):
     data = request.get_json() or {}
     candidat_record_id = int(data.get('candidate_record_id') or 0)
     employeur_record_id = int(data.get('employer_record_id') or 0)
-    note = str(data.get('note') or '').strip()
+    employer_email_comment = str(data.get('employer_email_comment') or '').strip()
+    candidate_email_comment = str(data.get('candidate_email_comment') or '').strip()
     send_directly = bool(data.get('send_directly'))
     if not candidat_record_id or not employeur_record_id:
         return jsonify({'error': 'Candidate and employer selections are required'}), 400
@@ -7150,7 +7160,9 @@ def admin_eures_manual_matching(form_id: str):
             'manual_matching_source': 'admin_manual',
             'manual_matching_created_at': _now_iso_utc(),
             'manual_matching_created_by': actor,
-            'manual_matching_note': note,
+            'manual_matching_note': '',
+            'employer_email_comment': employer_email_comment,
+            'candidate_email_comment': candidate_email_comment,
             **matching,
         }
         upsert_matching_record(matching_config['doc_id'], payload, headers)
@@ -7164,7 +7176,9 @@ def admin_eures_manual_matching(form_id: str):
                 'admin_status': 'accepted',
                 'admin_decision_at': _now_iso_utc(),
                 'admin_decision_by': actor,
-                'admin_decision_note': note,
+                'admin_decision_note': '',
+                'employer_email_comment': employer_email_comment,
+                'candidate_email_comment': candidate_email_comment,
                 **_matching_workflow_update_fields('valide_admin', actor),
             }
             update_matching_record_by_id(matching_config['doc_id'], record_id, decision_fields, headers)
@@ -7254,6 +7268,8 @@ def admin_eures_matching_decision(form_id: str, record_id: int):
     data = request.get_json() or {}
     decision = str(data.get('decision') or '').strip().lower()
     note = str(data.get('note') or '').strip()
+    employer_email_comment = str(data.get('employer_email_comment') or '').strip()
+    candidate_email_comment = str(data.get('candidate_email_comment') or '').strip()
     if decision not in {'accepted', 'refused'}:
         return jsonify({'error': 'Decision must be accepted or refused'}), 400
 
@@ -7277,6 +7293,8 @@ def admin_eures_matching_decision(form_id: str, record_id: int):
             'admin_decision_at': _now_iso_utc(),
             'admin_decision_by': decided_by,
             'admin_decision_note': note,
+            'employer_email_comment': employer_email_comment,
+            'candidate_email_comment': candidate_email_comment,
         }
         if decision == 'accepted':
             decision_fields.update(_matching_workflow_update_fields('valide_admin', decided_by))
@@ -7348,6 +7366,8 @@ def admin_eures_matching_decision(form_id: str, record_id: int):
             'admin_decision_at': updated_fields.get('admin_decision_at', decision_fields['admin_decision_at']),
             'admin_decision_by': updated_fields.get('admin_decision_by', decided_by),
             'admin_decision_note': updated_fields.get('admin_decision_note', note),
+            'employer_email_comment': updated_fields.get('employer_email_comment', employer_email_comment),
+            'candidate_email_comment': updated_fields.get('candidate_email_comment', candidate_email_comment),
             'email_sent': decision == 'accepted',
             'email_result': brevo_result,
             'candidate_email_result': candidate_brevo_result,
