@@ -178,6 +178,16 @@ EURES_INVITATION_FIELDS = {
     'matching_status',
     'matching_status_updated_at',
     'matching_status_updated_by',
+    'duplicate_followup_status',
+    'duplicate_followup_type',
+    'duplicate_followup_target_record_id',
+    'duplicate_followup_target_status',
+    'duplicate_followup_message',
+    'duplicate_followup_created_at',
+    'duplicate_followup_created_by',
+    'duplicate_followup_processed_at',
+    'duplicate_followup_processed_by',
+    'duplicate_followup_note',
     'notes',
 }
 EURES_INVITATION_ALLOWED_ROLES = {'candidate', 'employer'}
@@ -193,6 +203,7 @@ EURES_INVITATION_ALLOWED_STATUSES = {
     'desactivee',
 }
 EURES_INVITATION_SENDABLE_STATUSES = {'invitation_a_envoyer', 'erreur_envoi'}
+EURES_DUPLICATE_FOLLOWUP_ALLOWED_STATUSES = {'pending', 'reminded', 'ignored'}
 EURES_SECTOR_CANONICAL_MAP = {
     'vente': 'vente',
     'commerce': 'vente',
@@ -1306,6 +1317,16 @@ def list_eures_invitations() -> list[dict]:
             'linked_record_id': fields.get('linked_record_id', ''),
             'linked_record_key': fields.get('linked_record_key', ''),
             'matching_status': fields.get('matching_status', ''),
+            'duplicate_followup_status': fields.get('duplicate_followup_status', ''),
+            'duplicate_followup_type': fields.get('duplicate_followup_type', ''),
+            'duplicate_followup_target_record_id': fields.get('duplicate_followup_target_record_id', ''),
+            'duplicate_followup_target_status': fields.get('duplicate_followup_target_status', ''),
+            'duplicate_followup_message': fields.get('duplicate_followup_message', ''),
+            'duplicate_followup_created_at': fields.get('duplicate_followup_created_at', ''),
+            'duplicate_followup_created_by': fields.get('duplicate_followup_created_by', ''),
+            'duplicate_followup_processed_at': fields.get('duplicate_followup_processed_at', ''),
+            'duplicate_followup_processed_by': fields.get('duplicate_followup_processed_by', ''),
+            'duplicate_followup_note': fields.get('duplicate_followup_note', ''),
             'notes': fields.get('notes', ''),
             'import_batch_id': fields.get('import_batch_id', ''),
             'imported_at': fields.get('imported_at', ''),
@@ -1522,6 +1543,94 @@ def check_eures_invitation_send_conflict(
             'message': 'Un questionnaire a déjà été retourné avec cette adresse email.',
         }
     return None
+
+
+def mark_eures_duplicate_followup_pending(
+    record_id: int,
+    conflict: dict,
+    actor: str,
+    headers: dict | None = None,
+):
+    """Store one duplicate invitation follow-up to review in admin."""
+    status = 'pending'
+    conflict_type = str((conflict or {}).get('type') or '').strip().lower()
+    conflict_record_id = int((conflict or {}).get('record_id') or 0)
+    conflict_status = str((conflict or {}).get('status') or '').strip().lower()
+    conflict_message = str((conflict or {}).get('message') or '').strip()
+    note = str((conflict or {}).get('note') or '').strip()
+    update_eures_invitation_record_by_id(record_id, {
+        'duplicate_followup_status': status,
+        'duplicate_followup_type': conflict_type,
+        'duplicate_followup_target_record_id': str(conflict_record_id or ''),
+        'duplicate_followup_target_status': conflict_status,
+        'duplicate_followup_message': conflict_message,
+        'duplicate_followup_created_at': _now_iso_utc(),
+        'duplicate_followup_created_by': actor,
+        'duplicate_followup_processed_at': '',
+        'duplicate_followup_processed_by': '',
+        'duplicate_followup_note': note,
+        'notes': note[:500] if note else '',
+    }, headers=headers)
+
+
+def clear_eures_duplicate_followup(
+    record_id: int,
+    actor: str,
+    *,
+    status: str,
+    note: str = '',
+    headers: dict | None = None,
+):
+    """Mark one duplicate follow-up as processed."""
+    normalized_status = _normalize_eures_duplicate_followup_status(status)
+    if not normalized_status:
+        raise RuntimeError('Invalid duplicate follow-up status.')
+    update_fields = {
+        'duplicate_followup_status': normalized_status,
+        'duplicate_followup_processed_at': _now_iso_utc(),
+        'duplicate_followup_processed_by': actor,
+        'duplicate_followup_note': str(note or '').strip(),
+    }
+    if normalized_status in {'reminded', 'ignored'}:
+        update_fields['invitation_status'] = 'traitee'
+        update_fields['invitation_status_updated_at'] = _now_iso_utc()
+        update_fields['invitation_status_updated_by'] = actor
+    update_eures_invitation_record_by_id(record_id, update_fields, headers=headers)
+
+
+def send_eures_invitation_reminder_by_record_id(record_id: int, actor: str, headers: dict | None = None) -> dict:
+    """Send one reminder email for an existing EURES invitation row."""
+    config = get_eures_invitations_config()
+    if not config:
+        raise RuntimeError('EURES invitations configuration is incomplete.')
+    if headers is None:
+        headers = _eures_admin_headers(config)
+    rec = fetch_record_by_id(config['doc_id'], config['table_id'], record_id, headers)
+    if not rec:
+        raise RuntimeError("Invitation cible introuvable pour la relance.")
+    fields = rec.get('fields', {}) if isinstance(rec.get('fields'), dict) else {}
+    current_status = str(fields.get('invitation_status') or '').strip().lower()
+    if current_status != 'invitation_envoyee':
+        raise RuntimeError("La relance n'est possible que pour une invitation déjà envoyée.")
+    if str(fields.get('answered_at') or '').strip():
+        raise RuntimeError('Le questionnaire a déjà été reçu pour cette invitation.')
+    recipient, subject, text_body, html_body, invite_token, invite_link = build_brevo_invitation_email(fields, kind='reminder')
+    brevo_result = send_brevo_transactional_email(recipient, subject, text_body, html_body)
+    update_eures_invitation_record_by_id(record_id, {
+        'invite_token': invite_token,
+        'invite_link': invite_link,
+        'invitation_status_updated_at': _now_iso_utc(),
+        'invitation_status_updated_by': actor,
+        'reminder_count': _safe_int(fields.get('reminder_count')) + 1,
+        'last_reminder_at': _now_iso_utc(),
+        'last_reminder_by': actor,
+        'last_reminder_message_id': str((brevo_result or {}).get('messageId') or ''),
+    }, headers=headers)
+    return {
+        'record_id': int(rec.get('id') or 0),
+        'email': recipient,
+        'brevo_message_id': str((brevo_result or {}).get('messageId') or ''),
+    }
 
 
 def get_eures_active_employer_invitation(invite_token: str) -> tuple[dict | None, str]:
@@ -3591,6 +3700,11 @@ def _normalize_eures_new_employer_alert_status(value: str) -> str:
     return status if status in EURES_NEW_EMPLOYER_ALERT_ALLOWED_STATUSES else ''
 
 
+def _normalize_eures_duplicate_followup_status(value: str) -> str:
+    status = str(value or '').strip().lower()
+    return status if status in EURES_DUPLICATE_FOLLOWUP_ALLOWED_STATUSES else ''
+
+
 def _get_eures_role_table_config(role: str) -> dict | None:
     normalized_role = _normalize_eures_invitation_role(role)
     if not normalized_role:
@@ -4710,6 +4824,7 @@ def _compute_eures_delay_hours(start_value, end_value) -> float | None:
 def build_eures_admin_tasks(status: str = 'pending') -> list[dict]:
     """Return one unified admin task list for the cockpit."""
     rows = []
+    invitations = list_eures_invitations()
 
     for row in list_eures_admin_matchings(status='all'):
         task_status = 'pending'
@@ -4794,6 +4909,42 @@ def build_eures_admin_tasks(status: str = 'pending') -> list[dict]:
             'subtitle': row.get('poste') or 'Besoin employeur',
             'summary': 'Besoin déposé par un employeur recommandé: vigilance manuelle demandée.',
             'new_employer': row,
+        })
+
+    for row in invitations:
+        followup_status = _normalize_eures_duplicate_followup_status(row.get('duplicate_followup_status', ''))
+        if not followup_status:
+            continue
+        task_status = 'pending'
+        if followup_status == 'reminded':
+            task_status = 'done'
+        elif followup_status == 'ignored':
+            task_status = 'dismissed'
+        if status != 'all' and task_status != status:
+            continue
+        target_type = str(row.get('duplicate_followup_type') or '').strip().lower()
+        target_status = str(row.get('duplicate_followup_target_status') or '').strip().lower()
+        can_remind = target_type == 'existing_invitation' and target_status == 'invitation_envoyee'
+        task_title = (
+            row.get('company_name')
+            or ' '.join(part for part in [row.get('first_name'), row.get('last_name')] if str(part or '').strip())
+            or row.get('email')
+            or 'Invitation en doublon'
+        )
+        rows.append({
+            'task_type': 'duplicate_invitation_followup',
+            'status': task_status,
+            'priority': 'normal',
+            'created_at': row.get('duplicate_followup_created_at') or row.get('invitation_status_updated_at') or '',
+            'updated_at': row.get('duplicate_followup_processed_at') or row.get('duplicate_followup_created_at') or '',
+            'record_id': row.get('record_id'),
+            'title': task_title,
+            'subtitle': row.get('email') or '',
+            'summary': row.get('duplicate_followup_message') or 'Adresse déjà connue: relance ou clôture à confirmer.',
+            'duplicate_followup': {
+                **row,
+                'can_remind': can_remind,
+            },
         })
 
     priority_rank = {'high': 0, 'normal': 1, 'low': 2}
@@ -4914,6 +5065,7 @@ def build_eures_cockpit_summary() -> dict:
             'no_match_followup': sum(1 for row in tasks_pending if row.get('task_type') == 'no_match_followup'),
             'new_job_request': sum(1 for row in tasks_pending if row.get('task_type') == 'new_job_request'),
             'new_employer_alert': sum(1 for row in tasks_pending if row.get('task_type') == 'new_employer_alert'),
+            'duplicate_invitation_followup': sum(1 for row in tasks_pending if row.get('task_type') == 'duplicate_invitation_followup'),
             'invitation_errors': sum(1 for row in invitations if str(row.get('invitation_status') or '') == 'erreur_envoi'),
         },
         'today_flow': {
@@ -5151,11 +5303,22 @@ def create_eures_employer_referral(form_id: str):
             invitation_headers=headers,
         )
         if send_conflict:
+            followup_note = (
+                f"Doublon détecté pour {recipient_email}. "
+                f"Action admin attendue sur l'invitation {record_id}."
+            )
+            mark_eures_duplicate_followup_pending(
+                record_id,
+                {**send_conflict, 'note': followup_note},
+                actor='public_employer_referral',
+                headers=headers,
+            )
             return jsonify({
                 'error': send_conflict['message'],
                 'conflict_type': send_conflict['type'],
                 'conflict_record_id': send_conflict['record_id'],
                 'conflict_status': send_conflict['status'],
+                'followup_created': True,
             }), 409
 
         recipient, subject, text_body, html_body, new_invite_token, invite_link = build_brevo_invitation_email(fields)
@@ -5637,17 +5800,27 @@ def admin_eures_invitations(form_id: str):
             ]
         stats = Counter(row.get('invitation_status') or 'invitation_a_envoyer' for row in rows)
         reminder_due = sum(1 for row in rows if row.get('needs_reminder'))
+        duplicate_followup_pending = sum(
+            1 for row in rows
+            if _normalize_eures_duplicate_followup_status(row.get('duplicate_followup_status', '')) == 'pending'
+        )
+        ready_to_send = sum(
+            1 for row in rows
+            if str(row.get('invitation_status') or '') == 'invitation_a_envoyer'
+            and _normalize_eures_duplicate_followup_status(row.get('duplicate_followup_status', '')) != 'pending'
+        )
         return jsonify({
             'ok': True,
             'form_id': form_id,
             'stats': {
                 'total': len(rows),
-                'invitation_a_envoyer': stats.get('invitation_a_envoyer', 0),
+                'invitation_a_envoyer': ready_to_send,
                 'invitation_envoyee': stats.get('invitation_envoyee', 0),
                 'questionnaire_recu': stats.get('questionnaire_recu', 0),
                 'rapprochee': stats.get('rapprochee', 0),
                 'erreur_envoi': stats.get('erreur_envoi', 0),
                 'reminder_due': reminder_due,
+                'duplicate_followup_pending': duplicate_followup_pending,
             },
             'rows': rows,
         }), 200
@@ -5799,6 +5972,60 @@ def admin_eures_invitation_delete(form_id: str, record_id: int):
         return jsonify({'error': str(e)}), 500
 
 
+@app.route('/api/forms/<form_id>/admin/invitations/<int:record_id>/duplicate-followup', methods=['POST'])
+@admin_required
+def admin_eures_invitation_duplicate_followup(form_id: str, record_id: int):
+    """Admin API: accept or ignore one duplicate invitation follow-up."""
+    proxied = maybe_proxy_eures_request(form_id)
+    if proxied:
+        return proxied
+    if form_id != 'eures-beta':
+        return jsonify({'error': f'Unknown duplicate follow-up admin form: {form_id}'}), 404
+
+    data = request.get_json() or {}
+    action = str(data.get('action') or '').strip().lower()
+    note = str(data.get('note') or '').strip()
+    if action not in {'remind', 'ignore'}:
+        return jsonify({'error': "action doit valoir 'remind' ou 'ignore'."}), 400
+
+    config = get_eures_invitations_config()
+    if not config:
+        return jsonify({'error': 'EURES invitations configuration is incomplete.'}), 500
+
+    headers = _eures_admin_headers(config)
+    actor = get_admin_actor(form_id)
+    try:
+        current = fetch_record_by_id(config['doc_id'], config['table_id'], record_id, headers)
+        if not current:
+            return jsonify({'error': 'Invitation introuvable'}), 404
+        fields = current.get('fields', {}) if isinstance(current.get('fields'), dict) else {}
+        followup_status = _normalize_eures_duplicate_followup_status(fields.get('duplicate_followup_status', ''))
+        if followup_status != 'pending':
+            return jsonify({'error': 'Cette proposition de relance a déjà été traitée.'}), 400
+
+        target_type = str(fields.get('duplicate_followup_type') or '').strip().lower()
+        target_record_id = int(fields.get('duplicate_followup_target_record_id') or 0)
+        result = {'action': action}
+        if action == 'remind':
+            if target_type != 'existing_invitation' or not target_record_id:
+                return jsonify({'error': 'Aucune invitation existante ne peut être relancée pour cette adresse.'}), 400
+            result['reminder'] = send_eures_invitation_reminder_by_record_id(target_record_id, actor, headers=headers)
+            clear_eures_duplicate_followup(record_id, actor, status='reminded', note=note, headers=headers)
+        else:
+            clear_eures_duplicate_followup(record_id, actor, status='ignored', note=note, headers=headers)
+
+        updated = fetch_record_by_id(config['doc_id'], config['table_id'], record_id, headers)
+        return jsonify({
+            'ok': True,
+            'record_id': record_id,
+            'result': result,
+            'fields': updated.get('fields', {}) if isinstance(updated, dict) else {},
+        }), 200
+    except Exception as e:
+        app.logger.exception('EURES duplicate follow-up update failed')
+        return jsonify({'error': str(e)}), 500
+
+
 @app.route('/api/forms/<form_id>/admin/invitations/send', methods=['POST'])
 @admin_required
 def admin_eures_invitations_send(form_id: str):
@@ -5857,6 +6084,16 @@ def admin_eures_invitations_send(form_id: str):
                 invitation_headers=headers,
             )
             if send_conflict:
+                followup_note = (
+                    f"Doublon détecté pour {fields.get('email', '')}. "
+                    f"Action admin attendue sur l'invitation {record_id}."
+                )
+                mark_eures_duplicate_followup_pending(
+                    record_id,
+                    {**send_conflict, 'note': followup_note},
+                    actor=actor,
+                    headers=headers,
+                )
                 skipped.append({
                     'record_id': record_id,
                     'email': fields.get('email', ''),
@@ -5864,6 +6101,7 @@ def admin_eures_invitations_send(form_id: str):
                     'message': send_conflict['message'],
                     'conflict_record_id': send_conflict['record_id'],
                     'conflict_status': send_conflict['status'],
+                    'followup_created': True,
                 })
                 continue
             try:
@@ -5972,23 +6210,7 @@ def admin_eures_invitations_remind(form_id: str):
                 })
                 continue
             try:
-                recipient, subject, text_body, html_body, invite_token, invite_link = build_brevo_invitation_email(fields, kind='reminder')
-                brevo_result = send_brevo_transactional_email(recipient, subject, text_body, html_body)
-                update_eures_invitation_record_by_id(record_id, {
-                    'invite_token': invite_token,
-                    'invite_link': invite_link,
-                    'invitation_status_updated_at': _now_iso_utc(),
-                    'invitation_status_updated_by': actor,
-                    'reminder_count': _safe_int(fields.get('reminder_count')) + 1,
-                    'last_reminder_at': _now_iso_utc(),
-                    'last_reminder_by': actor,
-                    'last_reminder_message_id': str((brevo_result or {}).get('messageId') or ''),
-                }, headers=headers)
-                reminded.append({
-                    'record_id': record_id,
-                    'email': recipient,
-                    'brevo_message_id': str((brevo_result or {}).get('messageId') or ''),
-                })
+                reminded.append(send_eures_invitation_reminder_by_record_id(record_id, actor, headers=headers))
             except Exception as e:
                 errors.append({
                     'record_id': record_id,

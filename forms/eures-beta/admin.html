@@ -1085,6 +1085,7 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
               <select id="invite-filter-status">
                 <option value="all">Tous les statuts</option>
                 <option value="invitation_a_envoyer">À envoyer</option>
+                <option value="duplicate_followup_pending">Relances à arbitrer</option>
                 <option value="invitation_envoyee">Envoyées</option>
                 <option value="reminder_due">À relancer</option>
                 <option value="questionnaire_recu">Questionnaires reçus</option>
@@ -1445,7 +1446,15 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
       if (type === "no_match_followup") return "Sans matching";
       if (type === "new_job_request") return "Nouveau métier";
       if (type === "new_employer_alert") return "Nouvel employeur";
+      if (type === "duplicate_invitation_followup") return "Invitation en doublon";
       return type || "Tâche";
+    }
+
+    function duplicateFollowupLabel(status) {
+      if (status === "pending") return "relance à arbitrer";
+      if (status === "reminded") return "relance envoyée";
+      if (status === "ignored") return "ignoré";
+      return status || "inconnu";
     }
 
     function normalizeText(value) {
@@ -1538,6 +1547,7 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
 
     function invitationStatusLabel(status) {
       if (status === "invitation_a_envoyer") return "à envoyer";
+      if (status === "traitee") return "traitée";
       if (status === "invitation_envoyee") return "envoyée";
       if (status === "questionnaire_recu") return "questionnaire reçu";
       if (status === "rapprochee") return "rapprochée";
@@ -1561,7 +1571,9 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
     }
 
     function pendingInvitationRows() {
-      return state.invitations.rows.filter((row) => row.invitation_status === "invitation_a_envoyer");
+      return state.invitations.rows.filter((row) =>
+        row.invitation_status === "invitation_a_envoyer" && row.duplicate_followup_status !== "pending"
+      );
     }
 
     function reminderInvitationRows() {
@@ -1636,7 +1648,18 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
       const search = normalizeText(document.getElementById("invite-filter-search").value.trim());
       const statusFilter = document.getElementById("invite-filter-status").value;
       const filtered = state.invitations.rows.filter((row) => {
+        if (statusFilter === "duplicate_followup_pending") {
+          return row.duplicate_followup_status === "pending";
+        }
         if (statusFilter === "reminder_due" && !row.needs_reminder) {
+          return false;
+        }
+        if (statusFilter === "invitation_a_envoyer") {
+          if (row.invitation_status !== "invitation_a_envoyer" || row.duplicate_followup_status === "pending") {
+            return false;
+          }
+        }
+        if (statusFilter !== "all" && statusFilter !== "reminder_due" && statusFilter !== "duplicate_followup_pending" && row.invitation_status !== statusFilter) {
           return false;
         }
         if (!search) return true;
@@ -1675,6 +1698,7 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
               </div>
               <div class="summary-tags">
                 <span class="pill ${invitationStatusClass(row.invitation_status)}">${esc(invitationStatusLabel(row.invitation_status))}</span>
+                ${row.duplicate_followup_status ? `<span class="pill">${esc(duplicateFollowupLabel(row.duplicate_followup_status))}</span>` : ""}
               </div>
             </div>
             <div class="invitation-meta">
@@ -1715,12 +1739,41 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
                 <span>${esc(row.matching_status || "-")}</span>
               </div>
             </div>
+            ${row.duplicate_followup_status === "pending" ? `
+              <section class="notes-box" style="margin-top:0.9rem;">
+                <h4>Arbitrage doublon</h4>
+                <p style="margin:0 0 0.8rem; line-height:1.7;">${esc(row.duplicate_followup_message || "Cette adresse existe déjà dans le suivi.")}</p>
+                <div class="compare-grid">
+                  <section class="compare-card">
+                    <h3>Invitation actuelle</h3>
+                    <dl class="detail-list">
+                      <div class="detail-row"><dt>Adresse</dt><dd>${esc(row.email || "-")}</dd></div>
+                      <div class="detail-row"><dt>Type</dt><dd>${esc(row.role === "employer" ? "Employeur" : "Candidat")}</dd></div>
+                      <div class="detail-row"><dt>Référence</dt><dd>${esc(row.external_ref || "-")}</dd></div>
+                    </dl>
+                  </section>
+                  <section class="compare-card">
+                    <h3>Conflit détecté</h3>
+                    <dl class="detail-list">
+                      <div class="detail-row"><dt>Nature</dt><dd>${esc(row.duplicate_followup_type === "existing_questionnaire" ? "Questionnaire déjà reçu" : "Invitation déjà envoyée")}</dd></div>
+                      <div class="detail-row"><dt>Record cible</dt><dd>${esc(row.duplicate_followup_target_record_id || "-")}</dd></div>
+                      <div class="detail-row"><dt>Statut cible</dt><dd>${esc(invitationStatusLabel(row.duplicate_followup_target_status || "-"))}</dd></div>
+                    </dl>
+                  </section>
+                </div>
+                <textarea id="duplicate-followup-note-${esc(row.record_id)}" placeholder="Note interne optionnelle">${esc(row.duplicate_followup_note || "")}</textarea>
+                <div class="hero-actions">
+                  ${row.duplicate_followup_type === "existing_invitation" && row.duplicate_followup_target_status === "invitation_envoyee" ? `<button type="button" data-duplicate-followup-action="remind" data-record-id="${esc(row.record_id)}">Envoyer la relance</button>` : ""}
+                  <button class="btn-refuse" type="button" data-duplicate-followup-action="ignore" data-record-id="${esc(row.record_id)}">Ignorer</button>
+                </div>
+              </section>
+            ` : ""}
             ${row.invitation_status === "erreur_envoi" ? `
               <div class="inline-actions" style="margin-top:0.9rem;">
                 <button class="btn-refuse" type="button" data-delete-invitation="${esc(row.record_id)}">Supprimer cette erreur</button>
               </div>
             ` : ""}
-            ${row.invitation_status === "invitation_envoyee" && !row.answered_at ? `
+            ${row.invitation_status === "invitation_envoyee" && !row.answered_at && row.duplicate_followup_status !== "pending" ? `
               <div class="inline-actions" style="margin-top:0.9rem;">
                 <button type="button" data-remind-invitation="${esc(row.record_id)}">${row.needs_reminder ? "Relancer maintenant" : "Envoyer une relance"}</button>
               </div>
@@ -1744,6 +1797,15 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
           const recordId = Number(event.currentTarget.dataset.remindInvitation || 0);
           if (!recordId) return;
           await sendInvitationReminders([recordId]);
+        });
+      }
+      for (const button of list.querySelectorAll("[data-duplicate-followup-action]")) {
+        button.addEventListener("click", async (event) => {
+          const recordId = Number(event.currentTarget.dataset.recordId || 0);
+          const action = event.currentTarget.dataset.duplicateFollowupAction || "";
+          const note = document.getElementById(`duplicate-followup-note-${recordId}`)?.value || "";
+          if (!recordId || !action) return;
+          await submitDuplicateFollowup(recordId, action, note);
         });
       }
       updatePendingSendPanel();
@@ -2065,7 +2127,9 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
 
       const status = document.getElementById("invite-filter-status").value;
       const url = new URL(apiUrl("/admin/invitations"), window.location.origin);
-      if (status && status !== "all" && status !== "reminder_due") url.searchParams.set("status", status);
+      if (status && status !== "all" && status !== "reminder_due" && status !== "duplicate_followup_pending") {
+        url.searchParams.set("status", status);
+      }
 
       try {
         const response = await fetch(url.toString(), { credentials: "same-origin" });
@@ -2075,7 +2139,11 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
         }
         state.invitations.rows = Array.isArray(payload.rows) ? payload.rows : [];
         state.invitations.selectedIds = state.invitations.selectedIds.filter((recordId) =>
-          state.invitations.rows.some((row) => Number(row.record_id) === Number(recordId) && row.invitation_status === "invitation_a_envoyer")
+          state.invitations.rows.some((row) =>
+            Number(row.record_id) === Number(recordId)
+            && row.invitation_status === "invitation_a_envoyer"
+            && row.duplicate_followup_status !== "pending"
+          )
         );
         updateInvitationKpis(payload.stats || {});
         renderInvitations();
@@ -2131,9 +2199,14 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
         }
         const sentCount = Array.isArray(payload.sent) ? payload.sent.length : 0;
         const errorCount = Array.isArray(payload.errors) ? payload.errors.length : 0;
-        setStatus("invite-status-line", `Envoi terminé : ${sentCount} envoyé(s), ${errorCount} erreur(s).`);
+        const followupCount = Array.isArray(payload.skipped)
+          ? payload.skipped.filter((row) => row.followup_created).length
+          : 0;
+        const followupNote = followupCount ? `, ${followupCount} relance(s) à arbitrer` : "";
+        setStatus("invite-status-line", `Envoi terminé : ${sentCount} envoyé(s), ${errorCount} erreur(s)${followupNote}.`);
         await loadInvitations();
         await loadCockpit();
+        await loadTasks();
       } catch (error) {
         setStatus("invite-status-line", `Erreur : ${error.message || "envoi impossible"}`);
       }
@@ -2182,8 +2255,34 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
         setStatus("invite-status-line", "Invitation en erreur supprimée.");
         await loadInvitations();
         await loadCockpit();
+        await loadTasks();
       } catch (error) {
         setStatus("invite-status-line", `Erreur : ${error.message || "suppression impossible"}`);
+      }
+    }
+
+    async function submitDuplicateFollowup(recordId, action, note) {
+      setStatus("invite-status-line", action === "remind" ? "Envoi de la relance..." : "Clôture de la proposition...");
+      try {
+        const response = await fetch(apiUrl(`/admin/invitations/${recordId}/duplicate-followup`), {
+          method: "POST",
+          credentials: "same-origin",
+          headers: {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+          },
+          body: JSON.stringify({ action, note }),
+        });
+        const payload = await response.json();
+        if (!response.ok || !payload.ok) {
+          throw new Error(payload.error || `Erreur API (${response.status})`);
+        }
+        setStatus("invite-status-line", action === "remind" ? "Relance envoyée." : "Proposition ignorée.");
+        await loadInvitations();
+        await loadCockpit();
+        await loadTasks();
+      } catch (error) {
+        setStatus("invite-status-line", `Erreur : ${error.message || "action impossible"}`);
       }
     }
 
@@ -2252,6 +2351,7 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
               { label: "Sans matching à notifier", value: priorities.no_match_followup ?? 0, target: "no_match_followup" },
               { label: "Demandes de nouveaux métiers", value: priorities.new_job_request ?? 0, target: "new_job_request" },
               { label: "Nouveaux employeurs", value: priorities.new_employer_alert ?? 0, target: "new_employer_alert" },
+              { label: "Doublons à arbitrer", value: priorities.duplicate_invitation_followup ?? 0, target: "duplicate_invitation_followup" },
               { label: "Erreurs d’envoi", value: priorities.invitation_errors ?? 0, target: "invitation_errors" },
             ], { actionable: true })}
           </div>
@@ -2333,6 +2433,7 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
         no_match_followup: "sans matching",
         new_job_request: "nouveau métier",
         new_employer_alert: "nouvel employeur",
+        duplicate_invitation_followup: "invitation en doublon",
       };
       document.getElementById("task-filter-search").value = searchMap[target] || "";
       await loadTasks();
@@ -2454,6 +2555,33 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
             <button class="btn-accept" type="button" data-task-new-employer-action="reviewed">Marquer surveillé</button>
             <button class="btn-refuse" type="button" data-task-new-employer-action="dismissed">Ignorer</button>
           `;
+        } else if (row.task_type === "duplicate_invitation_followup") {
+          const duplicate = row.duplicate_followup || {};
+          body = `
+            <div class="compare-grid">
+              <section class="compare-card">
+                <h3>Invitation actuelle</h3>
+                <dl class="detail-list">
+                  <div class="detail-row"><dt>Adresse</dt><dd>${esc(duplicate.email || "-")}</dd></div>
+                  <div class="detail-row"><dt>Type</dt><dd>${esc(duplicate.role === "employer" ? "Employeur" : "Candidat")}</dd></div>
+                  <div class="detail-row"><dt>Structure</dt><dd>${esc(duplicate.company_name || "-")}</dd></div>
+                </dl>
+              </section>
+              <section class="compare-card">
+                <h3>Conflit détecté</h3>
+                <dl class="detail-list">
+                  <div class="detail-row"><dt>Nature</dt><dd>${esc(duplicate.duplicate_followup_type === "existing_questionnaire" ? "Questionnaire déjà reçu" : "Invitation déjà envoyée")}</dd></div>
+                  <div class="detail-row"><dt>Record cible</dt><dd>${esc(duplicate.duplicate_followup_target_record_id || "-")}</dd></div>
+                  <div class="detail-row"><dt>Statut cible</dt><dd>${esc(invitationStatusLabel(duplicate.duplicate_followup_target_status || "-"))}</dd></div>
+                  <div class="detail-row"><dt>Message</dt><dd>${esc(duplicate.duplicate_followup_message || "-")}</dd></div>
+                </dl>
+              </section>
+            </div>
+          `;
+          actions = `
+            ${duplicate.can_remind ? `<button class="btn-accept" type="button" data-task-duplicate-action="remind">Envoyer la relance</button>` : ""}
+            <button class="btn-refuse" type="button" data-task-duplicate-action="ignore">Ignorer</button>
+          `;
         }
 
         return `
@@ -2475,7 +2603,7 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
               ${body}
               <section class="notes-box">
                 <h4>Note admin</h4>
-                <textarea id="${esc(noteId)}" placeholder="Ajouter une note interne...">${esc(row.matching?.admin_decision_note || row.no_match?.note || row.new_job?.note || row.new_employer?.note || "")}</textarea>
+                <textarea id="${esc(noteId)}" placeholder="Ajouter une note interne...">${esc(row.matching?.admin_decision_note || row.no_match?.note || row.new_job?.note || row.new_employer?.note || row.duplicate_followup?.duplicate_followup_note || "")}</textarea>
                 <div class="hero-actions">${actions}</div>
               </section>
             </div>
@@ -2534,6 +2662,16 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
           await submitNewEmployerAlertStatus(recordId, status, note);
           await loadTasks();
           await loadCockpit();
+        });
+      }
+      for (const button of list.querySelectorAll("[data-task-duplicate-action]")) {
+        button.addEventListener("click", async (event) => {
+          const card = event.currentTarget.closest(".matching-card");
+          const recordId = card?.dataset.recordId;
+          const action = event.currentTarget.dataset.taskDuplicateAction;
+          const note = document.getElementById(`task-note-duplicate_invitation_followup-${recordId}`)?.value || "";
+          if (!recordId || !action) return;
+          await submitDuplicateFollowup(recordId, action, note);
         });
       }
     }
