@@ -79,6 +79,7 @@
     .toolbar input,
     .toolbar button,
     .decision-actions button,
+    .compact-response-actions input,
     .notes-box textarea,
     .notes-box button {
       font: inherit;
@@ -86,6 +87,7 @@
 
     .toolbar select,
     .toolbar input,
+    .compact-response-actions input,
     .notes-box textarea {
       width: 100%;
       min-height: 48px;
@@ -472,6 +474,22 @@
       margin-top: 0.25rem;
     }
 
+    .compact-response-actions {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 0.8rem;
+      align-items: center;
+    }
+
+    .compact-response-actions input {
+      min-height: 44px;
+      padding: 0.75rem 0.9rem;
+    }
+
+    .compact-response-actions .hero-actions {
+      margin-top: 0;
+    }
+
     .decision-meta {
       margin-top: 0.8rem;
       color: var(--muted);
@@ -841,6 +859,10 @@
       .decision-actions {
         justify-items: start;
         justify-content: flex-start;
+      }
+
+      .compact-response-actions {
+        grid-template-columns: 1fr;
       }
     }
 
@@ -1966,13 +1988,15 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
               </details>
               <section class="notes-box" style="margin-top:1rem;">
                 <h4>Gestion de la réponse</h4>
-                <textarea id="response-note-${esc(role)}-${esc(row.record_id)}" placeholder="Motif optionnel pour la désactivation">${esc(row.response_disabled_reason || "")}</textarea>
-                <div class="hero-actions">
-                  ${row.is_active === false
-                    ? `<button type="button" data-response-status-action="active" data-role="${esc(role)}" data-record-id="${esc(row.record_id)}">Réactiver</button>`
-                    : `<button class="btn-refuse" type="button" data-response-status-action="disabled" data-role="${esc(role)}" data-record-id="${esc(row.record_id)}">Désactiver</button>`
-                  }
-                  <button class="btn-refuse" type="button" data-response-delete="${esc(row.record_id)}" data-role="${esc(role)}">Supprimer</button>
+                <div class="compact-response-actions">
+                  <input id="response-note-${esc(role)}-${esc(row.record_id)}" type="text" placeholder="Motif optionnel" value="${esc(row.response_disabled_reason || "")}">
+                  <div class="hero-actions">
+                    ${row.is_active === false
+                      ? `<button type="button" data-response-status-action="active" data-role="${esc(role)}" data-record-id="${esc(row.record_id)}">Réactiver</button>`
+                      : `<button class="btn-refuse" type="button" data-response-status-action="disabled" data-role="${esc(role)}" data-record-id="${esc(row.record_id)}">Désactiver</button>`
+                    }
+                    <button class="btn-refuse" type="button" data-response-delete="${esc(row.record_id)}" data-role="${esc(role)}">Supprimer</button>
+                  </div>
                 </div>
               </section>
             </section>
