@@ -1950,16 +1950,20 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
 
           <div class="matching-body">
             <section class="compare-card" style="grid-column: 1 / -1;">
-              <h3>${esc(isCandidate ? "Réponse complète du candidat" : "Réponse complète de l’employeur")}</h3>
               ${row.response_disabled_reason ? `<p style="margin:0 0 0.8rem; line-height:1.7;"><strong>Motif de désactivation :</strong> ${esc(row.response_disabled_reason)}</p>` : ""}
-              <dl class="detail-list">
-                ${(Array.isArray(row.fields) ? row.fields : []).map((field) => `
-                  <div class="detail-row">
-                    <dt>${esc(field.label || field.key || "-")}</dt>
-                    <dd>${esc(field.value || "-")}</dd>
-                  </div>
-                `).join("")}
-              </dl>
+              <details>
+                <summary style="cursor:pointer; font-weight:700; margin-bottom:0.9rem;">
+                  ${esc(isCandidate ? "Afficher la réponse complète du candidat" : "Afficher la réponse complète de l’employeur")}
+                </summary>
+                <dl class="detail-list">
+                  ${(Array.isArray(row.fields) ? row.fields : []).map((field) => `
+                    <div class="detail-row">
+                      <dt>${esc(field.label || field.key || "-")}</dt>
+                      <dd>${esc(field.value || "-")}</dd>
+                    </div>
+                  `).join("")}
+                </dl>
+              </details>
               <section class="notes-box" style="margin-top:1rem;">
                 <h4>Gestion de la réponse</h4>
                 <textarea id="response-note-${esc(role)}-${esc(row.record_id)}" placeholder="Motif optionnel pour la désactivation">${esc(row.response_disabled_reason || "")}</textarea>
