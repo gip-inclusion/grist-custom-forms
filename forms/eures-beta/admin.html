@@ -195,6 +195,235 @@
       font-size: 1.1rem;
     }
 
+    .cockpit-hero-card {
+      grid-column: 1 / -1;
+      border: 1px solid rgba(18, 74, 155, 0.14);
+      background:
+        radial-gradient(circle at top left, rgba(213, 230, 255, 0.95), transparent 42%),
+        linear-gradient(180deg, rgba(241, 247, 255, 0.98), rgba(255, 255, 255, 0.95));
+    }
+
+    .cockpit-hero-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.4fr) minmax(320px, 0.9fr);
+      gap: 1rem;
+      align-items: start;
+    }
+
+    .cockpit-hero-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.35rem 0.7rem;
+      border-radius: 999px;
+      background: rgba(255, 230, 176, 0.7);
+      color: #8d5311;
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+    }
+
+    .cockpit-hero-main h2 {
+      margin: 0.9rem 0 0.5rem;
+      font-size: clamp(1.8rem, 3vw, 2.8rem);
+      line-height: 0.95;
+      letter-spacing: -0.04em;
+      color: var(--accent-strong);
+    }
+
+    .cockpit-hero-main p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.7;
+      max-width: 70ch;
+    }
+
+    .cockpit-hero-kpis {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.8rem;
+      margin-top: 1rem;
+    }
+
+    .cockpit-hero-kpi {
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.92);
+      padding: 0.95rem 1rem;
+    }
+
+    .cockpit-hero-kpi strong {
+      display: block;
+      font-size: 2rem;
+      line-height: 1;
+      color: var(--accent-strong);
+    }
+
+    .cockpit-hero-kpi span {
+      display: block;
+      margin-top: 0.35rem;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .cockpit-hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.7rem;
+      margin-top: 1rem;
+    }
+
+    .cockpit-hero-actions button,
+    .cockpit-quick-card button,
+    .cockpit-priority-item button,
+    .cockpit-health-item button {
+      min-height: 46px;
+      border-radius: 999px;
+      border: 1px solid transparent;
+      padding: 0.75rem 1rem;
+      cursor: pointer;
+      font: inherit;
+      font-weight: 700;
+      transition: transform 120ms ease, background 120ms ease, border-color 120ms ease;
+    }
+
+    .cockpit-hero-actions button:hover,
+    .cockpit-quick-card button:hover,
+    .cockpit-priority-item button:hover,
+    .cockpit-health-item button:hover {
+      transform: translateY(-1px);
+    }
+
+    .cockpit-primary-btn {
+      background: var(--accent);
+      color: white;
+    }
+
+    .cockpit-secondary-btn {
+      background: rgba(255, 255, 255, 0.94);
+      color: var(--accent-strong);
+      border-color: var(--line) !important;
+    }
+
+    .cockpit-side-stack,
+    .cockpit-priority-list,
+    .cockpit-health-list,
+    .cockpit-quick-grid {
+      display: grid;
+      gap: 0.8rem;
+    }
+
+    .cockpit-side-stack {
+      align-content: start;
+    }
+
+    .cockpit-signal-card,
+    .cockpit-priority-item,
+    .cockpit-health-item,
+    .cockpit-quick-card {
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.92);
+      padding: 1rem;
+    }
+
+    .cockpit-signal-card strong,
+    .cockpit-priority-item strong,
+    .cockpit-health-item strong,
+    .cockpit-quick-card strong {
+      color: var(--accent-strong);
+    }
+
+    .cockpit-signal-card p,
+    .cockpit-priority-item p,
+    .cockpit-health-item p,
+    .cockpit-quick-card p {
+      margin: 0.35rem 0 0;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    .cockpit-signal-card.warning {
+      border-color: #e7bc77;
+      background: linear-gradient(180deg, rgba(255, 245, 226, 0.96), rgba(255, 255, 255, 0.94));
+    }
+
+    .cockpit-signal-card.danger,
+    .cockpit-health-item.danger {
+      border-color: #e0a4a4;
+      background: linear-gradient(180deg, rgba(254, 238, 238, 0.96), rgba(255, 255, 255, 0.94));
+    }
+
+    .cockpit-signal-card.success,
+    .cockpit-health-item.success {
+      border-color: #90c8a6;
+      background: linear-gradient(180deg, rgba(239, 249, 241, 0.96), rgba(255, 255, 255, 0.94));
+    }
+
+    .cockpit-health-item.warning {
+      border-color: #e7bc77;
+      background: linear-gradient(180deg, rgba(255, 247, 232, 0.96), rgba(255, 255, 255, 0.94));
+    }
+
+    .cockpit-priority-head,
+    .cockpit-health-head,
+    .cockpit-quick-head,
+    .cockpit-signal-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+      align-items: center;
+    }
+
+    .cockpit-priority-count,
+    .cockpit-signal-count {
+      min-width: 68px;
+      border-radius: 18px;
+      padding: 0.75rem 0.8rem;
+      text-align: center;
+      background: rgba(15, 39, 66, 0.06);
+    }
+
+    .cockpit-priority-count strong,
+    .cockpit-signal-count strong {
+      display: block;
+      font-size: 1.7rem;
+      line-height: 1;
+    }
+
+    .cockpit-priority-count span,
+    .cockpit-signal-count span {
+      display: block;
+      margin-top: 0.2rem;
+      color: var(--muted);
+      font-size: 0.8rem;
+    }
+
+    .cockpit-priority-item footer,
+    .cockpit-health-item footer,
+    .cockpit-quick-card footer {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 0.85rem;
+    }
+
+    .cockpit-health-grid,
+    .cockpit-operations-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 1rem;
+    }
+
+    .cockpit-quick-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .cockpit-section-intro {
+      margin: -0.25rem 0 0.9rem;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
     .metric-list,
     .activity-list {
       display: grid;
@@ -233,6 +462,12 @@
     .metric-row strong,
     .activity-row strong {
       color: var(--accent-strong);
+    }
+
+    .activity-row small {
+      color: var(--muted);
+      display: block;
+      margin-top: 0.15rem;
     }
 
     .task-type-label {
@@ -882,6 +1117,14 @@
     }
 
     @media (max-width: 1280px) {
+      .cockpit-hero-grid,
+      .cockpit-health-grid,
+      .cockpit-operations-grid,
+      .cockpit-quick-grid,
+      .cockpit-hero-kpis {
+        grid-template-columns: 1fr;
+      }
+
       .kpis,
       .subscores-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -919,6 +1162,12 @@
       }
 
       .inline-actions {
+        display: grid;
+        grid-template-columns: 1fr;
+      }
+
+      .cockpit-hero-actions,
+      .global-watch-actions {
         display: grid;
         grid-template-columns: 1fr;
       }
@@ -1481,6 +1730,9 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
         text.textContent = "";
         candidateButton.hidden = true;
         employerButton.hidden = true;
+        if (state.cockpit.data) {
+          renderCockpit();
+        }
         return;
       }
 
@@ -1495,6 +1747,9 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
       text.innerHTML = `<strong>Nouvelles réponses détectées :</strong> ${esc(parts.join(" · "))}`;
       candidateButton.hidden = candidateCount === 0;
       employerButton.hidden = employerCount === 0;
+      if (state.cockpit.data) {
+        renderCockpit();
+      }
     }
 
     function clearResponseWatch(role) {
@@ -2370,6 +2625,13 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
         loadMatchings();
         return;
       }
+      if (target === "matchings-manual-builder") {
+        activateTab("matchings");
+        window.setTimeout(() => {
+          document.getElementById("manual-match-candidate")?.scrollIntoView({ behavior: "smooth", block: "start" });
+        }, 60);
+        return;
+      }
       if (target === "tasks") {
         activateTab("tasks");
         loadTasks();
@@ -2649,6 +2911,43 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
       const funnel = data.funnel || {};
       const delays = data.delays || {};
       const activity = Array.isArray(data.recent_activity) ? data.recent_activity : [];
+      const brevo = state.brevo || null;
+      const unseenCandidate = Number(state.candidateResponses.unseenCount || 0);
+      const unseenEmployer = Number(state.employerResponses.unseenCount || 0);
+      const pendingDecisions =
+        Number(priorities.matching_review || 0) +
+        Number(priorities.no_match_followup || 0) +
+        Number(priorities.new_job_request || 0) +
+        Number(priorities.new_employer_alert || 0) +
+        Number(priorities.duplicate_invitation_followup || 0);
+      const alertCount =
+        Number(priorities.invitation_errors || 0) +
+        Number(priorities.duplicate_invitation_followup || 0) +
+        Number(priorities.new_employer_alert || 0);
+      const responseSignals = unseenCandidate + unseenEmployer;
+
+      function formatHours(value) {
+        return value != null ? `${value} h` : "-";
+      }
+
+      function signalTone(count, warningThreshold = 1) {
+        if (count >= warningThreshold && count > 0) return "warning";
+        return "success";
+      }
+
+      function healthTone() {
+        if (!brevo?.configured) return "danger";
+        if (brevo?.api_ok === false) return "danger";
+        if (brevo?.api_ok === true) return "success";
+        return "warning";
+      }
+
+      function healthLabel() {
+        if (!brevo?.configured) return "Brevo non configuré";
+        if (brevo?.api_ok === false) return "Brevo en incident";
+        if (brevo?.api_ok === true) return "Brevo opérationnel";
+        return "Brevo à vérifier";
+      }
 
       const metricRows = (rows, options = {}) => rows.map((row) => `
         <div class="metric-row ${options.actionable ? "actionable" : ""}" ${options.actionable ? `data-${esc(options.targetAttr || "priority-target")}="${esc(row.target || "")}"` : ""}>
@@ -2660,54 +2959,253 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
       const activityRows = activity.length
         ? activity.map((row) => `
             <div class="activity-row">
-              <span>${esc(row.label || "-")}</span>
+              <span>
+                ${esc(row.label || "-")}
+                ${row.detail ? `<small>${esc(row.detail)}</small>` : ""}
+              </span>
               <strong>${esc(row.at || "-")}</strong>
             </div>
           `).join("")
         : `<div class="empty-state">Aucune activité récente.</div>`;
 
       container.innerHTML = `
-        <article class="cockpit-card">
-          <h3>Priorités</h3>
-          <div class="metric-list">
-            ${metricRows([
-              { label: "Matchings à valider", value: priorities.matching_review ?? 0, target: "matching_review" },
-              { label: "Sans matching à notifier", value: priorities.no_match_followup ?? 0, target: "no_match_followup" },
-              { label: "Demandes de nouveaux métiers", value: priorities.new_job_request ?? 0, target: "new_job_request" },
-              { label: "Nouveaux employeurs", value: priorities.new_employer_alert ?? 0, target: "new_employer_alert" },
-              { label: "Doublons à arbitrer", value: priorities.duplicate_invitation_followup ?? 0, target: "duplicate_invitation_followup" },
-              { label: "Erreurs d’envoi", value: priorities.invitation_errors ?? 0, target: "invitation_errors" },
-            ], { actionable: true })}
+        <article class="cockpit-card cockpit-hero-card">
+          <div class="cockpit-hero-grid">
+            <div class="cockpit-hero-main">
+              <span class="cockpit-hero-eyebrow">Pilotage quotidien</span>
+              <h2>Agir vite sur ce qui compte aujourd’hui</h2>
+              <p>Ce cockpit met en avant les arbitrages à prendre, les nouvelles entrées à surveiller et la santé du service. L’idée est de vous permettre de piloter l’expérimentation sans chercher l’information dans plusieurs onglets.</p>
+              <div class="cockpit-hero-kpis">
+                <div class="cockpit-hero-kpi">
+                  <strong>${esc(pendingDecisions)}</strong>
+                  <span>décision(s) en attente</span>
+                </div>
+                <div class="cockpit-hero-kpi">
+                  <strong>${esc(responseSignals)}</strong>
+                  <span>nouvelle(s) réponse(s) détectée(s)</span>
+                </div>
+                <div class="cockpit-hero-kpi">
+                  <strong>${esc(alertCount)}</strong>
+                  <span>signal(s) de vigilance</span>
+                </div>
+              </div>
+              <div class="cockpit-hero-actions">
+                <button class="cockpit-primary-btn" type="button" data-open-list="tasks">Ouvrir les décisions à traiter</button>
+                <button class="cockpit-secondary-btn" type="button" data-open-list="matchings-pending">Voir les matchings à valider</button>
+                <button class="cockpit-secondary-btn" type="button" data-open-list="matchings-manual-builder">Créer un matching manuel</button>
+              </div>
+            </div>
+            <div class="cockpit-side-stack">
+              <article class="cockpit-signal-card ${signalTone(responseSignals)}">
+                <div class="cockpit-signal-head">
+                  <div>
+                    <strong>Nouvelles réponses</strong>
+                    <p>Candidats : ${esc(unseenCandidate)} · Employeurs : ${esc(unseenEmployer)}</p>
+                  </div>
+                  <div class="cockpit-signal-count">
+                    <strong>${esc(responseSignals)}</strong>
+                    <span>à ouvrir</span>
+                  </div>
+                </div>
+              </article>
+              <article class="cockpit-signal-card ${signalTone(priorities.matching_review ?? 0)}">
+                <div class="cockpit-signal-head">
+                  <div>
+                    <strong>Matchings à arbitrer</strong>
+                    <p>Décisions humaines à prendre avant envoi ou clôture.</p>
+                  </div>
+                  <div class="cockpit-signal-count">
+                    <strong>${esc(priorities.matching_review ?? 0)}</strong>
+                    <span>en attente</span>
+                  </div>
+                </div>
+              </article>
+              <article class="cockpit-signal-card ${healthTone()}">
+                <div class="cockpit-signal-head">
+                  <div>
+                    <strong>${esc(healthLabel())}</strong>
+                    <p>${esc(brevo?.message || "Aucune information de santé disponible pour le moment.")}</p>
+                  </div>
+                  <div class="cockpit-signal-count">
+                    <strong>${esc(Number(priorities.invitation_errors || 0))}</strong>
+                    <span>erreur(s)</span>
+                  </div>
+                </div>
+              </article>
+            </div>
           </div>
         </article>
 
         <article class="cockpit-card">
-          <h3>Flux du jour</h3>
-          <div class="metric-list">
-            ${metricRows([
-              { label: "Matchings calculés", value: todayFlow.matchings_calcules ?? 0, target: "matchings-all" },
-              { label: "Matchings manuels envoyés", value: todayFlow.matchings_manuels_envoyes ?? 0, target: "matchings-manual-sent" },
-              { label: "Emails envoyés", value: todayFlow.emails_envoyes ?? 0, target: "invitations" },
-              { label: "Cas sans matching", value: todayFlow.sans_matching_crees ?? 0, target: "tasks" },
-              { label: "Nouveaux métiers demandés", value: todayFlow.nouveaux_metiers_recus ?? 0, target: "tasks" },
-            ], { actionable: true, targetAttr: "open-list" })}
+          <h3>Décisions à prendre maintenant</h3>
+          <p class="cockpit-section-intro">Les tâches les plus sensibles sont isolées ici pour éviter de naviguer dans plusieurs écrans avant d’agir.</p>
+          <div class="cockpit-priority-list">
+            ${[
+              {
+                title: "Valider les matchings",
+                count: priorities.matching_review ?? 0,
+                detail: "Arbitrages sur les rapprochements calculés ou créés manuellement.",
+                action: "Ouvrir la file de validation",
+                targetType: "priority",
+                target: "matching_review",
+              },
+              {
+                title: "Notifier l’absence de matching",
+                count: priorities.no_match_followup ?? 0,
+                detail: "Entrées qui nécessitent un retour explicite au candidat ou à l’employeur.",
+                action: "Ouvrir les cas sans matching",
+                targetType: "priority",
+                target: "no_match_followup",
+              },
+              {
+                title: "Surveiller les nouveaux employeurs",
+                count: priorities.new_employer_alert ?? 0,
+                detail: "Demandes déposées par de nouvelles structures à examiner avec plus de vigilance.",
+                action: "Ouvrir ces alertes",
+                targetType: "priority",
+                target: "new_employer_alert",
+              },
+            ].map((item) => `
+              <article class="cockpit-priority-item">
+                <div class="cockpit-priority-head">
+                  <div>
+                    <strong>${esc(item.title)}</strong>
+                    <p>${esc(item.detail)}</p>
+                  </div>
+                  <div class="cockpit-priority-count">
+                    <strong>${esc(item.count)}</strong>
+                    <span>cas</span>
+                  </div>
+                </div>
+                <footer>
+                  <button class="cockpit-secondary-btn" type="button" data-priority-target="${esc(item.target)}">${esc(item.action)}</button>
+                </footer>
+              </article>
+            `).join("")}
           </div>
         </article>
 
         <article class="cockpit-card">
-          <h3>Entonnoir</h3>
-          <div class="metric-list">
-            ${metricRows([
-              { label: "Besoins reçus", value: funnel.besoins_recus ?? 0, target: "employer-responses" },
-              { label: "Candidats contactés", value: funnel.candidats_contactes ?? 0, target: "invitations" },
-              { label: "Candidats reçus", value: funnel.candidats_recus ?? 0, target: "candidate-responses" },
-              { label: "Matchings exploitables", value: funnel.matchings_exploitables ?? 0, target: "matchings-all" },
-              { label: "Matchings validés", value: funnel.matchings_valides ?? 0, target: "matchings-accepted" },
-              { label: "Matchings manuels envoyés", value: funnel.matchings_manuels_envoyes ?? 0, target: "matchings-manual-sent" },
-              { label: "Envoyés aux employeurs", value: funnel.envoyes_employeurs ?? 0, target: "matchings-accepted" },
-              { label: "Mises en relation", value: funnel.mises_en_relation ?? 0, target: "matchings-accepted" },
-              { label: "Embauches confirmées", value: funnel.embauches_confirmees ?? 0, target: "matchings-accepted" },
-            ], { actionable: true, targetAttr: "open-list" })}
+          <h3>Raccourcis opérationnels</h3>
+          <p class="cockpit-section-intro">Accès direct aux vues les plus utilisées dans le pilotage quotidien.</p>
+          <div class="cockpit-quick-grid">
+            ${[
+              {
+                title: "Réponses candidats",
+                detail: `Consulter les questionnaires reçus et leurs matchings liés. ${unseenCandidate ? `${unseenCandidate} nouvelle(s) réponse(s).` : ""}`.trim(),
+                target: "candidate-responses",
+                action: "Ouvrir les réponses candidats",
+              },
+              {
+                title: "Réponses employeurs",
+                detail: `Consulter les besoins reçus et leur prise en compte dans le matching. ${unseenEmployer ? `${unseenEmployer} nouvelle(s) réponse(s).` : ""}`.trim(),
+                target: "employer-responses",
+                action: "Ouvrir les réponses employeurs",
+              },
+              {
+                title: "Invitations et relances",
+                detail: "Gérer les invitations à envoyer, les relances et les erreurs d’envoi.",
+                target: "invitations",
+                action: "Ouvrir les invitations",
+              },
+              {
+                title: "Matchings manuels",
+                detail: "Créer rapidement un rapprochement manuel quand l’automatique ne suffit pas.",
+                target: "matchings-manual-builder",
+                action: "Créer un matching manuel",
+              },
+            ].map((item) => `
+              <article class="cockpit-quick-card">
+                <div class="cockpit-quick-head">
+                  <strong>${esc(item.title)}</strong>
+                </div>
+                <p>${esc(item.detail)}</p>
+                <footer>
+                  <button class="cockpit-secondary-btn" type="button" data-open-list="${esc(item.target)}">${esc(item.action)}</button>
+                </footer>
+              </article>
+            `).join("")}
+          </div>
+        </article>
+
+        <article class="cockpit-card full">
+          <h3>Suivi opérationnel</h3>
+          <p class="cockpit-section-intro">Vue consolidée du pipeline et des délais pour suivre la progression réelle de l’expérimentation.</p>
+          <div class="cockpit-operations-grid">
+            <section class="notes-box">
+              <h4>Flux du jour</h4>
+              <div class="metric-list">
+                ${metricRows([
+                  { label: "Matchings calculés", value: todayFlow.matchings_calcules ?? 0, target: "matchings-all" },
+                  { label: "Matchings manuels envoyés", value: todayFlow.matchings_manuels_envoyes ?? 0, target: "matchings-manual-sent" },
+                  { label: "Emails envoyés", value: todayFlow.emails_envoyes ?? 0, target: "invitations" },
+                  { label: "Cas sans matching", value: todayFlow.sans_matching_crees ?? 0, target: "tasks" },
+                  { label: "Nouveaux métiers demandés", value: todayFlow.nouveaux_metiers_recus ?? 0, target: "tasks" },
+                ], { actionable: true, targetAttr: "open-list" })}
+              </div>
+            </section>
+            <section class="notes-box">
+              <h4>Entonnoir</h4>
+              <div class="metric-list">
+                ${metricRows([
+                  { label: "Besoins reçus", value: funnel.besoins_recus ?? 0, target: "employer-responses" },
+                  { label: "Candidats contactés", value: funnel.candidats_contactes ?? 0, target: "invitations" },
+                  { label: "Candidats reçus", value: funnel.candidats_recus ?? 0, target: "candidate-responses" },
+                  { label: "Matchings exploitables", value: funnel.matchings_exploitables ?? 0, target: "matchings-all" },
+                  { label: "Matchings validés", value: funnel.matchings_valides ?? 0, target: "matchings-accepted" },
+                  { label: "Envoyés aux employeurs", value: funnel.envoyes_employeurs ?? 0, target: "matchings-accepted" },
+                  { label: "Mises en relation", value: funnel.mises_en_relation ?? 0, target: "matchings-accepted" },
+                  { label: "Embauches confirmées", value: funnel.embauches_confirmees ?? 0, target: "matchings-accepted" },
+                ], { actionable: true, targetAttr: "open-list" })}
+              </div>
+            </section>
+          </div>
+        </article>
+
+        <article class="cockpit-card full">
+          <h3>Santé du service</h3>
+          <p class="cockpit-section-intro">Indicateurs à surveiller pour éviter les angles morts techniques ou métier.</p>
+          <div class="cockpit-health-grid">
+            <article class="cockpit-health-item ${healthTone()}">
+              <div class="cockpit-health-head">
+                <strong>Envoi des emails</strong>
+                <span class="pill ${healthTone() === "success" ? "accepted" : healthTone() === "danger" ? "refused" : "pending"}">${esc(healthLabel())}</span>
+              </div>
+              <p>${esc(brevo?.message || "Le statut Brevo sera affiché ici dès qu’un contrôle aura été fait.")}</p>
+              <footer>
+                <button class="cockpit-secondary-btn" type="button" data-open-list="invitations">Voir les invitations</button>
+              </footer>
+            </article>
+            <article class="cockpit-health-item ${Number(priorities.invitation_errors || 0) > 0 ? "danger" : "success"}">
+              <div class="cockpit-health-head">
+                <strong>Erreurs d’envoi</strong>
+                <span class="pill ${Number(priorities.invitation_errors || 0) > 0 ? "refused" : "accepted"}">${esc(priorities.invitation_errors ?? 0)} erreur(s)</span>
+              </div>
+              <p>Les envois qui ont échoué doivent être supprimés ou retraités pour garder un suivi propre.</p>
+              <footer>
+                <button class="cockpit-secondary-btn" type="button" data-priority-target="invitation_errors">Ouvrir les erreurs</button>
+              </footer>
+            </article>
+            <article class="cockpit-health-item ${Number(priorities.duplicate_invitation_followup || 0) > 0 ? "warning" : "success"}">
+              <div class="cockpit-health-head">
+                <strong>Doublons à arbitrer</strong>
+                <span class="pill ${Number(priorities.duplicate_invitation_followup || 0) > 0 ? "pending" : "accepted"}">${esc(priorities.duplicate_invitation_followup ?? 0)} cas</span>
+              </div>
+              <p>Ces invitations nécessitent une décision pour éviter une relance inutile ou contradictoire.</p>
+              <footer>
+                <button class="cockpit-secondary-btn" type="button" data-priority-target="duplicate_invitation_followup">Traiter les doublons</button>
+              </footer>
+            </article>
+            <article class="cockpit-health-item ${Number(priorities.new_employer_alert || 0) > 0 ? "warning" : "success"}">
+              <div class="cockpit-health-head">
+                <strong>Nouveaux employeurs</strong>
+                <span class="pill ${Number(priorities.new_employer_alert || 0) > 0 ? "pending" : "accepted"}">${esc(priorities.new_employer_alert ?? 0)} alerte(s)</span>
+              </div>
+              <p>Ces demandes viennent de nouvelles structures et méritent un regard renforcé avant traitement complet.</p>
+              <footer>
+                <button class="cockpit-secondary-btn" type="button" data-priority-target="new_employer_alert">Voir les alertes</button>
+              </footer>
+            </article>
           </div>
         </article>
 
@@ -2715,11 +3213,22 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
           <h3>Délais moyens</h3>
           <div class="metric-list">
             ${metricRows([
-              { label: "Matching -> validation admin", value: delays.matching_to_validation_hours != null ? `${delays.matching_to_validation_hours} h` : "-" },
-              { label: "Validation -> envoi employeur", value: delays.validation_to_send_hours != null ? `${delays.validation_to_send_hours} h` : "-" },
-              { label: "Envoi -> retour employeur", value: delays.send_to_response_hours != null ? `${delays.send_to_response_hours} h` : "-" },
-              { label: "Retour -> mise en relation", value: delays.response_to_relation_hours != null ? `${delays.response_to_relation_hours} h` : "-" },
+              { label: "Matching -> validation admin", value: formatHours(delays.matching_to_validation_hours) },
+              { label: "Validation -> envoi employeur", value: formatHours(delays.validation_to_send_hours) },
+              { label: "Envoi -> retour employeur", value: formatHours(delays.send_to_response_hours) },
+              { label: "Retour -> mise en relation", value: formatHours(delays.response_to_relation_hours) },
             ])}
+          </div>
+        </article>
+
+        <article class="cockpit-card">
+          <h3>Charge à venir</h3>
+          <div class="metric-list">
+            ${metricRows([
+              { label: "Demandes de nouveaux métiers", value: priorities.new_job_request ?? 0, target: "new_job_request" },
+              { label: "Cas sans matching à notifier", value: priorities.no_match_followup ?? 0, target: "no_match_followup" },
+              { label: "Doublons à arbitrer", value: priorities.duplicate_invitation_followup ?? 0, target: "duplicate_invitation_followup" },
+            ], { actionable: true })}
           </div>
         </article>
 
@@ -3374,6 +3883,9 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
         const health = payload?.brevo || null;
         state.brevo = health;
         renderBrevoStatus(health);
+        if (state.cockpit.data) {
+          renderCockpit();
+        }
       } catch (error) {
         setStatus("brevo-status-line", `Brevo : vérification impossible. ${error.message || "erreur réseau"}`);
       }
