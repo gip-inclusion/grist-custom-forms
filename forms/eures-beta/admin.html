@@ -1372,10 +1372,12 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
       candidateResponses: {
         rows: [],
         loading: false,
+        signature: "",
       },
       employerResponses: {
         rows: [],
         loading: false,
+        signature: "",
       },
       matchings: {
         rows: [],
@@ -1390,6 +1392,7 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
         loading: false,
       },
       brevo: null,
+      questionnaireAutoRefreshTimer: null,
     };
 
     function esc(value) {
@@ -1407,6 +1410,13 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
 
     function setStatus(targetId, message) {
       document.getElementById(targetId).textContent = message;
+    }
+
+    function questionnaireResponseSignature(rows) {
+      if (!Array.isArray(rows) || !rows.length) return "";
+      return rows
+        .map((row) => `${row.record_id}:${row.response_received_at || row.submitted_at || ""}:${row.response_status || ""}`)
+        .join("|");
     }
 
     function renderBrevoStatus(health) {
@@ -2054,7 +2064,7 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
       }
     }
 
-    async function loadQuestionnaireResponses(role) {
+    async function loadQuestionnaireResponses(role, options = {}) {
       const isCandidate = role === "candidate";
       const stateKey = isCandidate ? "candidateResponses" : "employerResponses";
       const statusId = isCandidate ? "candidate-response-status-line" : "employer-response-status-line";
@@ -2063,10 +2073,13 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
       const kpiActiveId = isCandidate ? "candidate-response-kpi-active" : "employer-response-kpi-active";
       const kpiDisabledId = isCandidate ? "candidate-response-kpi-disabled" : "employer-response-kpi-disabled";
       const label = isCandidate ? "candidats" : "employeurs";
+      const silent = Boolean(options.silent);
 
       if (state[stateKey].loading) return;
       state[stateKey].loading = true;
-      setStatus(statusId, `Chargement des réponses ${label}...`);
+      if (!silent) {
+        setStatus(statusId, `Chargement des réponses ${label}...`);
+      }
 
       try {
         const response = await fetch(apiUrl(`/admin/questionnaires/${role}`), { credentials: "same-origin" });
@@ -2074,19 +2087,51 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
         if (!response.ok || !payload.ok) {
           throw new Error(payload.error || `Erreur API (${response.status})`);
         }
-        state[stateKey].rows = Array.isArray(payload.rows) ? payload.rows : [];
+        const nextRows = Array.isArray(payload.rows) ? payload.rows : [];
+        const previousSignature = state[stateKey].signature || "";
+        const nextSignature = questionnaireResponseSignature(nextRows);
+        const previousCount = Array.isArray(state[stateKey].rows) ? state[stateKey].rows.length : 0;
+        const nextCount = nextRows.length;
+        const hasChanged = previousSignature !== nextSignature;
+
+        state[stateKey].rows = nextRows;
+        state[stateKey].signature = nextSignature;
         document.getElementById(kpiId).textContent = payload.stats?.total ?? 0;
         document.getElementById(kpiActiveId).textContent = payload.stats?.active ?? 0;
         document.getElementById(kpiDisabledId).textContent = payload.stats?.disabled ?? 0;
-        renderQuestionnaireResponses(role);
-        renderManualMatchingOptions();
-        setStatus(statusId, `${state[stateKey].rows.length} réponse(s) ${label} chargée(s).`);
+        if (!silent || hasChanged) {
+          renderQuestionnaireResponses(role);
+          renderManualMatchingOptions();
+        }
+        if (!silent) {
+          setStatus(statusId, `${state[stateKey].rows.length} réponse(s) ${label} chargée(s).`);
+        } else if (hasChanged && nextCount > previousCount) {
+          setStatus(statusId, `${nextCount - previousCount} nouvelle(s) réponse(s) ${label} détectée(s).`);
+        }
       } catch (error) {
-        document.getElementById(listId).innerHTML = `<div class="empty-state">${esc(error.message || "Erreur de chargement")}</div>`;
-        setStatus(statusId, `Erreur : ${error.message || "chargement impossible"}`);
+        if (!silent) {
+          document.getElementById(listId).innerHTML = `<div class="empty-state">${esc(error.message || "Erreur de chargement")}</div>`;
+          setStatus(statusId, `Erreur : ${error.message || "chargement impossible"}`);
+        }
       } finally {
         state[stateKey].loading = false;
       }
+    }
+
+    function startQuestionnaireAutoRefresh() {
+      if (state.questionnaireAutoRefreshTimer) {
+        window.clearInterval(state.questionnaireAutoRefreshTimer);
+      }
+      state.questionnaireAutoRefreshTimer = window.setInterval(() => {
+        if (document.hidden) return;
+        if (state.activeTab === "candidate-responses") {
+          loadQuestionnaireResponses("candidate", { silent: true });
+          return;
+        }
+        if (state.activeTab === "employer-responses") {
+          loadQuestionnaireResponses("employer", { silent: true });
+        }
+      }, 30000);
     }
 
     async function updateQuestionnaireResponseStatus(role, recordId, status, reason) {
@@ -3544,6 +3589,7 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
       button.addEventListener("click", () => activateTab(button.dataset.tab));
     }
     activateTab("cockpit");
+    startQuestionnaireAutoRefresh();
     loadCockpit();
     loadTasks();
     loadInvitations();
