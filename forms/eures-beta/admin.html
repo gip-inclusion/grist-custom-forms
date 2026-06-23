@@ -635,6 +635,17 @@
       border-color: var(--line) !important;
     }
 
+    a.btn-neutral {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 48px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 0.8rem 1.1rem;
+      text-decoration: none;
+    }
+
     .matching-body {
       display: grid;
       gap: 1rem;
@@ -2316,6 +2327,7 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
                 <span class="pill">Réponse reçue le : ${esc(row.response_received_at || row.submitted_at || "-")}</span>
                 <span class="pill">Clé : ${esc(row.record_key || row.record_id || "-")}</span>
                 <span class="pill">${esc(row.matching_count || 0)} matching(s)</span>
+                ${row.cv_download_url ? `<span class="pill accepted">CV disponible</span>` : ""}
               </div>
               ${row.summary ? `<div class="detail-tags"><span class="pill">${esc(row.summary)}</span></div>` : ""}
             </div>
@@ -2349,6 +2361,15 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
                   </div>
                 ` : `<p style="margin:0; color:var(--muted);">Aucun matching lié pour le moment.</p>`}
               </section>
+              ${row.cv_download_url ? `
+                <section class="notes-box" style="margin-bottom:1rem;">
+                  <h4>CV du candidat</h4>
+                  <p style="margin:0; color:var(--muted); line-height:1.7;">${esc(row.cv_file_name || "CV")}</p>
+                  <div class="hero-actions" style="margin-top:0.8rem;">
+                    <a class="btn-neutral" href="${esc(row.cv_download_url)}" target="_blank" rel="noopener noreferrer">Télécharger le CV</a>
+                  </div>
+                </section>
+              ` : ""}
               ${row.response_disabled_reason ? `<p style="margin:0 0 0.8rem; line-height:1.7;"><strong>Motif de désactivation :</strong> ${esc(row.response_disabled_reason)}</p>` : ""}
               <details>
                 <summary style="cursor:pointer; font-weight:700; margin-bottom:0.9rem;">

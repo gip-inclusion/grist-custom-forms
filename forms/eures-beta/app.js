@@ -4284,9 +4284,8 @@ function attachCandidateTallyBehavior(lang, t) {
         if (!rawValue.name) {
           continue;
         }
-        const meta = { name: rawValue.name, size: rawValue.size, type: rawValue.type || "" };
-        files[key] = meta;
-        values[key] = meta.name;
+        files[key] = rawValue;
+        values[key] = rawValue.name;
         continue;
       }
 
@@ -4307,6 +4306,58 @@ function attachCandidateTallyBehavior(lang, t) {
     }
 
     return { values, files };
+  }
+
+  async function readCandidateCvFile(file) {
+    if (!file) {
+      return null;
+    }
+    function inferMime(name, mime) {
+      if (mime) {
+        return mime;
+      }
+      const lower = String(name || "").toLowerCase();
+      if (lower.endsWith(".pdf")) return "application/pdf";
+      if (lower.endsWith(".doc")) return "application/msword";
+      if (lower.endsWith(".docx")) return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+      if (lower.endsWith(".odt")) return "application/vnd.oasis.opendocument.text";
+      return "";
+    }
+    const allowedTypes = new Set([
+      "application/pdf",
+      "application/msword",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "application/vnd.oasis.opendocument.text"
+    ]);
+    const maxBytes = 3 * 1024 * 1024;
+    const resolvedType = inferMime(file.name, file.type || "");
+    if (!allowedTypes.has(resolvedType)) {
+      throw new Error("Le CV doit etre au format PDF, DOC, DOCX ou ODT.");
+    }
+    if (file.size > maxBytes) {
+      throw new Error("Le CV depasse la taille autorisee de 3 Mo.");
+    }
+    const fileBase64 = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = String(reader.result || "");
+        const marker = "base64,";
+        const index = result.indexOf(marker);
+        if (index === -1) {
+          reject(new Error("Le CV n'a pas pu etre lu correctement."));
+          return;
+        }
+        resolve(result.slice(index + marker.length));
+      };
+      reader.onerror = () => reject(new Error("Le CV n'a pas pu etre lu correctement."));
+      reader.readAsDataURL(file);
+    });
+    return {
+      name: file.name,
+      size: file.size,
+      type: resolvedType,
+      base64: fileBase64
+    };
   }
 
   form.addEventListener("change", () => toggleConditionBlocks(form));
@@ -4418,7 +4469,9 @@ function attachCandidateTallyBehavior(lang, t) {
     normalized.tally_q17 = rankingSummary.join(" > ");
     normalized.tally_q36 = files["file__tally_q36"] ? files["file__tally_q36"].name : "";
 
-    const rawAnswers = humanizeCandidateRawAnswers(normalized, files["file__tally_q36"] || null, rankingSummary);
+    const cvPayload = await readCandidateCvFile(files["file__tally_q36"] || null);
+    const cvMeta = cvPayload ? { name: cvPayload.name, size: cvPayload.size, type: cvPayload.type } : null;
+    const rawAnswers = humanizeCandidateRawAnswers(normalized, cvMeta, rankingSummary);
 
     const targetCountries = candidateTallyMeta.countryRows
       .filter((row) => Array.isArray(normalized[row.field]) && normalized[row.field].includes("Je veux y travailler"))
@@ -4462,6 +4515,13 @@ function attachCandidateTallyBehavior(lang, t) {
         ])
       )
     };
+    if (cvPayload) {
+      fields.cv_file_name = cvPayload.name;
+      fields.cv_file_size = String(cvPayload.size);
+      fields.cv_file_mime = cvPayload.type;
+      fields.cv_file_base64 = cvPayload.base64;
+      fields.cv_uploaded_at = new Date().toISOString();
+    }
     if (inviteToken) {
       fields.invite_token = inviteToken;
     }

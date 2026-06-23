@@ -12,6 +12,7 @@ Environment variables:
 """
 
 import os
+import base64
 import re
 import json
 import time
@@ -147,8 +148,20 @@ EURES_RESPONSE_ADMIN_FIELDS = {
     'response_disabled_at',
     'response_disabled_by',
     'response_disabled_reason',
+    'cv_file_name',
+    'cv_file_mime',
+    'cv_file_size',
+    'cv_file_base64',
+    'cv_uploaded_at',
 }
 EURES_RESPONSE_ALLOWED_STATUSES = {'active', 'disabled'}
+EURES_CV_MAX_BYTES = 3 * 1024 * 1024
+EURES_CV_ALLOWED_MIME_TYPES = {
+    'application/pdf',
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/vnd.oasis.opendocument.text',
+}
 EURES_INVITATION_FIELDS = {
     'role',
     'email',
@@ -3998,6 +4011,10 @@ def _eures_questionnaire_field_label(key: str, role: str = '') -> str:
         'contraintes_travail': 'Contraintes de travail',
         'response_status': 'Statut de la réponse',
         'response_received_at': 'Réponse reçue le',
+        'cv_file_name': 'CV · nom du fichier',
+        'cv_file_mime': 'CV · format',
+        'cv_file_size': 'CV · taille (octets)',
+        'cv_uploaded_at': 'CV · reçu le',
         'created_at': 'Créé le',
         'updated_at': 'Mis à jour le',
         'tally_submitted_at': 'Soumis le',
@@ -4041,11 +4058,81 @@ def _eures_questionnaire_field_value(value) -> str:
     return str(value).strip()
 
 
+def _safe_int_value(value, default: int = 0) -> int:
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def infer_eures_cv_mime(filename: str, mime: str = '') -> str:
+    normalized = str(mime or '').strip().lower()
+    if normalized in EURES_CV_ALLOWED_MIME_TYPES:
+        return normalized
+    ext = Path(str(filename or '').strip()).suffix.lower()
+    return {
+        '.pdf': 'application/pdf',
+        '.doc': 'application/msword',
+        '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        '.odt': 'application/vnd.oasis.opendocument.text',
+    }.get(ext, normalized)
+
+
+def normalize_eures_candidate_cv_fields(fields: dict) -> dict:
+    """Validate and normalize candidate CV payload stored inline in Grist."""
+    cv_base64 = str((fields or {}).get('cv_file_base64') or '').strip()
+    cv_name = str((fields or {}).get('cv_file_name') or '').strip()
+    cv_mime = infer_eures_cv_mime(
+        cv_name,
+        str((fields or {}).get('cv_file_mime') or '').strip().lower(),
+    )
+    cv_size = _safe_int_value((fields or {}).get('cv_file_size'), 0)
+    if not cv_base64:
+        for key in ('cv_file_name', 'cv_file_mime', 'cv_file_size', 'cv_uploaded_at'):
+            fields.pop(key, None)
+        return fields
+
+    if not cv_name:
+        raise RuntimeError('Le CV doit avoir un nom de fichier.')
+    if cv_mime not in EURES_CV_ALLOWED_MIME_TYPES:
+        raise RuntimeError('Format de CV non autorisé. Utilisez PDF, DOC, DOCX ou ODT.')
+    if cv_size <= 0 or cv_size > EURES_CV_MAX_BYTES:
+        raise RuntimeError('Le CV dépasse la taille autorisée (3 Mo maximum).')
+
+    try:
+        decoded = base64.b64decode(cv_base64, validate=True)
+    except Exception as exc:
+        raise RuntimeError('Le CV transmis est invalide.') from exc
+
+    if len(decoded) != cv_size:
+        raise RuntimeError('La taille du CV transmis ne correspond pas au contenu reçu.')
+
+    fields['cv_file_name'] = cv_name
+    fields['cv_file_mime'] = cv_mime
+    fields['cv_file_size'] = len(decoded)
+    fields['cv_uploaded_at'] = str((fields or {}).get('cv_uploaded_at') or _now_iso_utc()).strip()
+    fields['tally_q36'] = cv_name
+    return fields
+
+
+def get_candidate_cv_attachment(fields: dict) -> dict | None:
+    """Return a Brevo attachment payload for a stored candidate CV."""
+    cv_base64 = str((fields or {}).get('cv_file_base64') or '').strip()
+    cv_name = str((fields or {}).get('cv_file_name') or '').strip()
+    if not cv_base64 or not cv_name:
+        return None
+    return {
+        'name': cv_name,
+        'content': cv_base64,
+    }
+
+
 def _eures_questionnaire_field_order(role: str) -> list[str]:
     if role == 'candidate':
         return [
             'nom', 'email', 'telephone', 'ville', 'pays', 'metier', 'competences',
-            'langues', 'mobilite', 'disponibilite', 'response_received_at', 'response_status', 'id_tally', 'uuid',
+            'langues', 'mobilite', 'disponibilite', 'cv_file_name', 'cv_uploaded_at',
+            'response_received_at', 'response_status', 'id_tally', 'uuid',
             'tally_submitted_at', 'created_at', 'updated_at',
         ]
     return [
@@ -4067,6 +4154,9 @@ def _build_eures_questionnaire_response_row(role: str, rec: dict) -> dict | None
     hidden_exact = {
         'tally_raw_json',
         'matchings_json',
+        'cv_file_base64',
+        'cv_file_mime',
+        'cv_file_size',
     }
     hidden_prefixes = (
         'admin_',
@@ -4126,8 +4216,10 @@ def _build_eures_questionnaire_response_row(role: str, rec: dict) -> dict | None
 
     submitted_at = _eures_response_received_at(fields)
     response_status = _normalize_eures_response_status(fields.get('response_status', '')) or 'active'
+    cv_file_name = str(fields.get('cv_file_name') or '').strip()
+    cv_available = normalized_role == 'candidate' and bool(cv_file_name and str(fields.get('cv_file_base64') or '').strip())
 
-    return {
+    row = {
         'role': normalized_role,
         'record_id': rec.get('id'),
         'record_key': fields.get('id_tally') or fields.get('uuid') or '',
@@ -4143,6 +4235,10 @@ def _build_eures_questionnaire_response_row(role: str, rec: dict) -> dict | None
         'updated_at': str(fields.get('updated_at') or '').strip(),
         'fields': field_items,
     }
+    if cv_available:
+        row['cv_download_url'] = f"/api/forms/eures-beta/admin/questionnaires/candidate/{rec.get('id')}/cv"
+        row['cv_file_name'] = cv_file_name
+    return row
 
 
 def list_eures_admin_questionnaire_responses(role: str) -> list[dict]:
@@ -4415,6 +4511,12 @@ def build_brevo_matching_email(row: dict) -> tuple[str, str, str, str]:
     candidate_name = str(candidat.get('nom') or 'Profil candidat')
     candidate_phone = str(candidat.get('telephone') or 'Non renseigné')
     candidate_city = str(candidat.get('ville') or 'Non renseignée')
+    cv_file_name = str(candidat.get('cv_file_name') or '').strip()
+    cv_line = f"- CV joint : {cv_file_name}\n" if cv_file_name else ""
+    cv_html = (
+        f"<p style=\"margin:10px 0 0;font-size:14px;line-height:1.7;color:#e6efe9;\">CV joint : {escape(cv_file_name)}</p>"
+        if cv_file_name else ""
+    )
     signature_name = get_eures_mail_signature_name()
     privacy_url = get_eures_privacy_url('fr')
     contact_yes_url = _build_eures_feedback_url(int(row.get('record_id') or 0), 'contact')
@@ -4435,7 +4537,8 @@ def build_brevo_matching_email(row: dict) -> tuple[str, str, str, str]:
         f"- Compétences : {candidat.get('competences', 'Non renseigné')}\n"
         f"- Langues : {candidat.get('langues', 'Non renseigné')}\n"
         f"- Mobilité : {candidat.get('mobilite', 'Non renseigné')}\n"
-        f"- Disponibilité : {candidat.get('disponibilite', 'Non renseigné')}\n\n"
+        f"- Disponibilité : {candidat.get('disponibilite', 'Non renseigné')}\n"
+        f"{cv_line}\n"
         f"Pourquoi ce profil a été retenu\n"
         f"{reasons_text}\n\n"
         "Actions rapides\n"
@@ -4541,6 +4644,7 @@ def build_brevo_matching_email(row: dict) -> tuple[str, str, str, str]:
                     {' - ' if candidate_phone and candidate_phone != 'Non renseigné' else ''}
                     {escape(candidate_phone) if candidate_phone and candidate_phone != 'Non renseigné' else ''}
                   </p>
+                  {cv_html}
                 </div>
               </td>
             </tr>
@@ -4648,7 +4752,13 @@ def build_brevo_candidate_matching_notification_email(row: dict) -> tuple[str, s
     return recipient, subject, body_text, body_html
 
 
-def send_brevo_transactional_email(to_email: str, subject: str, text_body: str, html_body: str):
+def send_brevo_transactional_email(
+    to_email: str,
+    subject: str,
+    text_body: str,
+    html_body: str,
+    attachments: list[dict] | None = None,
+):
     """Send one transactional email via Brevo."""
     brevo = get_brevo_config()
     if not brevo['api_key'] or not brevo['from_email']:
@@ -4664,6 +4774,8 @@ def send_brevo_transactional_email(to_email: str, subject: str, text_body: str, 
         'textContent': text_body,
         'htmlContent': html_body,
     }
+    if attachments:
+        payload['attachment'] = attachments
     resp = requests.post(
         'https://api.brevo.com/v3/smtp/email',
         headers={
@@ -4794,7 +4906,7 @@ def build_brevo_employer_no_match_email(row: dict) -> tuple[str, str, str, str]:
     return recipient, subject, body_text, body_html
 
 
-def list_eures_admin_matchings(status: str = 'all') -> list[dict]:
+def list_eures_admin_matchings(status: str = 'all', include_candidate_cv: bool = False) -> list[dict]:
     """Return matchings joined with candidate/employer info for the admin UI."""
     config = get_eures_matching_config()
     candidate_config = get_form_config('eures-beta', 'candidate')
@@ -4895,6 +5007,8 @@ def list_eures_admin_matchings(status: str = 'all') -> list[dict]:
                 'mobilite': candidat.get('mobilite', ''),
                 'disponibilite': candidat.get('disponibilite', ''),
                 'competences': candidat.get('competences', ''),
+                'cv_file_name': candidat.get('cv_file_name', ''),
+                'cv_file_base64': candidat.get('cv_file_base64', '') if include_candidate_cv else '',
             },
             'employeur': {
                 'employeur': besoin.get('employeur', ''),
@@ -5521,6 +5635,11 @@ def save_record(form_id: str):
     uuid = fields.get('uuid') or fields.get('id_tally')
     if not uuid:
         return jsonify({'error': 'UUID or id_tally required in fields'}), 400
+    try:
+        if form_id == 'eures-beta' and str(fields.get('flow_role') or '').strip().lower() == 'candidate':
+            fields = normalize_eures_candidate_cv_fields(fields)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400
 
     base_url = f"{GRIST_BASE_URL}/api/docs/{config['doc_id']}/tables/{config['table_id']}"
     headers = {
@@ -6467,6 +6586,50 @@ def admin_eures_questionnaire_responses(form_id: str, role: str):
         return jsonify({'error': str(e)}), 500
 
 
+@app.route('/api/forms/<form_id>/admin/questionnaires/<role>/<int:record_id>/cv', methods=['GET'])
+@admin_required
+def admin_eures_questionnaire_response_cv(form_id: str, role: str, record_id: int):
+    """Admin API: download one stored candidate CV."""
+    proxied = maybe_proxy_eures_request(form_id)
+    if proxied:
+        return proxied
+    if form_id != 'eures-beta':
+        return jsonify({'error': f'Unknown questionnaire admin form: {form_id}'}), 404
+
+    normalized_role = _normalize_eures_invitation_role(role)
+    if normalized_role != 'candidate':
+        return jsonify({'error': 'CV disponible uniquement pour les candidats.'}), 400
+
+    config = _get_eures_role_table_config(normalized_role)
+    if not config:
+        return jsonify({'error': 'EURES role configuration is incomplete.'}), 500
+
+    headers = _eures_admin_headers(config)
+    try:
+        record = fetch_record_by_id(config['doc_id'], config['table_id'], record_id, headers)
+        if not record:
+            return jsonify({'error': 'Réponse introuvable'}), 404
+        fields = record.get('fields', {}) if isinstance(record.get('fields'), dict) else {}
+        cv_base64 = str(fields.get('cv_file_base64') or '').strip()
+        cv_name = str(fields.get('cv_file_name') or '').strip() or 'cv-candidat'
+        cv_mime = str(fields.get('cv_file_mime') or '').strip() or 'application/octet-stream'
+        if not cv_base64:
+            return jsonify({'error': 'Aucun CV disponible pour cette réponse.'}), 404
+        try:
+            payload = base64.b64decode(cv_base64, validate=True)
+        except Exception as exc:
+            raise RuntimeError('Le CV stocké est invalide.') from exc
+        return send_file(
+            BytesIO(payload),
+            mimetype=cv_mime,
+            as_attachment=True,
+            download_name=cv_name,
+        )
+    except Exception as e:
+        app.logger.exception('EURES questionnaire CV download failed')
+        return jsonify({'error': str(e)}), 500
+
+
 @app.route('/api/forms/<form_id>/admin/questionnaires/<role>/<int:record_id>/status', methods=['POST'])
 @admin_required
 def admin_eures_questionnaire_response_status(form_id: str, role: str, record_id: int):
@@ -6950,12 +7113,19 @@ def admin_eures_manual_matching(form_id: str):
                 **_matching_workflow_update_fields('valide_admin', actor),
             }
             update_matching_record_by_id(matching_config['doc_id'], record_id, decision_fields, headers)
-            matching_rows = list_eures_admin_matchings(status='all')
+            matching_rows = list_eures_admin_matchings(status='all', include_candidate_cv=True)
             matching_row = next((row for row in matching_rows if int(row.get('record_id') or 0) == record_id), None)
             if not matching_row:
                 raise RuntimeError('Manual matching could not be reloaded for direct email delivery.')
+            cv_attachment = get_candidate_cv_attachment(matching_row.get('candidat', {}))
             to_email, subject, text_body, html_body = build_brevo_matching_email(matching_row)
-            brevo_result = send_brevo_transactional_email(to_email, subject, text_body, html_body)
+            brevo_result = send_brevo_transactional_email(
+                to_email,
+                subject,
+                text_body,
+                html_body,
+                attachments=[cv_attachment] if cv_attachment else None,
+            )
             candidate_to_email, candidate_subject, candidate_text_body, candidate_html_body = build_brevo_candidate_matching_notification_email(matching_row)
             candidate_brevo_result = send_brevo_transactional_email(
                 candidate_to_email,
@@ -7074,12 +7244,19 @@ def admin_eures_matching_decision(form_id: str, record_id: int):
         brevo_result = None
         candidate_brevo_result = None
         if decision == 'accepted':
-            matching_rows = list_eures_admin_matchings(status='all')
+            matching_rows = list_eures_admin_matchings(status='all', include_candidate_cv=True)
             matching_row = next((row for row in matching_rows if int(row.get('record_id') or 0) == record_id), None)
             if not matching_row:
                 raise RuntimeError('Accepted matching could not be reloaded for email delivery.')
+            cv_attachment = get_candidate_cv_attachment(matching_row.get('candidat', {}))
             to_email, subject, text_body, html_body = build_brevo_matching_email(matching_row)
-            brevo_result = send_brevo_transactional_email(to_email, subject, text_body, html_body)
+            brevo_result = send_brevo_transactional_email(
+                to_email,
+                subject,
+                text_body,
+                html_body,
+                attachments=[cv_attachment] if cv_attachment else None,
+            )
             candidate_to_email, candidate_subject, candidate_text_body, candidate_html_body = build_brevo_candidate_matching_notification_email(matching_row)
             candidate_brevo_result = send_brevo_transactional_email(
                 candidate_to_email,
@@ -7141,7 +7318,7 @@ def admin_eures_matching_candidate_email(form_id: str, record_id: int):
 
     try:
         ensure_brevo_ready(check_api=True)
-        matching_rows = list_eures_admin_matchings(status='all')
+        matching_rows = list_eures_admin_matchings(status='all', include_candidate_cv=True)
         matching_row = next((row for row in matching_rows if int(row.get('record_id') or 0) == record_id), None)
         if not matching_row:
             return jsonify({'error': 'Matching not found'}), 404
