@@ -1548,8 +1548,8 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
               </label>
             </div>
             <div class="field-stack" style="margin-top:0.9rem;">
-              <label for="manual-match-note">Note interne</label>
-              <textarea id="manual-match-note" placeholder="Optionnel"></textarea>
+              <label for="manual-match-note">Commentaire intégré au mail</label>
+              <textarea id="manual-match-note" placeholder="Optionnel. Si vous écrivez ici, le commentaire sera ajouté aux emails envoyés."></textarea>
             </div>
             <section class="matching-body" id="manual-match-preview" hidden style="margin-top:1rem;">
               <div class="compare-grid">
@@ -3645,8 +3645,8 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
               </div>
 
               <section class="notes-box">
-                <h4>Note de décision</h4>
-                <textarea id="note-${esc(row.record_id)}" placeholder="Ajouter une note de validation ou de refus...">${esc(row.admin_decision_note || "")}</textarea>
+                <h4>Commentaire intégré au mail</h4>
+                <textarea id="note-${esc(row.record_id)}" placeholder="Optionnel. Si vous écrivez ici, le commentaire sera ajouté aux emails envoyés.">${esc(row.admin_decision_note || "")}</textarea>
                 <div class="hero-actions">
                   <button class="btn-neutral" type="button" data-action="accepted">Enregistrer comme accepté</button>
                   <button class="btn-refuse" type="button" data-action="refused">Enregistrer comme refusé</button>
