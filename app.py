@@ -4487,6 +4487,25 @@ def _build_eures_feedback_url(record_id: int, response: str) -> str:
     return f"{get_public_app_base_url()}/eures-beta/matching-feedback?token={token}"
 
 
+def _matching_outgoing_comment(row: dict) -> str:
+    """Return the optional admin comment to inject into outgoing matching emails."""
+    if not isinstance(row, dict):
+        return ''
+    comment = str(row.get('admin_decision_note') or '').strip()
+    if comment:
+        return comment
+    return str(row.get('manual_matching_note') or '').strip()
+
+
+def _format_email_comment_text(comment: str) -> str:
+    return '\n'.join(line.strip() for line in str(comment or '').splitlines()).strip()
+
+
+def _format_email_comment_html(comment: str) -> str:
+    lines = [escape(line.strip()) for line in str(comment or '').splitlines() if line.strip()]
+    return '<br>'.join(lines)
+
+
 def build_brevo_matching_email(row: dict) -> tuple[str, str, str, str]:
     """Build recipient, subject, text body and HTML body for one accepted matching."""
     candidat = row.get('candidat', {}) if isinstance(row.get('candidat'), dict) else {}
@@ -4517,6 +4536,22 @@ def build_brevo_matching_email(row: dict) -> tuple[str, str, str, str]:
         f"<p style=\"margin:10px 0 0;font-size:14px;line-height:1.7;color:#e6efe9;\">CV joint : {escape(cv_file_name)}</p>"
         if cv_file_name else ""
     )
+    outgoing_comment = _matching_outgoing_comment(row)
+    outgoing_comment_text = _format_email_comment_text(outgoing_comment)
+    outgoing_comment_html = _format_email_comment_html(outgoing_comment)
+    comment_block_text = (
+        f"Commentaire du conseiller EURES\n{outgoing_comment_text}\n\n"
+        if outgoing_comment_text else ""
+    )
+    comment_block_html = (
+        f"""
+                <div style="background:#f3f7fc;border:1px solid #d7e2f0;border-radius:12px;padding:18px 20px;margin:18px 0 0;">
+                  <div style="font-size:12px;letter-spacing:1.3px;text-transform:uppercase;color:#35557a;margin-bottom:10px;">Commentaire du conseiller EURES</div>
+                  <p style="margin:0;font-size:15px;line-height:1.7;color:#22374f;">{outgoing_comment_html}</p>
+                </div>
+        """.strip()
+        if outgoing_comment_html else ""
+    )
     signature_name = get_eures_mail_signature_name()
     privacy_url = get_eures_privacy_url('fr')
     contact_yes_url = _build_eures_feedback_url(int(row.get('record_id') or 0), 'contact')
@@ -4541,6 +4576,7 @@ def build_brevo_matching_email(row: dict) -> tuple[str, str, str, str]:
         f"{cv_line}\n"
         f"Pourquoi ce profil a été retenu\n"
         f"{reasons_text}\n\n"
+        f"{comment_block_text}"
         "Actions rapides\n"
         f"- Je vais le contacter : {contact_yes_url}\n"
         f"- Je ne vais pas le contacter : {contact_no_url}\n\n"
@@ -4620,6 +4656,7 @@ def build_brevo_matching_email(row: dict) -> tuple[str, str, str, str]:
                     {reasons_html}
                   </ul>
                 </div>
+                {comment_block_html}
               </td>
             </tr>
             <tr>
@@ -4684,12 +4721,29 @@ def build_brevo_candidate_matching_notification_email(row: dict) -> tuple[str, s
     hello = "Bonjour,"
     if candidate_name:
         hello = "Bonjour,"
+    outgoing_comment = _matching_outgoing_comment(row)
+    outgoing_comment_text = _format_email_comment_text(outgoing_comment)
+    outgoing_comment_html = _format_email_comment_html(outgoing_comment)
+    comment_block_text = (
+        f"Commentaire de votre conseiller EURES\n{outgoing_comment_text}\n\n"
+        if outgoing_comment_text else ""
+    )
+    comment_block_html = (
+        f"""
+                <div style="border:1px solid #d7e2f0;border-radius:14px;background:#f3f7fc;padding:18px 20px;margin:0 0 18px;">
+                  <p style="margin:0 0 10px;font-size:15px;line-height:1.6;"><strong>Commentaire de votre conseiller EURES</strong></p>
+                  <p style="margin:0;font-size:15px;line-height:1.7;color:#22374f;">{outgoing_comment_html}</p>
+                </div>
+        """.strip()
+        if outgoing_comment_html else ""
+    )
     privacy_url = get_eures_privacy_url('fr')
 
     subject = f"[EURES beta] Votre candidature a ete transmise a {employeur_name}"
     body_text = (
         f"{hello}\n\n"
         f"Nous vous informons que votre candidature a ete transmise a {employeur_name}.\n\n"
+        f"{comment_block_text}"
         "Si cet employeur souhaite echanger avec vous, il pourra vous contacter directement.\n\n"
         "Nous vous invitons a :\n"
         "- repondre aux appels masques ou aux numeros inconnus,\n"
@@ -4722,6 +4776,7 @@ def build_brevo_candidate_matching_notification_email(row: dict) -> tuple[str, s
                   Nous vous informons que votre candidature a ete transmise a
                   <strong>{escape(employeur_name)}</strong>.
                 </p>
+                {comment_block_html}
                 <p style="margin:0 0 18px;font-size:16px;line-height:1.7;">
                   Si cet employeur souhaite echanger avec vous, il pourra vous contacter directement.
                 </p>
