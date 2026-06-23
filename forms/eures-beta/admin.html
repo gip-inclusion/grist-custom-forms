@@ -1108,6 +1108,14 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
                 <div class="kpi-label">Total affiché</div>
                 <div class="kpi-value" id="candidate-response-kpi-total">0</div>
               </div>
+              <div class="kpi">
+                <div class="kpi-label">Actives</div>
+                <div class="kpi-value" id="candidate-response-kpi-active">0</div>
+              </div>
+              <div class="kpi">
+                <div class="kpi-label">Désactivées</div>
+                <div class="kpi-value" id="candidate-response-kpi-disabled">0</div>
+              </div>
             </div>
           </div>
           <div class="admin-card">
@@ -1129,6 +1137,14 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
               <div class="kpi">
                 <div class="kpi-label">Total affiché</div>
                 <div class="kpi-value" id="employer-response-kpi-total">0</div>
+              </div>
+              <div class="kpi">
+                <div class="kpi-label">Actives</div>
+                <div class="kpi-value" id="employer-response-kpi-active">0</div>
+              </div>
+              <div class="kpi">
+                <div class="kpi-label">Désactivées</div>
+                <div class="kpi-value" id="employer-response-kpi-disabled">0</div>
               </div>
             </div>
           </div>
@@ -1839,18 +1855,20 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
       const employerSelect = document.getElementById("manual-match-employer");
       const currentCandidate = candidateSelect.value;
       const currentEmployer = employerSelect.value;
+      const activeCandidateRows = state.candidateResponses.rows.filter((row) => row.is_active !== false);
+      const activeEmployerRows = state.employerResponses.rows.filter((row) => row.is_active !== false);
 
-      candidateSelect.innerHTML = `<option value="">Sélectionner un candidat</option>` + state.candidateResponses.rows.map((row) => `
+      candidateSelect.innerHTML = `<option value="">Sélectionner un candidat</option>` + activeCandidateRows.map((row) => `
         <option value="${esc(row.record_id)}">${esc(optionLabelForCandidate(row))}</option>
       `).join("");
-      employerSelect.innerHTML = `<option value="">Sélectionner un besoin employeur</option>` + state.employerResponses.rows.map((row) => `
+      employerSelect.innerHTML = `<option value="">Sélectionner un besoin employeur</option>` + activeEmployerRows.map((row) => `
         <option value="${esc(row.record_id)}">${esc(optionLabelForEmployer(row))}</option>
       `).join("");
 
-      if (state.candidateResponses.rows.some((row) => String(row.record_id) === currentCandidate)) {
+      if (activeCandidateRows.some((row) => String(row.record_id) === currentCandidate)) {
         candidateSelect.value = currentCandidate;
       }
-      if (state.employerResponses.rows.some((row) => String(row.record_id) === currentEmployer)) {
+      if (activeEmployerRows.some((row) => String(row.record_id) === currentEmployer)) {
         employerSelect.value = currentEmployer;
       }
       renderManualMatchingPreview();
@@ -1916,7 +1934,8 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
               <p>${esc(row.subtitle || (isCandidate ? "Réponse candidat" : "Réponse employeur"))}</p>
               <div class="summary-tags">
                 <span class="pill ${isCandidate ? "role-candidate" : "role-employer"}">${esc(isCandidate ? "Candidat" : "Employeur")}</span>
-                <span class="pill">Soumis le : ${esc(row.submitted_at || "-")}</span>
+                <span class="pill ${row.is_active === false ? "refused" : "accepted"}">${esc(row.is_active === false ? "Désactivée" : "Active")}</span>
+                <span class="pill">Réponse reçue le : ${esc(row.response_received_at || row.submitted_at || "-")}</span>
                 <span class="pill">Clé : ${esc(row.record_key || row.record_id || "-")}</span>
               </div>
               ${row.summary ? `<div class="detail-tags"><span class="pill">${esc(row.summary)}</span></div>` : ""}
@@ -1932,6 +1951,7 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
           <div class="matching-body">
             <section class="compare-card" style="grid-column: 1 / -1;">
               <h3>${esc(isCandidate ? "Réponse complète du candidat" : "Réponse complète de l’employeur")}</h3>
+              ${row.response_disabled_reason ? `<p style="margin:0 0 0.8rem; line-height:1.7;"><strong>Motif de désactivation :</strong> ${esc(row.response_disabled_reason)}</p>` : ""}
               <dl class="detail-list">
                 ${(Array.isArray(row.fields) ? row.fields : []).map((field) => `
                   <div class="detail-row">
@@ -1940,10 +1960,42 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
                   </div>
                 `).join("")}
               </dl>
+              <section class="notes-box" style="margin-top:1rem;">
+                <h4>Gestion de la réponse</h4>
+                <textarea id="response-note-${esc(role)}-${esc(row.record_id)}" placeholder="Motif optionnel pour la désactivation">${esc(row.response_disabled_reason || "")}</textarea>
+                <div class="hero-actions">
+                  ${row.is_active === false
+                    ? `<button type="button" data-response-status-action="active" data-role="${esc(role)}" data-record-id="${esc(row.record_id)}">Réactiver</button>`
+                    : `<button class="btn-refuse" type="button" data-response-status-action="disabled" data-role="${esc(role)}" data-record-id="${esc(row.record_id)}">Désactiver</button>`
+                  }
+                  <button class="btn-refuse" type="button" data-response-delete="${esc(row.record_id)}" data-role="${esc(role)}">Supprimer</button>
+                </div>
+              </section>
             </section>
           </div>
         </article>
       `).join("");
+
+      for (const button of list.querySelectorAll("[data-response-status-action]")) {
+        button.addEventListener("click", async (event) => {
+          const recordId = Number(event.currentTarget.dataset.recordId || 0);
+          const roleValue = event.currentTarget.dataset.role || "";
+          const status = event.currentTarget.dataset.responseStatusAction || "";
+          const note = document.getElementById(`response-note-${roleValue}-${recordId}`)?.value || "";
+          if (!recordId || !roleValue || !status) return;
+          await updateQuestionnaireResponseStatus(roleValue, recordId, status, note);
+        });
+      }
+      for (const button of list.querySelectorAll("[data-response-delete]")) {
+        button.addEventListener("click", async (event) => {
+          const recordId = Number(event.currentTarget.dataset.responseDelete || 0);
+          const roleValue = event.currentTarget.dataset.role || "";
+          if (!recordId || !roleValue) return;
+          const confirmed = window.confirm("Supprimer définitivement cette réponse et les matchings associés ?");
+          if (!confirmed) return;
+          await deleteQuestionnaireResponse(roleValue, recordId);
+        });
+      }
     }
 
     async function loadQuestionnaireResponses(role) {
@@ -1952,6 +2004,8 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
       const statusId = isCandidate ? "candidate-response-status-line" : "employer-response-status-line";
       const listId = isCandidate ? "candidate-response-list" : "employer-response-list";
       const kpiId = isCandidate ? "candidate-response-kpi-total" : "employer-response-kpi-total";
+      const kpiActiveId = isCandidate ? "candidate-response-kpi-active" : "employer-response-kpi-active";
+      const kpiDisabledId = isCandidate ? "candidate-response-kpi-disabled" : "employer-response-kpi-disabled";
       const label = isCandidate ? "candidats" : "employeurs";
 
       if (state[stateKey].loading) return;
@@ -1966,6 +2020,8 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
         }
         state[stateKey].rows = Array.isArray(payload.rows) ? payload.rows : [];
         document.getElementById(kpiId).textContent = payload.stats?.total ?? 0;
+        document.getElementById(kpiActiveId).textContent = payload.stats?.active ?? 0;
+        document.getElementById(kpiDisabledId).textContent = payload.stats?.disabled ?? 0;
         renderQuestionnaireResponses(role);
         renderManualMatchingOptions();
         setStatus(statusId, `${state[stateKey].rows.length} réponse(s) ${label} chargée(s).`);
@@ -1974,6 +2030,60 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
         setStatus(statusId, `Erreur : ${error.message || "chargement impossible"}`);
       } finally {
         state[stateKey].loading = false;
+      }
+    }
+
+    async function updateQuestionnaireResponseStatus(role, recordId, status, reason) {
+      const isCandidate = role === "candidate";
+      const statusId = isCandidate ? "candidate-response-status-line" : "employer-response-status-line";
+      setStatus(statusId, status === "disabled" ? "Désactivation de la réponse..." : "Réactivation de la réponse...");
+      try {
+        const response = await fetch(apiUrl(`/admin/questionnaires/${role}/${recordId}/status`), {
+          method: "POST",
+          credentials: "same-origin",
+          headers: {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+          },
+          body: JSON.stringify({ status, reason }),
+        });
+        const payload = await response.json();
+        if (!response.ok || !payload.ok) {
+          throw new Error(payload.error || `Erreur API (${response.status})`);
+        }
+        await loadQuestionnaireResponses(role);
+        await loadMatchings();
+        await loadTasks();
+        await loadCockpit();
+        setStatus(statusId, status === "disabled" ? "Réponse désactivée." : "Réponse réactivée.");
+      } catch (error) {
+        setStatus(statusId, `Erreur : ${error.message || "mise à jour impossible"}`);
+      }
+    }
+
+    async function deleteQuestionnaireResponse(role, recordId) {
+      const isCandidate = role === "candidate";
+      const statusId = isCandidate ? "candidate-response-status-line" : "employer-response-status-line";
+      setStatus(statusId, "Suppression de la réponse...");
+      try {
+        const response = await fetch(apiUrl(`/admin/questionnaires/${role}/${recordId}`), {
+          method: "DELETE",
+          credentials: "same-origin",
+          headers: {
+            "Accept": "application/json",
+          },
+        });
+        const payload = await response.json();
+        if (!response.ok || !payload.ok) {
+          throw new Error(payload.error || `Erreur API (${response.status})`);
+        }
+        await loadQuestionnaireResponses(role);
+        await loadMatchings();
+        await loadTasks();
+        await loadCockpit();
+        setStatus(statusId, `Réponse supprimée. ${payload.deleted_matchings || 0} matching(s) associé(s) supprimé(s).`);
+      } catch (error) {
+        setStatus(statusId, `Erreur : ${error.message || "suppression impossible"}`);
       }
     }
 

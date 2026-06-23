@@ -139,6 +139,16 @@ EURES_NEW_EMPLOYER_ALERT_FIELDS = {
     'sponsor_company_name',
 }
 EURES_NEW_EMPLOYER_ALERT_ALLOWED_STATUSES = {'pending', 'reviewed', 'dismissed'}
+EURES_RESPONSE_ADMIN_FIELDS = {
+    'response_status',
+    'response_received_at',
+    'response_status_updated_at',
+    'response_status_updated_by',
+    'response_disabled_at',
+    'response_disabled_by',
+    'response_disabled_reason',
+}
+EURES_RESPONSE_ALLOWED_STATUSES = {'active', 'disabled'}
 EURES_INVITATION_FIELDS = {
     'role',
     'email',
@@ -2967,6 +2977,14 @@ def build_eures_public_stats() -> dict:
         'response_to_relation': [],
         'relation_to_hire': [],
     }
+    active_candidate_keys = {
+        str((rec.get('fields') or {}).get('id_tally') or (rec.get('fields') or {}).get('uuid') or '').strip()
+        for rec in candidats if isinstance(rec, dict) and _is_eures_response_active((rec.get('fields') or {}))
+    }
+    active_employer_keys = {
+        str((rec.get('fields') or {}).get('id_tally') or (rec.get('fields') or {}).get('uuid') or '').strip()
+        for rec in besoins if isinstance(rec, dict) and _is_eures_response_active((rec.get('fields') or {}))
+    }
 
     for rec in candidats:
         fields = rec.get('fields', {}) if isinstance(rec, dict) else {}
@@ -3004,6 +3022,10 @@ def build_eures_public_stats() -> dict:
 
     for rec in matchings:
         fields = rec.get('fields', {}) if isinstance(rec, dict) else {}
+        candidat_id = str(fields.get('candidat_id') or '').strip()
+        besoin_id = str(fields.get('besoin_id') or '').strip()
+        if candidat_id not in active_candidate_keys or besoin_id not in active_employer_keys:
+            continue
         month = _month_key(fields.get('date_calcul'))
         if month:
             monthly[month]['mois'] = month
@@ -3561,12 +3583,16 @@ def run_eures_matching_for_saved_record(form_id: str, role: str, saved_record: d
     all_candidats = fetch_table_records(config['doc_id'], EURES_CANDIDATS_TABLE, headers)
     all_besoins = fetch_table_records(config['doc_id'], EURES_BESOINS_TABLE, headers)
     saved_fields = saved_record.get('fields', {}) if isinstance(saved_record.get('fields'), dict) else {}
+    if not _is_eures_response_active(saved_fields):
+        return {'processed': False, 'reason': 'disabled_saved_record', 'role': role}
 
     writes = 0
     qualifying_matches = 0
     if role == 'candidate':
         for besoin in all_besoins:
             besoin_fields = besoin.get('fields', {}) if isinstance(besoin.get('fields'), dict) else {}
+            if not _is_eures_response_active(besoin_fields):
+                continue
             candidat_id = str(saved_fields.get('id_tally') or saved_fields.get('uuid') or '')
             besoin_id = str(besoin_fields.get('id_tally') or besoin_fields.get('uuid') or '')
             if not candidat_id or not besoin_id:
@@ -3580,6 +3606,8 @@ def run_eures_matching_for_saved_record(form_id: str, role: str, saved_record: d
     else:
         for candidat in all_candidats:
             candidat_fields = candidat.get('fields', {}) if isinstance(candidat.get('fields'), dict) else {}
+            if not _is_eures_response_active(candidat_fields):
+                continue
             candidat_id = str(candidat_fields.get('id_tally') or candidat_fields.get('uuid') or '')
             besoin_id = str(saved_fields.get('id_tally') or saved_fields.get('uuid') or '')
             if not candidat_id or not besoin_id:
@@ -3700,6 +3728,11 @@ def _normalize_eures_new_employer_alert_status(value: str) -> str:
     return status if status in EURES_NEW_EMPLOYER_ALERT_ALLOWED_STATUSES else ''
 
 
+def _normalize_eures_response_status(value: str) -> str:
+    status = str(value or '').strip().lower()
+    return status if status in EURES_RESPONSE_ALLOWED_STATUSES else ''
+
+
 def _normalize_eures_duplicate_followup_status(value: str) -> str:
     status = str(value or '').strip().lower()
     return status if status in EURES_DUPLICATE_FOLLOWUP_ALLOWED_STATUSES else ''
@@ -3717,6 +3750,20 @@ def _get_eures_role_table_config(role: str) -> dict | None:
         'table_id': EURES_CANDIDATS_TABLE if normalized_role == 'candidate' else EURES_BESOINS_TABLE,
         'api_key': base.get('api_key'),
     }
+
+
+def _eures_response_received_at(fields: dict) -> str:
+    return (
+        str((fields or {}).get('response_received_at') or '').strip()
+        or str((fields or {}).get('tally_submitted_at') or '').strip()
+        or str((fields or {}).get('created_at') or '').strip()
+        or str((fields or {}).get('updated_at') or '').strip()
+    )
+
+
+def _is_eures_response_active(fields: dict) -> bool:
+    status = _normalize_eures_response_status((fields or {}).get('response_status', ''))
+    return status != 'disabled'
 
 
 def queue_eures_no_match_notification(role: str, record_id: int):
@@ -3801,6 +3848,9 @@ def list_eures_admin_no_match_notifications(status: str = 'all') -> list[dict]:
             continue
         headers = _eures_admin_headers(config)
         for rec in fetch_table_records(config['doc_id'], config['table_id'], headers):
+            fields = rec.get('fields', {}) if isinstance(rec, dict) else {}
+            if not _is_eures_response_active(fields):
+                continue
             row = _build_eures_no_match_row(role, rec)
             if not row:
                 continue
@@ -3946,6 +3996,8 @@ def _eures_questionnaire_field_label(key: str, role: str = '') -> str:
         'date_debut': 'Date de début',
         'competences_clefs': 'Compétences clefs',
         'contraintes_travail': 'Contraintes de travail',
+        'response_status': 'Statut de la réponse',
+        'response_received_at': 'Réponse reçue le',
         'created_at': 'Créé le',
         'updated_at': 'Mis à jour le',
         'tally_submitted_at': 'Soumis le',
@@ -3993,12 +4045,12 @@ def _eures_questionnaire_field_order(role: str) -> list[str]:
     if role == 'candidate':
         return [
             'nom', 'email', 'telephone', 'ville', 'pays', 'metier', 'competences',
-            'langues', 'mobilite', 'disponibilite', 'id_tally', 'uuid',
+            'langues', 'mobilite', 'disponibilite', 'response_received_at', 'response_status', 'id_tally', 'uuid',
             'tally_submitted_at', 'created_at', 'updated_at',
         ]
     return [
         'employeur', 'contact', 'email', 'telephone', 'pays', 'poste',
-        'competences_clefs', 'langues_requises', 'date_debut',
+        'competences_clefs', 'langues_requises', 'date_debut', 'response_received_at', 'response_status',
         'id_tally', 'uuid', 'tally_submitted_at', 'created_at', 'updated_at',
     ]
 
@@ -4042,7 +4094,7 @@ def _build_eures_questionnaire_response_row(role: str, rec: dict) -> dict | None
             continue
         if key_str.startswith('employer_response'):
             continue
-        if key_str not in {'tally_submitted_at', 'created_at', 'updated_at'} and any(key_str.endswith(suffix) for suffix in hidden_suffixes):
+        if key_str not in {'tally_submitted_at', 'created_at', 'updated_at', 'response_status'} and any(key_str.endswith(suffix) for suffix in hidden_suffixes):
             continue
         if key_str in seen:
             continue
@@ -4072,11 +4124,8 @@ def _build_eures_questionnaire_response_row(role: str, rec: dict) -> dict | None
         subtitle_parts = [fields.get('poste', ''), fields.get('pays', '')]
         summary_parts = [fields.get('langues_requises', ''), fields.get('date_debut', ''), fields.get('competences_clefs', '')]
 
-    submitted_at = (
-        str(fields.get('tally_submitted_at') or '').strip()
-        or str(fields.get('created_at') or '').strip()
-        or str(fields.get('updated_at') or '').strip()
-    )
+    submitted_at = _eures_response_received_at(fields)
+    response_status = _normalize_eures_response_status(fields.get('response_status', '')) or 'active'
 
     return {
         'role': normalized_role,
@@ -4086,6 +4135,11 @@ def _build_eures_questionnaire_response_row(role: str, rec: dict) -> dict | None
         'subtitle': ' · '.join(str(part).strip() for part in subtitle_parts if str(part).strip()),
         'summary': ' · '.join(str(part).strip() for part in summary_parts if str(part).strip()),
         'submitted_at': submitted_at,
+        'response_received_at': submitted_at,
+        'response_status': response_status,
+        'is_active': response_status == 'active',
+        'response_disabled_at': str(fields.get('response_disabled_at') or '').strip(),
+        'response_disabled_reason': str(fields.get('response_disabled_reason') or '').strip(),
         'updated_at': str(fields.get('updated_at') or '').strip(),
         'fields': field_items,
     }
@@ -4113,6 +4167,42 @@ def list_eures_admin_questionnaire_responses(role: str) -> list[dict]:
         reverse=True,
     )
     return rows
+
+
+def delete_table_record_by_id(config: dict, record_id: int, headers: dict):
+    """Delete one Grist record by id on any configured table."""
+    delete_url = f"{GRIST_BASE_URL}/api/docs/{config['doc_id']}/tables/{config['table_id']}/records/delete"
+    resp = write_grist_records('POST', delete_url, [int(record_id)], headers)
+    if resp.status_code not in {200, 202, 204}:
+        raise RuntimeError(f'Failed to delete {config["table_id"]}: HTTP {resp.status_code} - {resp.text}')
+    return resp
+
+
+def delete_matching_records_for_response(role: str, response_key: str):
+    """Delete Matchings rows linked to one candidate or employer response."""
+    normalized_role = _normalize_eures_invitation_role(role)
+    key_value = str(response_key or '').strip()
+    if normalized_role not in {'candidate', 'employer'} or not key_value:
+        return 0
+    config = get_eures_matching_config()
+    if not config:
+        return 0
+    headers = _eures_admin_headers(config)
+    records = fetch_table_records(config['doc_id'], EURES_MATCHINGS_TABLE, headers)
+    field_name = 'candidat_id' if normalized_role == 'candidate' else 'besoin_id'
+    to_delete = [
+        int(rec.get('id') or 0)
+        for rec in records
+        if str(((rec.get('fields') or {}).get(field_name) or '')).strip() == key_value
+    ]
+    to_delete = [record_id for record_id in to_delete if record_id]
+    if not to_delete:
+        return 0
+    delete_url = f"{GRIST_BASE_URL}/api/docs/{config['doc_id']}/tables/{EURES_MATCHINGS_TABLE}/records/delete"
+    resp = write_grist_records('POST', delete_url, to_delete, headers)
+    if resp.status_code not in {200, 202, 204}:
+        raise RuntimeError(f'Failed to delete related Matchings: HTTP {resp.status_code} - {resp.text}')
+    return len(to_delete)
 
 
 def queue_eures_new_job_request(record_id: int):
@@ -4170,6 +4260,9 @@ def list_eures_admin_new_job_requests(status: str = 'all') -> list[dict]:
     headers = _eures_admin_headers(config)
     rows = []
     for rec in fetch_table_records(config['doc_id'], config['table_id'], headers):
+        fields = rec.get('fields', {}) if isinstance(rec, dict) else {}
+        if not _is_eures_response_active(fields):
+            continue
         row = _build_eures_new_job_request_row(rec)
         if not row:
             continue
@@ -4244,6 +4337,9 @@ def list_eures_admin_new_employer_alerts(status: str = 'all') -> list[dict]:
     headers = _eures_admin_headers(config)
     rows = []
     for rec in fetch_table_records(config['doc_id'], config['table_id'], headers):
+        fields = rec.get('fields', {}) if isinstance(rec, dict) else {}
+        if not _is_eures_response_active(fields):
+            continue
         row = _build_eures_new_employer_alert_row(rec)
         if not row:
             continue
@@ -4683,11 +4779,13 @@ def list_eures_admin_matchings(status: str = 'all') -> list[dict]:
 
     candidats_by_id = {
         str((rec.get('fields') or {}).get('id_tally') or (rec.get('fields') or {}).get('uuid') or ''): rec.get('fields', {})
-        for rec in candidats if isinstance(rec, dict)
+        for rec in candidats
+        if isinstance(rec, dict) and _is_eures_response_active((rec.get('fields') or {}))
     }
     besoins_by_id = {
         str((rec.get('fields') or {}).get('id_tally') or (rec.get('fields') or {}).get('uuid') or ''): rec.get('fields', {})
-        for rec in besoins if isinstance(rec, dict)
+        for rec in besoins
+        if isinstance(rec, dict) and _is_eures_response_active((rec.get('fields') or {}))
     }
 
     rows = []
@@ -4706,6 +4804,8 @@ def list_eures_admin_matchings(status: str = 'all') -> list[dict]:
         candidat_id = str(fields.get('candidat_id') or '')
         candidat = candidats_by_id.get(candidat_id, {})
         besoin = besoins_by_id.get(besoin_id, {})
+        if not candidat or not besoin:
+            continue
         candidat_job_titles = ' | '.join(
             str(candidat.get(field_name) or '').strip()
             for field_name in EURES_CANDIDAT_SECTOR_JOB_TITLE_FIELDS.values()
@@ -5399,7 +5499,7 @@ def save_record(form_id: str):
     # Keep only fields that exist in target table (prod/local may differ).
     try:
         if form_id == 'eures-beta':
-            ensure_table_columns(config, set(str(key) for key in fields.keys()), headers)
+            ensure_table_columns(config, set(str(key) for key in fields.keys()) | EURES_RESPONSE_ADMIN_FIELDS, headers)
         allowed_columns = get_table_columns(config, headers)
         filtered_fields = {k: v for k, v in fields.items() if str(k) in allowed_columns}
         record_key = resolve_record_key(allowed_columns)
@@ -5436,6 +5536,23 @@ def save_record(form_id: str):
 
     # Create or update, then re-read the UUID so callers never get a false success.
     try:
+        now_iso = _now_iso_utc()
+        if form_id == 'eures-beta':
+            if existing_record:
+                existing_fields = existing_record.get('fields', {}) if isinstance(existing_record.get('fields'), dict) else {}
+                filtered_fields['response_status'] = _normalize_eures_response_status(existing_fields.get('response_status', '')) or 'active'
+                filtered_fields['response_status_updated_at'] = str(existing_fields.get('response_status_updated_at') or '').strip() or now_iso
+                filtered_fields['response_status_updated_by'] = str(existing_fields.get('response_status_updated_by') or '').strip() or 'system_questionnaire_submission'
+                filtered_fields['response_received_at'] = _eures_response_received_at(existing_fields) or now_iso
+                if filtered_fields['response_status'] == 'disabled':
+                    filtered_fields['response_disabled_at'] = str(existing_fields.get('response_disabled_at') or '').strip()
+                    filtered_fields['response_disabled_by'] = str(existing_fields.get('response_disabled_by') or '').strip()
+                    filtered_fields['response_disabled_reason'] = str(existing_fields.get('response_disabled_reason') or '').strip()
+            else:
+                filtered_fields['response_status'] = 'active'
+                filtered_fields['response_status_updated_at'] = now_iso
+                filtered_fields['response_status_updated_by'] = 'system_questionnaire_submission'
+                filtered_fields['response_received_at'] = now_iso
         action = 'updated' if record_id else 'created'
         if record_id:
             # Update existing
@@ -6300,17 +6417,117 @@ def admin_eures_questionnaire_responses(form_id: str, role: str):
 
     try:
         rows = list_eures_admin_questionnaire_responses(normalized_role)
+        stats = Counter('active' if row.get('is_active') else 'disabled' for row in rows)
         return jsonify({
             'ok': True,
             'form_id': form_id,
             'role': normalized_role,
             'stats': {
                 'total': len(rows),
+                'active': stats.get('active', 0),
+                'disabled': stats.get('disabled', 0),
             },
             'rows': rows,
         }), 200
     except Exception as e:
         app.logger.exception('EURES questionnaire response list failed')
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/forms/<form_id>/admin/questionnaires/<role>/<int:record_id>/status', methods=['POST'])
+@admin_required
+def admin_eures_questionnaire_response_status(form_id: str, role: str, record_id: int):
+    """Admin API: activate or disable one candidate/employer response."""
+    proxied = maybe_proxy_eures_request(form_id)
+    if proxied:
+        return proxied
+    if form_id != 'eures-beta':
+        return jsonify({'error': f'Unknown questionnaire admin form: {form_id}'}), 404
+
+    normalized_role = _normalize_eures_invitation_role(role)
+    if normalized_role not in {'candidate', 'employer'}:
+        return jsonify({'error': 'Invalid questionnaire role'}), 400
+
+    data = request.get_json() or {}
+    status = _normalize_eures_response_status(data.get('status') or '')
+    reason = str(data.get('reason') or '').strip()
+    if status not in {'active', 'disabled'}:
+        return jsonify({'error': "status doit valoir 'active' ou 'disabled'."}), 400
+
+    config = _get_eures_role_table_config(normalized_role)
+    if not config:
+        return jsonify({'error': 'EURES role configuration is incomplete.'}), 500
+
+    headers = _eures_admin_headers(config)
+    actor = get_admin_actor(form_id)
+    try:
+        record = fetch_record_by_id(config['doc_id'], config['table_id'], record_id, headers)
+        if not record:
+            return jsonify({'error': 'Réponse introuvable'}), 404
+        update_fields = {
+            'response_status': status,
+            'response_status_updated_at': _now_iso_utc(),
+            'response_status_updated_by': actor,
+            'response_disabled_reason': reason if status == 'disabled' else '',
+            'response_disabled_at': _now_iso_utc() if status == 'disabled' else '',
+            'response_disabled_by': actor if status == 'disabled' else '',
+        }
+        update_table_record_by_id(config, record_id, update_fields, headers, EURES_RESPONSE_ADMIN_FIELDS)
+        app.logger.info(
+            'EURES questionnaire response status updated',
+            extra={'form_id': form_id, 'role': normalized_role, 'record_id': record_id, 'status': status},
+        )
+        return jsonify({
+            'ok': True,
+            'record_id': record_id,
+            'role': normalized_role,
+            'status': status,
+        }), 200
+    except Exception as e:
+        app.logger.exception('EURES questionnaire response status update failed')
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/forms/<form_id>/admin/questionnaires/<role>/<int:record_id>', methods=['DELETE'])
+@admin_required
+def admin_eures_questionnaire_response_delete(form_id: str, role: str, record_id: int):
+    """Admin API: delete one candidate/employer response and related matchings."""
+    proxied = maybe_proxy_eures_request(form_id)
+    if proxied:
+        return proxied
+    if form_id != 'eures-beta':
+        return jsonify({'error': f'Unknown questionnaire admin form: {form_id}'}), 404
+
+    normalized_role = _normalize_eures_invitation_role(role)
+    if normalized_role not in {'candidate', 'employer'}:
+        return jsonify({'error': 'Invalid questionnaire role'}), 400
+
+    config = _get_eures_role_table_config(normalized_role)
+    if not config:
+        return jsonify({'error': 'EURES role configuration is incomplete.'}), 500
+
+    headers = _eures_admin_headers(config)
+    try:
+        record = fetch_record_by_id(config['doc_id'], config['table_id'], record_id, headers)
+        if not record:
+            return jsonify({'error': 'Réponse introuvable'}), 404
+        fields = record.get('fields', {}) if isinstance(record.get('fields'), dict) else {}
+        response_key = str(fields.get('id_tally') or fields.get('uuid') or '').strip()
+        deleted_matchings = delete_matching_records_for_response(normalized_role, response_key)
+        delete_table_record_by_id(config, record_id, headers)
+        app.logger.info(
+            'EURES questionnaire response deleted',
+            extra={'form_id': form_id, 'role': normalized_role, 'record_id': record_id, 'deleted_matchings': deleted_matchings},
+        )
+        return jsonify({
+            'ok': True,
+            'record_id': record_id,
+            'role': normalized_role,
+            'deleted': True,
+            'deleted_matchings': deleted_matchings,
+        }), 200
+    except Exception as e:
+        app.logger.exception('EURES questionnaire response delete failed')
         return jsonify({'error': str(e)}), 500
 
 
@@ -6666,6 +6883,10 @@ def admin_eures_manual_matching(form_id: str):
 
         candidat_fields = candidat_record.get('fields', {}) if isinstance(candidat_record.get('fields'), dict) else {}
         employeur_fields = employeur_record.get('fields', {}) if isinstance(employeur_record.get('fields'), dict) else {}
+        if not _is_eures_response_active(candidat_fields):
+            return jsonify({'error': 'Le candidat sélectionné est désactivé et ne peut pas être utilisé pour un matching.'}), 400
+        if not _is_eures_response_active(employeur_fields):
+            return jsonify({'error': "Le besoin employeur sélectionné est désactivé et ne peut pas être utilisé pour un matching."}), 400
         candidat_id = str(candidat_fields.get('id_tally') or candidat_fields.get('uuid') or '').strip()
         besoin_id = str(employeur_fields.get('id_tally') or employeur_fields.get('uuid') or '').strip()
         if not candidat_id or not besoin_id:
