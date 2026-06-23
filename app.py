@@ -1446,6 +1446,84 @@ def find_eures_invitation_by_role_email(role: str, email: str, headers: dict | N
     return None
 
 
+def find_eures_questionnaire_by_role_email(role: str, email: str, headers: dict | None = None) -> dict | None:
+    """Find one returned EURES questionnaire by normalized role and email."""
+    normalized_role = _normalize_eures_invitation_role(role)
+    normalized_email = normalize_email(email)
+    if not normalized_role or not normalized_email:
+        return None
+    config = _get_eures_role_table_config(normalized_role)
+    if not config:
+        raise RuntimeError('EURES role table configuration is incomplete.')
+    if headers is None:
+        headers = _eures_admin_headers(config)
+    records = fetch_table_records(config['doc_id'], config['table_id'], headers)
+    for rec in records:
+        fields = rec.get('fields', {}) if isinstance(rec, dict) else {}
+        if not isinstance(fields, dict):
+            continue
+        row_email = (
+            normalize_email(fields.get('email', ''))
+            if normalized_role == 'candidate'
+            else _resolve_employer_recipient(fields)
+        )
+        if row_email == normalized_email:
+            return rec
+    return None
+
+
+def check_eures_invitation_send_conflict(
+    role: str,
+    email: str,
+    *,
+    current_record_id: int | None = None,
+    invitation_headers: dict | None = None,
+    questionnaire_headers: dict | None = None,
+) -> dict | None:
+    """Return one conflict payload when an invitation should not be sent."""
+    normalized_role = _normalize_eures_invitation_role(role)
+    normalized_email = normalize_email(email)
+    if not normalized_role or not normalized_email:
+        return None
+
+    config = get_eures_invitations_config()
+    if not config:
+        raise RuntimeError('EURES invitations configuration is incomplete.')
+    if invitation_headers is None:
+        invitation_headers = _eures_admin_headers(config)
+    invitation_records = fetch_table_records(config['doc_id'], config['table_id'], invitation_headers)
+    for rec in invitation_records:
+        record_id = int(rec.get('id') or 0)
+        if current_record_id and record_id == int(current_record_id):
+            continue
+        fields = rec.get('fields', {}) if isinstance(rec, dict) else {}
+        if _eures_invitation_lookup_key(fields.get('role', ''), fields.get('email', '')) != (normalized_role, normalized_email):
+            continue
+        status = str(fields.get('invitation_status') or '').strip().lower()
+        if status in {'invitation_envoyee', 'questionnaire_recu', 'rapprochement_a_confirmer', 'rapprochee', 'matching_calcule', 'traitee'}:
+            return {
+                'type': 'existing_invitation',
+                'record_id': record_id,
+                'status': status,
+                'message': 'Une invitation a déjà été envoyée à cette adresse.',
+            }
+
+    questionnaire = find_eures_questionnaire_by_role_email(
+        normalized_role,
+        normalized_email,
+        headers=questionnaire_headers,
+    )
+    if questionnaire:
+        questionnaire_record_id = int(questionnaire.get('id') or 0)
+        return {
+            'type': 'existing_questionnaire',
+            'record_id': questionnaire_record_id,
+            'status': 'questionnaire_recu',
+            'message': 'Un questionnaire a déjà été retourné avec cette adresse email.',
+        }
+    return None
+
+
 def get_eures_active_employer_invitation(invite_token: str) -> tuple[dict | None, str]:
     """Validate one employer invitation link for public self-service actions."""
     config = get_eures_invitations_config()
@@ -5066,6 +5144,19 @@ def create_eures_employer_referral(form_id: str):
         current_status = str(fields.get('invitation_status') or '').strip().lower()
         if current_status == 'desactivee':
             return jsonify({'error': 'Cette invitation a été désactivée.'}), 400
+        send_conflict = check_eures_invitation_send_conflict(
+            'employer',
+            recipient_email,
+            current_record_id=record_id,
+            invitation_headers=headers,
+        )
+        if send_conflict:
+            return jsonify({
+                'error': send_conflict['message'],
+                'conflict_type': send_conflict['type'],
+                'conflict_record_id': send_conflict['record_id'],
+                'conflict_status': send_conflict['status'],
+            }), 409
 
         recipient, subject, text_body, html_body, new_invite_token, invite_link = build_brevo_invitation_email(fields)
         brevo_result = send_brevo_transactional_email(recipient, subject, text_body, html_body)
@@ -5757,6 +5848,22 @@ def admin_eures_invitations_send(form_id: str):
                     'record_id': record_id,
                     'email': fields.get('email', ''),
                     'reason': f'status_not_sendable:{current_status or "unknown"}',
+                })
+                continue
+            send_conflict = check_eures_invitation_send_conflict(
+                fields.get('role', ''),
+                fields.get('email', ''),
+                current_record_id=record_id,
+                invitation_headers=headers,
+            )
+            if send_conflict:
+                skipped.append({
+                    'record_id': record_id,
+                    'email': fields.get('email', ''),
+                    'reason': send_conflict['type'],
+                    'message': send_conflict['message'],
+                    'conflict_record_id': send_conflict['record_id'],
+                    'conflict_status': send_conflict['status'],
                 })
                 continue
             try:
