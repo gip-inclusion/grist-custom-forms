@@ -4159,6 +4159,39 @@ def list_eures_admin_questionnaire_responses(role: str) -> list[dict]:
         if row:
             rows.append(row)
 
+    matching_rows = list_eures_admin_matchings(status='all')
+    matching_map: dict[str, list[dict]] = {}
+    for matching in matching_rows:
+        candidate_key = str(matching.get('candidat_id') or '').strip()
+        employer_key = str(matching.get('besoin_id') or '').strip()
+        if normalized_role == 'candidate' and candidate_key:
+            matching_map.setdefault(candidate_key, []).append({
+                'matching_record_id': matching.get('record_id'),
+                'score': _safe_int(matching.get('score')),
+                'scoring_status': matching.get('scoring_status', ''),
+                'admin_status': matching.get('admin_status', ''),
+                'workflow_status': matching.get('workflow_status', ''),
+                'counterpart_name': str((matching.get('employeur') or {}).get('employeur') or '').strip(),
+                'counterpart_subtitle': str((matching.get('employeur') or {}).get('poste') or '').strip(),
+            })
+        if normalized_role == 'employer' and employer_key:
+            matching_map.setdefault(employer_key, []).append({
+                'matching_record_id': matching.get('record_id'),
+                'score': _safe_int(matching.get('score')),
+                'scoring_status': matching.get('scoring_status', ''),
+                'admin_status': matching.get('admin_status', ''),
+                'workflow_status': matching.get('workflow_status', ''),
+                'counterpart_name': str((matching.get('candidat') or {}).get('nom') or '').strip(),
+                'counterpart_subtitle': str((matching.get('candidat') or {}).get('metier') or '').strip(),
+            })
+
+    for row in rows:
+        key = str(row.get('record_key') or '').strip()
+        related = matching_map.get(key, [])
+        related.sort(key=lambda item: (-int(item.get('score') or 0), -int(item.get('matching_record_id') or 0)))
+        row['matchings'] = related
+        row['matching_count'] = len(related)
+
     rows.sort(
         key=lambda row: (
             _parse_iso_datetime(row.get('submitted_at')) or datetime.min.replace(tzinfo=timezone.utc),

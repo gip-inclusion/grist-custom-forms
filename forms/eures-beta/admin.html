@@ -1959,6 +1959,7 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
                 <span class="pill ${row.is_active === false ? "refused" : "accepted"}">${esc(row.is_active === false ? "Désactivée" : "Active")}</span>
                 <span class="pill">Réponse reçue le : ${esc(row.response_received_at || row.submitted_at || "-")}</span>
                 <span class="pill">Clé : ${esc(row.record_key || row.record_id || "-")}</span>
+                <span class="pill">${esc(row.matching_count || 0)} matching(s)</span>
               </div>
               ${row.summary ? `<div class="detail-tags"><span class="pill">${esc(row.summary)}</span></div>` : ""}
             </div>
@@ -1972,6 +1973,26 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
 
           <div class="matching-body">
             <section class="compare-card" style="grid-column: 1 / -1;">
+              <section class="notes-box" style="margin-bottom:1rem;">
+                <h4>${esc(isCandidate ? "Matchings avec des employeurs" : "Matchings avec des candidats")}</h4>
+                ${Array.isArray(row.matchings) && row.matchings.length ? `
+                  <div class="detail-list">
+                    ${row.matchings.map((matching) => `
+                      <div class="detail-row" style="grid-template-columns:minmax(0, 1fr) auto; align-items:center;">
+                        <div>
+                          <strong>${esc(matching.counterpart_name || "-")}</strong>
+                          <div style="color:var(--muted); margin-top:0.2rem;">${esc(matching.counterpart_subtitle || "-")}</div>
+                          <div class="summary-tags" style="margin-top:0.45rem;">
+                            <span class="pill">Score : ${esc(matching.score ?? 0)}</span>
+                            <span class="pill">${esc(matching.workflow_status || "-")}</span>
+                          </div>
+                        </div>
+                        <button class="btn-neutral" type="button" data-open-matching="${esc(matching.matching_record_id)}">Voir le matching</button>
+                      </div>
+                    `).join("")}
+                  </div>
+                ` : `<p style="margin:0; color:var(--muted);">Aucun matching lié pour le moment.</p>`}
+              </section>
               ${row.response_disabled_reason ? `<p style="margin:0 0 0.8rem; line-height:1.7;"><strong>Motif de désactivation :</strong> ${esc(row.response_disabled_reason)}</p>` : ""}
               <details>
                 <summary style="cursor:pointer; font-weight:700; margin-bottom:0.9rem;">
@@ -2022,6 +2043,13 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
           const confirmed = window.confirm("Supprimer définitivement cette réponse et les matchings associés ?");
           if (!confirmed) return;
           await deleteQuestionnaireResponse(roleValue, recordId);
+        });
+      }
+      for (const button of list.querySelectorAll("[data-open-matching]")) {
+        button.addEventListener("click", async (event) => {
+          const matchingRecordId = Number(event.currentTarget.dataset.openMatching || 0);
+          if (!matchingRecordId) return;
+          await openMatchingRecord(matchingRecordId);
         });
       }
     }
@@ -2206,6 +2234,24 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
         activateTab("tasks");
         loadTasks();
         return;
+      }
+    }
+
+    async function openMatchingRecord(recordId) {
+      if (!recordId) return;
+      document.getElementById("filter-status").value = "all";
+      document.getElementById("filter-source").value = "all";
+      activateTab("matchings");
+      await loadMatchings();
+      const card = document.querySelector(`#matching-list .matching-card[data-record-id="${CSS.escape(String(recordId))}"]`);
+      if (card) {
+        card.scrollIntoView({ behavior: "smooth", block: "start" });
+        card.style.outline = "3px solid rgba(22, 95, 190, 0.28)";
+        card.style.outlineOffset = "6px";
+        window.setTimeout(() => {
+          card.style.outline = "";
+          card.style.outlineOffset = "";
+        }, 2200);
       }
     }
 
