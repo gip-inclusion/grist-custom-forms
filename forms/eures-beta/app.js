@@ -1208,7 +1208,8 @@ const candidateTallyMeta = {
     "Nettoyage et entretien (ex : bureaux, espaces collectifs)",
     "Hôtellerie et restauration (ex : plonge, service, aide de cuisine)",
     "Agriculture et récolte (ex : récolte de fruits, travaux saisonniers)",
-    "Missions polyvalentes et emplois accessibles rapidement"
+    "Missions polyvalentes et emplois accessibles rapidement",
+    "Opérateur de production dans l’industrie"
   ]
 };
 
@@ -1277,7 +1278,8 @@ const candidateTallyCopy = {
       "Nettoyage et entretien (ex : bureaux, espaces collectifs)",
       "Hôtellerie et restauration (ex : plonge, service, aide de cuisine)",
       "Agriculture et récolte (ex : récolte de fruits, travaux saisonniers)",
-      "Missions polyvalentes et emplois accessibles rapidement"
+      "Missions polyvalentes et emplois accessibles rapidement",
+      "Opérateur de production dans l’industrie"
     ],
     questions: {
       q03: "Avez-vous déjà travaillé sous statut \"frontalier\" ?",
@@ -1304,6 +1306,7 @@ const candidateTallyCopy = {
       q26: "Avez-vous une expérience professionnelle dans le secteur de l'hôtellerie et de la restauration?",
       q28: "Avez-vous une expérience professionnelle dans le secteur de l'agriculture et de la récolte?",
       q30: "Avez-vous une expérience professionnelle ?",
+      q39: "Avez-vous une expérience professionnelle dans le secteur de la production industrielle ?",
       jobTitle: "Quel intitulé de poste recherchez-vous pour ce métier ?",
       salaryType: "Sous quelle forme pensez-vous à votre salaire ?",
       salaryMin: "Quel est le minimum que vous souhaiteriez pour ce métier, en euros bruts ou nets ?",
@@ -1337,14 +1340,16 @@ const candidateTallyCopy = {
       nettoyage: "Nettoyage et entretien",
       hotel: "Hôtellerie et restauration",
       agri: "Agriculture et récolte",
-      polyvalent: "Missions polyvalentes et emplois accessibles rapidement"
+      polyvalent: "Missions polyvalentes et emplois accessibles rapidement",
+      industrie_production: "Opérateur de production dans l’industrie"
     },
     sectorLegends: {
       vente: "Vente et commerce — parmi les propositions suivantes, lesquelles vous correspondent le mieux ?",
       nettoyage: "Nettoyage et entretien — parmi les propositions suivantes, lesquelles vous correspondent le mieux ?",
       hotel: "Hôtellerie et restauration — parmi les propositions suivantes, lesquelles vous correspondent le mieux ?",
       agri: "Agriculture et récolte — parmi les propositions suivantes, lesquelles vous correspondent le mieux ?",
-      polyvalent: "Missions polyvalentes et emplois accessibles rapidement — parmi les propositions suivantes, lesquelles vous correspondent le mieux ?"
+      polyvalent: "Missions polyvalentes et emplois accessibles rapidement — parmi les propositions suivantes, lesquelles vous correspondent le mieux ?",
+      industrie_production: "Opérateur de production dans l’industrie — parmi les propositions suivantes, lesquelles vous correspondent le mieux ?"
     },
     sectorChoices: {
       vente: [
@@ -1411,6 +1416,20 @@ const candidateTallyCopy = {
         "Accepter des horaires variables",
         "Aider un collègue si nécessaire",
         "Être disponible rapidement"
+      ],
+      industrie_production: [
+        "Respect des consignes",
+        "Travail en équipe",
+        "Rigueur",
+        "Respect des règles de sécurité",
+        "Contrôle qualité",
+        "Utilisation de machines de production",
+        "Lecture de consignes techniques",
+        "Cadence de production",
+        "Maintenance de premier niveau",
+        "Organisation du poste de travail",
+        "Réactivité",
+        "Polyvalence"
       ]
     }
   },
@@ -1478,7 +1497,8 @@ const candidateTallyCopy = {
       "Cleaning and maintenance (for example offices, shared spaces)",
       "Hospitality and food service (for example dishwashing, service, kitchen support)",
       "Agriculture and harvesting (for example fruit picking, seasonal work)",
-      "Versatile jobs and roles accessible quickly"
+      "Versatile jobs and roles accessible quickly",
+      "Production operator in industry"
     ],
     questions: {
       q03: "Have you already worked with cross-border commuter status?",
@@ -1505,6 +1525,7 @@ const candidateTallyCopy = {
       q26: "Do you have work experience in hospitality and food service?",
       q28: "Do you have work experience in agriculture and harvesting?",
       q30: "Do you have work experience?",
+      q39: "Do you have work experience in industrial production?",
       jobTitle: "What job title are you looking for in this occupation?",
       salaryType: "How do you think about your salary?",
       salaryMin: "What is the minimum you would like for this role, in gross or net euros?",
@@ -1538,21 +1559,24 @@ const candidateTallyCopy = {
       nettoyage: "Cleaning and maintenance",
       hotel: "Hospitality and food service",
       agri: "Agriculture and harvesting",
-      polyvalent: "Versatile jobs and roles accessible quickly"
+      polyvalent: "Versatile jobs and roles accessible quickly",
+      industrie_production: "Production operator in industry"
     },
     sectorLegends: {
       vente: "Sales and retail: which of the following statements describe you best?",
       nettoyage: "Cleaning and maintenance: which of the following statements describe you best?",
       hotel: "Hospitality and food service: which of the following statements describe you best?",
       agri: "Agriculture and harvesting: which of the following statements describe you best?",
-      polyvalent: "Versatile jobs and roles accessible quickly: which of the following statements describe you best?"
+      polyvalent: "Versatile jobs and roles accessible quickly: which of the following statements describe you best?",
+      industrie_production: "Production operator in industry: which of the following statements describe you best?"
     },
     sectorChoices: {
       vente: ["Welcoming and guiding customers", "Advising on a product or service", "Understanding a request quickly", "Handling payment", "Staying calm during busy periods", "Working as part of a team", "Being punctual", "Adapting to different tasks", "Handling stress", "Helping a colleague when needed", "Building customer loyalty", "Keeping the sales area clean and organised"],
       nettoyage: ["Working independently", "Following instructions", "Organising your work", "Keeping an area clean and organised", "Adapting to an unexpected situation", "Taking care of the equipment used", "Being efficient in your tasks", "Working as part of a team", "Helping a colleague when needed", "Being punctual", "Following hygiene and safety rules", "Carrying out repetitive tasks"],
       hotel: ["Welcoming and guiding customers", "Working as part of a team", "Staying calm during busy periods", "Following instructions", "Being punctual", "Adapting to different tasks", "Remembering orders or information", "Helping a colleague when needed", "Handling stress", "Keeping an area clean and organised", "Advising a customer or answering a request"],
       agri: ["Being punctual", "Working as part of a team", "Following instructions", "Taking care of the equipment used", "Helping a colleague when needed", "Staying calm during intense periods of activity", "Doing physical tasks", "Working outdoors and depending on weather conditions", "Adapting to different tasks", "Carrying out repetitive tasks"],
-      polyvalent: ["Adapting quickly to a new task", "Working as part of a team", "Following instructions", "Respecting working hours", "Doing physical work", "Working at a sustained pace", "Working in different environments", "Accepting variable schedules", "Helping a colleague when needed", "Being available quickly"]
+      polyvalent: ["Adapting quickly to a new task", "Working as part of a team", "Following instructions", "Respecting working hours", "Doing physical work", "Working at a sustained pace", "Working in different environments", "Accepting variable schedules", "Helping a colleague when needed", "Being available quickly"],
+      industrie_production: ["Following instructions", "Working as part of a team", "Being rigorous", "Following safety rules", "Quality control", "Using production machines", "Reading technical instructions", "Working at production pace", "First-level maintenance", "Organising your workstation", "Being reactive", "Being versatile"]
     }
   },
   de: {
@@ -1619,7 +1643,8 @@ const candidateTallyCopy = {
       "Reinigung und Instandhaltung (z. B. Büros, Gemeinschaftsflächen)",
       "Hotellerie und Gastronomie (z. B. Spülküche, Service, Küchenhilfe)",
       "Landwirtschaft und Ernte (z. B. Obsternte, Saisonarbeit)",
-      "Vielseitige Tätigkeiten und Jobs mit schnellem Einstieg"
+      "Vielseitige Tätigkeiten und Jobs mit schnellem Einstieg",
+      "Produktionsmitarbeiter in der Industrie"
     ],
     questions: {
       q03: "Haben Sie bereits mit Grenzgängerstatus gearbeitet?",
@@ -1646,6 +1671,7 @@ const candidateTallyCopy = {
       q26: "Haben Sie Berufserfahrung in Hotellerie und Gastronomie?",
       q28: "Haben Sie Berufserfahrung in Landwirtschaft und Ernte?",
       q30: "Haben Sie Berufserfahrung?",
+      q39: "Haben Sie Berufserfahrung in der industriellen Produktion?",
       jobTitle: "Welche konkrete Stellenbezeichnung suchen Sie für diesen Beruf?",
       salaryType: "In welcher Form denken Sie an Ihr Gehalt?",
       salaryMin: "Was ist das Minimum, das Sie für diesen Beruf in Euro brutto oder netto erwarten würden?",
@@ -1679,21 +1705,24 @@ const candidateTallyCopy = {
       nettoyage: "Reinigung und Instandhaltung",
       hotel: "Hotellerie und Gastronomie",
       agri: "Landwirtschaft und Ernte",
-      polyvalent: "Vielseitige Tätigkeiten und Jobs mit schnellem Einstieg"
+      polyvalent: "Vielseitige Tätigkeiten und Jobs mit schnellem Einstieg",
+      industrie_production: "Produktionsmitarbeiter in der Industrie"
     },
     sectorLegends: {
       vente: "Verkauf und Handel: Welche der folgenden Aussagen passen am besten zu Ihnen?",
       nettoyage: "Reinigung und Instandhaltung: Welche der folgenden Aussagen passen am besten zu Ihnen?",
       hotel: "Hotellerie und Gastronomie: Welche der folgenden Aussagen passen am besten zu Ihnen?",
       agri: "Landwirtschaft und Ernte: Welche der folgenden Aussagen passen am besten zu Ihnen?",
-      polyvalent: "Vielseitige Tätigkeiten und Jobs mit schnellem Einstieg: Welche der folgenden Aussagen passen am besten zu Ihnen?"
+      polyvalent: "Vielseitige Tätigkeiten und Jobs mit schnellem Einstieg: Welche der folgenden Aussagen passen am besten zu Ihnen?",
+      industrie_production: "Produktionsmitarbeiter in der Industrie: Welche der folgenden Aussagen passen am besten zu Ihnen?"
     },
     sectorChoices: {
       vente: ["Kunden empfangen und orientieren", "Zu einem Produkt oder einer Dienstleistung beraten", "Eine Anfrage schnell verstehen", "Eine Zahlung durchführen", "In Stoßzeiten ruhig bleiben", "Im Team arbeiten", "Pünktlich sein", "Sich an verschiedene Aufgaben anpassen", "Stress standhalten", "Bei Bedarf einem Kollegen helfen", "Kundschaft binden", "Einen Verkaufsbereich sauber und organisiert halten"],
       nettoyage: ["Selbstständig arbeiten", "Anweisungen befolgen", "Die eigene Arbeit organisieren", "Einen Bereich sauber und organisiert halten", "Sich an eine unvorhergesehene Situation anpassen", "Sorgfältig mit dem verwendeten Material umgehen", "In den Aufgaben effizient sein", "Im Team arbeiten", "Bei Bedarf einem Kollegen helfen", "Pünktlich sein", "Hygiene- und Sicherheitsregeln einhalten", "Wiederholende Aufgaben ausführen"],
       hotel: ["Kunden empfangen und orientieren", "Im Team arbeiten", "Während starker Auslastung ruhig bleiben", "Anweisungen befolgen", "Pünktlich sein", "Sich an verschiedene Aufgaben anpassen", "Bestellungen oder Informationen behalten", "Bei Bedarf einem Kollegen helfen", "Stress standhalten", "Einen Bereich sauber und organisiert halten", "Einen Kunden beraten oder auf eine Anfrage antworten"],
       agri: ["Pünktlich sein", "Im Team arbeiten", "Anweisungen befolgen", "Sorgfältig mit dem verwendeten Material umgehen", "Bei Bedarf einem Kollegen helfen", "In intensiven Arbeitsphasen ruhig bleiben", "Körperliche Aufgaben ausführen", "Im Freien und je nach Wetterbedingungen arbeiten", "Sich an verschiedene Aufgaben anpassen", "Wiederholende Aufgaben ausführen"],
-      polyvalent: ["Sich schnell an eine neue Aufgabe anpassen", "Im Team arbeiten", "Anweisungen befolgen", "Arbeitszeiten einhalten", "Körperliche Arbeit ausführen", "In hohem Tempo arbeiten", "In unterschiedlichen Umgebungen arbeiten", "Variable Arbeitszeiten akzeptieren", "Bei Bedarf einem Kollegen helfen", "Schnell verfügbar sein"]
+      polyvalent: ["Sich schnell an eine neue Aufgabe anpassen", "Im Team arbeiten", "Anweisungen befolgen", "Arbeitszeiten einhalten", "Körperliche Arbeit ausführen", "In hohem Tempo arbeiten", "In unterschiedlichen Umgebungen arbeiten", "Variable Arbeitszeiten akzeptieren", "Bei Bedarf einem Kollegen helfen", "Schnell verfügbar sein"],
+      industrie_production: ["Anweisungen befolgen", "Im Team arbeiten", "Sorgfältig arbeiten", "Sicherheitsregeln einhalten", "Qualitätskontrolle", "Produktionsmaschinen bedienen", "Technische Anweisungen lesen", "Im Produktionstakt arbeiten", "Erste Wartungsarbeiten durchführen", "Den Arbeitsplatz organisieren", "Reaktionsfähig sein", "Vielseitig einsetzbar sein"]
     }
   }
 };
@@ -1731,7 +1760,8 @@ const employerTallyMeta = {
     "Nettoyage et entretien",
     "Hôtellerie et restauration",
     "Agriculture et récolte",
-    "Missions polyvalentes et emplois accessibles rapidement"
+    "Missions polyvalentes et emplois accessibles rapidement",
+    "Opérateur de production dans l’industrie"
   ],
   languageColumns: ["Pas nécessaire", "Communication simple", "Communication professionelle", "Très important au quotidien"],
   languageRows: [
@@ -1797,6 +1827,20 @@ const employerTallyMeta = {
       "Accepter des horaires variables",
       "Être disponible rapidement",
       "Pouvoir commencer rapidement une mission"
+    ],
+    tally_q40: [
+      "Respect des consignes",
+      "Travail en équipe",
+      "Rigueur",
+      "Respect des règles de sécurité",
+      "Contrôle qualité",
+      "Utilisation de machines de production",
+      "Lecture de consignes techniques",
+      "Cadence de production",
+      "Maintenance de premier niveau",
+      "Organisation du poste de travail",
+      "Réactivité",
+      "Polyvalence"
     ]
   }
 };
@@ -1838,6 +1882,7 @@ const employerTallyCopy = {
       q12: "Pour ce recrutement en hôtellerie et restauration, quels éléments vous semblent les plus importants ?",
       q13: "Pour ce recrutement en agriculture et récolte, quels éléments vous semblent les plus importants ?",
       q14: "Pour ce recrutement en missions polyvalentes et emplois accessibles rapidement, quels éléments vous semblent les plus importants ?",
+      q40: "Pour ce recrutement d’opérateur de production dans l’industrie, quels éléments vous semblent les plus importants ?",
       q14Hint: "Vous pouvez sélectionner jusqu'à 4 propositions.",
       q15: "Quelles conditions de travail les personnes recrutées doivent-elles connaître ?",
       q16: "Prénom",
@@ -1878,7 +1923,8 @@ const employerTallyCopy = {
       tally_q11: "Nettoyage et entretien",
       tally_q12: "Hôtellerie et restauration",
       tally_q13: "Agriculture et récolte",
-      tally_q14: "Missions polyvalentes et emplois accessibles rapidement"
+      tally_q14: "Missions polyvalentes et emplois accessibles rapidement",
+      tally_q40: "Opérateur de production dans l’industrie"
     },
     errors: {
       chooseAtLeastOne: "Sélectionnez au moins une réponse pour :",
@@ -1922,6 +1968,7 @@ const employerTallyCopy = {
       q12: "For this hospitality and food service recruitment, which elements seem most important to you?",
       q13: "For this agriculture and harvesting recruitment, which elements seem most important to you?",
       q14: "For this versatile jobs and quick-access roles recruitment, which elements seem most important to you?",
+      q40: "For this production operator in industry recruitment, which elements seem most important to you?",
       q14Hint: "You can select up to 4 options.",
       q15: "Which working conditions should recruited people be aware of?",
       q16: "First name",
@@ -1941,7 +1988,7 @@ const employerTallyCopy = {
       consent: "I agree that the information provided may be used by EURES teams and partners for introductions and exchanges related to recruitment. The data provided will only be used within the framework of recruitment exchanges and in accordance with European data protection rules (GDPR)."
     },
     options: {
-      sectors: ["Sales and retail", "Cleaning and maintenance", "Hospitality and food service", "Agriculture and harvesting", "Versatile jobs and roles accessible quickly"],
+      sectors: ["Sales and retail", "Cleaning and maintenance", "Hospitality and food service", "Agriculture and harvesting", "Versatile jobs and roles accessible quickly", "Production operator in industry"],
       q02Columns: ["Not necessary", "Simple communication", "Professional communication", "Very important on a daily basis"],
       q02Rows: ["German", "English", "French", "Luxembourgish"],
       q03: ["1 person", "2 to 5 people", "More than 5 people", "I do not know yet"],
@@ -1964,14 +2011,16 @@ const employerTallyCopy = {
       tally_q11: "Cleaning and maintenance",
       tally_q12: "Hospitality and food service",
       tally_q13: "Agriculture and harvesting",
-      tally_q14: "Versatile jobs and roles accessible quickly"
+      tally_q14: "Versatile jobs and roles accessible quickly",
+      tally_q40: "Production operator in industry"
     },
     sectorChoices: {
       tally_q10: ["Being comfortable with customers", "Being able to communicate simply with customers", "Working during busy periods", "Handling payment operations", "Working as part of a team", "Adapting to different tasks", "Keeping a sales area clean and organised", "Respecting working hours"],
       tally_q11: ["Following procedures, instructions and hygiene rules", "Maintaining a consistent level of quality", "Respecting working hours", "Working independently", "Working as part of a team", "Working at a sustained pace", "Adapting to different workplaces or environments", "Carrying out repetitive tasks", "Being able to travel easily to intervention sites"],
       tally_q12: ["Welcoming and guiding customers", "Being able to communicate simply with customers", "Working during busy periods", "Staying calm during intense periods of activity", "Working as part of a team", "Respecting working hours", "Working in the evening, on weekends or on public holidays", "Remembering orders or information", "Adapting to different tasks", "Keeping a reception or service area clean and organised"],
       tally_q13: ["Respecting schedules and harvesting periods", "Working outdoors and depending on weather conditions", "Doing physical work", "Working at a sustained pace", "Following work and safety instructions", "Using equipment or tools correctly", "Working as part of a team", "Adapting to different types of tasks", "Being able to travel easily to work sites", "Maintaining a consistent quality of work"],
-      tally_q14: ["Adapting quickly to different tasks", "Respecting instructions and schedules", "Doing physical work", "Working at a sustained pace", "Working in different environments", "Joining a team quickly", "Working as part of a team", "Accepting variable schedules", "Being available quickly", "Being able to start an assignment quickly"]
+      tally_q14: ["Adapting quickly to different tasks", "Respecting instructions and schedules", "Doing physical work", "Working at a sustained pace", "Working in different environments", "Joining a team quickly", "Working as part of a team", "Accepting variable schedules", "Being available quickly", "Being able to start an assignment quickly"],
+      tally_q40: ["Following instructions", "Working as part of a team", "Being rigorous", "Following safety rules", "Quality control", "Using production machines", "Reading technical instructions", "Working at production pace", "First-level maintenance", "Organising the workstation", "Being reactive", "Being versatile"]
     },
     errors: {
       chooseAtLeastOne: "Select at least one answer for:",
@@ -2015,6 +2064,7 @@ const employerTallyCopy = {
       q12: "Welche Elemente erscheinen Ihnen bei dieser Einstellung in Hotellerie und Gastronomie am wichtigsten?",
       q13: "Welche Elemente erscheinen Ihnen bei dieser Einstellung in Landwirtschaft und Ernte am wichtigsten?",
       q14: "Welche Elemente erscheinen Ihnen bei dieser Einstellung für vielseitige Tätigkeiten und schnell zugängliche Jobs am wichtigsten?",
+      q40: "Welche Elemente erscheinen Ihnen bei dieser Einstellung als Produktionsmitarbeiter in der Industrie am wichtigsten?",
       q14Hint: "Sie können bis zu 4 Antworten auswählen.",
       q15: "Welche Arbeitsbedingungen sollten die eingestellten Personen kennen?",
       q16: "Vorname",
@@ -2034,7 +2084,7 @@ const employerTallyCopy = {
       consent: "Ich stimme zu, dass die übermittelten Informationen von EURES-Teams und Partnern im Rahmen von Vermittlungen und austauschbezogenen Rekrutierungen verwendet werden dürfen. Die übermittelten Daten werden nur im Rahmen des recruitmentbezogenen Austauschs und gemäß den europäischen Datenschutzvorschriften (DSGVO) verwendet."
     },
     options: {
-      sectors: ["Verkauf und Handel", "Reinigung und Instandhaltung", "Hotellerie und Gastronomie", "Landwirtschaft und Ernte", "Vielseitige Tätigkeiten und Jobs mit schnellem Einstieg"],
+      sectors: ["Verkauf und Handel", "Reinigung und Instandhaltung", "Hotellerie und Gastronomie", "Landwirtschaft und Ernte", "Vielseitige Tätigkeiten und Jobs mit schnellem Einstieg", "Produktionsmitarbeiter in der Industrie"],
       q02Columns: ["Nicht erforderlich", "Einfache Kommunikation", "Berufliche Kommunikation", "Im Alltag sehr wichtig"],
       q02Rows: ["Deutsch", "Englisch", "Französisch", "Luxemburgisch"],
       q03: ["1 Person", "2 bis 5 Personen", "Mehr als 5 Personen", "Ich weiß es noch nicht"],
@@ -2057,14 +2107,16 @@ const employerTallyCopy = {
       tally_q11: "Reinigung und Instandhaltung",
       tally_q12: "Hotellerie und Gastronomie",
       tally_q13: "Landwirtschaft und Ernte",
-      tally_q14: "Vielseitige Tätigkeiten und Jobs mit schnellem Einstieg"
+      tally_q14: "Vielseitige Tätigkeiten und Jobs mit schnellem Einstieg",
+      tally_q40: "Produktionsmitarbeiter in der Industrie"
     },
     sectorChoices: {
       tally_q10: ["Sich im Umgang mit Kunden wohlfühlen", "Einfach mit Kunden kommunizieren können", "Während Stoßzeiten arbeiten", "Kassenvorgänge durchführen", "Im Team arbeiten", "Sich an verschiedene Aufgaben anpassen", "Einen Verkaufsbereich sauber und organisiert halten", "Arbeitszeiten einhalten"],
       tally_q11: ["Verfahren, Anweisungen und Hygieneregeln einhalten", "Ein gleichbleibendes Qualitätsniveau halten", "Arbeitszeiten einhalten", "Selbstständig arbeiten", "Im Team arbeiten", "In hohem Tempo arbeiten", "Sich an verschiedene Arbeitsorte oder Umgebungen anpassen", "Wiederholende Aufgaben ausführen", "Einsatzorte leicht erreichen können"],
       tally_q12: ["Kunden empfangen und orientieren", "Einfach mit Kunden kommunizieren können", "Während Stoßzeiten arbeiten", "In intensiven Phasen ruhig bleiben", "Im Team arbeiten", "Arbeitszeiten einhalten", "Abends, am Wochenende oder an Feiertagen arbeiten", "Bestellungen oder Informationen behalten", "Sich an verschiedene Aufgaben anpassen", "Einen Empfangs- oder Servicebereich sauber und organisiert halten"],
       tally_q13: ["Zeitpläne und Erntezeiten einhalten", "Im Freien und je nach Wetter arbeiten", "Körperliche Arbeit leisten", "In hohem Tempo arbeiten", "Arbeits- und Sicherheitsanweisungen einhalten", "Material oder Werkzeuge korrekt verwenden", "Im Team arbeiten", "Sich an unterschiedliche Arten von Aufgaben anpassen", "Arbeitsorte leicht erreichen können", "Eine gleichbleibende Arbeitsqualität aufrechterhalten"],
-      tally_q14: ["Sich schnell an verschiedene Aufgaben anpassen", "Anweisungen und Zeitpläne einhalten", "Körperliche Arbeit leisten", "In hohem Tempo arbeiten", "In unterschiedlichen Umgebungen arbeiten", "Sich schnell in ein Team integrieren", "Im Team arbeiten", "Variable Arbeitszeiten akzeptieren", "Schnell verfügbar sein", "Schnell eine Aufgabe beginnen können"]
+      tally_q14: ["Sich schnell an verschiedene Aufgaben anpassen", "Anweisungen und Zeitpläne einhalten", "Körperliche Arbeit leisten", "In hohem Tempo arbeiten", "In unterschiedlichen Umgebungen arbeiten", "Sich schnell in ein Team integrieren", "Im Team arbeiten", "Variable Arbeitszeiten akzeptieren", "Schnell verfügbar sein", "Schnell eine Aufgabe beginnen können"],
+      tally_q40: ["Anweisungen befolgen", "Im Team arbeiten", "Sorgfältig arbeiten", "Sicherheitsregeln einhalten", "Qualitätskontrolle", "Produktionsmaschinen bedienen", "Technische Anweisungen lesen", "Im Produktionstakt arbeiten", "Erste Wartungsarbeiten durchführen", "Den Arbeitsplatz organisieren", "Reaktionsfähig sein", "Vielseitig einsetzbar sein"]
     },
     errors: {
       chooseAtLeastOne: "Wählen Sie mindestens eine Antwort für:",
@@ -3377,6 +3429,20 @@ function candidateTallyQuestionnaireTemplate(lang, t) {
               ${salaryExpectationFields("tally_q29", content)}
             </section>
 
+            <section class="form-section" data-condition="sector-industrie_production">
+              <h3>${content.sectorTitles.industrie_production}</h3>
+              ${jobTitleField("tally_q38", content.questions.jobTitle)}
+              <fieldset class="fieldset">
+                <legend>${content.sectorLegends.industrie_production} <span class="mini-note">${content.questions.sectorHint}</span></legend>
+                ${choicePills("tally_q38", localizeOptions(candidateTallyCopy.fr.sectorChoices.industrie_production, content.sectorChoices.industrie_production))}
+              </fieldset>
+              <fieldset class="fieldset">
+                <legend>${content.questions.q39}</legend>
+                ${radioPills("tally_q39", localizeOptions(["Oui, plus de 2 ans", "Oui, entre 6 mois et 2 ans", "Oui, moins de 6 mois", "Non, mais je suis intéressé(e) par le secteur"], content.options.experience))}
+              </fieldset>
+              ${salaryExpectationFields("tally_q38", content)}
+            </section>
+
             <section class="form-section">
               <h2>${content.contactTitle}</h2>
               <div class="form-grid">
@@ -3717,12 +3783,12 @@ function employerTallyQuestionnaireTemplate(lang, t) {
               </fieldset>
             </section>
 
-            ${["tally_q10", "tally_q11", "tally_q12", "tally_q13", "tally_q14"].map((name, index) => `
+            ${["tally_q10", "tally_q11", "tally_q12", "tally_q13", "tally_q14", "tally_q40"].map((name, index) => `
               <section class="form-section" data-condition="employer-sector-${index}">
                 <h3>${content.sectorTitles[name]}</h3>
                 ${jobTitleField(name, content.questions.jobTitle)}
                 <fieldset class="fieldset">
-                  <legend>${index === 4 ? content.questions.q14 : content.questions[`q${10 + index}`]} <span class="mini-note">${content.questions.q14Hint}</span></legend>
+                  <legend>${name === "tally_q14" ? content.questions.q14 : name === "tally_q40" ? content.questions.q40 : content.questions[`q${10 + index}`]} <span class="mini-note">${content.questions.q14Hint}</span></legend>
                   ${choicePills(name, content.sectorPriorityOptions[name])}
                 </fieldset>
                 ${salaryOfferFields(name, content)}
@@ -3833,7 +3899,8 @@ function toggleConditionBlocks(form) {
     "sector-nettoyage": selectedSectors.includes(candidateTallyMeta.sectors[1]),
     "sector-hotel": selectedSectors.includes(candidateTallyMeta.sectors[2]),
     "sector-agri": selectedSectors.includes(candidateTallyMeta.sectors[3]),
-    "sector-polyvalent": selectedSectors.includes(candidateTallyMeta.sectors[4])
+    "sector-polyvalent": selectedSectors.includes(candidateTallyMeta.sectors[4]),
+    "sector-industrie_production": selectedSectors.includes(candidateTallyMeta.sectors[5])
   };
 
   function shouldShow(element) {
@@ -3941,6 +4008,12 @@ function humanizeCandidateRawAnswers(fields, fileMeta, rankingSummary) {
       experience: fields.tally_q30 || "",
       salaire: { type: fields.tally_q29_salary_type || "", minimum: fields.tally_q29_salary_min || "", note: fields.tally_q29_salary_note || "" }
     },
+    industrie_production: {
+      intitule_poste: fields.tally_q38_job_title || "",
+      qualites: fields.tally_q38 || [],
+      experience: fields.tally_q39 || "",
+      salaire: { type: fields.tally_q38_salary_type || "", minimum: fields.tally_q38_salary_min || "", note: fields.tally_q38_salary_note || "" }
+    },
     contact: {
       prenom: fields.tally_q31 || "",
       nom: fields.tally_q32 || "",
@@ -4001,7 +4074,8 @@ function toggleEmployerConditionBlocks(form) {
     "employer-sector-1": selectedSectors.includes(employerTallyMeta.sectors[1]),
     "employer-sector-2": selectedSectors.includes(employerTallyMeta.sectors[2]),
     "employer-sector-3": selectedSectors.includes(employerTallyMeta.sectors[3]),
-    "employer-sector-4": selectedSectors.includes(employerTallyMeta.sectors[4])
+    "employer-sector-4": selectedSectors.includes(employerTallyMeta.sectors[4]),
+    "employer-sector-5": selectedSectors.includes(employerTallyMeta.sectors[5])
   };
 
   form.querySelectorAll("[data-condition]").forEach((element) => {
@@ -4058,6 +4132,11 @@ function humanizeEmployerRawAnswers(fields) {
       choix: fields.tally_q14 || [],
       salaire: { type: fields.tally_q14_salary_type || "", minimum: fields.tally_q14_salary_min || "", maximum: fields.tally_q14_salary_max || "", note: fields.tally_q14_salary_note || "" }
     },
+    priorites_industrie_production: {
+      intitule_poste: fields.tally_q40_job_title || "",
+      choix: fields.tally_q40 || [],
+      salaire: { type: fields.tally_q40_salary_type || "", minimum: fields.tally_q40_salary_min || "", maximum: fields.tally_q40_salary_max || "", note: fields.tally_q40_salary_note || "" }
+    },
     conditions_travail: fields.tally_q15 || [],
     contact: {
       prenom: fields.tally_q16 || "",
@@ -4093,7 +4172,7 @@ function attachEmployerTallyBehavior(lang, t) {
     setStatusMessage(statusEl, message, state);
   }
 
-  const limitedGroups = ["tally_q10", "tally_q11", "tally_q12", "tally_q13", "tally_q14"];
+  const limitedGroups = ["tally_q10", "tally_q11", "tally_q12", "tally_q13", "tally_q14", "tally_q40"];
 
   function collectValues() {
     const data = new FormData(form);
@@ -4164,6 +4243,7 @@ function attachEmployerTallyBehavior(lang, t) {
       ["tally_q12", content.questions.q12, 1, 4],
       ["tally_q13", content.questions.q13, 1, 4],
       ["tally_q14", content.questions.q14, 1, 4],
+      ["tally_q40", content.questions.q40, 1, 4],
       ["tally_q15", content.questions.q15]
     ];
     for (const [name, label, min, max] of validations) {
@@ -4183,7 +4263,8 @@ function attachEmployerTallyBehavior(lang, t) {
       normalized.tally_q11 || [],
       normalized.tally_q12 || [],
       normalized.tally_q13 || [],
-      normalized.tally_q14 || []
+      normalized.tally_q14 || [],
+      normalized.tally_q40 || []
     ].flat();
 
     const fields = {
@@ -4272,7 +4353,7 @@ function attachCandidateTallyBehavior(lang, t) {
     setStatusMessage(statusEl, message, state);
   }
 
-  const limitedGroups = ["tally_q20", "tally_q22", "tally_q25", "tally_q27", "tally_q29"];
+  const limitedGroups = ["tally_q20", "tally_q22", "tally_q25", "tally_q27", "tally_q29", "tally_q38"];
 
   function collectValues() {
     const data = new FormData(form);
@@ -4394,7 +4475,7 @@ function attachCandidateTallyBehavior(lang, t) {
     if (!validateVisibleCheckboxGroup(form, "tally_q02", content.mobilityTypeTitle, setStatus, t, 1, 2)) {
       return;
     }
-    if (!validateVisibleCheckboxGroup(form, "tally_q19", content.questions.q19, setStatus, t, 1, 5)) {
+    if (!validateVisibleCheckboxGroup(form, "tally_q19", content.questions.q19, setStatus, t, 1, 6)) {
       return;
     }
     if (
@@ -4419,6 +4500,7 @@ function attachCandidateTallyBehavior(lang, t) {
       ["tally_q25", content.sectorTitles.hotel],
       ["tally_q27", content.sectorTitles.agri],
       ["tally_q29", content.sectorTitles.polyvalent],
+      ["tally_q38", content.sectorTitles.industrie_production],
     ];
     for (const [name, label] of sectorGroupValidations) {
       if (!validateVisibleCheckboxGroup(form, name, label, setStatus, t, 1, 4)) {
@@ -4486,7 +4568,8 @@ function attachCandidateTallyBehavior(lang, t) {
       normalized.tally_q22 || [],
       normalized.tally_q25 || [],
       normalized.tally_q27 || [],
-      normalized.tally_q29 || []
+      normalized.tally_q29 || [],
+      normalized.tally_q38 || []
     ].flat();
 
     const fields = {

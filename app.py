@@ -247,6 +247,12 @@ EURES_SECTOR_CANONICAL_MAP = {
     'récolte': 'agriculture',
     'recolte': 'agriculture',
     'harvesting': 'agriculture',
+    'industrie': 'industrie_production',
+    'industry': 'industrie_production',
+    'production': 'industrie_production',
+    'opérateur de production': 'industrie_production',
+    'operateur de production': 'industrie_production',
+    'production operator': 'industrie_production',
     'polyvalent': 'polyvalent',
     'multi': 'polyvalent',
     'accessible rapidement': 'polyvalent',
@@ -257,6 +263,7 @@ EURES_CANDIDAT_SECTOR_SALARY_FIELDS = {
     'hotellerie': ('tally_q25_salary_type', 'tally_q25_salary_min'),
     'agriculture': ('tally_q27_salary_type', 'tally_q27_salary_min'),
     'polyvalent': ('tally_q29_salary_type', 'tally_q29_salary_min'),
+    'industrie_production': ('tally_q38_salary_type', 'tally_q38_salary_min'),
 }
 EURES_CANDIDAT_SECTOR_JOB_TITLE_FIELDS = {
     'vente': 'tally_q20_job_title',
@@ -264,6 +271,7 @@ EURES_CANDIDAT_SECTOR_JOB_TITLE_FIELDS = {
     'hotellerie': 'tally_q25_job_title',
     'agriculture': 'tally_q27_job_title',
     'polyvalent': 'tally_q29_job_title',
+    'industrie_production': 'tally_q38_job_title',
 }
 EURES_EMPLOYEUR_SECTOR_SALARY_FIELDS = {
     'vente': ('tally_q10_salary_type', 'tally_q10_salary_min', 'tally_q10_salary_max'),
@@ -271,6 +279,7 @@ EURES_EMPLOYEUR_SECTOR_SALARY_FIELDS = {
     'hotellerie': ('tally_q12_salary_type', 'tally_q12_salary_min', 'tally_q12_salary_max'),
     'agriculture': ('tally_q13_salary_type', 'tally_q13_salary_min', 'tally_q13_salary_max'),
     'polyvalent': ('tally_q14_salary_type', 'tally_q14_salary_min', 'tally_q14_salary_max'),
+    'industrie_production': ('tally_q40_salary_type', 'tally_q40_salary_min', 'tally_q40_salary_max'),
 }
 EURES_EMPLOYEUR_SECTOR_JOB_TITLE_FIELDS = {
     'vente': 'tally_q10_job_title',
@@ -278,6 +287,7 @@ EURES_EMPLOYEUR_SECTOR_JOB_TITLE_FIELDS = {
     'hotellerie': 'tally_q12_job_title',
     'agriculture': 'tally_q13_job_title',
     'polyvalent': 'tally_q14_job_title',
+    'industrie_production': 'tally_q40_job_title',
 }
 EURES_PUBLIC_SECTOR_LABELS = {
     'vente': 'Vente et commerce',
@@ -285,6 +295,7 @@ EURES_PUBLIC_SECTOR_LABELS = {
     'hotellerie': 'Hôtellerie et restauration',
     'agriculture': 'Agriculture et récolte',
     'polyvalent': 'Missions polyvalentes',
+    'industrie_production': 'Opérateur de production dans l’industrie',
 }
 WIZARD_STATE_KEY = '__wizard_v3_state'
 JSON_EXPORT_COLUMNS = {
@@ -3933,6 +3944,9 @@ EURES_CANDIDATE_TALLY_LABELS = {
     'tally_q29': 'Atouts recherchés · Missions polyvalentes et emplois accessibles rapidement',
     'tally_q29_job_title': 'Intitulé du poste visé · Missions polyvalentes et emplois accessibles rapidement',
     'tally_q30': 'Expérience · Missions polyvalentes et emplois accessibles rapidement',
+    'tally_q38': 'Atouts recherchés · Opérateur de production dans l’industrie',
+    'tally_q38_job_title': 'Intitulé du poste visé · Opérateur de production dans l’industrie',
+    'tally_q39': 'Expérience · Opérateur de production dans l’industrie',
     'tally_q31': 'Prénom',
     'tally_q32': 'Nom',
     'tally_q33': 'Adresse e-mail',
@@ -3966,6 +3980,8 @@ EURES_EMPLOYER_TALLY_LABELS = {
     'tally_q13_job_title': 'Intitulé du poste proposé · Agriculture et récolte',
     'tally_q14': 'Priorités métier · Missions polyvalentes et emplois accessibles rapidement',
     'tally_q14_job_title': 'Intitulé du poste proposé · Missions polyvalentes et emplois accessibles rapidement',
+    'tally_q40': 'Priorités métier · Opérateur de production dans l’industrie',
+    'tally_q40_job_title': 'Intitulé du poste proposé · Opérateur de production dans l’industrie',
     'tally_q15': 'Conditions de travail à connaître',
     'tally_q16': 'Prénom du contact',
     'tally_q17': "Nom de l'entreprise",
@@ -3982,11 +3998,13 @@ EURES_TALLY_SECTOR_LABELS = {
     'tally_q12': 'Hôtellerie et restauration',
     'tally_q13': 'Agriculture et récolte',
     'tally_q14': 'Missions polyvalentes et emplois accessibles rapidement',
+    'tally_q40': 'Opérateur de production dans l’industrie',
     'tally_q20': 'Vente et commerce',
     'tally_q22': 'Nettoyage et entretien',
     'tally_q25': 'Hôtellerie et restauration',
     'tally_q27': 'Agriculture et récolte',
     'tally_q29': 'Missions polyvalentes et emplois accessibles rapidement',
+    'tally_q38': 'Opérateur de production dans l’industrie',
 }
 
 
