@@ -883,6 +883,39 @@
       resize: vertical;
     }
 
+    .checkbox-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 0.7rem;
+    }
+
+    .checkbox-pill {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      min-height: 48px;
+      padding: 0.8rem 1rem;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.9);
+      color: var(--text);
+      cursor: pointer;
+      box-sizing: border-box;
+    }
+
+    .checkbox-pill input {
+      width: 18px;
+      height: 18px;
+      margin: 0;
+      min-height: 0;
+      flex: 0 0 auto;
+    }
+
+    .checkbox-pill span {
+      font-size: 0.95rem;
+      line-height: 1.4;
+    }
+
     .help-text {
       margin: 0.35rem 0 0;
       color: var(--muted);
@@ -1378,6 +1411,18 @@
                   <input id="single-source" type="text" value="admin_manual">
                 </div>
               </div>
+              <div class="field-stack" id="candidate-target-jobs-block">
+                <label>Métiers ciblés dans l’invitation candidat</label>
+                <div class="checkbox-grid" id="candidate-target-jobs-grid">
+                  <label class="checkbox-pill"><input type="checkbox" name="single-target-job" value="vente"><span>Vente et commerce</span></label>
+                  <label class="checkbox-pill"><input type="checkbox" name="single-target-job" value="nettoyage"><span>Nettoyage et entretien</span></label>
+                  <label class="checkbox-pill"><input type="checkbox" name="single-target-job" value="hotellerie"><span>Hôtellerie et restauration</span></label>
+                  <label class="checkbox-pill"><input type="checkbox" name="single-target-job" value="agriculture"><span>Agriculture et récolte</span></label>
+                  <label class="checkbox-pill"><input type="checkbox" name="single-target-job" value="polyvalent"><span>Missions polyvalentes</span></label>
+                  <label class="checkbox-pill"><input type="checkbox" name="single-target-job" value="industrie_production"><span>Opérateur de production dans l’industrie</span></label>
+                </div>
+                <p class="help-text">Optionnel. Sans sélection, le mail générique actuel est conservé. Avec plusieurs métiers, le mail générique est enrichi d’une courte mention.</p>
+              </div>
               <div class="field-stack">
                 <label for="single-notes">Note</label>
                 <textarea id="single-notes" placeholder="Optionnel"></textarea>
@@ -1400,10 +1445,10 @@
                 <div class="inline-actions">
                   <button id="csv-import-btn" type="button">Importer le CSV</button>
                 </div>
-                <p class="help-text">Colonnes recommandées : <code>role,email,first_name,last_name,company_name,language,source,external_ref,notes</code></p>
-                <pre class="code-block" id="csv-example">role,email,first_name,last_name,company_name,language,source,external_ref,notes
-candidate,alice@example.com,Alice,Martin,,fr,campagne_juin,CAND-001,
-employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
+                <p class="help-text">Colonnes recommandées : <code>role,email,first_name,last_name,company_name,language,source,external_ref,target_job_keys,notes</code></p>
+                <pre class="code-block" id="csv-example">role,email,first_name,last_name,company_name,language,source,external_ref,target_job_keys,notes
+candidate,alice@example.com,Alice,Martin,,fr,campagne_juin,CAND-001,industrie_production,
+employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,</pre>
               </div>
             </div>
           </div>
@@ -2079,6 +2124,7 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
           row.company_name,
           row.external_ref,
           row.source,
+          Array.isArray(row.target_job_labels) ? row.target_job_labels.join(" ") : "",
           row.notes,
         ].map(normalizeText).join(" ");
         return haystack.includes(search);
@@ -2147,6 +2193,12 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
                 <strong>Matching</strong>
                 <span>${esc(row.matching_status || "-")}</span>
               </div>
+              ${row.role === "candidate" ? `
+                <div class="meta-box">
+                  <strong>Métiers ciblés</strong>
+                  <span>${esc((row.target_job_labels || []).join(" · ") || "-")}</span>
+                </div>
+              ` : ""}
             </div>
             ${row.duplicate_followup_status === "pending" ? `
               <section class="notes-box" style="margin-top:0.9rem;">
@@ -2905,6 +2957,9 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
       if (!email) {
         throw new Error("Email requis");
       }
+      const targetJobKeys = role === "candidate"
+        ? Array.from(document.querySelectorAll('input[name="single-target-job"]:checked')).map((input) => input.value)
+        : [];
       return {
         rows: [{
           role,
@@ -2915,10 +2970,24 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
           language: document.getElementById("single-language").value.trim() || "fr",
           source: document.getElementById("single-source").value.trim() || "admin_manual",
           external_ref: document.getElementById("single-external-ref").value.trim(),
+          target_job_keys: targetJobKeys,
           notes: document.getElementById("single-notes").value.trim(),
           invitation_status: "invitation_a_envoyer",
         }],
       };
+    }
+
+    function updateSingleInvitationRoleUI() {
+      const role = document.getElementById("single-role").value;
+      const targetBlock = document.getElementById("candidate-target-jobs-block");
+      if (!targetBlock) return;
+      const isCandidate = role === "candidate";
+      targetBlock.hidden = !isCandidate;
+      if (!isCandidate) {
+        for (const input of targetBlock.querySelectorAll('input[name="single-target-job"]')) {
+          input.checked = false;
+        }
+      }
     }
 
     function sampleCsv() {
@@ -4179,6 +4248,7 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
         setStatus("invite-status-line", `Erreur : ${error.message || "création impossible"}`);
       }
     });
+    document.getElementById("single-role").addEventListener("change", updateSingleInvitationRoleUI);
     document.getElementById("csv-sample-btn").addEventListener("click", () => {
       document.getElementById("csv-text").value = sampleCsv();
     });
@@ -4226,6 +4296,7 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,</pre>
       await loadCockpit();
       await loadTasks();
     });
+    updateSingleInvitationRoleUI();
     document.getElementById("task-reload-btn").addEventListener("click", loadTasks);
     document.getElementById("task-filter-status").addEventListener("change", loadTasks);
     document.getElementById("task-filter-search").addEventListener("input", renderTaskRows);

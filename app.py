@@ -213,6 +213,7 @@ EURES_INVITATION_FIELDS = {
     'duplicate_followup_processed_at',
     'duplicate_followup_processed_by',
     'duplicate_followup_note',
+    'target_job_keys',
     'notes',
 }
 EURES_INVITATION_ALLOWED_ROLES = {'candidate', 'employer'}
@@ -297,6 +298,40 @@ EURES_PUBLIC_SECTOR_LABELS = {
     'polyvalent': 'Missions polyvalentes',
     'industrie_production': 'Opérateur de production dans l’industrie',
 }
+EURES_INVITATION_TARGET_JOB_LABELS = {
+    'fr': {
+        'vente': 'Vente et commerce',
+        'nettoyage': 'Nettoyage et entretien',
+        'hotellerie': 'Hôtellerie et restauration',
+        'agriculture': 'Agriculture et récolte',
+        'polyvalent': 'Missions polyvalentes et emplois accessibles rapidement',
+        'industrie_production': 'Opérateur de production dans l’industrie',
+    },
+    'en': {
+        'vente': 'Sales and retail',
+        'nettoyage': 'Cleaning and maintenance',
+        'hotellerie': 'Hospitality and catering',
+        'agriculture': 'Agriculture and harvesting',
+        'polyvalent': 'Versatile entry-level jobs',
+        'industrie_production': 'Production operator in industry',
+    },
+    'de': {
+        'vente': 'Verkauf und Handel',
+        'nettoyage': 'Reinigung und Instandhaltung',
+        'hotellerie': 'Hotellerie und Gastronomie',
+        'agriculture': 'Landwirtschaft und Ernte',
+        'polyvalent': 'Vielseitige schnell zugängliche Tätigkeiten',
+        'industrie_production': 'Produktionsmitarbeiter in der Industrie',
+    },
+}
+EURES_INVITATION_CANDIDATE_TARGET_OPTIONS = [
+    'vente',
+    'nettoyage',
+    'hotellerie',
+    'agriculture',
+    'polyvalent',
+    'industrie_production',
+]
 EURES_WORK_CONDITION_CANONICAL_MAP = {
     'travail tot le matin ou en horaire decales': 'matin_decale',
     'travail tôt le matin ou en horaire décalés': 'matin_decale',
@@ -1355,6 +1390,53 @@ def _parse_eures_invitation_rows(payload: dict) -> list[dict]:
     return []
 
 
+def _normalize_eures_invitation_target_job_keys(value) -> list[str]:
+    """Normalize targeted job keys stored on candidate invitations."""
+    candidates = value
+    if isinstance(value, str):
+        stripped = value.strip()
+        if not stripped:
+            candidates = []
+        else:
+            try:
+                parsed = json.loads(stripped)
+            except Exception:
+                parsed = None
+            if isinstance(parsed, list):
+                candidates = parsed
+            else:
+                candidates = re.split(r'[,\n;|]+', stripped)
+    elif not isinstance(value, list):
+        candidates = []
+
+    normalized: list[str] = []
+    seen: set[str] = set()
+    for item in candidates:
+        key = str(item or '').strip().lower()
+        if key not in EURES_INVITATION_CANDIDATE_TARGET_OPTIONS or key in seen:
+            continue
+        seen.add(key)
+        normalized.append(key)
+    return normalized
+
+
+def _serialize_eures_invitation_target_job_keys(value) -> str:
+    keys = _normalize_eures_invitation_target_job_keys(value)
+    return json.dumps(keys, ensure_ascii=False) if keys else ''
+
+
+def _eures_invitation_target_job_labels(value, language: str = 'fr') -> list[str]:
+    normalized_language = str(language or 'fr').strip().lower()
+    if normalized_language not in EURES_INVITATION_TARGET_JOB_LABELS:
+        normalized_language = 'fr'
+    labels_map = EURES_INVITATION_TARGET_JOB_LABELS[normalized_language]
+    return [
+        labels_map[key]
+        for key in _normalize_eures_invitation_target_job_keys(value)
+        if key in labels_map
+    ]
+
+
 def _normalize_eures_invitation_row(row: dict, actor: str, batch_id: str) -> dict:
     role = _normalize_eures_invitation_role(_coalesce_row_value(row, 'role', 'type', 'profil', 'profile'))
     email = normalize_email(_coalesce_row_value(row, 'email', 'mail', 'contact_email'))
@@ -1385,6 +1467,9 @@ def _normalize_eures_invitation_row(row: dict, actor: str, batch_id: str) -> dic
         'sponsor_company_name': _coalesce_row_value(row, 'sponsor_company_name'),
         'invited_by_type': _coalesce_row_value(row, 'invited_by_type') or 'admin',
         'invite_scope': _coalesce_row_value(row, 'invite_scope') or '',
+        'target_job_keys': _serialize_eures_invitation_target_job_keys(
+            _coalesce_row_value(row, 'target_job_keys', 'target_jobs', 'target_job', 'metier_cible', 'metiers_cibles')
+        ) if role == 'candidate' else '',
         'notes': _coalesce_row_value(row, 'notes', 'note', 'comment', 'commentaire'),
     }
 
@@ -1424,6 +1509,8 @@ def list_eures_invitations() -> list[dict]:
             'sponsor_company_name': fields.get('sponsor_company_name', ''),
             'invited_by_type': fields.get('invited_by_type', ''),
             'invite_scope': fields.get('invite_scope', ''),
+            'target_job_keys': _normalize_eures_invitation_target_job_keys(fields.get('target_job_keys', '')),
+            'target_job_labels': _eures_invitation_target_job_labels(fields.get('target_job_keys', ''), fields.get('language', 'fr')),
             'first_submission_at': fields.get('first_submission_at', ''),
             'last_submission_at': fields.get('last_submission_at', ''),
             'submission_count': _safe_int(fields.get('submission_count')),
@@ -1869,6 +1956,8 @@ def build_brevo_invitation_email(invitation_row: dict, kind: str = 'initial') ->
     signature_role = get_eures_mail_signature_role()
     privacy_url = get_eures_privacy_url(language)
     reminder_mode = kind == 'reminder'
+    target_job_keys = _normalize_eures_invitation_target_job_keys(invitation_row.get('target_job_keys', '')) if role == 'candidate' else []
+    target_job_labels = _eures_invitation_target_job_labels(target_job_keys, language) if role == 'candidate' else []
     if language == 'en':
         hello = "Hello,"
     elif language == 'de':
@@ -2020,6 +2109,83 @@ def build_brevo_invitation_email(invitation_row: dict, kind: str = 'initial') ->
 """.strip()
         return recipient, subject, text_body, body_html, invite_token, invite_link
 
+    target_intro = ''
+    target_intro_html = ''
+    personalized_candidate_copy = None
+    if target_job_keys:
+        if len(target_job_keys) == 1 and target_job_keys[0] == 'industrie_production':
+            if language == 'en':
+                personalized_candidate_copy = {
+                    'subject': "[EURES / France Travail] Production operator opportunities in industry",
+                    'preheader': "A short questionnaire to position your profile on production operator roles in industry.",
+                    'body_lines': [
+                        "I am contacting you as part of my role as an EURES adviser within France Travail.",
+                        "As part of the EURES beta experiment, we are currently identifying candidates interested in production operator roles in industry, with opportunities that may match their availability and mobility plans.",
+                        "To help us assess whether your profile could fit these opportunities, I invite you to complete the short questionnaire below. It takes only a few minutes.",
+                    ],
+                    'title': "Production operator opportunities in industry",
+                    'cta': "Access the questionnaire",
+                    'cta_note': "This questionnaire helps us confirm your profile, your availability and the type of industrial production roles that may match your situation.",
+                    'footer': "If your profile matches the current criteria, your application may then be shared with a partner employer.",
+                }
+            elif language == 'de':
+                personalized_candidate_copy = {
+                    'subject': "[EURES / France Travail] Produktionsstellen in der Industrie",
+                    'preheader': "Ein kurzer Fragebogen, um Ihr Profil für Produktionsstellen in der Industrie einzuordnen.",
+                    'body_lines': [
+                        "Ich kontaktiere Sie im Rahmen meiner Tätigkeit als EURES-Berater bei France Travail.",
+                        "Im Rahmen des Experiments EURES beta identifizieren wir derzeit Kandidatinnen und Kandidaten, die an Produktionsstellen in der Industrie interessiert sind und deren Verfügbarkeit sowie Mobilitätsprojekt dazu passen könnten.",
+                        "Damit wir prüfen können, ob Ihr Profil zu diesen Möglichkeiten passen könnte, lade ich Sie ein, den kurzen Fragebogen unten auszufüllen. Das dauert nur wenige Minuten.",
+                    ],
+                    'title': "Produktionsstellen in der Industrie",
+                    'cta': "Zum Fragebogen",
+                    'cta_note': "Mit diesem Fragebogen können wir Ihr Profil, Ihre Verfügbarkeit und die Art von Produktionsstellen in der Industrie bestätigen, die zu Ihrer Situation passen könnten.",
+                    'footer': "Wenn Ihr Profil den aktuellen Kriterien entspricht, kann Ihre Bewerbung anschließend an einen Partnerarbeitgeber weitergeleitet werden.",
+                }
+            else:
+                personalized_candidate_copy = {
+                    'subject': "[EURES / France Travail] Opportunités d’opérateur de production dans l’industrie",
+                    'preheader': "Un court questionnaire pour positionner votre profil sur des postes d’opérateur de production dans l’industrie.",
+                    'body_lines': [
+                        "Je me permets de vous contacter dans le cadre de ma mission de conseiller EURES au sein de France Travail.",
+                        "Dans le cadre de l’expérimentation EURES beta, nous recherchons actuellement des candidats intéressés par des postes d’opérateur de production dans l’industrie, avec des opportunités susceptibles de correspondre à leurs disponibilités et à leur projet de mobilité.",
+                        "Pour vérifier si votre profil pourrait correspondre à ces opportunités, je vous invite à compléter le court questionnaire ci-dessous. Il vous prendra seulement quelques minutes.",
+                    ],
+                    'title': "Opportunités d’opérateur de production dans l’industrie",
+                    'cta': "Accéder au formulaire",
+                    'cta_note': "Ce questionnaire nous permettra de confirmer votre profil, vos disponibilités et le type de postes en production industrielle susceptibles de vous correspondre.",
+                    'footer': "Si votre profil correspond aux critères recherchés, votre candidature pourra ensuite être proposée à un employeur partenaire.",
+                }
+        else:
+            joined_labels = ", ".join(target_job_labels) if target_job_labels else ""
+            if joined_labels:
+                if language == 'en':
+                    target_intro = f"The current opportunities we are reviewing concern the following job families: {joined_labels}."
+                elif language == 'de':
+                    target_intro = f"Die derzeit geprüften Möglichkeiten betreffen folgende Tätigkeitsbereiche: {joined_labels}."
+                else:
+                    target_intro = f"Les opportunités actuellement étudiées concernent les métiers suivants : {joined_labels}."
+                target_intro_html = f'<p style="margin:0 0 14px;font-size:16px;line-height:1.55;color:#324765;"><strong>{escape(target_intro)}</strong></p>'
+
+    if personalized_candidate_copy:
+        subject = personalized_candidate_copy['subject']
+        preheader = personalized_candidate_copy['preheader']
+        body_lines = personalized_candidate_copy['body_lines']
+        title = personalized_candidate_copy['title']
+        cta = personalized_candidate_copy['cta']
+        cta_note = personalized_candidate_copy['cta_note']
+        footer = (
+            personalized_candidate_copy['footer']
+            + "\n\n"
+            + (
+                "EURES beta is an experimental service supported by EURES and France Travail to facilitate professional mobility in the Greater Region."
+                if language == 'en'
+                else "EURES beta ist ein experimenteller Service von EURES und France Travail zur Unterstützung beruflicher Mobilität in der Großregion."
+                if language == 'de'
+                else "EURES est le réseau européen de coopération pour l'emploi, qui facilite les recrutements et les opportunités professionnelles en Europe."
+            )
+        )
+
     if language == 'en':
         if reminder_mode:
             subject = "[EURES / France Travail] Reminder: candidate questionnaire"
@@ -2098,7 +2264,27 @@ def build_brevo_invitation_email(invitation_row: dict, kind: str = 'initial') ->
             "opportunités professionnelles en Europe."
         )
 
+    if personalized_candidate_copy:
+        subject = personalized_candidate_copy['subject']
+        preheader = personalized_candidate_copy['preheader']
+        body_lines = personalized_candidate_copy['body_lines']
+        title = personalized_candidate_copy['title']
+        cta = personalized_candidate_copy['cta']
+        cta_note = personalized_candidate_copy['cta_note']
+        footer = (
+            personalized_candidate_copy['footer']
+            + "\n\n"
+            + (
+                "EURES beta is an experimental service supported by EURES and France Travail to facilitate professional mobility in the Greater Region."
+                if language == 'en'
+                else "EURES beta ist ein experimenteller Service von EURES und France Travail zur Unterstützung beruflicher Mobilität in der Großregion."
+                if language == 'de'
+                else "EURES est le réseau européen de coopération pour l'emploi, qui facilite les recrutements et les opportunités professionnelles en Europe."
+            )
+        )
+
     title_block = f"{title}\n\n" if title else ""
+    body_lines_for_text = [target_intro] + body_lines if target_intro else body_lines
     title_html = (
         f'<h1 style="margin:0;font-size:28px;line-height:1.18;font-weight:700;color:#16253d;">{escape(title)}</h1>'
         if title else ''
@@ -2106,7 +2292,7 @@ def build_brevo_invitation_email(invitation_row: dict, kind: str = 'initial') ->
     text_body = (
         f"{hello}\n\n"
         f"{title_block}"
-        + "\n\n".join(body_lines)
+        + "\n\n".join(body_lines_for_text)
         + f"\n\n{cta}: {invite_link}\n\n{cta_note}\n\n{footer}\n\nInformations sur vos données : {privacy_url}\n\nCordialement,\n\n{signature_name}\n{signature_role}\n"
     )
     html_body = f"""
@@ -2134,6 +2320,7 @@ def build_brevo_invitation_email(invitation_row: dict, kind: str = 'initial') ->
             </tr>
             <tr>
               <td style="padding:0 28px 4px;">
+                {target_intro_html}
                 <p style="margin:0 0 14px;font-size:16px;line-height:1.55;color:#324765;">{escape(body_lines[0])}</p>
                 <p style="margin:0 0 14px;font-size:16px;line-height:1.55;color:#324765;">{escape(body_lines[1])}</p>
                 <p style="margin:0 0 22px;font-size:16px;line-height:1.55;color:#324765;">{escape(body_lines[2])}</p>
@@ -6387,6 +6574,7 @@ def admin_eures_invitation_update(form_id: str, record_id: int):
         'language',
         'source',
         'external_ref',
+        'target_job_keys',
         'notes',
         'answered_at',
         'linked_form_role',
@@ -6395,7 +6583,10 @@ def admin_eures_invitation_update(form_id: str, record_id: int):
         'matching_status',
     }:
         if field_name in data:
-            update_fields[field_name] = str(data.get(field_name) or '').strip()
+            if field_name == 'target_job_keys':
+                update_fields[field_name] = _serialize_eures_invitation_target_job_keys(data.get(field_name))
+            else:
+                update_fields[field_name] = str(data.get(field_name) or '').strip()
 
     if not update_fields:
         return jsonify({'error': 'No supported invitation fields provided'}), 400
