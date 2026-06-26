@@ -77,6 +77,7 @@ EURES_MATCHING_FIELDS = {
     'candidat_id',
     'score',
     'score_metier',
+    'score_competences',
     'score_langues',
     'score_mobilite',
     'score_disponibilite',
@@ -3727,6 +3728,57 @@ def eures_score_job_title(expected: str, actual: str) -> tuple[int, str]:
     return 3, 'intitule: faible recoupement (' + ', '.join(common) + ')'
 
 
+def eures_parse_skill_items(value: str) -> list[str]:
+    items: list[str] = []
+    seen: set[str] = set()
+    for raw_part in re.split(r'[|\n;,]+', str(value or '')):
+        part = str(raw_part or '').strip()
+        if not part:
+            continue
+        folded = eures_fold_text(part)
+        if not folded or folded in seen:
+            continue
+        seen.add(folded)
+        items.append(part)
+    return items
+
+
+def eures_score_competences(expected: str, actual: str) -> tuple[int, str]:
+    expected_items = eures_parse_skill_items(expected)
+    actual_items = eures_parse_skill_items(actual)
+    if not expected_items or not actual_items:
+        return 0, 'competences: information manquante'
+
+    expected_map = {eures_fold_text(item): item for item in expected_items}
+    actual_map = {eures_fold_text(item): item for item in actual_items}
+    exact_overlap = [expected_map[key] for key in expected_map if key in actual_map]
+
+    if exact_overlap:
+        ratio = len(exact_overlap) / max(len(expected_items), 1)
+        points = round(20 * ratio)
+        if points > 0:
+            if ratio >= 0.99:
+                return 20, 'competences: couverture complete'
+            return points, 'competences: ' + ', '.join(exact_overlap)
+
+    expected_tokens = set(eures_tokenize_text(expected))
+    actual_tokens = set(eures_tokenize_text(actual))
+    if not expected_tokens or not actual_tokens:
+        return 0, 'competences: information insuffisante'
+
+    overlap = sorted(expected_tokens & actual_tokens)
+    if not overlap:
+        return 0, 'competences: aucune correspondance'
+
+    ratio = len(overlap) / max(len(expected_tokens), 1)
+    points = round(20 * ratio * 0.75)
+    if ratio >= 0.6:
+        return max(points, 12), 'competences: proches (' + ', '.join(overlap) + ')'
+    if ratio >= 0.3:
+        return max(points, 7), 'competences: partielles (' + ', '.join(overlap) + ')'
+    return max(points, 3), 'competences: faible recoupement (' + ', '.join(overlap) + ')'
+
+
 def eures_score_salary(secteur: str, candidat_fields: dict, besoin_fields: dict) -> tuple[int, str]:
     if not secteur:
         return 0, 'salaire: secteur indetermine'
@@ -3769,11 +3821,17 @@ def compute_eures_matching(besoin_fields: dict, candidat_fields: dict) -> dict:
         employeur_job_title,
         candidat_job_title,
     )
-    score_metier = min(30, score_metier_sector + score_metier_title)
-    score_langues, raison_langues = eures_score_languages(
+    score_metier_raw = min(30, score_metier_sector + score_metier_title)
+    score_metier = round(25 * score_metier_raw / 30)
+    score_competences, raison_competences = eures_score_competences(
+        str(besoin_fields.get('competences_clefs') or ''),
+        str(candidat_fields.get('competences') or ''),
+    )
+    score_langues_raw, raison_langues = eures_score_languages(
         str(besoin_fields.get('langues_requises') or ''),
         str(candidat_fields.get('langues') or ''),
     )
+    score_langues = round(20 * score_langues_raw / 25)
     score_mobilite, raison_mobilite = eures_score_location(
         str(besoin_country),
         str(candidat_country),
@@ -3791,27 +3849,30 @@ def compute_eures_matching(besoin_fields: dict, candidat_fields: dict) -> dict:
         str(besoin_fields.get('permis_autorisations') or ''),
         str(candidat_fields.get('permis_autorisations') or ''),
     )
-    score_disponibilite = min(15, round(score_disponibilite_base * 0.6) + score_conditions + score_permis)
-    score_salaire, raison_salaire = eures_score_salary(secteur, candidat_fields, besoin_fields)
+    score_disponibilite = min(10, round(score_disponibilite_base * 0.35) + score_conditions + score_permis)
+    score_salaire_raw, raison_salaire = eures_score_salary(secteur, candidat_fields, besoin_fields)
+    score_salaire = round(10 * score_salaire_raw / 15)
 
     reasons = []
     weaknesses = []
     for points, text in [
         (score_metier_sector, raison_metier_sector),
         (score_metier_title, raison_metier_title),
-        (score_langues, raison_langues),
+        (score_competences, raison_competences),
+        (score_langues_raw, raison_langues),
         (score_mobilite, raison_mobilite),
         (score_disponibilite_base, raison_disponibilite),
         (score_conditions, raison_conditions),
         (score_permis, raison_permis),
-        (score_salaire, raison_salaire),
+        (score_salaire_raw, raison_salaire),
     ]:
         (reasons if points else weaknesses).append(text)
 
-    score = score_metier + score_langues + score_mobilite + score_disponibilite + score_salaire
+    score = score_metier + score_competences + score_langues + score_mobilite + score_disponibilite + score_salaire
     return {
         'score': score,
         'score_metier': score_metier,
+        'score_competences': score_competences,
         'score_langues': score_langues,
         'score_mobilite': score_mobilite,
         'score_disponibilite': score_disponibilite,
@@ -5286,6 +5347,7 @@ def list_eures_admin_matchings(status: str = 'all', include_candidate_cv: bool =
             'admin_status': admin_status,
             'workflow_status': _matching_workflow_status(fields),
             'score_metier': _safe_int(fields.get('score_metier')),
+            'score_competences': _safe_int(fields.get('score_competences')),
             'score_langues': _safe_int(fields.get('score_langues')),
             'score_mobilite': _safe_int(fields.get('score_mobilite')),
             'score_disponibilite': _safe_int(fields.get('score_disponibilite')),

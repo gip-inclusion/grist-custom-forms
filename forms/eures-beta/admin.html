@@ -3689,11 +3689,12 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,</pre>
               </div>
 
               <section class="subscores-grid">
-                <div class="subscore-card"><strong>${esc(row.score_metier)}</strong><span>Métier / 30</span></div>
-                <div class="subscore-card"><strong>${esc(row.score_langues)}</strong><span>Langues / 25</span></div>
+                <div class="subscore-card"><strong>${esc(row.score_metier)}</strong><span>Métier / 25</span></div>
+                <div class="subscore-card"><strong>${esc(row.score_competences ?? 0)}</strong><span>Compétences / 20</span></div>
+                <div class="subscore-card"><strong>${esc(row.score_langues)}</strong><span>Langues / 20</span></div>
                 <div class="subscore-card"><strong>${esc(row.score_mobilite)}</strong><span>Mobilité / 15</span></div>
-                <div class="subscore-card"><strong>${esc(row.score_disponibilite)}</strong><span>Disponibilité / 15</span></div>
-                <div class="subscore-card"><strong>${esc(row.score_salaire)}</strong><span>Salaire / 15</span></div>
+                <div class="subscore-card"><strong>${esc(row.score_disponibilite)}</strong><span>Disponibilité / 10</span></div>
+                <div class="subscore-card"><strong>${esc(row.score_salaire)}</strong><span>Salaire / 10</span></div>
               </section>
 
               <div class="notes-grid">
