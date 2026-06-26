@@ -312,9 +312,38 @@ def get_candidate_invitation_template(
     job_key = normalize_target_job_key(target_job_key)
     if not job_key:
         return base
+    job_label = get_candidate_target_job_label(job_key, lang)
     specific_bundle = CANDIDATE_INVITATION_EMAIL_TEMPLATES.get(job_key, {}).get(normalized_kind, {})
     specific = specific_bundle.get(lang) or {}
     if not specific:
+        if job_label:
+            if lang == "en":
+                if normalized_kind == "reminder":
+                    base["subject"] = f"Companies are still recruiting in {job_label} – check whether your profile matches"
+                    base["title"] = f"Employers are still recruiting in {job_label}"
+                    base["hook"] = f"Your profile may still match ongoing recruitment needs in {job_label.lower()}."
+                else:
+                    base["subject"] = f"Companies are currently recruiting in {job_label} — your profile may be relevant"
+                    base["title"] = f"Employers are currently recruiting in {job_label}"
+                    base["hook"] = f"Your profile may match needs already expressed by partner employers in {job_label.lower()}."
+            elif lang == "de":
+                if normalized_kind == "reminder":
+                    base["subject"] = f"Unternehmen rekrutieren weiterhin in {job_label} – prüfen Sie, ob Ihr Profil passt"
+                    base["title"] = f"Arbeitgeber rekrutieren weiterhin in {job_label}"
+                    base["hook"] = f"Ihr Profil könnte weiterhin zu laufenden Bedarfen in {job_label} passen."
+                else:
+                    base["subject"] = f"Unternehmen rekrutieren aktuell in {job_label} — Ihr Profil könnte passen"
+                    base["title"] = f"Arbeitgeber rekrutieren aktuell in {job_label}"
+                    base["hook"] = f"Ihr Profil könnte zu bereits gemeldeten Bedarfen von Partnerarbeitgebern in {job_label} passen."
+            else:
+                if normalized_kind == "reminder":
+                    base["subject"] = f"Des entreprises recrutent toujours en {job_label} – vérifiez si votre profil correspond"
+                    base["title"] = f"Des employeurs recrutent actuellement en {job_label}"
+                    base["hook"] = f"Votre profil pourrait toujours correspondre à des besoins en {job_label.lower()}."
+                else:
+                    base["subject"] = f"Des entreprises recrutent actuellement en {job_label} — votre profil nous intéresse"
+                    base["title"] = f"Des employeurs recrutent actuellement en {job_label}"
+                    base["hook"] = f"Votre profil pourrait correspondre à des besoins déjà exprimés par des entreprises partenaires en {job_label.lower()}."
         return base
     merged = deepcopy(base)
     merged.update(specific)
