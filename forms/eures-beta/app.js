@@ -2545,6 +2545,7 @@ function nav(page, lang, t) {
     <header class="site-header">
       <div class="shell">
         <div class="brand" aria-label="${t.common.brandTitle}">
+          <img class="brand-lockup" src="/assets/eures-email-header.png" alt="République Française, France Travail et EURES">
           <span class="brand-copy">
             <strong>${t.common.brandTitle}</strong>
             <span>${t.common.brandSubtitle}</span>

@@ -107,7 +107,16 @@ textarea {
 .brand {
   display: flex;
   align-items: center;
+  gap: 0.9rem;
   text-decoration: none;
+}
+
+.brand-lockup {
+  display: block;
+  width: clamp(140px, 18vw, 220px);
+  max-width: 42vw;
+  height: auto;
+  flex: 0 0 auto;
 }
 
 .brand-copy strong {
@@ -120,6 +129,19 @@ textarea {
   display: block;
   font-size: 0.88rem;
   color: var(--muted);
+}
+
+@media (max-width: 720px) {
+  .brand {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.55rem;
+  }
+
+  .brand-lockup {
+    width: min(210px, 60vw);
+    max-width: 100%;
+  }
 }
 
 .nav {
