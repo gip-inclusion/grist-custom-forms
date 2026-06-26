@@ -31,6 +31,10 @@ from dotenv import load_dotenv
 import requests
 from flask import Flask, request, jsonify, redirect, send_file, send_from_directory, Response, session, url_for
 from werkzeug.middleware.dispatcher import DispatcherMiddleware
+from eures_beta_email_templates import (
+    get_candidate_invitation_template,
+    get_candidate_target_job_label,
+)
 
 load_dotenv()
 
@@ -297,32 +301,6 @@ EURES_PUBLIC_SECTOR_LABELS = {
     'agriculture': 'Agriculture et récolte',
     'polyvalent': 'Missions polyvalentes',
     'industrie_production': 'Opérateur de production dans l’industrie',
-}
-EURES_INVITATION_TARGET_JOB_LABELS = {
-    'fr': {
-        'vente': 'Vente et commerce',
-        'nettoyage': 'Nettoyage et entretien',
-        'hotellerie': 'Hôtellerie et restauration',
-        'agriculture': 'Agriculture et récolte',
-        'polyvalent': 'Missions polyvalentes et emplois accessibles rapidement',
-        'industrie_production': 'Opérateur de production dans l’industrie',
-    },
-    'en': {
-        'vente': 'Sales and retail',
-        'nettoyage': 'Cleaning and maintenance',
-        'hotellerie': 'Hospitality and catering',
-        'agriculture': 'Agriculture and harvesting',
-        'polyvalent': 'Versatile entry-level jobs',
-        'industrie_production': 'Production operator in industry',
-    },
-    'de': {
-        'vente': 'Verkauf und Handel',
-        'nettoyage': 'Reinigung und Instandhaltung',
-        'hotellerie': 'Hotellerie und Gastronomie',
-        'agriculture': 'Landwirtschaft und Ernte',
-        'polyvalent': 'Vielseitige schnell zugängliche Tätigkeiten',
-        'industrie_production': 'Produktionsmitarbeiter in der Industrie',
-    },
 }
 EURES_INVITATION_CANDIDATE_TARGET_OPTIONS = [
     'vente',
@@ -1085,6 +1063,16 @@ def get_public_app_base_url() -> str:
     return 'https://eures-beta.osc-fr1.scalingo.io'
 
 
+def get_eures_email_header_image_url() -> str:
+    configured = os.environ.get('EURES_EMAIL_HEADER_IMAGE_URL', '').strip()
+    if configured:
+        return configured
+    bundled = ASSETS_DIR / 'eures-email-header.png'
+    if bundled.exists():
+        return f"{get_public_app_base_url()}/assets/eures-email-header.png"
+    return ''
+
+
 def _proxy_eures_location_header(location: str) -> str:
     """Rewrite absolute redirects back to the current public host."""
     value = str(location or '').strip()
@@ -1441,14 +1429,10 @@ def _serialize_eures_invitation_target_job_keys(value) -> str:
 
 
 def _eures_invitation_target_job_labels(value, language: str = 'fr') -> list[str]:
-    normalized_language = str(language or 'fr').strip().lower()
-    if normalized_language not in EURES_INVITATION_TARGET_JOB_LABELS:
-        normalized_language = 'fr'
-    labels_map = EURES_INVITATION_TARGET_JOB_LABELS[normalized_language]
     return [
-        labels_map[key]
+        get_candidate_target_job_label(key, language)
         for key in _normalize_eures_invitation_target_job_keys(value)
-        if key in labels_map
+        if get_candidate_target_job_label(key, language)
     ]
 
 
@@ -1951,6 +1935,147 @@ def link_eures_invitation_after_save(role: str, request_fields: dict, saved_reco
     }
 
 
+def _render_eures_email_brand_block(header_image_url: str) -> str:
+    if header_image_url:
+        return (
+            f'<img src="{escape(header_image_url)}" alt="République Française · France Travail · EURES" '
+            'style="display:block;width:100%;max-width:320px;height:auto;border:0;">'
+        )
+    return (
+        '<div style="font-size:12px;line-height:1.4;color:#51627d;">'
+        '<strong>République Française</strong> · <strong>France Travail</strong> · <strong>EURES</strong>'
+        '</div>'
+    )
+
+
+def _build_eures_candidate_invitation_email(
+    *,
+    language: str,
+    target_job_key: str,
+    kind: str,
+    invite_link: str,
+    privacy_url: str,
+    signature_name: str,
+    signature_role: str,
+    hello: str,
+) -> tuple[str, str, str]:
+    template = get_candidate_invitation_template(language, target_job_key=target_job_key, kind=kind)
+    subject = str(template.get('subject') or '').strip()
+    preheader = str(template.get('preheader') or '').strip()
+    eyebrow = str(template.get('eyebrow') or '').strip()
+    title = str(template.get('title') or '').strip()
+    hook = str(template.get('hook') or '').strip()
+    body = [str(item or '').strip() for item in template.get('body', []) if str(item or '').strip()]
+    cta_label = str(template.get('cta_label') or 'Voir si mon profil correspond').strip()
+    cta_note = str(template.get('cta_note') or '').strip()
+    info_title = str(template.get('info_title') or '').strip()
+    info_items = [str(item or '').strip() for item in template.get('info_items', []) if str(item or '').strip()]
+    legal_intro = str(template.get('legal_intro') or '').strip()
+    footer_network = str(template.get('footer_network') or '').strip()
+    header_image_url = get_eures_email_header_image_url()
+
+    text_lines = [hello]
+    if eyebrow:
+        text_lines.extend(['', eyebrow])
+    if title:
+        text_lines.extend(['', title])
+    if hook:
+        text_lines.extend(['', hook])
+    if body:
+        text_lines.extend([''] + body)
+    text_lines.extend(['', f"{cta_label} : {invite_link}"])
+    if cta_note:
+        text_lines.extend(['', cta_note])
+    if info_items:
+        if info_title:
+            text_lines.extend(['', info_title])
+        for item in info_items:
+            text_lines.append(f"- {item}")
+    if legal_intro:
+        text_lines.extend(['', legal_intro])
+    if footer_network:
+        text_lines.extend(['', footer_network])
+    text_lines.extend([
+        '',
+        f'Informations sur vos données : {privacy_url}',
+        '',
+        'Cordialement,',
+        '',
+        signature_name,
+        signature_role,
+        '',
+    ])
+    text_body = '\n'.join(text_lines)
+
+    body_html = f"""
+<!doctype html>
+<html lang="{escape(language)}">
+  <body style="margin:0;padding:0;background:#f4f7fb;font-family:Arial,'Helvetica Neue',sans-serif;color:#16253d;">
+    <div style="display:none;max-height:0;overflow:hidden;opacity:0;mso-hide:all;">
+      {escape(preheader)}
+    </div>
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f4f7fb;padding:20px 12px;">
+      <tr>
+        <td align="center">
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:640px;background:#ffffff;border:1px solid #d9e1ee;border-radius:20px;overflow:hidden;">
+            <tr>
+              <td style="padding:18px 24px;border-bottom:1px solid #e7ecf4;background:#ffffff;">
+                {_render_eures_email_brand_block(header_image_url)}
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:24px 28px 8px;">
+                <p style="margin:0 0 10px;font-size:16px;line-height:1.6;color:#324765;">{escape(hello)}</p>
+                {f'<div style="display:inline-block;padding:6px 10px;border-radius:999px;background:#edf4ff;color:#004494;font-size:12px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;">{escape(eyebrow)}</div>' if eyebrow else ''}
+                {f'<h1 style="margin:14px 0 10px;font-size:28px;line-height:1.12;font-weight:700;color:#16253d;">{escape(title)}</h1>' if title else ''}
+                {f'<p style="margin:0 0 16px;font-size:17px;line-height:1.5;color:#183b66;font-weight:700;">{escape(hook)}</p>' if hook else ''}
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:0 28px 4px;">
+                {''.join(f'<p style="margin:0 0 14px;font-size:16px;line-height:1.6;color:#324765;">{escape(item)}</p>' for item in body)}
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:2px 28px 12px;">
+                <a href="{escape(invite_link)}" style="display:block;width:100%;box-sizing:border-box;padding:16px 18px;border-radius:12px;background:#004494;color:#ffffff;text-decoration:none;font-size:16px;font-weight:700;text-align:center;">{escape(cta_label)}</a>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:0 28px 18px;">
+                <p style="margin:0;font-size:14px;line-height:1.6;color:#627892;">{escape(cta_note)}</p>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:0 28px 18px;">
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border:1px solid #e7ecf4;border-radius:14px;background:#f8fbff;">
+                  <tr>
+                    <td style="padding:16px 18px;">
+                      {f'<p style="margin:0 0 10px;font-size:14px;line-height:1.5;color:#183b66;font-weight:700;">{escape(info_title)}</p>' if info_title else ''}
+                      {''.join(f'<p style="margin:0 0 8px;font-size:14px;line-height:1.5;color:#51627d;">• {escape(item)}</p>' for item in info_items)}
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:18px 28px 24px;border-top:1px solid #e7ecf4;">
+                {f'<p style="margin:0 0 10px;font-size:13px;line-height:1.6;color:#627892;">{escape(legal_intro)}</p>' if legal_intro else ''}
+                {f'<p style="margin:0 0 10px;font-size:13px;line-height:1.6;color:#627892;">{escape(footer_network)}</p>' if footer_network else ''}
+                <p style="margin:0 0 10px;font-size:13px;line-height:1.6;color:#627892;">Informations sur le traitement de vos données : <a href="{escape(privacy_url)}" style="color:#004494;">consulter la notice de confidentialité</a>.</p>
+                <p style="margin:0;font-size:13px;line-height:1.6;color:#627892;">Cordialement,<br><br>{escape(signature_name)}<br>{escape(signature_role)}</p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
+""".strip()
+    return subject, text_body, body_html
+
+
 def build_brevo_invitation_email(invitation_row: dict, kind: str = 'initial') -> tuple[str, str, str, str]:
     """Build recipient, subject, text body and HTML body for one invitation."""
     role = _normalize_eures_invitation_role(invitation_row.get('role', ''))
@@ -1963,8 +2088,6 @@ def build_brevo_invitation_email(invitation_row: dict, kind: str = 'initial') ->
     language = str(invitation_row.get('language') or 'fr').strip().lower()
     if language not in {'fr', 'en', 'de'}:
         language = 'fr'
-    first_name = str(invitation_row.get('first_name') or '').strip()
-    company_name = str(invitation_row.get('company_name') or '').strip()
     invite_token = str(invitation_row.get('invite_token') or '').strip() or _generate_eures_invitation_token()
     invite_link = str(invitation_row.get('invite_link') or '').strip() or _build_eures_invitation_link(role, language, invite_token)
     signature_name = get_eures_mail_signature_name()
@@ -2124,247 +2247,17 @@ def build_brevo_invitation_email(invitation_row: dict, kind: str = 'initial') ->
 """.strip()
         return recipient, subject, text_body, body_html, invite_token, invite_link
 
-    target_intro = ''
-    target_intro_html = ''
-    personalized_candidate_copy = None
-    if target_job_keys:
-        if len(target_job_keys) == 1 and target_job_keys[0] == 'industrie_production':
-            if language == 'en':
-                personalized_candidate_copy = {
-                    'subject': "[EURES / France Travail] Production operator opportunities in industry",
-                    'preheader': "A short questionnaire to position your profile on production operator roles in industry.",
-                    'body_lines': [
-                        "I am contacting you as part of my role as an EURES adviser within France Travail.",
-                        "As part of the EURES beta experiment, we are currently identifying candidates interested in production operator roles in industry, with opportunities that may match their availability and mobility plans.",
-                        "To help us assess whether your profile could fit these opportunities, I invite you to complete the short questionnaire below. It takes only a few minutes.",
-                    ],
-                    'title': "Production operator opportunities in industry",
-                    'cta': "Access the questionnaire",
-                    'cta_note': "This questionnaire helps us confirm your profile, your availability and the type of industrial production roles that may match your situation.",
-                    'footer': "If your profile matches the current criteria, your application may then be shared with a partner employer.",
-                }
-            elif language == 'de':
-                personalized_candidate_copy = {
-                    'subject': "[EURES / France Travail] Produktionsstellen in der Industrie",
-                    'preheader': "Ein kurzer Fragebogen, um Ihr Profil für Produktionsstellen in der Industrie einzuordnen.",
-                    'body_lines': [
-                        "Ich kontaktiere Sie im Rahmen meiner Tätigkeit als EURES-Berater bei France Travail.",
-                        "Im Rahmen des Experiments EURES beta identifizieren wir derzeit Kandidatinnen und Kandidaten, die an Produktionsstellen in der Industrie interessiert sind und deren Verfügbarkeit sowie Mobilitätsprojekt dazu passen könnten.",
-                        "Damit wir prüfen können, ob Ihr Profil zu diesen Möglichkeiten passen könnte, lade ich Sie ein, den kurzen Fragebogen unten auszufüllen. Das dauert nur wenige Minuten.",
-                    ],
-                    'title': "Produktionsstellen in der Industrie",
-                    'cta': "Zum Fragebogen",
-                    'cta_note': "Mit diesem Fragebogen können wir Ihr Profil, Ihre Verfügbarkeit und die Art von Produktionsstellen in der Industrie bestätigen, die zu Ihrer Situation passen könnten.",
-                    'footer': "Wenn Ihr Profil den aktuellen Kriterien entspricht, kann Ihre Bewerbung anschließend an einen Partnerarbeitgeber weitergeleitet werden.",
-                }
-            else:
-                personalized_candidate_copy = {
-                    'subject': "[EURES / France Travail] Opportunités d’opérateur de production dans l’industrie",
-                    'preheader': "Un court questionnaire pour positionner votre profil sur des postes d’opérateur de production dans l’industrie.",
-                    'body_lines': [
-                        "Je me permets de vous contacter dans le cadre de ma mission de conseiller EURES au sein de France Travail.",
-                        "Dans le cadre de l’expérimentation EURES beta, nous recherchons actuellement des candidats intéressés par des postes d’opérateur de production dans l’industrie, avec des opportunités susceptibles de correspondre à leurs disponibilités et à leur projet de mobilité.",
-                        "Pour vérifier si votre profil pourrait correspondre à ces opportunités, je vous invite à compléter le court questionnaire ci-dessous. Il vous prendra seulement quelques minutes.",
-                    ],
-                    'title': "Opportunités d’opérateur de production dans l’industrie",
-                    'cta': "Accéder au formulaire",
-                    'cta_note': "Ce questionnaire nous permettra de confirmer votre profil, vos disponibilités et le type de postes en production industrielle susceptibles de vous correspondre.",
-                    'footer': "Si votre profil correspond aux critères recherchés, votre candidature pourra ensuite être proposée à un employeur partenaire.",
-                }
-        else:
-            joined_labels = ", ".join(target_job_labels) if target_job_labels else ""
-            if joined_labels:
-                if language == 'en':
-                    target_intro = f"The current opportunities we are reviewing concern the following job families: {joined_labels}."
-                elif language == 'de':
-                    target_intro = f"Die derzeit geprüften Möglichkeiten betreffen folgende Tätigkeitsbereiche: {joined_labels}."
-                else:
-                    target_intro = f"Les opportunités actuellement étudiées concernent les métiers suivants : {joined_labels}."
-                target_intro_html = f'<p style="margin:0 0 14px;font-size:16px;line-height:1.55;color:#324765;"><strong>{escape(target_intro)}</strong></p>'
-
-    if personalized_candidate_copy:
-        subject = personalized_candidate_copy['subject']
-        preheader = personalized_candidate_copy['preheader']
-        body_lines = personalized_candidate_copy['body_lines']
-        title = personalized_candidate_copy['title']
-        cta = personalized_candidate_copy['cta']
-        cta_note = personalized_candidate_copy['cta_note']
-        footer = (
-            personalized_candidate_copy['footer']
-            + "\n\n"
-            + (
-                "EURES beta is an experimental service supported by EURES and France Travail to facilitate professional mobility in the Greater Region."
-                if language == 'en'
-                else "EURES beta ist ein experimenteller Service von EURES und France Travail zur Unterstützung beruflicher Mobilität in der Großregion."
-                if language == 'de'
-                else "EURES est le réseau européen de coopération pour l'emploi, qui facilite les recrutements et les opportunités professionnelles en Europe."
-            )
-        )
-
-    if language == 'en':
-        if reminder_mode:
-            subject = "[EURES / France Travail] Reminder: candidate questionnaire"
-            preheader = "A short follow-up if you still wish to be considered for EURES beta opportunities."
-            body_lines = [
-                "I am following up on my previous message regarding EURES beta.",
-                "If you still wish to be considered for suitable opportunities, this short questionnaire helps us better understand your profile, your mobility plans and your current availability.",
-                "Completing it takes about 5 minutes.",
-            ]
-            title = "Candidate questionnaire reminder"
-            cta = "Access the questionnaire"
-            cta_note = f"If the button does not work, copy this address into your browser: {invite_link}"
-        else:
-            subject = "[EURES beta / EURES / France Travail] Invitation to complete the candidate questionnaire"
-            preheader = "Official invitation to complete the EURES beta candidate questionnaire."
-            body_lines = [
-                "You are receiving this message as part of the EURES beta initiative led by EURES and France Travail in the Greater Region.",
-                "This questionnaire helps us understand your profile, your mobility plans and the type of opportunities that may match your situation.",
-                "Completing it takes about 5 minutes.",
-            ]
-            title = "Official invitation to complete the candidate questionnaire"
-            cta = "Access the candidate questionnaire"
-            cta_note = f"If the button does not work, copy this address into your browser: {invite_link}"
-        footer = "EURES beta is an experimental service supported by EURES and France Travail to facilitate professional mobility in the Greater Region."
-    elif language == 'de':
-        if reminder_mode:
-            subject = "[EURES / France Travail] Erinnerung: Kandidatenfragebogen"
-            preheader = "Kurze Erinnerung, falls Sie weiterhin für passende EURES-beta-Möglichkeiten berücksichtigt werden möchten."
-            body_lines = [
-                "Ich melde mich erneut zu meiner vorherigen Nachricht zu EURES beta.",
-                "Wenn Sie weiterhin für passende Möglichkeiten berücksichtigt werden möchten, hilft uns dieser kurze Fragebogen dabei, Ihr Profil, Ihr Mobilitätsprojekt und Ihre aktuelle Verfügbarkeit besser zu verstehen.",
-                "Das Ausfüllen dauert ungefähr 5 Minuten.",
-            ]
-            title = "Erinnerung zum Kandidatenfragebogen"
-            cta = "Zum Fragebogen"
-            cta_note = f"Falls die Schaltfläche nicht funktioniert, kopieren Sie diese Adresse in Ihren Browser: {invite_link}"
-        else:
-            subject = "[EURES beta / EURES / France Travail] Einladung zum Kandidatenfragebogen"
-            preheader = "Offizielle Einladung zum Ausfüllen des EURES-beta-Kandidatenfragebogens."
-            body_lines = [
-                "Sie erhalten diese Nachricht im Rahmen der Initiative EURES beta, die von EURES und France Travail in der Großregion getragen wird.",
-                "Mit diesem Fragebogen können wir Ihr Profil, Ihr Mobilitätsprojekt und die für Sie passenden beruflichen Möglichkeiten besser verstehen.",
-                "Das Ausfüllen dauert ungefähr 5 Minuten.",
-            ]
-            title = "Offizielle Einladung zum Kandidatenfragebogen"
-            cta = "Zum Kandidatenfragebogen"
-            cta_note = f"Falls die Schaltfläche nicht funktioniert, kopieren Sie diese Adresse in Ihren Browser: {invite_link}"
-        footer = "EURES beta ist ein experimenteller Service von EURES und France Travail zur Unterstützung beruflicher Mobilität in der Großregion."
-    else:
-        if reminder_mode:
-            subject = "[EURES / France Travail] Relance : questionnaire candidat"
-            preheader = "Je me permets de revenir vers vous si vous souhaitez toujours être pris en compte pour des opportunites EURES beta."
-            body_lines = [
-                "Je me permets de revenir vers vous concernant mon précédent message relatif à EURES beta.",
-                "Si vous souhaitez toujours être pris en compte pour des opportunités correspondant à votre profil, ce court questionnaire nous permet de mieux comprendre votre projet, vos disponibilités et vos attentes.",
-                "Il vous prendra seulement quelques minutes.",
-            ]
-            title = ""
-            cta = "Accéder au questionnaire"
-            cta_note = "Ce questionnaire permettra de vérifier que votre profil, vos disponibilités et vos attentes correspondent bien aux besoins actuellement recherchés."
-        else:
-            subject = "[EURES / France Travail] Questionnaire candidat - expérimentation EURES beta"
-            preheader = "Dans le cadre de ma mission de conseiller EURES au sein de France Travail, je vous invite à compléter un court questionnaire."
-            body_lines = [
-                "Je me permets de vous contacter dans le cadre de ma mission de conseiller EURES au sein de France Travail.",
-                "Dans le cadre d'une expérimentation EURES actuellement menée autour des besoins de recrutement, j'ai consulté votre profil ainsi que vos coordonnées publiés sur le portail EURES afin d'identifier des candidats dont le profil pourrait correspondre aux besoins actuellement déposés par des employeurs partenaires.",
-                "Pour cela, je vous invite à compléter le court formulaire ci-dessous. Il vous prendra seulement quelques minutes.",
-            ]
-            title = ""
-            cta = "Accéder au formulaire"
-            cta_note = "Ce questionnaire permettra de vérifier que votre profil, vos disponibilités et vos attentes correspondent bien aux besoins actuellement recherchés."
-        footer = (
-            "Si votre profil correspond aux critères recherchés, votre candidature pourra ensuite être proposée "
-            "à l'employeur, qui vous contactera directement pour échanger avec vous.\n\n"
-            "EURES est le réseau européen de coopération pour l'emploi, qui facilite les recrutements et les "
-            "opportunités professionnelles en Europe."
-        )
-
-    if personalized_candidate_copy:
-        subject = personalized_candidate_copy['subject']
-        preheader = personalized_candidate_copy['preheader']
-        body_lines = personalized_candidate_copy['body_lines']
-        title = personalized_candidate_copy['title']
-        cta = personalized_candidate_copy['cta']
-        cta_note = personalized_candidate_copy['cta_note']
-        footer = (
-            personalized_candidate_copy['footer']
-            + "\n\n"
-            + (
-                "EURES beta is an experimental service supported by EURES and France Travail to facilitate professional mobility in the Greater Region."
-                if language == 'en'
-                else "EURES beta ist ein experimenteller Service von EURES und France Travail zur Unterstützung beruflicher Mobilität in der Großregion."
-                if language == 'de'
-                else "EURES est le réseau européen de coopération pour l'emploi, qui facilite les recrutements et les opportunités professionnelles en Europe."
-            )
-        )
-
-    title_block = f"{title}\n\n" if title else ""
-    body_lines_for_text = [target_intro] + body_lines if target_intro else body_lines
-    title_html = (
-        f'<h1 style="margin:0;font-size:28px;line-height:1.18;font-weight:700;color:#16253d;">{escape(title)}</h1>'
-        if title else ''
+    target_job_key = target_job_keys[0] if target_job_keys else ''
+    subject, text_body, html_body = _build_eures_candidate_invitation_email(
+        language=language,
+        target_job_key=target_job_key,
+        kind='reminder' if reminder_mode else 'initial',
+        invite_link=invite_link,
+        privacy_url=privacy_url,
+        signature_name=signature_name,
+        signature_role=signature_role,
+        hello=hello,
     )
-    text_body = (
-        f"{hello}\n\n"
-        f"{title_block}"
-        + "\n\n".join(body_lines_for_text)
-        + f"\n\n{cta}: {invite_link}\n\n{cta_note}\n\n{footer}\n\nInformations sur vos données : {privacy_url}\n\nCordialement,\n\n{signature_name}\n{signature_role}\n"
-    )
-    html_body = f"""
-<!doctype html>
-<html lang="{escape(language)}">
-  <body style="margin:0;padding:0;background:#f5f7fb;font-family:Arial,'Helvetica Neue',sans-serif;color:#16253d;">
-    <div style="display:none;max-height:0;overflow:hidden;opacity:0;mso-hide:all;">
-      {escape(preheader)}
-    </div>
-    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f5f7fb;padding:20px 12px;">
-      <tr>
-        <td align="center">
-          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:640px;background:#ffffff;border:1px solid #d9e1ee;border-radius:18px;overflow:hidden;">
-            <tr>
-              <td style="padding:22px 28px;background:#0f2742;color:#ffffff;">
-                <div style="font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;opacity:0.9;">EURES beta</div>
-                <div style="margin-top:6px;font-size:14px;line-height:1.5;opacity:0.92;">EURES • France Travail</div>
-              </td>
-            </tr>
-            <tr>
-              <td style="padding:24px 28px 8px;">
-                <p style="margin:0 0 10px;font-size:16px;line-height:1.6;color:#324765;">{escape(hello)}</p>
-                {title_html}
-              </td>
-            </tr>
-            <tr>
-              <td style="padding:0 28px 4px;">
-                {target_intro_html}
-                <p style="margin:0 0 14px;font-size:16px;line-height:1.55;color:#324765;">{escape(body_lines[0])}</p>
-                <p style="margin:0 0 14px;font-size:16px;line-height:1.55;color:#324765;">{escape(body_lines[1])}</p>
-                <p style="margin:0 0 22px;font-size:16px;line-height:1.55;color:#324765;">{escape(body_lines[2])}</p>
-              </td>
-            </tr>
-            <tr>
-              <td style="padding:0 28px 12px;">
-                <a href="{escape(invite_link)}" style="display:block;width:100%;box-sizing:border-box;padding:15px 18px;border-radius:12px;background:#004494;color:#ffffff;text-decoration:none;font-size:16px;font-weight:700;text-align:center;">{escape(cta)}</a>
-              </td>
-            </tr>
-            <tr>
-              <td style="padding:0 28px 22px;">
-                <p style="margin:0;font-size:14px;line-height:1.6;color:#627892;">{escape(cta_note)}</p>
-              </td>
-            </tr>
-            <tr>
-              <td style="padding:18px 28px 24px;border-top:1px solid #e7ecf4;">
-                <p style="margin:0 0 10px;font-size:13px;line-height:1.6;color:#627892;">{escape(footer)}</p>
-                <p style="margin:0 0 10px;font-size:13px;line-height:1.6;color:#627892;">Informations sur le traitement de vos données : <a href="{escape(privacy_url)}" style="color:#004494;">consulter la notice de confidentialité</a>.</p>
-                <p style="margin:0;font-size:13px;line-height:1.6;color:#627892;">Cordialement,<br><br>{escape(signature_name)}<br>{escape(signature_role)}</p>
-              </td>
-            </tr>
-          </table>
-        </td>
-      </tr>
-    </table>
-  </body>
-</html>
-""".strip()
     return recipient, subject, text_body, html_body, invite_token, invite_link
 
 
