@@ -54,9 +54,9 @@ CANDIDATE_TARGET_JOB_OPTIONS = [
     {
         "key": "industrie_production",
         "labels": {
-            "fr": "Opérateur de production dans l’industrie",
-            "en": "Production operator in industry",
-            "de": "Produktionsmitarbeiter in der Industrie",
+            "fr": "Production industrielle (assemblage, fabrication, conditionnement, contrôle qualité)",
+            "en": "Industrial production (assembly, manufacturing, packaging, quality control)",
+            "de": "Industrielle Produktion (Montage, Fertigung, Verpackung, Qualitätskontrolle)",
         },
     },
 ]
@@ -198,13 +198,13 @@ CANDIDATE_INVITATION_EMAIL_TEMPLATES = {
     "industrie_production": {
         "initial": {
             "fr": {
-                "subject": "Des entreprises recrutent actuellement des opérateurs de production – votre profil nous intéresse",
+                "subject": "Des entreprises recrutent actuellement en production industrielle – votre profil nous intéresse",
                 "preheader": "Répondez en 2 à 3 minutes pour voir si votre profil peut correspondre à des postes en production industrielle.",
-                "title": "Vous recherchez un poste d’opérateur de production dans l’industrie ?",
+                "title": "Vous recherchez un poste en production industrielle ?",
                 "hook": "Des entreprises partenaires recrutent actuellement sur ce métier et votre profil pourrait correspondre à leurs besoins.",
                 "body": [
                     "En répondant au questionnaire, vous nous aidez à vérifier rapidement vos disponibilités, votre mobilité et les conditions de travail qui vous conviennent.",
-                    "C’est la première étape pour pouvoir vous proposer à des employeurs partenaires qui recherchent actuellement des opérateurs de production.",
+                    "C’est la première étape pour pouvoir vous proposer à des employeurs partenaires qui recrutent actuellement en production industrielle.",
                 ],
                 "cta_note": "Le questionnaire prend 2 à 3 minutes et nous permet de vérifier rapidement si votre profil peut être positionné sur ces recrutements.",
             },
@@ -222,7 +222,7 @@ CANDIDATE_INVITATION_EMAIL_TEMPLATES = {
             "de": {
                 "subject": "Unternehmen rekrutieren aktuell Produktionsmitarbeitende – Ihr Profil könnte passen",
                 "preheader": "Antworten Sie in 2 bis 3 Minuten, um zu sehen, ob Ihr Profil zu Produktionsstellen in der Industrie passen könnte.",
-                "title": "Suchen Sie eine Stelle als Produktionsmitarbeiter in der Industrie?",
+                "title": "Suchen Sie eine Stelle in der industriellen Produktion?",
                 "hook": "Partnerunternehmen rekrutieren aktuell für dieses Tätigkeitsfeld und Ihr Profil könnte zu ihrem Bedarf passen.",
                 "body": [
                     "Mit Ihrer Antwort auf den Fragebogen helfen Sie uns, Ihre Verfügbarkeit, Ihr Mobilitätsprojekt und passende Arbeitsbedingungen schnell einzuordnen.",
@@ -233,9 +233,9 @@ CANDIDATE_INVITATION_EMAIL_TEMPLATES = {
         },
         "reminder": {
             "fr": {
-                "subject": "Des postes d’opérateur de production sont toujours ouverts – vérifiez si votre profil correspond",
+                "subject": "Des postes en production industrielle sont toujours ouverts – vérifiez si votre profil correspond",
                 "preheader": "Le questionnaire prend 2 à 3 minutes et permet toujours de vous positionner sur des recrutements en production industrielle.",
-                "title": "Des postes d’opérateur de production sont toujours ouverts",
+                "title": "Des postes en production industrielle sont toujours ouverts",
                 "hook": "Des employeurs partenaires recherchent toujours ce profil.",
                 "body": [
                     "Si vous êtes toujours intéressé, vous pouvez encore compléter le questionnaire ci-dessous afin que nous vérifiions rapidement si votre profil correspond.",

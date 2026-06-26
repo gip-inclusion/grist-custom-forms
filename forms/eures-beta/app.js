@@ -1329,7 +1329,7 @@ const candidateTallyMeta = {
     "Hôtellerie et restauration (ex : plonge, service, aide de cuisine)",
     "Agriculture et récolte (ex : récolte de fruits, travaux saisonniers)",
     "Missions polyvalentes et emplois accessibles rapidement",
-    "Opérateur de production dans l’industrie"
+    "Production industrielle (assemblage, fabrication, conditionnement, contrôle qualité)"
   ]
 };
 
@@ -1399,7 +1399,7 @@ const candidateTallyCopy = {
       "Hôtellerie et restauration (ex : plonge, service, aide de cuisine)",
       "Agriculture et récolte (ex : récolte de fruits, travaux saisonniers)",
       "Missions polyvalentes et emplois accessibles rapidement",
-      "Opérateur de production dans l’industrie"
+      "Production industrielle (assemblage, fabrication, conditionnement, contrôle qualité)"
     ],
     questions: {
       q03: "Avez-vous déjà travaillé sous statut \"frontalier\" ?",
@@ -1467,7 +1467,7 @@ const candidateTallyCopy = {
       hotel: "Hôtellerie et restauration",
       agri: "Agriculture et récolte",
       polyvalent: "Missions polyvalentes et emplois accessibles rapidement",
-      industrie_production: "Opérateur de production dans l’industrie"
+      industrie_production: "Production industrielle (assemblage, fabrication, conditionnement, contrôle qualité)"
     },
     sectorLegends: {
       vente: "Vente et commerce — parmi les propositions suivantes, lesquelles vous correspondent le mieux ?",
@@ -1475,7 +1475,7 @@ const candidateTallyCopy = {
       hotel: "Hôtellerie et restauration — parmi les propositions suivantes, lesquelles vous correspondent le mieux ?",
       agri: "Agriculture et récolte — parmi les propositions suivantes, lesquelles vous correspondent le mieux ?",
       polyvalent: "Missions polyvalentes et emplois accessibles rapidement — parmi les propositions suivantes, lesquelles vous correspondent le mieux ?",
-      industrie_production: "Opérateur de production dans l’industrie — parmi les propositions suivantes, lesquelles vous correspondent le mieux ?"
+      industrie_production: "Production industrielle (assemblage, fabrication, conditionnement, contrôle qualité) — parmi les propositions suivantes, lesquelles vous correspondent le mieux ?"
     },
     sectorChoices: {
       vente: [
@@ -1624,7 +1624,7 @@ const candidateTallyCopy = {
       "Hospitality and food service (for example dishwashing, service, kitchen support)",
       "Agriculture and harvesting (for example fruit picking, seasonal work)",
       "Versatile jobs and roles accessible quickly",
-      "Production operator in industry"
+      "Industrial production (assembly, manufacturing, packaging, quality control)"
     ],
     questions: {
       q03: "Have you already worked with cross-border commuter status?",
@@ -1692,7 +1692,7 @@ const candidateTallyCopy = {
       hotel: "Hospitality and food service",
       agri: "Agriculture and harvesting",
       polyvalent: "Versatile jobs and roles accessible quickly",
-      industrie_production: "Production operator in industry"
+      industrie_production: "Industrial production (assembly, manufacturing, packaging, quality control)"
     },
     sectorLegends: {
       vente: "Sales and retail: which of the following statements describe you best?",
@@ -1700,7 +1700,7 @@ const candidateTallyCopy = {
       hotel: "Hospitality and food service: which of the following statements describe you best?",
       agri: "Agriculture and harvesting: which of the following statements describe you best?",
       polyvalent: "Versatile jobs and roles accessible quickly: which of the following statements describe you best?",
-      industrie_production: "Production operator in industry: which of the following statements describe you best?"
+      industrie_production: "Industrial production (assembly, manufacturing, packaging, quality control): which of the following statements describe you best?"
     },
     sectorChoices: {
       vente: ["Welcoming and guiding customers", "Advising on a product or service", "Understanding a request quickly", "Handling payment", "Staying calm during busy periods", "Working as part of a team", "Being punctual", "Adapting to different tasks", "Handling stress", "Helping a colleague when needed", "Building customer loyalty", "Keeping the sales area clean and organised"],
@@ -1776,7 +1776,7 @@ const candidateTallyCopy = {
       "Hotellerie und Gastronomie (z. B. Spülküche, Service, Küchenhilfe)",
       "Landwirtschaft und Ernte (z. B. Obsternte, Saisonarbeit)",
       "Vielseitige Tätigkeiten und Jobs mit schnellem Einstieg",
-      "Produktionsmitarbeiter in der Industrie"
+      "Industrielle Produktion (Montage, Fertigung, Verpackung, Qualitätskontrolle)"
     ],
     questions: {
       q03: "Haben Sie bereits mit Grenzgängerstatus gearbeitet?",
@@ -1844,7 +1844,7 @@ const candidateTallyCopy = {
       hotel: "Hotellerie und Gastronomie",
       agri: "Landwirtschaft und Ernte",
       polyvalent: "Vielseitige Tätigkeiten und Jobs mit schnellem Einstieg",
-      industrie_production: "Produktionsmitarbeiter in der Industrie"
+      industrie_production: "Industrielle Produktion (Montage, Fertigung, Verpackung, Qualitätskontrolle)"
     },
     sectorLegends: {
       vente: "Verkauf und Handel: Welche der folgenden Aussagen passen am besten zu Ihnen?",
@@ -1852,7 +1852,7 @@ const candidateTallyCopy = {
       hotel: "Hotellerie und Gastronomie: Welche der folgenden Aussagen passen am besten zu Ihnen?",
       agri: "Landwirtschaft und Ernte: Welche der folgenden Aussagen passen am besten zu Ihnen?",
       polyvalent: "Vielseitige Tätigkeiten und Jobs mit schnellem Einstieg: Welche der folgenden Aussagen passen am besten zu Ihnen?",
-      industrie_production: "Produktionsmitarbeiter in der Industrie: Welche der folgenden Aussagen passen am besten zu Ihnen?"
+      industrie_production: "Industrielle Produktion (Montage, Fertigung, Verpackung, Qualitätskontrolle): Welche der folgenden Aussagen passen am besten zu Ihnen?"
     },
     sectorChoices: {
       vente: ["Kunden empfangen und orientieren", "Zu einem Produkt oder einer Dienstleistung beraten", "Eine Anfrage schnell verstehen", "Eine Zahlung durchführen", "In Stoßzeiten ruhig bleiben", "Im Team arbeiten", "Pünktlich sein", "Sich an verschiedene Aufgaben anpassen", "Stress standhalten", "Bei Bedarf einem Kollegen helfen", "Kundschaft binden", "Einen Verkaufsbereich sauber und organisiert halten"],
@@ -1905,7 +1905,7 @@ const employerTallyMeta = {
     "Hôtellerie et restauration",
     "Agriculture et récolte",
     "Missions polyvalentes et emplois accessibles rapidement",
-    "Opérateur de production dans l’industrie"
+    "Production industrielle (assemblage, fabrication, conditionnement, contrôle qualité)"
   ],
   languageColumns: ["Pas nécessaire", "Communication simple", "Communication professionelle", "Très important au quotidien"],
   languageRows: [
@@ -2026,7 +2026,7 @@ const employerTallyCopy = {
       q12: "Pour ce recrutement en hôtellerie et restauration, quels éléments vous semblent les plus importants ?",
       q13: "Pour ce recrutement en agriculture et récolte, quels éléments vous semblent les plus importants ?",
       q14: "Pour ce recrutement en missions polyvalentes et emplois accessibles rapidement, quels éléments vous semblent les plus importants ?",
-      q40: "Pour ce recrutement d’opérateur de production dans l’industrie, quels éléments vous semblent les plus importants ?",
+      q40: "Pour ce recrutement en production industrielle, quels éléments vous semblent les plus importants ?",
       q14Hint: "Vous pouvez sélectionner jusqu'à 4 propositions.",
       q15: "Quelles conditions de travail les personnes recrutées doivent-elles connaître ?",
       q22: "Le poste nécessite-t-il un permis ou une autorisation particulière ?",
@@ -2073,7 +2073,7 @@ const employerTallyCopy = {
       tally_q12: "Hôtellerie et restauration",
       tally_q13: "Agriculture et récolte",
       tally_q14: "Missions polyvalentes et emplois accessibles rapidement",
-      tally_q40: "Opérateur de production dans l’industrie"
+      tally_q40: "Production industrielle (assemblage, fabrication, conditionnement, contrôle qualité)"
     },
     errors: {
       chooseAtLeastOne: "Sélectionnez au moins une réponse pour :",
@@ -2141,7 +2141,7 @@ const employerTallyCopy = {
     },
     options: {
       yesNo: ["Yes", "No"],
-      sectors: ["Sales and retail", "Cleaning and maintenance", "Hospitality and food service", "Agriculture and harvesting", "Versatile jobs and roles accessible quickly", "Production operator in industry"],
+      sectors: ["Sales and retail", "Cleaning and maintenance", "Hospitality and food service", "Agriculture and harvesting", "Versatile jobs and roles accessible quickly", "Industrial production (assembly, manufacturing, packaging, quality control)"],
       q02Columns: ["Not necessary", "Simple communication", "Professional communication", "Very important on a daily basis"],
       q02Rows: ["German", "English", "French", "Luxembourgish"],
       q03: ["1 person", "2 to 5 people", "More than 5 people", "I do not know yet"],
@@ -2166,7 +2166,7 @@ const employerTallyCopy = {
       tally_q12: "Hospitality and food service",
       tally_q13: "Agriculture and harvesting",
       tally_q14: "Versatile jobs and roles accessible quickly",
-      tally_q40: "Production operator in industry"
+      tally_q40: "Industrial production (assembly, manufacturing, packaging, quality control)"
     },
     sectorChoices: {
       tally_q10: ["Being comfortable with customers", "Being able to communicate simply with customers", "Working during busy periods", "Handling payment operations", "Working as part of a team", "Adapting to different tasks", "Keeping a sales area clean and organised", "Respecting working hours"],
@@ -2218,7 +2218,7 @@ const employerTallyCopy = {
       q12: "Welche Elemente erscheinen Ihnen bei dieser Einstellung in Hotellerie und Gastronomie am wichtigsten?",
       q13: "Welche Elemente erscheinen Ihnen bei dieser Einstellung in Landwirtschaft und Ernte am wichtigsten?",
       q14: "Welche Elemente erscheinen Ihnen bei dieser Einstellung für vielseitige Tätigkeiten und schnell zugängliche Jobs am wichtigsten?",
-      q40: "Welche Elemente erscheinen Ihnen bei dieser Einstellung als Produktionsmitarbeiter in der Industrie am wichtigsten?",
+      q40: "Welche Elemente erscheinen Ihnen bei dieser Einstellung in der industriellen Produktion am wichtigsten?",
       q14Hint: "Sie können bis zu 4 Antworten auswählen.",
       q15: "Welche Arbeitsbedingungen sollten die eingestellten Personen kennen?",
       q22: "Erfordert die Stelle einen Führerschein oder eine besondere Genehmigung?",
@@ -2242,7 +2242,7 @@ const employerTallyCopy = {
     },
     options: {
       yesNo: ["Ja", "Nein"],
-      sectors: ["Verkauf und Handel", "Reinigung und Instandhaltung", "Hotellerie und Gastronomie", "Landwirtschaft und Ernte", "Vielseitige Tätigkeiten und Jobs mit schnellem Einstieg", "Produktionsmitarbeiter in der Industrie"],
+      sectors: ["Verkauf und Handel", "Reinigung und Instandhaltung", "Hotellerie und Gastronomie", "Landwirtschaft und Ernte", "Vielseitige Tätigkeiten und Jobs mit schnellem Einstieg", "Industrielle Produktion (Montage, Fertigung, Verpackung, Qualitätskontrolle)"],
       q02Columns: ["Nicht erforderlich", "Einfache Kommunikation", "Berufliche Kommunikation", "Im Alltag sehr wichtig"],
       q02Rows: ["Deutsch", "Englisch", "Französisch", "Luxemburgisch"],
       q03: ["1 Person", "2 bis 5 Personen", "Mehr als 5 Personen", "Ich weiß es noch nicht"],
@@ -2267,7 +2267,7 @@ const employerTallyCopy = {
       tally_q12: "Hotellerie und Gastronomie",
       tally_q13: "Landwirtschaft und Ernte",
       tally_q14: "Vielseitige Tätigkeiten und Jobs mit schnellem Einstieg",
-      tally_q40: "Produktionsmitarbeiter in der Industrie"
+      tally_q40: "Industrielle Produktion (Montage, Fertigung, Verpackung, Qualitätskontrolle)"
     },
     sectorChoices: {
       tally_q10: ["Sich im Umgang mit Kunden wohlfühlen", "Einfach mit Kunden kommunizieren können", "Während Stoßzeiten arbeiten", "Kassenvorgänge durchführen", "Im Team arbeiten", "Sich an verschiedene Aufgaben anpassen", "Einen Verkaufsbereich sauber und organisiert halten", "Arbeitszeiten einhalten"],

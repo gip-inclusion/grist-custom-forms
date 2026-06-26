@@ -301,7 +301,7 @@ EURES_PUBLIC_SECTOR_LABELS = {
     'hotellerie': 'Hôtellerie et restauration',
     'agriculture': 'Agriculture et récolte',
     'polyvalent': 'Missions polyvalentes',
-    'industrie_production': 'Opérateur de production dans l’industrie',
+    'industrie_production': 'Production industrielle (assemblage, fabrication, conditionnement, contrôle qualité)',
 }
 EURES_INVITATION_CANDIDATE_TARGET_OPTIONS = [
     'vente',
@@ -4229,9 +4229,9 @@ EURES_CANDIDATE_TALLY_LABELS = {
     'tally_q29': 'Atouts recherchés · Missions polyvalentes et emplois accessibles rapidement',
     'tally_q29_job_title': 'Intitulé du poste visé · Missions polyvalentes et emplois accessibles rapidement',
     'tally_q30': 'Expérience · Missions polyvalentes et emplois accessibles rapidement',
-    'tally_q38': 'Atouts recherchés · Opérateur de production dans l’industrie',
-    'tally_q38_job_title': 'Intitulé du poste visé · Opérateur de production dans l’industrie',
-    'tally_q39': 'Expérience · Opérateur de production dans l’industrie',
+    'tally_q38': 'Atouts recherchés · Production industrielle (assemblage, fabrication, conditionnement, contrôle qualité)',
+    'tally_q38_job_title': 'Intitulé du poste visé · Production industrielle (assemblage, fabrication, conditionnement, contrôle qualité)',
+    'tally_q39': 'Expérience · Production industrielle (assemblage, fabrication, conditionnement, contrôle qualité)',
     'tally_q41': 'Permis / autorisation particulière',
     'tally_q42': 'Permis / autorisations possédés',
     'tally_q42_extra': 'Permis / autorisation · précision',
@@ -4269,8 +4269,8 @@ EURES_EMPLOYER_TALLY_LABELS = {
     'tally_q13_job_title': 'Intitulé du poste proposé · Agriculture et récolte',
     'tally_q14': 'Priorités métier · Missions polyvalentes et emplois accessibles rapidement',
     'tally_q14_job_title': 'Intitulé du poste proposé · Missions polyvalentes et emplois accessibles rapidement',
-    'tally_q40': 'Priorités métier · Opérateur de production dans l’industrie',
-    'tally_q40_job_title': 'Intitulé du poste proposé · Opérateur de production dans l’industrie',
+    'tally_q40': 'Priorités métier · Production industrielle (assemblage, fabrication, conditionnement, contrôle qualité)',
+    'tally_q40_job_title': 'Intitulé du poste proposé · Production industrielle (assemblage, fabrication, conditionnement, contrôle qualité)',
     'tally_q15': 'Conditions de travail à connaître',
     'tally_q22': 'Permis / autorisation requis',
     'tally_q23': 'Permis / autorisations nécessaires',
@@ -4290,13 +4290,13 @@ EURES_TALLY_SECTOR_LABELS = {
     'tally_q12': 'Hôtellerie et restauration',
     'tally_q13': 'Agriculture et récolte',
     'tally_q14': 'Missions polyvalentes et emplois accessibles rapidement',
-    'tally_q40': 'Opérateur de production dans l’industrie',
+    'tally_q40': 'Production industrielle (assemblage, fabrication, conditionnement, contrôle qualité)',
     'tally_q20': 'Vente et commerce',
     'tally_q22': 'Nettoyage et entretien',
     'tally_q25': 'Hôtellerie et restauration',
     'tally_q27': 'Agriculture et récolte',
     'tally_q29': 'Missions polyvalentes et emplois accessibles rapidement',
-    'tally_q38': 'Opérateur de production dans l’industrie',
+    'tally_q38': 'Production industrielle (assemblage, fabrication, conditionnement, contrôle qualité)',
 }
 
 
