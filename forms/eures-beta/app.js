@@ -343,9 +343,49 @@ const copy = {
         min: "Minimum",
         max: "Maximum"
       },
+      transparencyTitle: "Comprendre le matching",
+      transparencyLead: "Le rapprochement candidat / employeur repose sur des critères déclaratifs pondérés, puis sur une validation humaine dès qu'un doute subsiste.",
+      transparencyBullets: [
+        "Le score global est calculé sur 100 points à partir du métier, des compétences, des langues, de la mobilité, de la disponibilité et du salaire.",
+        "Le score n'entraîne pas à lui seul une transmission automatique : il sert d'abord à prioriser les dossiers et à documenter la décision.",
+        "Les données personnelles ne sont pas publiées. Le matching produit une proposition interne avant toute éventuelle transmission ciblée."
+      ],
+      transparencyCta: "Voir la méthode de matching",
       emptyBreakdown: "Aucune donnée exploitable pour le moment.",
       loading: "Chargement des statistiques...",
       error: "Impossible de charger les statistiques pour le moment."
+    },
+    matchingPage: {
+      eyebrow: "Transparence",
+      title: "Comment fonctionne le matching EURES beta",
+      intro: "Le matching EURES beta rapproche un besoin employeur et un profil candidat à partir d'informations déclarées dans les questionnaires. L'objectif est d'aider à prioriser les dossiers, pas de remplacer l'appréciation humaine.",
+      criteriaTitle: "Critères pris en compte",
+      criteriaLead: "Le score global est calculé sur 100 points. Chaque bloc produit un sous-score explicable.",
+      criteria: [
+        ["Métier et intitulé du poste", "25 points", "Le moteur vérifie d'abord la famille de métier sélectionnée, puis compare l'intitulé libre du poste côté employeur et côté candidat."],
+        ["Compétences clés", "20 points", "Les compétences sélectionnées ou rédigées dans les questionnaires sont comparées. Une couverture forte donne un score élevé ; une proximité partielle conserve un score intermédiaire."],
+        ["Langues", "20 points", "Les langues demandées sont comparées aux langues déclarées par le candidat, avec prise en compte des niveaux et des correspondances partielles."],
+        ["Pays et mobilité", "15 points", "Le score augmente si le pays du besoin correspond au pays du candidat ou à un pays explicitement visé dans son projet de mobilité."],
+        ["Disponibilité, conditions de travail et permis", "10 points", "Ce bloc agrège la date de démarrage, la compatibilité des conditions de travail déclarées et, si besoin, les permis ou autorisations requis."],
+        ["Salaire attendu et salaire proposé", "10 points", "Lorsque les informations sont disponibles, le moteur compare l'attente minimale du candidat et la fourchette proposée par l'employeur."]
+      ],
+      thresholdsTitle: "Seuils de traitement",
+      thresholdsLead: "Le score sert à orienter le traitement administratif des dossiers.",
+      thresholds: [
+        ["75 à 100", "Le matching est classé « auto-envoyable » dans l'outil, car la compatibilité paraît forte."],
+        ["55 à 74", "Le matching est classé « à valider » et doit être revu humainement avant tout envoi."],
+        ["0 à 54", "Le matching est classé « à écarter » ou à revoir plus tard, car l'écart paraît trop important ou trop incertain."]
+      ],
+      processTitle: "Ce que le score ne fait pas seul",
+      processBullets: [
+        "Le score ne publie aucune donnée personnelle.",
+        "Le score n'envoie pas automatiquement chaque dossier à un employeur.",
+        "Un contrôle humain reste possible pour vérifier la pertinence métier, les ambiguïtés et le contexte du recrutement.",
+        "Les sous-scores et les motifs sont conservés pour expliquer pourquoi un rapprochement a été proposé ou non."
+      ],
+      noteTitle: "Ce que voit l'équipe de suivi",
+      noteText: "Dans l'espace d'administration, chaque matching affiche un score global, des sous-scores par critère, des raisons de compatibilité et des points faibles éventuels. Cela permet d'expliquer et de justifier chaque décision de mise en relation.",
+      cta: "Retour aux statistiques"
     },
     privacyPage: {
       eyebrow: "Protection des données",
@@ -725,9 +765,49 @@ const copy = {
         min: "Minimum",
         max: "Maximum"
       },
+      transparencyTitle: "Understand the matching logic",
+      transparencyLead: "Candidate / employer matching relies on weighted self-declared criteria, then on human review whenever uncertainty remains.",
+      transparencyBullets: [
+        "The global score is calculated out of 100 points using occupation, skills, languages, mobility, availability and salary.",
+        "The score does not, by itself, guarantee an automatic referral: it is first used to prioritise cases and document decisions.",
+        "Personal data is not published. Matching first creates an internal proposal before any targeted transmission."
+      ],
+      transparencyCta: "See the matching method",
       emptyBreakdown: "No usable data yet.",
       loading: "Loading statistics...",
       error: "Unable to load statistics right now."
+    },
+    matchingPage: {
+      eyebrow: "Transparency",
+      title: "How EURES beta matching works",
+      intro: "EURES beta matching compares an employer need with a candidate profile using self-declared questionnaire information. The goal is to help prioritise cases, not to replace human judgement.",
+      criteriaTitle: "Criteria used",
+      criteriaLead: "The global score is calculated out of 100 points. Each block generates an explainable sub-score.",
+      criteria: [
+        ["Occupation and job title", "25 points", "The engine first checks the selected job family, then compares the free-text job title entered by the employer and the candidate."],
+        ["Key skills", "20 points", "Selected or written skills are compared. Strong coverage produces a high score; partial proximity keeps an intermediate one."],
+        ["Languages", "20 points", "Required languages are compared with candidate languages, taking account of levels and partial matches."],
+        ["Country and mobility", "15 points", "The score rises when the employer country matches the candidate country or a country explicitly mentioned in the mobility project."],
+        ["Availability, working conditions and permits", "10 points", "This block combines start date, compatibility of declared work conditions and, when relevant, required permits or authorisations."],
+        ["Expected salary and offered salary", "10 points", "When data is available, the engine compares the candidate's minimum expectation with the employer's salary range."]
+      ],
+      thresholdsTitle: "Processing thresholds",
+      thresholdsLead: "The score is used to orient administrative handling.",
+      thresholds: [
+        ["75 to 100", "The matching is flagged as “auto-sendable” in the tool because compatibility appears strong."],
+        ["55 to 74", "The matching is flagged as “to review” and must be checked manually before any referral."],
+        ["0 to 54", "The matching is flagged as “to discard” or to revisit later because the gap appears too high or too uncertain."]
+      ],
+      processTitle: "What the score does not do on its own",
+      processBullets: [
+        "The score does not publish personal data.",
+        "The score does not automatically send every case to an employer.",
+        "Human review remains possible to verify occupational relevance, ambiguities and recruitment context.",
+        "Sub-scores and reasons are kept to explain why a referral was or was not proposed."
+      ],
+      noteTitle: "What the follow-up team sees",
+      noteText: "In the administration area, each matching shows a global score, criterion-level sub-scores, reasons for compatibility and potential weak points. This makes each referral decision explainable.",
+      cta: "Back to statistics"
     },
     privacyPage: {
       eyebrow: "Data protection",
@@ -1107,9 +1187,49 @@ const copy = {
         min: "Minimum",
         max: "Maximum"
       },
+      transparencyTitle: "Matching nachvollziehen",
+      transparencyLead: "Der Abgleich zwischen Kandidaten und Arbeitgebern basiert auf gewichteten Eigenauskünften und wird bei Unsicherheiten menschlich überprüft.",
+      transparencyBullets: [
+        "Der Gesamtscore wird auf 100 Punkte berechnet und berücksichtigt Beruf, Kompetenzen, Sprachen, Mobilität, Verfügbarkeit und Gehalt.",
+        "Der Score allein führt nicht automatisch zu einer Weiterleitung: Er dient zunächst der Priorisierung und der Begründung von Entscheidungen.",
+        "Personenbezogene Daten werden nicht veröffentlicht. Das Matching erzeugt zunächst einen internen Vorschlag."
+      ],
+      transparencyCta: "Matching-Methode ansehen",
       emptyBreakdown: "Noch keine auswertbaren Daten.",
       loading: "Statistiken werden geladen...",
       error: "Die Statistiken können derzeit nicht geladen werden."
+    },
+    matchingPage: {
+      eyebrow: "Transparenz",
+      title: "Wie das Matching in EURES beta funktioniert",
+      intro: "Das Matching von EURES beta vergleicht einen Personalbedarf mit einem Kandidatenprofil anhand der im Fragebogen gemachten Angaben. Ziel ist es, Fälle zu priorisieren, nicht menschliches Urteil zu ersetzen.",
+      criteriaTitle: "Berücksichtigte Kriterien",
+      criteriaLead: "Der Gesamtscore wird auf 100 Punkte berechnet. Jeder Block erzeugt einen nachvollziehbaren Teilscore.",
+      criteria: [
+        ["Beruf und Stellenbezeichnung", "25 Punkte", "Zunächst wird die ausgewählte Berufsgruppe geprüft, danach die freie Stellenbezeichnung auf Arbeitgeber- und Kandidatenseite verglichen."],
+        ["Schlüsselkompetenzen", "20 Punkte", "Ausgewählte oder frei angegebene Kompetenzen werden verglichen. Hohe Übereinstimmung ergibt einen hohen Score, Teilnähe einen mittleren Wert."],
+        ["Sprachen", "20 Punkte", "Geforderte Sprachen werden mit den angegebenen Sprachkenntnissen der Kandidaten verglichen, einschließlich Niveaus und Teiltreffern."],
+        ["Land und Mobilität", "15 Punkte", "Der Score steigt, wenn das Einsatzland mit dem Wohnland oder einem ausdrücklich gewünschten Zielland übereinstimmt."],
+        ["Verfügbarkeit, Arbeitsbedingungen und Berechtigungen", "10 Punkte", "Dieser Block bündelt Starttermin, Kompatibilität der Arbeitsbedingungen sowie gegebenenfalls Führerscheine oder besondere Berechtigungen."],
+        ["Gehaltsvorstellung und Gehaltsangebot", "10 Punkte", "Soweit verfügbar, vergleicht das System die Mindestvorstellung der Kandidaten mit der vom Arbeitgeber angebotenen Spanne."]
+      ],
+      thresholdsTitle: "Bearbeitungsschwellen",
+      thresholdsLead: "Der Score steuert die administrative Bearbeitung.",
+      thresholds: [
+        ["75 bis 100", "Das Matching wird im Tool als „auto-sendable“ markiert, weil die Passung stark erscheint."],
+        ["55 bis 74", "Das Matching wird als „zu prüfen“ markiert und muss vor einer Weiterleitung manuell kontrolliert werden."],
+        ["0 bis 54", "Das Matching wird als „zurückstellen“ markiert, weil die Abweichung zu groß oder zu unsicher erscheint."]
+      ],
+      processTitle: "Was der Score nicht allein entscheidet",
+      processBullets: [
+        "Der Score veröffentlicht keine personenbezogenen Daten.",
+        "Der Score versendet nicht automatisch jeden Fall an Arbeitgeber.",
+        "Eine menschliche Prüfung bleibt möglich, um berufliche Relevanz, Unklarheiten und den Rekrutierungskontext zu bewerten.",
+        "Teilscores und Begründungen bleiben erhalten, damit nachvollziehbar ist, warum ein Vorschlag gemacht wurde oder nicht."
+      ],
+      noteTitle: "Was das Projektteam sieht",
+      noteText: "Im Administrationsbereich zeigt jedes Matching einen Gesamtscore, Teilscores je Kriterium, Gründe für die Passung und mögliche Schwächen. So lässt sich jede Entscheidung zur Kontaktanbahnung erklären.",
+      cta: "Zurück zu den Statistiken"
     },
     privacyPage: {
       eyebrow: "Datenschutz",
@@ -2258,6 +2378,7 @@ function pageUrl(page, lang) {
     "candidate-landing": `${BASE_PATH}/candidate`,
     "employer-landing": `${BASE_PATH}/employer`,
     stat: `${BASE_PATH}/stat`,
+    matching: `${BASE_PATH}/matching`,
     privacy: `${BASE_PATH}/privacy`,
     "candidate-questionnaire": `${BASE_PATH}/questionnaire-candidate`,
     "employer-questionnaire": `${BASE_PATH}/questionnaire-employer`
@@ -2778,6 +2899,19 @@ function statTemplate(lang, t, data) {
 
       <section class="section">
         <div class="shell">
+          <article class="surface-card">
+            <h2>${t.statPage.transparencyTitle}</h2>
+            <p>${t.statPage.transparencyLead}</p>
+            ${list(t.statPage.transparencyBullets)}
+            <div class="hero-actions" style="margin-top: 1rem;">
+              <a class="primary-action" href="${pageUrl("matching", lang)}">${t.statPage.transparencyCta}</a>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="shell">
           <div class="panel">
             <h2>${t.statPage.detailedTitle}</h2>
             <p>${t.statPage.detailedLead}</p>
@@ -2932,6 +3066,81 @@ function homeTemplate(lang, t) {
           <article class="panel">
             <h2>${t.home.perspectivesTitle}</h2>
             ${list(t.home.perspectivesBullets)}
+          </article>
+        </div>
+      </section>
+    </main>
+    ${footer(t)}
+  `;
+}
+
+function matchingTemplate(lang, t) {
+  const data = t.matchingPage;
+  const criteriaCards = data.criteria.map(([title, points, text]) => `
+    <article class="surface-card">
+      <div class="breakdown-head" style="gap:1rem; align-items:flex-start;">
+        <h3 style="margin:0;">${title}</h3>
+        <strong style="white-space:nowrap;">${points}</strong>
+      </div>
+      <p>${text}</p>
+    </article>
+  `).join("");
+  const thresholdRows = data.thresholds.map(([label, text]) => `
+    <article class="panel breakdown-panel">
+      <h3>${label}</h3>
+      <p>${text}</p>
+    </article>
+  `).join("");
+
+  return `
+    ${nav("stat", lang, t)}
+    <main id="main-content" tabindex="-1">
+      <section class="hero">
+        <div class="shell hero-grid hero-grid-stat">
+          <article class="hero-card hero hero-card-stat">
+            <div class="eyebrow">${data.eyebrow}</div>
+            <h1>${data.title}</h1>
+            <p class="lede">${data.intro}</p>
+            <div class="hero-actions">
+              <a class="secondary-action" href="${pageUrl("stat", lang)}">${data.cta}</a>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="shell">
+          <div class="panel">
+            <h2>${data.criteriaTitle}</h2>
+            <p>${data.criteriaLead}</p>
+          </div>
+          <div class="principles-grid" style="margin-top: 1rem;">
+            ${criteriaCards}
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="shell">
+          <div class="panel">
+            <h2>${data.thresholdsTitle}</h2>
+            <p>${data.thresholdsLead}</p>
+          </div>
+          <div class="dashboard-grid" style="margin-top: 1rem;">
+            ${thresholdRows}
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="shell principles-grid">
+          <article class="surface-card">
+            <h2>${data.processTitle}</h2>
+            ${list(data.processBullets)}
+          </article>
+          <article class="surface-card">
+            <h2>${data.noteTitle}</h2>
+            <p>${data.noteText}</p>
           </article>
         </div>
       </section>
@@ -5171,6 +5380,11 @@ function render() {
 
   if (page === "privacy") {
     root.innerHTML = privacyTemplate(lang, t);
+    return;
+  }
+
+  if (page === "matching") {
+    root.innerHTML = matchingTemplate(lang, t);
     return;
   }
 
