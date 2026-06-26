@@ -1307,6 +1307,10 @@ const candidateTallyCopy = {
       q28: "Avez-vous une expérience professionnelle dans le secteur de l'agriculture et de la récolte?",
       q30: "Avez-vous une expérience professionnelle ?",
       q39: "Avez-vous une expérience professionnelle dans le secteur de la production industrielle ?",
+      q41: "Disposez-vous d’un permis de conduire ou d’une autorisation particulière ?",
+      q42: "Quels permis ou autorisations possédez-vous ?",
+      q42Extra: "Précisez le permis ou l’autorisation",
+      q43: "Quelles conditions de travail pouvez-vous accepter ?",
       jobTitle: "Quel intitulé de poste recherchez-vous pour ce métier ?",
       salaryType: "Sous quelle forme pensez-vous à votre salaire ?",
       salaryMin: "Quel est le minimum que vous souhaiteriez pour ce métier, en euros bruts ou nets ?",
@@ -1328,7 +1332,9 @@ const candidateTallyCopy = {
       departWhen: ["Dès que possible", "D'ici 3 mois", "Entre 3 et 6 mois", "Dans  plus de 6 mois", "Je ne sais pas"],
       departWith: ["Uniquement vous", "En couple", "En famille"],
       experience: ["Oui, plus de 2 ans", "Oui, entre 6 mois et 2 ans", "Oui, moins de 6 mois", "Non, mais je suis intéressé(e) par le secteur"],
-      backgroundCheck: ["Oui", "Non", "Je peux en faire la demande rapidement", "Je ne sais pas"]
+      backgroundCheck: ["Oui", "Non", "Je peux en faire la demande rapidement", "Je ne sais pas"],
+      workConditions: ["Travail tôt le matin ou en horaires décalés", "Travail en soirée ou la nuit", "Travail le week-end ou les jours fériés", "Horaires variables", "Travail posté", "Travail physique", "Travail debout prolongé", "Travail en extérieur", "Déplacements fréquents", "Travail en équipe", "Aucune condition particulière", "Je ne sais pas encore"],
+      permits: ["Permis B", "Permis C", "Permis CE", "Permis D", "Permis DE", "CACES", "Autre"]
     },
     salaryUnits: ["Par heure", "Par mois", "Par an"],
     salaryFields: {
@@ -1526,6 +1532,10 @@ const candidateTallyCopy = {
       q28: "Do you have work experience in agriculture and harvesting?",
       q30: "Do you have work experience?",
       q39: "Do you have work experience in industrial production?",
+      q41: "Do you have a driving licence or a specific authorisation?",
+      q42: "Which licences or authorisations do you have?",
+      q42Extra: "Specify the licence or authorisation",
+      q43: "Which working conditions can you accept?",
       jobTitle: "What job title are you looking for in this occupation?",
       salaryType: "How do you think about your salary?",
       salaryMin: "What is the minimum you would like for this role, in gross or net euros?",
@@ -1547,7 +1557,9 @@ const candidateTallyCopy = {
       departWhen: ["As soon as possible", "Within 3 months", "Between 3 and 6 months", "In more than 6 months", "I don't know"],
       departWith: ["Only you", "As a couple", "As a family"],
       experience: ["Yes, more than 2 years", "Yes, between 6 months and 2 years", "Yes, less than 6 months", "No, but I am interested in this sector"],
-      backgroundCheck: ["Yes", "No", "I can request it quickly", "I don't know"]
+      backgroundCheck: ["Yes", "No", "I can request it quickly", "I don't know"],
+      workConditions: ["Early morning work or staggered hours", "Evening or night work", "Weekend or public holiday work", "Variable hours", "Shift work", "Physical work", "Prolonged standing work", "Outdoor work", "Frequent travel", "Teamwork", "No particular condition", "I do not know yet"],
+      permits: ["Category B driving licence", "Category C driving licence", "Category CE driving licence", "Category D driving licence", "Category DE driving licence", "CACES", "Other"]
     },
     salaryUnits: ["Per hour", "Per month", "Per year"],
     salaryFields: {
@@ -1672,6 +1684,10 @@ const candidateTallyCopy = {
       q28: "Haben Sie Berufserfahrung in Landwirtschaft und Ernte?",
       q30: "Haben Sie Berufserfahrung?",
       q39: "Haben Sie Berufserfahrung in der industriellen Produktion?",
+      q41: "Verfügen Sie über einen Führerschein oder eine besondere Genehmigung?",
+      q42: "Welche Führerscheine oder Genehmigungen besitzen Sie?",
+      q42Extra: "Bitte präzisieren Sie den Führerschein oder die Genehmigung",
+      q43: "Welche Arbeitsbedingungen können Sie akzeptieren?",
       jobTitle: "Welche konkrete Stellenbezeichnung suchen Sie für diesen Beruf?",
       salaryType: "In welcher Form denken Sie an Ihr Gehalt?",
       salaryMin: "Was ist das Minimum, das Sie für diesen Beruf in Euro brutto oder netto erwarten würden?",
@@ -1693,7 +1709,9 @@ const candidateTallyCopy = {
       departWhen: ["So schnell wie möglich", "Innerhalb von 3 Monaten", "Zwischen 3 und 6 Monaten", "In mehr als 6 Monaten", "Ich weiß es nicht"],
       departWith: ["Nur Sie", "Als Paar", "Als Familie"],
       experience: ["Ja, mehr als 2 Jahre", "Ja, zwischen 6 Monaten und 2 Jahren", "Ja, weniger als 6 Monate", "Nein, aber ich interessiere mich für diesen Bereich"],
-      backgroundCheck: ["Ja", "Nein", "Ich kann ihn schnell beantragen", "Ich weiß es nicht"]
+      backgroundCheck: ["Ja", "Nein", "Ich kann ihn schnell beantragen", "Ich weiß es nicht"],
+      workConditions: ["Arbeit früh am Morgen oder zu versetzten Zeiten", "Arbeit am Abend oder in der Nacht", "Arbeit am Wochenende oder an Feiertagen", "Variable Arbeitszeiten", "Schichtarbeit", "Körperliche Arbeit", "Längeres Stehen", "Arbeit im Freien", "Häufige Fahrten", "Teamarbeit", "Keine besonderen Bedingungen", "Ich weiß es noch nicht"],
+      permits: ["Führerschein B", "Führerschein C", "Führerschein CE", "Führerschein D", "Führerschein DE", "CACES", "Andere"]
     },
     salaryUnits: ["Pro Stunde", "Pro Monat", "Pro Jahr"],
     salaryFields: {
@@ -1749,6 +1767,12 @@ function getCandidateTallyContent(lang) {
     languageColumns: localizeOptions(candidateTallyMeta.languageColumns, content.languageColumns),
     languageRows: localizeRows(candidateTallyMeta.languageRows, content.languageRows),
     sectorsOptions: localizeOptions(candidateTallyMeta.sectors, content.sectors),
+    workConditionsOptions: localizeOptions(candidateTallyCopy.fr.options.workConditions, content.options.workConditions),
+    permitYesNoOptions: [
+      { value: "yes", label: (content.options.yesNo || candidateTallyCopy.fr.options.yesNo)[0] || "Oui" },
+      { value: "no", label: (content.options.yesNo || candidateTallyCopy.fr.options.yesNo)[1] || "Non" }
+    ],
+    permitOptions: localizeOptions(candidateTallyCopy.fr.options.permits, content.options.permits),
     rankingDisplayOptions: content.rankingOptions
   };
 }
@@ -1885,6 +1909,9 @@ const employerTallyCopy = {
       q40: "Pour ce recrutement d’opérateur de production dans l’industrie, quels éléments vous semblent les plus importants ?",
       q14Hint: "Vous pouvez sélectionner jusqu'à 4 propositions.",
       q15: "Quelles conditions de travail les personnes recrutées doivent-elles connaître ?",
+      q22: "Le poste nécessite-t-il un permis ou une autorisation particulière ?",
+      q23: "Quels permis ou autorisations sont nécessaires ?",
+      q23Extra: "Précisez le permis ou l’autorisation nécessaire",
       q16: "Prénom",
       q17: "Nom de l'entreprise",
       q18: "Adresse e-mail",
@@ -1903,6 +1930,7 @@ const employerTallyCopy = {
     },
     options: {
       sectors: employerTallyMeta.sectors,
+      yesNo: ["Oui", "Non"],
       q03: ["1 personne", "2 à 5 personnes", "Plus de 5 personnes", "Je ne sais pas encore"],
       q04: ["Dès que possible", "Dans les prochains jours", "Dans les prochaines semaines", "Pour une période saisonnière", "Je ne sais pas encore"],
       q05: ["Moins d'un mois", "1 à 3 mois", "3 à 6 mois", "Plus de 6 mois", "Contrat sans date de fin prévue", "Je ne sais pas encore"],
@@ -1910,7 +1938,8 @@ const employerTallyCopy = {
       q07: ["Des travailleurs frontaliers", "Des personnes venant d’un autre pays de l’Union européenne", "Des personnes débutantes dans le métier", "Des personnes ayant besoin de temps pour s’installer", "Des personnes ne parlant pas encore parfaitement la langue", "Je ne sais pas encore"],
       q08: ["Oui, pour le logement", "Oui, pour les démarches administratives", "Oui, pour les transports ou déplacement", "Non", "Je ne sais pas encore"],
       q09: ["Une expérience dans le métier", "Une disponibilité rapide", "Le permis de conduire", "Une expérience de travail dans le pays", "Aucun de ces éléments n'est indispensable", "La motivation pour le poste", "Je ne sais pas encore"],
-      q15: ["Travail tôt le matin ou en horaire décalés", "Travail en soirée ou la nuit", "Travail le week-end ou les jours fériés", "Horaires variables", "Travail physique", "Travail debout prolongé", "Travail en extérieur", "Déplacement fréquents", "Travail en équipe", "Aucune condition particulière", "Je ne sais pas encore"]
+      q15: ["Travail tôt le matin ou en horaire décalés", "Travail en soirée ou la nuit", "Travail le week-end ou les jours fériés", "Horaires variables", "Travail posté", "Travail physique", "Travail debout prolongé", "Travail en extérieur", "Déplacement fréquents", "Travail en équipe", "Aucune condition particulière", "Je ne sais pas encore"],
+      permits: ["Permis B", "Permis C", "Permis CE", "Permis D", "Permis DE", "CACES", "Autre"]
     },
     salaryUnits: ["Par heure", "Par mois", "Par an"],
     salaryFields: {
@@ -1971,6 +2000,9 @@ const employerTallyCopy = {
       q40: "For this production operator in industry recruitment, which elements seem most important to you?",
       q14Hint: "You can select up to 4 options.",
       q15: "Which working conditions should recruited people be aware of?",
+      q22: "Does the job require a driving licence or a specific authorisation?",
+      q23: "Which licences or authorisations are required?",
+      q23Extra: "Specify the required licence or authorisation",
       q16: "First name",
       q17: "Company name",
       q18: "Email address",
@@ -1988,6 +2020,7 @@ const employerTallyCopy = {
       consent: "I agree that the information provided may be used by EURES teams and partners for introductions and exchanges related to recruitment. The data provided will only be used within the framework of recruitment exchanges and in accordance with European data protection rules (GDPR)."
     },
     options: {
+      yesNo: ["Yes", "No"],
       sectors: ["Sales and retail", "Cleaning and maintenance", "Hospitality and food service", "Agriculture and harvesting", "Versatile jobs and roles accessible quickly", "Production operator in industry"],
       q02Columns: ["Not necessary", "Simple communication", "Professional communication", "Very important on a daily basis"],
       q02Rows: ["German", "English", "French", "Luxembourgish"],
@@ -1998,7 +2031,8 @@ const employerTallyCopy = {
       q07: ["Cross-border workers", "People coming from another European Union country", "People who are beginners in the profession", "People who need time to settle in", "People who do not yet speak the language perfectly", "I do not know yet"],
       q08: ["Yes, for housing", "Yes, for administrative procedures", "Yes, for transport or travel", "No", "I do not know yet"],
       q09: ["Experience in the profession", "Quick availability", "Driving licence", "Work experience in the country", "None of these elements is essential", "Motivation for the role", "I do not know yet"],
-      q15: ["Early morning work or staggered hours", "Evening or night work", "Weekend or public holiday work", "Variable hours", "Physical work", "Prolonged standing work", "Outdoor work", "Frequent travel", "Teamwork", "No particular condition", "I do not know yet"]
+      q15: ["Early morning work or staggered hours", "Evening or night work", "Weekend or public holiday work", "Variable hours", "Shift work", "Physical work", "Prolonged standing work", "Outdoor work", "Frequent travel", "Teamwork", "No particular condition", "I do not know yet"],
+      permits: ["Category B driving licence", "Category C driving licence", "Category CE driving licence", "Category D driving licence", "Category DE driving licence", "CACES", "Other"]
     },
     salaryUnits: ["Per hour", "Per month", "Per year"],
     salaryFields: {
@@ -2067,6 +2101,9 @@ const employerTallyCopy = {
       q40: "Welche Elemente erscheinen Ihnen bei dieser Einstellung als Produktionsmitarbeiter in der Industrie am wichtigsten?",
       q14Hint: "Sie können bis zu 4 Antworten auswählen.",
       q15: "Welche Arbeitsbedingungen sollten die eingestellten Personen kennen?",
+      q22: "Erfordert die Stelle einen Führerschein oder eine besondere Genehmigung?",
+      q23: "Welche Führerscheine oder Genehmigungen sind erforderlich?",
+      q23Extra: "Bitte präzisieren Sie den erforderlichen Führerschein oder die Genehmigung",
       q16: "Vorname",
       q17: "Unternehmensname",
       q18: "E-Mail-Adresse",
@@ -2084,6 +2121,7 @@ const employerTallyCopy = {
       consent: "Ich stimme zu, dass die übermittelten Informationen von EURES-Teams und Partnern im Rahmen von Vermittlungen und austauschbezogenen Rekrutierungen verwendet werden dürfen. Die übermittelten Daten werden nur im Rahmen des recruitmentbezogenen Austauschs und gemäß den europäischen Datenschutzvorschriften (DSGVO) verwendet."
     },
     options: {
+      yesNo: ["Ja", "Nein"],
       sectors: ["Verkauf und Handel", "Reinigung und Instandhaltung", "Hotellerie und Gastronomie", "Landwirtschaft und Ernte", "Vielseitige Tätigkeiten und Jobs mit schnellem Einstieg", "Produktionsmitarbeiter in der Industrie"],
       q02Columns: ["Nicht erforderlich", "Einfache Kommunikation", "Berufliche Kommunikation", "Im Alltag sehr wichtig"],
       q02Rows: ["Deutsch", "Englisch", "Französisch", "Luxemburgisch"],
@@ -2094,7 +2132,8 @@ const employerTallyCopy = {
       q07: ["Grenzgänger", "Personen aus einem anderen Land der Europäischen Union", "Berufseinsteiger", "Personen, die Zeit für die Installation brauchen", "Personen, die die Sprache noch nicht perfekt sprechen", "Ich weiß es noch nicht"],
       q08: ["Ja, beim Wohnen", "Ja, bei administrativen Verfahren", "Ja, bei Transport oder Fahrten", "Nein", "Ich weiß es noch nicht"],
       q09: ["Berufserfahrung", "Schnelle Verfügbarkeit", "Führerschein", "Arbeitserfahrung im Land", "Keines dieser Elemente ist unverzichtbar", "Motivation für die Stelle", "Ich weiß es noch nicht"],
-      q15: ["Arbeit früh am Morgen oder zu versetzten Zeiten", "Arbeit am Abend oder in der Nacht", "Arbeit am Wochenende oder an Feiertagen", "Variable Arbeitszeiten", "Körperliche Arbeit", "Längeres Stehen", "Arbeit im Freien", "Häufige Fahrten", "Teamarbeit", "Keine besonderen Bedingungen", "Ich weiß es noch nicht"]
+      q15: ["Arbeit früh am Morgen oder zu versetzten Zeiten", "Arbeit am Abend oder in der Nacht", "Arbeit am Wochenende oder an Feiertagen", "Variable Arbeitszeiten", "Schichtarbeit", "Körperliche Arbeit", "Längeres Stehen", "Arbeit im Freien", "Häufige Fahrten", "Teamarbeit", "Keine besonderen Bedingungen", "Ich weiß es noch nicht"],
+      permits: ["Führerschein B", "Führerschein C", "Führerschein CE", "Führerschein D", "Führerschein DE", "CACES", "Andere"]
     },
     salaryUnits: ["Pro Stunde", "Pro Monat", "Pro Jahr"],
     salaryFields: {
@@ -2150,6 +2189,11 @@ function getEmployerTallyContent(lang) {
       q09: localizeOptions(frContent.options.q09, content.options.q09 || frContent.options.q09),
       q15: localizeOptions(frContent.options.q15, content.options.q15 || frContent.options.q15)
     },
+    permitYesNoOptions: [
+      { value: "yes", label: (content.options.yesNo || frContent.options.yesNo || ["Oui", "Non"])[0] || "Oui" },
+      { value: "no", label: (content.options.yesNo || frContent.options.yesNo || ["Oui", "Non"])[1] || "Non" }
+    ],
+    permitOptions: localizeOptions(frContent.options.permits, content.options.permits || frContent.options.permits),
     sectorPriorityOptions: Object.fromEntries(
       Object.entries(employerTallyMeta.sectorPriorityGroups).map(([key, value]) => [
         key,
@@ -3236,6 +3280,25 @@ function salaryOfferFields(baseName, content) {
   `;
 }
 
+function permitQuestionFields(toggleKey, yesNoName, permitName, otherName, questionLabel, permitLabel, otherLabel, yesNoOptions, permitOptions) {
+  return `
+    <fieldset class="fieldset">
+      <legend>${questionLabel}</legend>
+      ${radioPills(yesNoName, yesNoOptions)}
+    </fieldset>
+    <div data-condition="${toggleKey}-details">
+      <fieldset class="fieldset">
+        <legend>${permitLabel}</legend>
+        ${choicePills(permitName, permitOptions)}
+      </fieldset>
+      <label class="field" data-condition="${toggleKey}-other">
+        <span>${otherLabel}</span>
+        <input type="text" name="${otherName}">
+      </label>
+    </div>
+  `;
+}
+
 function candidateTallyQuestionnaireTemplate(lang, t) {
   const logos = t.candidateLanding.logos;
   const content = getCandidateTallyContent(lang);
@@ -3353,6 +3416,21 @@ function candidateTallyQuestionnaireTemplate(lang, t) {
                 <legend>${content.questions.q19}</legend>
                 ${choicePills("tally_q19", content.sectorsOptions)}
               </fieldset>
+              <fieldset class="fieldset">
+                <legend>${content.questions.q43}</legend>
+                ${choicePills("tally_q43", content.workConditionsOptions)}
+              </fieldset>
+              ${permitQuestionFields(
+                "candidate-permits",
+                "tally_q41",
+                "tally_q42",
+                "tally_q42_extra",
+                content.questions.q41,
+                content.questions.q42,
+                content.questions.q42Extra,
+                content.permitYesNoOptions,
+                content.permitOptions
+              )}
             </section>
 
             <section class="form-section" data-condition="sector-vente">
@@ -3807,6 +3885,17 @@ function employerTallyQuestionnaireTemplate(lang, t) {
                 <legend>${content.questions.q15}</legend>
                 ${choicePills("tally_q15", content.optionGroups.q15)}
               </fieldset>
+              ${permitQuestionFields(
+                "employer-permits",
+                "tally_q22",
+                "tally_q23",
+                "tally_q23_extra",
+                content.questions.q22,
+                content.questions.q23,
+                content.questions.q23Extra,
+                content.permitYesNoOptions,
+                content.permitOptions
+              )}
             </section>
 
             <section class="form-section">
@@ -3882,6 +3971,8 @@ function toggleConditionBlocks(form) {
   const transfrontaliere = isCheckedValue(form, "tally_q02", "Transfrontalière");
   const expatriation = isCheckedValue(form, "tally_q02", "Expatriation");
   const horairePrecis = (form.querySelector('input[name="tally_q06"]:checked') || {}).value === "J’ai des contraintes ou préférences horaires";
+  const candidatePermits = (form.querySelector('input[name="tally_q41"]:checked') || {}).value === "yes";
+  const candidatePermitOther = Array.from(form.querySelectorAll('input[name="tally_q42"]:checked')).some((input) => input.value === "Autre");
 
   const q01lu = Array.from(form.querySelectorAll('input[name="tally_q01_f03"]:checked')).map((input) => input.value);
   const q01de = Array.from(form.querySelectorAll('input[name="tally_q01_f01"]:checked')).map((input) => input.value);
@@ -3895,6 +3986,8 @@ function toggleConditionBlocks(form) {
     "show-lu-social": q01lu.includes("Je veux y travailler") && !q01lu.includes("J'y habite"),
     "show-de-social": q01de.includes("Je veux y travailler") && !q01de.includes("J'y habite"),
     "show-fr-social": q01fr.includes("Je veux y travailler") && !q01fr.includes("J'y habite"),
+    "candidate-permits-details": candidatePermits,
+    "candidate-permits-other": candidatePermits && candidatePermitOther,
     "sector-vente": selectedSectors.includes(candidateTallyMeta.sectors[0]),
     "sector-nettoyage": selectedSectors.includes(candidateTallyMeta.sectors[1]),
     "sector-hotel": selectedSectors.includes(candidateTallyMeta.sectors[2]),
@@ -3977,6 +4070,12 @@ function humanizeCandidateRawAnswers(fields, fileMeta, rankingSummary) {
       luxembourgeois: fields.tally_q18_f04 || []
     },
     secteurs: fields.tally_q19 || [],
+    conditions_travail: fields.tally_q43 || [],
+    permis_autorisations: {
+      reponse: fields.tally_q41 || "",
+      choix: fields.tally_q42 || [],
+      autre: fields.tally_q42_extra || ""
+    },
     vente: {
       intitule_poste: fields.tally_q20_job_title || "",
       qualites: fields.tally_q20 || [],
@@ -4067,9 +4166,26 @@ function enforceCheckboxLimit(form, groupNames, max, setStatus, message, changed
   });
 }
 
+function summarizePermitSelections(enabledValue, selectionsValue, otherValue) {
+  if (String(enabledValue || "").trim() !== "yes") {
+    return { summary: "", other: "" };
+  }
+  const selections = Array.isArray(selectionsValue)
+    ? selectionsValue.filter(Boolean)
+    : (selectionsValue ? [selectionsValue] : []);
+  return {
+    summary: selections.join(" | "),
+    other: selections.includes("Autre") ? String(otherValue || "").trim() : ""
+  };
+}
+
 function toggleEmployerConditionBlocks(form) {
   const selectedSectors = Array.from(form.querySelectorAll('input[name="tally_q01"]:checked')).map((input) => input.value);
+  const employerPermits = (form.querySelector('input[name="tally_q22"]:checked') || {}).value === "yes";
+  const employerPermitOther = Array.from(form.querySelectorAll('input[name="tally_q23"]:checked')).some((input) => input.value === "Autre");
   const visibility = {
+    "employer-permits-details": employerPermits,
+    "employer-permits-other": employerPermits && employerPermitOther,
     "employer-sector-0": selectedSectors.includes(employerTallyMeta.sectors[0]),
     "employer-sector-1": selectedSectors.includes(employerTallyMeta.sectors[1]),
     "employer-sector-2": selectedSectors.includes(employerTallyMeta.sectors[2]),
@@ -4138,6 +4254,11 @@ function humanizeEmployerRawAnswers(fields) {
       salaire: { type: fields.tally_q40_salary_type || "", minimum: fields.tally_q40_salary_min || "", maximum: fields.tally_q40_salary_max || "", note: fields.tally_q40_salary_note || "" }
     },
     conditions_travail: fields.tally_q15 || [],
+    permis_autorisations: {
+      reponse: fields.tally_q22 || "",
+      choix: fields.tally_q23 || [],
+      autre: fields.tally_q23_extra || ""
+    },
     contact: {
       prenom: fields.tally_q16 || "",
       entreprise: fields.tally_q17 || "",
@@ -4251,9 +4372,24 @@ function attachEmployerTallyBehavior(lang, t) {
         return;
       }
     }
+    if (!validateCheckboxGroup("tally_q22", content.questions.q22, 1, 1)) {
+      return;
+    }
+    if ((form.querySelector('input[name="tally_q22"]:checked') || {}).value === "yes") {
+      if (!validateCheckboxGroup("tally_q23", content.questions.q23, 1)) {
+        return;
+      }
+      const hasOtherPermit = Array.from(form.querySelectorAll('input[name="tally_q23"]:checked')).some((input) => input.value === "Autre");
+      if (hasOtherPermit && !String((form.querySelector('input[name="tally_q23_extra"]') || {}).value || "").trim()) {
+        setStatus(`${t.common.validation.required} ${content.questions.q23Extra}. ${t.common.validation.checkHighlighted}`, "error");
+        focusField(form.querySelector('input[name="tally_q23_extra"]'));
+        return;
+      }
+    }
 
     const normalized = collectValues();
     const rawAnswers = humanizeEmployerRawAnswers(normalized);
+    const permitSummary = summarizePermitSelections(normalized.tally_q22, normalized.tally_q23, normalized.tally_q23_extra);
     const languageSummary = employerTallyMeta.languageRows
       .map((row) => `${row.label}: ${Array.isArray(normalized[row.field]) ? normalized[row.field].join(", ") : ""}`)
       .filter((line) => !line.endsWith(": "));
@@ -4284,6 +4420,8 @@ function attachEmployerTallyBehavior(lang, t) {
       lieu_travail_normalise: normalized.tally_q20 || "",
       competences_clefs: Array.isArray(normalized.tally_q09) ? normalized.tally_q09.join(" | ") : (normalized.tally_q09 || ""),
       contraintes_travail: Array.isArray(normalized.tally_q15) ? normalized.tally_q15.join(" | ") : (normalized.tally_q15 || ""),
+      permis_autorisations: permitSummary.summary,
+      permis_autorisations_autre: permitSummary.other,
       profils_acceptes: Array.isArray(normalized.tally_q07) ? normalized.tally_q07.join(" | ") : (normalized.tally_q07 || ""),
       aides_installation: Array.isArray(normalized.tally_q08) ? normalized.tally_q08.join(" | ") : (normalized.tally_q08 || ""),
       flow_role: "employer",
@@ -4478,6 +4616,23 @@ function attachCandidateTallyBehavior(lang, t) {
     if (!validateVisibleCheckboxGroup(form, "tally_q19", content.questions.q19, setStatus, t, 1, 6)) {
       return;
     }
+    if (!validateVisibleCheckboxGroup(form, "tally_q43", content.questions.q43, setStatus, t, 1)) {
+      return;
+    }
+    if (!validateVisibleCheckboxGroup(form, "tally_q41", content.questions.q41, setStatus, t, 1, 1)) {
+      return;
+    }
+    if ((form.querySelector('input[name="tally_q41"]:checked') || {}).value === "yes") {
+      if (!validateVisibleCheckboxGroup(form, "tally_q42", content.questions.q42, setStatus, t, 1)) {
+        return;
+      }
+      const hasOtherPermit = Array.from(form.querySelectorAll('input[name="tally_q42"]:checked')).some((input) => input.value === "Autre");
+      if (hasOtherPermit && !String((form.querySelector('input[name="tally_q42_extra"]') || {}).value || "").trim()) {
+        setStatus(`${t.common.validation.required} ${content.questions.q42Extra}. ${t.common.validation.checkHighlighted}`, "error");
+        focusField(form.querySelector('input[name="tally_q42_extra"]'));
+        return;
+      }
+    }
     if (
       (form.querySelector('input[name="tally_q06"]:checked') || {}).value === "J’ai des contraintes ou préférences horaires" &&
       !candidateTallyMeta.scheduleRows.every((row) => validateVisibleCheckboxGroup(form, row.field, `${content.questions.q07} - ${row.label}`, setStatus, t))
@@ -4554,6 +4709,7 @@ function attachCandidateTallyBehavior(lang, t) {
     const cvPayload = await readCandidateCvFile(files["file__tally_q36"] || null);
     const cvMeta = cvPayload ? { name: cvPayload.name, size: cvPayload.size, type: cvPayload.type } : null;
     const rawAnswers = humanizeCandidateRawAnswers(normalized, cvMeta, rankingSummary);
+    const permitSummary = summarizePermitSelections(normalized.tally_q41, normalized.tally_q42, normalized.tally_q42_extra);
 
     const targetCountries = candidateTallyMeta.countryRows
       .filter((row) => Array.isArray(normalized[row.field]) && normalized[row.field].includes("Je veux y travailler"))
@@ -4587,6 +4743,9 @@ function attachCandidateTallyBehavior(lang, t) {
       langues: languageSummary.join(" | "),
       mobilite: Array.isArray(normalized.tally_q02) ? normalized.tally_q02.join(" | ") : (normalized.tally_q02 || ""),
       disponibilite: [normalized.tally_q09 || "", ...(Array.isArray(normalized.tally_q08) ? normalized.tally_q08 : [])].filter(Boolean).join(" | "),
+      contraintes_travail: Array.isArray(normalized.tally_q43) ? normalized.tally_q43.join(" | ") : (normalized.tally_q43 || ""),
+      permis_autorisations: permitSummary.summary,
+      permis_autorisations_autre: permitSummary.other,
       form_version: "2026-06-tally-candidate-v2",
       source_page: "candidate-questionnaire",
       ui_language: lang,

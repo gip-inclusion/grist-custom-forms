@@ -297,6 +297,84 @@ EURES_PUBLIC_SECTOR_LABELS = {
     'polyvalent': 'Missions polyvalentes',
     'industrie_production': 'Opérateur de production dans l’industrie',
 }
+EURES_WORK_CONDITION_CANONICAL_MAP = {
+    'travail tot le matin ou en horaire decales': 'matin_decale',
+    'travail tôt le matin ou en horaire décalés': 'matin_decale',
+    'early morning work or staggered hours': 'matin_decale',
+    'arbeit fruh am morgen oder zu versetzten zeiten': 'matin_decale',
+    'arbeit früh am morgen oder zu versetzten zeiten': 'matin_decale',
+    'travail en soiree ou la nuit': 'soir_nuit',
+    'travail en soirée ou la nuit': 'soir_nuit',
+    'evening or night work': 'soir_nuit',
+    'arbeit am abend oder in der nacht': 'soir_nuit',
+    'travail le week-end ou les jours feries': 'weekend_feries',
+    'travail le week-end ou les jours fériés': 'weekend_feries',
+    'weekend or public holiday work': 'weekend_feries',
+    'arbeit am wochenende oder an feiertagen': 'weekend_feries',
+    'horaires variables': 'horaires_variables',
+    'variable hours': 'horaires_variables',
+    'variable arbeitszeiten': 'horaires_variables',
+    'travail poste': 'travail_poste',
+    'travail posté': 'travail_poste',
+    'shift work': 'travail_poste',
+    'schichtarbeit': 'travail_poste',
+    'travail physique': 'travail_physique',
+    'physical work': 'travail_physique',
+    'korperliche arbeit': 'travail_physique',
+    'körperliche arbeit': 'travail_physique',
+    'travail debout prolonge': 'debout_prolonge',
+    'travail debout prolongé': 'debout_prolonge',
+    'prolonged standing work': 'debout_prolonge',
+    'langeres stehen': 'debout_prolonge',
+    'längeres stehen': 'debout_prolonge',
+    'travail en exterieur': 'exterieur',
+    'travail en extérieur': 'exterieur',
+    'outdoor work': 'exterieur',
+    'arbeit im freien': 'exterieur',
+    'deplacements frequents': 'deplacements_frequents',
+    'déplacements fréquents': 'deplacements_frequents',
+    'frequent travel': 'deplacements_frequents',
+    'haufige fahrten': 'deplacements_frequents',
+    'häufige fahrten': 'deplacements_frequents',
+    'travail en equipe': 'travail_equipe',
+    'travail en équipe': 'travail_equipe',
+    'teamwork': 'travail_equipe',
+    'teamarbeit': 'travail_equipe',
+    'aucune condition particuliere': 'aucune_condition',
+    'aucune condition particulière': 'aucune_condition',
+    'no particular condition': 'aucune_condition',
+    'keine besonderen bedingungen': 'aucune_condition',
+    'je ne sais pas encore': 'inconnu',
+    'i do not know yet': 'inconnu',
+    'ich weiss es noch nicht': 'inconnu',
+    'ich weiß es noch nicht': 'inconnu',
+}
+EURES_PERMIT_CANONICAL_MAP = {
+    'permis b': 'permis_b',
+    'category b driving licence': 'permis_b',
+    'fuhrerschein b': 'permis_b',
+    'führerschein b': 'permis_b',
+    'permis c': 'permis_c',
+    'category c driving licence': 'permis_c',
+    'fuhrerschein c': 'permis_c',
+    'führerschein c': 'permis_c',
+    'permis ce': 'permis_ce',
+    'category ce driving licence': 'permis_ce',
+    'fuhrerschein ce': 'permis_ce',
+    'führerschein ce': 'permis_ce',
+    'permis d': 'permis_d',
+    'category d driving licence': 'permis_d',
+    'fuhrerschein d': 'permis_d',
+    'führerschein d': 'permis_d',
+    'permis de': 'permis_de',
+    'category de driving licence': 'permis_de',
+    'fuhrerschein de': 'permis_de',
+    'führerschein de': 'permis_de',
+    'caces': 'caces',
+    'autre': 'autre',
+    'other': 'autre',
+    'andere': 'autre',
+}
 WIZARD_STATE_KEY = '__wizard_v3_state'
 JSON_EXPORT_COLUMNS = {
     'metiers_json',
@@ -3456,6 +3534,46 @@ def eures_score_availability(date_debut: str, disponibilite: str) -> tuple[int, 
     return 7, 'disponibilite: verification manuelle recommandee'
 
 
+def eures_parse_canonical_multi_values(value: str, mapping: dict[str, str]) -> set[str]:
+    parsed = set()
+    for part in _split_matching_text(value):
+        normalized = eures_normalize_text(part)
+        canonical = mapping.get(normalized)
+        if canonical:
+            parsed.add(canonical)
+    return parsed
+
+
+def eures_score_work_conditions(expected: str, actual: str) -> tuple[int, str]:
+    expected_set = eures_parse_canonical_multi_values(expected, EURES_WORK_CONDITION_CANONICAL_MAP)
+    actual_set = eures_parse_canonical_multi_values(actual, EURES_WORK_CONDITION_CANONICAL_MAP)
+    expected_set.discard('inconnu')
+    actual_set.discard('inconnu')
+    if not expected_set or expected_set == {'aucune_condition'}:
+        return 3, 'conditions: aucune contrainte specifique'
+    if 'aucune_condition' in actual_set:
+        return 0, 'conditions: candidat sans preference exploitable'
+    overlap = expected_set & actual_set
+    if expected_set and overlap == expected_set:
+        return 3, 'conditions: compatibles'
+    if overlap:
+        return 1, 'conditions: compatibilite partielle'
+    return 0, 'conditions: incompatibilite probable'
+
+
+def eures_score_permits(expected: str, actual: str) -> tuple[int, str]:
+    expected_set = eures_parse_canonical_multi_values(expected, EURES_PERMIT_CANONICAL_MAP)
+    actual_set = eures_parse_canonical_multi_values(actual, EURES_PERMIT_CANONICAL_MAP)
+    if not expected_set:
+        return 3, 'permis: aucun requis'
+    overlap = expected_set & actual_set
+    if overlap == expected_set:
+        return 3, 'permis: requis couverts'
+    if overlap:
+        return 1, 'permis: couverture partielle'
+    return 0, 'permis: exigence non couverte'
+
+
 def eures_candidate_salary_expectation(secteur: str, fields: dict):
     salary_fields = EURES_CANDIDAT_SECTOR_SALARY_FIELDS.get(secteur)
     if not salary_fields:
@@ -3566,10 +3684,19 @@ def compute_eures_matching(besoin_fields: dict, candidat_fields: dict) -> dict:
         str(candidat_country),
         str(candidat_fields.get('mobilite') or ''),
     )
-    score_disponibilite, raison_disponibilite = eures_score_availability(
+    score_disponibilite_base, raison_disponibilite = eures_score_availability(
         str(besoin_fields.get('date_debut') or ''),
         str(candidat_fields.get('disponibilite') or ''),
     )
+    score_conditions, raison_conditions = eures_score_work_conditions(
+        str(besoin_fields.get('contraintes_travail') or ''),
+        str(candidat_fields.get('contraintes_travail') or ''),
+    )
+    score_permis, raison_permis = eures_score_permits(
+        str(besoin_fields.get('permis_autorisations') or ''),
+        str(candidat_fields.get('permis_autorisations') or ''),
+    )
+    score_disponibilite = min(15, round(score_disponibilite_base * 0.6) + score_conditions + score_permis)
     score_salaire, raison_salaire = eures_score_salary(secteur, candidat_fields, besoin_fields)
 
     reasons = []
@@ -3579,7 +3706,9 @@ def compute_eures_matching(besoin_fields: dict, candidat_fields: dict) -> dict:
         (score_metier_title, raison_metier_title),
         (score_langues, raison_langues),
         (score_mobilite, raison_mobilite),
-        (score_disponibilite, raison_disponibilite),
+        (score_disponibilite_base, raison_disponibilite),
+        (score_conditions, raison_conditions),
+        (score_permis, raison_permis),
         (score_salaire, raison_salaire),
     ]:
         (reasons if points else weaknesses).append(text)
@@ -3947,6 +4076,10 @@ EURES_CANDIDATE_TALLY_LABELS = {
     'tally_q38': 'Atouts recherchés · Opérateur de production dans l’industrie',
     'tally_q38_job_title': 'Intitulé du poste visé · Opérateur de production dans l’industrie',
     'tally_q39': 'Expérience · Opérateur de production dans l’industrie',
+    'tally_q41': 'Permis / autorisation particulière',
+    'tally_q42': 'Permis / autorisations possédés',
+    'tally_q42_extra': 'Permis / autorisation · précision',
+    'tally_q43': 'Conditions de travail acceptées',
     'tally_q31': 'Prénom',
     'tally_q32': 'Nom',
     'tally_q33': 'Adresse e-mail',
@@ -3983,6 +4116,9 @@ EURES_EMPLOYER_TALLY_LABELS = {
     'tally_q40': 'Priorités métier · Opérateur de production dans l’industrie',
     'tally_q40_job_title': 'Intitulé du poste proposé · Opérateur de production dans l’industrie',
     'tally_q15': 'Conditions de travail à connaître',
+    'tally_q22': 'Permis / autorisation requis',
+    'tally_q23': 'Permis / autorisations nécessaires',
+    'tally_q23_extra': 'Permis / autorisation nécessaire · précision',
     'tally_q16': 'Prénom du contact',
     'tally_q17': "Nom de l'entreprise",
     'tally_q18': 'Adresse e-mail',
@@ -4029,6 +4165,8 @@ def _eures_questionnaire_field_label(key: str, role: str = '') -> str:
         'date_debut': 'Date de début',
         'competences_clefs': 'Compétences clefs',
         'contraintes_travail': 'Contraintes de travail',
+        'permis_autorisations': 'Permis / autorisations',
+        'permis_autorisations_autre': 'Permis / autorisations · précision',
         'response_status': 'Statut de la réponse',
         'response_received_at': 'Réponse reçue le',
         'cv_file_name': 'CV · nom du fichier',
@@ -4151,13 +4289,15 @@ def _eures_questionnaire_field_order(role: str) -> list[str]:
     if role == 'candidate':
         return [
             'nom', 'email', 'telephone', 'ville', 'pays', 'metier', 'competences',
-            'langues', 'mobilite', 'disponibilite', 'cv_file_name', 'cv_uploaded_at',
+            'langues', 'mobilite', 'disponibilite', 'contraintes_travail', 'permis_autorisations', 'permis_autorisations_autre',
+            'cv_file_name', 'cv_uploaded_at',
             'response_received_at', 'response_status', 'id_tally', 'uuid',
             'tally_submitted_at', 'created_at', 'updated_at',
         ]
     return [
         'employeur', 'contact', 'email', 'telephone', 'pays', 'poste',
-        'competences_clefs', 'langues_requises', 'date_debut', 'response_received_at', 'response_status',
+        'competences_clefs', 'langues_requises', 'date_debut', 'contraintes_travail', 'permis_autorisations', 'permis_autorisations_autre',
+        'response_received_at', 'response_status',
         'id_tally', 'uuid', 'tally_submitted_at', 'created_at', 'updated_at',
     ]
 
