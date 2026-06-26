@@ -1378,6 +1378,21 @@ def _coalesce_row_value(row: dict, *keys: str) -> str:
     return ''
 
 
+def _coalesce_row_raw_value(row: dict, *keys: str):
+    """Return the first non-empty raw value without forcing string conversion."""
+    for key in keys:
+        if key not in row:
+            continue
+        value = row.get(key)
+        if isinstance(value, list) and value:
+            return value
+        if value is None:
+            continue
+        if str(value).strip():
+            return value
+    return ''
+
+
 def _parse_eures_invitation_rows(payload: dict) -> list[dict]:
     rows = payload.get('rows')
     if isinstance(rows, list):
@@ -1468,7 +1483,7 @@ def _normalize_eures_invitation_row(row: dict, actor: str, batch_id: str) -> dic
         'invited_by_type': _coalesce_row_value(row, 'invited_by_type') or 'admin',
         'invite_scope': _coalesce_row_value(row, 'invite_scope') or '',
         'target_job_keys': _serialize_eures_invitation_target_job_keys(
-            _coalesce_row_value(row, 'target_job_keys', 'target_jobs', 'target_job', 'metier_cible', 'metiers_cibles')
+            _coalesce_row_raw_value(row, 'target_job_keys', 'target_jobs', 'target_job', 'metier_cible', 'metiers_cibles')
         ) if role == 'candidate' else '',
         'notes': _coalesce_row_value(row, 'notes', 'note', 'comment', 'commentaire'),
     }
