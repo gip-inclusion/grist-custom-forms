@@ -69,7 +69,7 @@ CANDIDATE_INVITATION_EMAIL_TEMPLATES = {
             "fr": {
                 "subject": "Des entreprises recrutent actuellement — votre profil nous intéresse",
                 "preheader": "Répondez en 2 à 3 minutes pour voir si votre profil peut être proposé à des employeurs partenaires.",
-                "eyebrow": "Opportunités en cours",
+                "eyebrow": "",
                 "title": "Des employeurs recrutent actuellement",
                 "hook": "Votre profil pourrait correspondre à des besoins déjà exprimés par des entreprises partenaires.",
                 "body": [
@@ -80,7 +80,6 @@ CANDIDATE_INVITATION_EMAIL_TEMPLATES = {
                 "cta_note": "Le questionnaire prend 2 à 3 minutes et vous permet d’être positionné sur des opportunités correspondant à votre profil.",
                 "info_title": "À retenir",
                 "info_items": [
-                    "Réponse rapide : 2 à 3 minutes",
                     "Première étape avant proposition à des employeurs partenaires",
                     "Analyse réalisée dans le cadre d’EURES beta par France Travail et EURES",
                 ],
@@ -134,7 +133,7 @@ CANDIDATE_INVITATION_EMAIL_TEMPLATES = {
             "fr": {
                 "subject": "Des entreprises recrutent toujours – vérifiez si votre profil correspond",
                 "preheader": "Le questionnaire prend 2 à 3 minutes et reste la première étape pour être proposé à des employeurs partenaires.",
-                "eyebrow": "Rappel",
+                "eyebrow": "",
                 "title": "Des employeurs recrutent actuellement",
                 "hook": "Votre profil pourrait toujours correspondre à des besoins en cours.",
                 "body": [

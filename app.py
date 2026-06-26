@@ -2027,7 +2027,7 @@ def _build_eures_candidate_invitation_email(
               <td style="padding:24px 28px 8px;">
                 <p style="margin:0 0 10px;font-size:16px;line-height:1.6;color:#324765;">{escape(hello)}</p>
                 {f'<div style="display:inline-block;padding:6px 10px;border-radius:999px;background:#edf4ff;color:#004494;font-size:12px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;">{escape(eyebrow)}</div>' if eyebrow else ''}
-                {f'<h1 style="margin:14px 0 10px;font-size:28px;line-height:1.12;font-weight:700;color:#16253d;">{escape(title)}</h1>' if title else ''}
+                {f'<h1 style="margin:14px 0 10px;font-size:23px;line-height:1.16;font-weight:700;color:#16253d;">{escape(title)}</h1>' if title else ''}
                 {f'<p style="margin:0 0 16px;font-size:17px;line-height:1.5;color:#183b66;font-weight:700;">{escape(hook)}</p>' if hook else ''}
               </td>
             </tr>
