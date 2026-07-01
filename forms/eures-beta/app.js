@@ -4968,7 +4968,7 @@ function attachCandidateTallyBehavior(lang, t) {
       competences: skillsSummary.join(" | "),
       langues: languageSummary.join(" | "),
       mobilite: Array.isArray(normalized.tally_q02) ? normalized.tally_q02.join(" | ") : (normalized.tally_q02 || ""),
-      disponibilite: [normalized.tally_q09 || "", ...(Array.isArray(normalized.tally_q08) ? normalized.tally_q08 : [])].filter(Boolean).join(" | "),
+      disponibilite: [normalized.tally_q09 || "", ...asArray(normalized.tally_q08)].filter(Boolean).join(" | "),
       contraintes_travail: Array.isArray(normalized.tally_q43) ? normalized.tally_q43.join(" | ") : (normalized.tally_q43 || ""),
       permis_autorisations: permitSummary.summary,
       permis_autorisations_autre: permitSummary.other,
