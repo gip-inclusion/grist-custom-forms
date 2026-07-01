@@ -132,6 +132,19 @@
       color: #1f7a45;
       font-weight: 600;
     }
+    .readonly-banner {
+      display: none;
+      margin-top: 10px;
+      padding: 12px 14px;
+      border: 1px solid #e4c37a;
+      border-radius: 10px;
+      background: #fff8e8;
+      color: #7a4b00;
+      font-weight: 700;
+    }
+    .readonly-banner.visible {
+      display: block;
+    }
 
     .app {
       max-width: 1180px;
@@ -2190,6 +2203,7 @@
         <span class="spacer"></span>
         <button type="button" id="quick-finish-btn">J'ai terminé ma saisie</button>
       </div>
+      <div id="readonly-banner" class="readonly-banner" hidden></div>
       <div id="recover-inline" class="recover-inline">
         <input
           type="email"
@@ -10132,12 +10146,107 @@
     const FORM_ID = 'fagerh';
     const QUESTIONS_PDF_URL = `/forms/${FORM_ID}/questions-pdf`;
     const WIZARD_STATE_KEY = '__wizard_v3_state';
+    const DEFAULT_READ_ONLY_MESSAGE = 'La période de saisie est close. Vous pouvez désormais uniquement consulter vos réponses.';
     let resumeUuid = '';
     let isHydratingFromSnapshot = false;
+    let formAccessState = {
+      readOnly: FORM_ID === 'fagerh',
+      message: DEFAULT_READ_ONLY_MESSAGE,
+    };
 
     function setTopStatusMessage(message) {
       const topStatus = document.getElementById('top-status');
       if (topStatus) topStatus.textContent = message || '';
+    }
+
+    function isReadOnlyMode() {
+      return !!formAccessState.readOnly;
+    }
+
+    function getReadOnlyMessage() {
+      return String(formAccessState.message || DEFAULT_READ_ONLY_MESSAGE).trim() || DEFAULT_READ_ONLY_MESSAGE;
+    }
+
+    function isReadOnlyAllowedButton(button) {
+      if (!button) return false;
+      const allowedIds = new Set([
+        'quick-recover-btn',
+        'quick-recover-submit-btn',
+        'quick-export-csv-btn',
+        'quick-export-xlsx-btn',
+        'quick-export-pdf-btn',
+        'primary-export-questions-pdf-btn',
+        'secondary-export-questions-pdf-btn',
+        'ident-duplicate-recover-btn',
+        'cond-focus-prev',
+        'cond-focus-next',
+      ]);
+      if (allowedIds.has(button.id)) return true;
+      return button.hasAttribute('data-prev')
+        || button.hasAttribute('data-next')
+        || button.hasAttribute('data-jump-step')
+        || button.hasAttribute('data-cond-jump')
+        || button.hasAttribute('data-cond-focus-key');
+    }
+
+    function isReadOnlyAllowedInput(control) {
+      if (!control) return false;
+      const allowedIds = new Set([
+        'quick-recover-email',
+        'quick-recover-finess',
+        'ident-duplicate-email',
+        'ident-duplicate-finess',
+      ]);
+      return allowedIds.has(control.id);
+    }
+
+    function applyReadOnlyMode() {
+      if (!isReadOnlyMode()) return;
+      const banner = document.getElementById('readonly-banner');
+      if (banner) {
+        banner.hidden = false;
+        banner.textContent = getReadOnlyMessage();
+        banner.classList.add('visible');
+      }
+      document.querySelectorAll('input, textarea, select, button').forEach((control) => {
+        if (control instanceof HTMLInputElement && control.type === 'hidden') return;
+        if (control.tagName === 'BUTTON') {
+          if (!isReadOnlyAllowedButton(control)) control.disabled = true;
+          return;
+        }
+        if (isReadOnlyAllowedInput(control)) {
+          control.disabled = false;
+          if ('readOnly' in control) control.readOnly = false;
+          return;
+        }
+        if (control instanceof HTMLSelectElement) {
+          control.disabled = true;
+          return;
+        }
+        if (control instanceof HTMLInputElement && (control.type === 'checkbox' || control.type === 'radio')) {
+          control.disabled = true;
+          return;
+        }
+        if ('readOnly' in control) {
+          control.readOnly = true;
+        } else {
+          control.disabled = true;
+        }
+      });
+    }
+
+    async function loadFormAccessState() {
+      try {
+        const response = await fetch(`/api/forms/${FORM_ID}/access`, {
+          headers: { Accept: 'application/json' },
+        });
+        if (!response.ok) return;
+        const payload = await response.json();
+        formAccessState = {
+          readOnly: !!payload?.read_only,
+          message: String(payload?.message || DEFAULT_READ_ONLY_MESSAGE).trim() || DEFAULT_READ_ONLY_MESSAGE,
+        };
+      } catch {}
     }
 
     function downloadQuestionsPdf(statusMessage) {
@@ -10314,9 +10423,9 @@
     }
 
     async function exportCurrentSaisieAsCsv() {
-      const savePrereq = getSavePrerequisiteStatus();
+      const savePrereq = getExportPrerequisiteStatus();
       if (!savePrereq.ok) throw new Error(savePrereq.message);
-      await saveWizardToServer();
+      if (!isReadOnlyMode()) await saveWizardToServer();
       const payload = buildCurrentExportPayload();
       const csv = buildCsvFromPayload(payload);
       downloadBlob(
@@ -10326,9 +10435,9 @@
     }
 
     async function exportCurrentSaisieAsReadableXlsx() {
-      const savePrereq = getSavePrerequisiteStatus();
+      const savePrereq = getExportPrerequisiteStatus();
       if (!savePrereq.ok) throw new Error(savePrereq.message);
-      await saveWizardToServer();
+      if (!isReadOnlyMode()) await saveWizardToServer();
       const payload = buildCurrentExportPayload();
       const response = await fetch(`/api/forms/${FORM_ID}/export-readable-xlsx`, {
         method: 'POST',
@@ -10351,9 +10460,9 @@
     }
 
     async function exportCurrentSaisieAsPdf() {
-      const savePrereq = getSavePrerequisiteStatus();
+      const savePrereq = getExportPrerequisiteStatus();
       if (!savePrereq.ok) throw new Error(savePrereq.message);
-      await saveWizardToServer();
+      if (!isReadOnlyMode()) await saveWizardToServer();
       const payload = buildCurrentExportPayload();
       const lines = [
         'FAGERH - Export de la saisie',
@@ -10720,6 +10829,9 @@
     }
 
     async function saveWizardToServer() {
+      if (isReadOnlyMode()) {
+        throw new Error(getReadOnlyMessage());
+      }
       const savePrereq = getSavePrerequisiteStatus();
       if (!savePrereq.ok) throw new Error(savePrereq.message);
       const uuid = ensureResumeUuid();
@@ -10781,10 +10893,15 @@
       refreshSummary();
       showStep(Number(snapshot?.runtime?.step || 1) || 1);
       isHydratingFromSnapshot = false;
+      applyReadOnlyMode();
       return true;
     }
 
     document.getElementById('fake-submit').addEventListener('click', async () => {
+      if (isReadOnlyMode()) {
+        setTopStatusMessage(getReadOnlyMessage());
+        return;
+      }
       refreshFinal();
       const finalState = getFinalValidationState();
       try {
@@ -10825,9 +10942,25 @@
       return { ok: true, message: '' };
     }
 
+    function getExportPrerequisiteStatus() {
+      if (!isReadOnlyMode()) return getSavePrerequisiteStatus();
+      if (!resumeUuid) {
+        return {
+          ok: false,
+          message: 'Chargez d’abord un questionnaire existant pour le consulter ou l’exporter.',
+        };
+      }
+      return { ok: true, message: '' };
+    }
+
     function updateQuickSaveAvailability() {
       const saveBtn = document.getElementById('quick-save-btn');
       if (!saveBtn) return;
+      if (isReadOnlyMode()) {
+        saveBtn.disabled = true;
+        saveBtn.title = getReadOnlyMessage();
+        return;
+      }
       const savePrereq = getSavePrerequisiteStatus();
       saveBtn.disabled = !savePrereq.ok;
       saveBtn.title = savePrereq.ok ? '' : savePrereq.message;
@@ -10997,6 +11130,10 @@
       downloadQuestionsPdf('Téléchargement du PDF des questions conditionnelles lancé.');
     });
     document.getElementById('quick-finish-btn')?.addEventListener('click', () => {
+      if (isReadOnlyMode()) {
+        setTopStatusMessage(getReadOnlyMessage());
+        return;
+      }
       showStep(getFinalStepNumber());
       const topStatus = document.getElementById('top-status');
       if (topStatus) topStatus.textContent = "Vous pouvez vérifier puis valider votre saisie.";
@@ -11074,6 +11211,11 @@
     });
 
     async function initializeWizard() {
+      await loadFormAccessState();
+      applyReadOnlyMode();
+      if (isReadOnlyMode()) {
+        setTopStatusMessage(getReadOnlyMessage());
+      }
       startAccessibilityObserver();
       validateIdent();
       applyRhDeacQuestionState();

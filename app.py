@@ -866,6 +866,30 @@ def get_form_config(form_id: str, role: str | None = None) -> dict:
     }
 
 
+def get_form_access_settings(form_id: str) -> dict:
+    """Return public access settings for one form."""
+    form_id_upper = form_id.replace('-', '_').upper()
+    read_only_env = os.environ.get(f'FORM_READONLY_{form_id_upper}')
+    default_read_only = form_id == 'fagerh'
+    if read_only_env is None:
+        read_only = default_read_only
+    else:
+        read_only = str(read_only_env).strip().lower() in {'1', 'true', 'yes', 'on'}
+
+    default_message = (
+        "La période de saisie est close. Vous pouvez désormais uniquement consulter vos réponses."
+    )
+    message = str(
+        os.environ.get(f'FORM_READONLY_MESSAGE_{form_id_upper}')
+        or default_message
+    ).strip() or default_message
+
+    return {
+        'read_only': read_only,
+        'message': message,
+    }
+
+
 def get_eures_stats_config() -> dict | None:
     """Get configuration for the optional EURES monthly stats table."""
     base = get_form_config('eures-beta', 'candidate') or get_form_config('eures-beta')
@@ -5849,6 +5873,21 @@ def issue_public_write_token(form_id: str):
     }), 200
 
 
+@app.route('/api/forms/<form_id>/access', methods=['GET'])
+def get_form_access(form_id: str):
+    """Expose public access state to the frontend."""
+    proxied = maybe_proxy_eures_request(form_id)
+    if proxied:
+        return proxied
+    settings = get_form_access_settings(form_id)
+    return jsonify({
+        'ok': True,
+        'form_id': form_id,
+        'read_only': settings['read_only'],
+        'message': settings['message'],
+    }), 200
+
+
 @app.route('/api/forms/<form_id>/employer-referrals', methods=['POST'])
 def create_eures_employer_referral(form_id: str):
     """Create and send one employer invitation from an existing employer link."""
@@ -5986,6 +6025,12 @@ def save_record(form_id: str):
     proxied = maybe_proxy_eures_request(form_id)
     if proxied:
         return proxied
+    access_settings = get_form_access_settings(form_id)
+    if access_settings['read_only']:
+        return jsonify({
+            'error': access_settings['message'],
+            'read_only': True,
+        }), 403
     data = request.get_json()
     if not data or 'fields' not in data:
         return jsonify({'error': 'Invalid request body'}), 400
