@@ -363,6 +363,12 @@ EURES_WORK_CONDITION_CANONICAL_MAP = {
     'ich weiss es noch nicht': 'inconnu',
     'ich weiß es noch nicht': 'inconnu',
 }
+EURES_WORK_CONDITION_PARTIAL_COMPATIBILITY = {
+    'travail_poste': {'matin_decale', 'soir_nuit', 'horaires_variables'},
+    'matin_decale': {'travail_poste', 'horaires_variables'},
+    'soir_nuit': {'travail_poste', 'horaires_variables'},
+    'horaires_variables': {'travail_poste', 'matin_decale', 'soir_nuit'},
+}
 EURES_PERMIT_CANONICAL_MAP = {
     'permis b': 'permis_b',
     'category b driving licence': 'permis_b',
@@ -3677,6 +3683,13 @@ def eures_score_work_conditions(expected: str, actual: str) -> tuple[int, str]:
     if expected_set and overlap == expected_set:
         return 3, 'conditions: compatibles'
     if overlap:
+        return 1, 'conditions: compatibilite partielle'
+    partial_overlap = {
+        expected_condition
+        for expected_condition in expected_set
+        if EURES_WORK_CONDITION_PARTIAL_COMPATIBILITY.get(expected_condition, set()) & actual_set
+    }
+    if partial_overlap:
         return 1, 'conditions: compatibilite partielle'
     return 0, 'conditions: incompatibilite probable'
 
