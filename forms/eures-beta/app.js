@@ -4389,6 +4389,16 @@ function summarizePermitSelections(enabledValue, selectionsValue, otherValue) {
   };
 }
 
+function asArray(value) {
+  if (Array.isArray(value)) {
+    return value.filter(Boolean);
+  }
+  if (value === undefined || value === null || value === "") {
+    return [];
+  }
+  return [value];
+}
+
 function toggleEmployerConditionBlocks(form) {
   const selectedSectors = Array.from(form.querySelectorAll('input[name="tally_q01"]:checked')).map((input) => input.value);
   const employerPermits = (form.querySelector('input[name="tally_q22"]:checked') || {}).value === "yes";
@@ -4601,7 +4611,10 @@ function attachEmployerTallyBehavior(lang, t) {
     const rawAnswers = humanizeEmployerRawAnswers(normalized);
     const permitSummary = summarizePermitSelections(normalized.tally_q22, normalized.tally_q23, normalized.tally_q23_extra);
     const languageSummary = employerTallyMeta.languageRows
-      .map((row) => `${row.label}: ${Array.isArray(normalized[row.field]) ? normalized[row.field].join(", ") : ""}`)
+      .map((row) => {
+        const selections = asArray(normalized[row.field]);
+        return `${row.label}: ${selections.join(", ")}`;
+      })
       .filter((line) => !line.endsWith(": "));
     const prioritySummary = [
       normalized.tally_q09 || [],
@@ -4922,11 +4935,14 @@ function attachCandidateTallyBehavior(lang, t) {
     const permitSummary = summarizePermitSelections(normalized.tally_q41, normalized.tally_q42, normalized.tally_q42_extra);
 
     const targetCountries = candidateTallyMeta.countryRows
-      .filter((row) => Array.isArray(normalized[row.field]) && normalized[row.field].includes("Je veux y travailler"))
+      .filter((row) => asArray(normalized[row.field]).includes("Je veux y travailler"))
       .map((row) => row.label);
 
     const languageSummary = candidateTallyMeta.languageRows
-      .map((row) => `${row.label}: ${Array.isArray(normalized[row.field]) ? normalized[row.field].join(", ") : ""}`)
+      .map((row) => {
+        const selections = asArray(normalized[row.field]);
+        return `${row.label}: ${selections.join(", ")}`;
+      })
       .filter((line) => !line.endsWith(": "));
 
     const skillsSummary = [
