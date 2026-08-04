@@ -178,6 +178,105 @@
       margin-top: 1rem;
     }
 
+    #matching-list {
+      gap: 0.65rem;
+    }
+
+    .matching-compact-card {
+      border-radius: 16px;
+      overflow: hidden;
+    }
+
+    .matching-compact-card > summary {
+      list-style: none;
+      cursor: pointer;
+    }
+
+    .matching-compact-card > summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .matching-row {
+      display: grid;
+      grid-template-columns: minmax(170px, 1.2fr) minmax(170px, 1.2fr) minmax(180px, 1.4fr) 84px minmax(160px, 1fr) auto;
+      gap: 0.7rem;
+      align-items: center;
+      padding: 0.85rem 1rem;
+    }
+
+    .matching-row-cell {
+      min-width: 0;
+    }
+
+    .matching-row-label {
+      color: var(--muted);
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .matching-row-main {
+      margin-top: 0.16rem;
+      color: var(--text);
+      font-weight: 800;
+      line-height: 1.25;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .matching-row-sub {
+      margin-top: 0.12rem;
+      color: var(--muted);
+      font-size: 0.84rem;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .matching-row-score {
+      justify-self: center;
+      text-align: center;
+      color: var(--accent-strong);
+      font-size: 1.55rem;
+      font-weight: 900;
+      line-height: 1;
+    }
+
+    .matching-row-score span {
+      display: block;
+      margin-top: 0.15rem;
+      color: var(--muted);
+      font-size: 0.68rem;
+      font-weight: 700;
+    }
+
+    .matching-row-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+      min-width: 0;
+    }
+
+    .matching-row-toggle {
+      color: var(--accent-strong);
+      font-size: 0.84rem;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .matching-compact-card[open] .matching-row-toggle::after {
+      content: " ▲";
+    }
+
+    .matching-compact-card:not([open]) .matching-row-toggle::after {
+      content: " ▼";
+    }
+
+    .matching-compact-card .matching-body {
+      border-top: 1px solid rgba(28, 45, 72, 0.08);
+    }
+
     .cockpit-grid {
       display: grid;
       grid-template-columns: repeat(12, minmax(0, 1fr));
@@ -1164,6 +1263,15 @@
       .compact-response-actions {
         grid-template-columns: 1fr;
       }
+
+      .matching-row {
+        grid-template-columns: minmax(180px, 1.2fr) minmax(180px, 1.2fr) 84px auto;
+      }
+
+      .matching-row-cell:nth-child(3),
+      .matching-row-tags {
+        grid-column: 1 / -1;
+      }
     }
 
     @media (max-width: 760px) {
@@ -1192,6 +1300,19 @@
 
       .csv-actions {
         grid-template-columns: 1fr;
+      }
+
+      .matching-row {
+        grid-template-columns: 1fr auto;
+      }
+
+      .matching-row-cell,
+      .matching-row-tags {
+        grid-column: 1 / -1;
+      }
+
+      .matching-row-score {
+        justify-self: start;
       }
 
       .detail-row {
@@ -2628,6 +2749,11 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,</pre>
             ? `Matching créé et envoyé : score ${payload.score ?? 0}, statut ${payload.statut || "-"}.`
             : `Matching créé : score ${payload.score ?? 0}, statut ${payload.statut || "-"}.`
         );
+        document.getElementById("manual-match-candidate").value = "";
+        document.getElementById("manual-match-employer").value = "";
+        document.getElementById("manual-match-employer-comment").value = "";
+        document.getElementById("manual-match-candidate-comment").value = "";
+        renderManualMatchingPreview();
         await loadMatchings();
         await loadTasks();
         await loadCockpit();
@@ -3630,34 +3756,60 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,</pre>
         const workflowMeta = `<div class="decision-meta">Workflow : <strong>${esc(workflowStatusLabel(row.workflow_status))}</strong><br>Maj : ${esc(row.workflow_status_updated_at || "-")}<br>Par : ${esc(row.workflow_status_updated_by || "-")}</div>`;
 
         return `
-          <article class="matching-card" data-record-id="${esc(row.record_id)}">
-            <div class="matching-summary">
-              <div>
-                <h2>${esc(row.employeur?.poste || "Poste non renseigné")} · ${esc(row.candidat?.nom || "Candidat non renseigné")}</h2>
-                <p>${esc(row.employeur?.employeur || "Entreprise non renseignée")} · ${esc(row.employeur?.pays || "Lieu non renseigné")}</p>
-                <div class="summary-tags">
+          <details class="matching-card matching-compact-card" data-record-id="${esc(row.record_id)}">
+            <summary>
+              <div class="matching-row">
+                <div class="matching-row-cell">
+                  <div class="matching-row-label">Candidat</div>
+                  <div class="matching-row-main">${esc(row.candidat?.nom || "Candidat non renseigné")}</div>
+                  <div class="matching-row-sub">${esc(row.candidat?.email || row.candidat_id || "-")}</div>
+                </div>
+                <div class="matching-row-cell">
+                  <div class="matching-row-label">Employeur</div>
+                  <div class="matching-row-main">${esc(row.employeur?.employeur || "Entreprise non renseignée")}</div>
+                  <div class="matching-row-sub">${esc(row.employeur?.pays || "Lieu non renseigné")}</div>
+                </div>
+                <div class="matching-row-cell">
+                  <div class="matching-row-label">Poste</div>
+                  <div class="matching-row-main">${esc(row.employeur?.poste || "Poste non renseigné")}</div>
+                  <div class="matching-row-sub">${esc(row.employeur?.date_debut ? `Début : ${row.employeur.date_debut}` : row.besoin_id || "-")}</div>
+                </div>
+                <div class="matching-row-score">${esc(row.score)}<span>/ 100</span></div>
+                <div class="matching-row-tags">
                   <span class="pill">Workflow : ${esc(workflowStatusLabel(row.workflow_status))}</span>
-                  <span class="pill ${esc(row.admin_status)}">Décision admin : ${esc(adminStatusLabel(row.admin_status))}</span>
-                  <span class="pill ${row.scoring_status === "auto_envoyable" ? "auto" : "pending"}">Statut scoring : ${esc(scoreStatusLabel(row))}</span>
-                  <span class="pill ${row.employer_response === "contact" ? "response-yes" : row.employer_response === "not_contact" ? "response-no" : ""}">Employeur : ${esc(employerResponseLabel(row.employer_response))}</span>
-                  <span class="pill">besoin_id : ${esc(row.besoin_id)}</span>
-                  <span class="pill">candidat_id : ${esc(row.candidat_id)}</span>
+                  <span class="pill ${esc(row.admin_status)}">${esc(adminStatusLabel(row.admin_status))}</span>
+                  <span class="pill ${row.scoring_status === "auto_envoyable" ? "auto" : "pending"}">${esc(scoreStatusLabel(row))}</span>
                 </div>
+                <div class="matching-row-toggle">Détails</div>
               </div>
-
-              <div class="summary-score">
-                <div class="score-box">
-                  <strong>${esc(row.score)}</strong>
-                  <span>score global / 100</span>
-                </div>
-                <div class="decision-actions">
-                  <button class="btn-accept" type="button" data-action="accepted">Accepter</button>
-                  <button class="btn-refuse" type="button" data-action="refused">Refuser</button>
-                </div>
-              </div>
-            </div>
-
+            </summary>
             <div class="matching-body">
+              <div class="matching-summary">
+                <div>
+                  <h2>${esc(row.employeur?.poste || "Poste non renseigné")} · ${esc(row.candidat?.nom || "Candidat non renseigné")}</h2>
+                  <p>${esc(row.employeur?.employeur || "Entreprise non renseignée")} · ${esc(row.employeur?.pays || "Lieu non renseigné")}</p>
+                  <div class="summary-tags">
+                    <span class="pill">Workflow : ${esc(workflowStatusLabel(row.workflow_status))}</span>
+                    <span class="pill ${esc(row.admin_status)}">Décision admin : ${esc(adminStatusLabel(row.admin_status))}</span>
+                    <span class="pill ${row.scoring_status === "auto_envoyable" ? "auto" : "pending"}">Statut scoring : ${esc(scoreStatusLabel(row))}</span>
+                    <span class="pill ${row.employer_response === "contact" ? "response-yes" : row.employer_response === "not_contact" ? "response-no" : ""}">Employeur : ${esc(employerResponseLabel(row.employer_response))}</span>
+                    <span class="pill">besoin_id : ${esc(row.besoin_id)}</span>
+                    <span class="pill">candidat_id : ${esc(row.candidat_id)}</span>
+                  </div>
+                </div>
+
+                <div class="summary-score">
+                  <div class="score-box">
+                    <strong>${esc(row.score)}</strong>
+                    <span>score global / 100</span>
+                  </div>
+                  <div class="decision-actions">
+                    <button class="btn-accept" type="button" data-action="accepted">Accepter</button>
+                    <button class="btn-refuse" type="button" data-action="refused">Refuser</button>
+                  </div>
+                </div>
+              </div>
+
               <div class="compare-grid">
                 <section class="compare-card">
                   <h3>Candidat</h3>
@@ -3735,7 +3887,7 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,</pre>
                 ${employerMeta}
               </section>
             </div>
-          </article>
+          </details>
         `;
       }).join("");
 
