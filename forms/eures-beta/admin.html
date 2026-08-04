@@ -1940,16 +1940,16 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,</pre>
     }
 
     function scoreStatusLabel(row) {
-      if (row.scoring_status === "auto_envoyable") return "auto";
-      if (row.scoring_status === "a_valider") return "à valider";
-      if (row.scoring_status === "a_ecarter") return "à écarter";
+      if (row.scoring_status === "auto_envoyable") return "score fort initial";
+      if (row.scoring_status === "a_valider") return "proposé à validation";
+      if (row.scoring_status === "a_ecarter") return "faible score initial";
       return row.scoring_status || "inconnu";
     }
 
     function adminStatusLabel(status) {
       if (status === "accepted") return "accepté";
       if (status === "refused") return "refusé";
-      return "pending";
+      return "à décider";
     }
 
     function employerResponseLabel(status) {
@@ -3778,7 +3778,6 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,</pre>
                 <div class="matching-row-tags">
                   <span class="pill">Workflow : ${esc(workflowStatusLabel(row.workflow_status))}</span>
                   <span class="pill ${esc(row.admin_status)}">${esc(adminStatusLabel(row.admin_status))}</span>
-                  <span class="pill ${row.scoring_status === "auto_envoyable" ? "auto" : "pending"}">${esc(scoreStatusLabel(row))}</span>
                 </div>
                 <div class="matching-row-toggle">Détails</div>
               </div>
@@ -3791,7 +3790,7 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,</pre>
                   <div class="summary-tags">
                     <span class="pill">Workflow : ${esc(workflowStatusLabel(row.workflow_status))}</span>
                     <span class="pill ${esc(row.admin_status)}">Décision admin : ${esc(adminStatusLabel(row.admin_status))}</span>
-                    <span class="pill ${row.scoring_status === "auto_envoyable" ? "auto" : "pending"}">Statut scoring : ${esc(scoreStatusLabel(row))}</span>
+                    <span class="pill">Scoring initial : ${esc(scoreStatusLabel(row))}</span>
                     <span class="pill ${row.employer_response === "contact" ? "response-yes" : row.employer_response === "not_contact" ? "response-no" : ""}">Employeur : ${esc(employerResponseLabel(row.employer_response))}</span>
                     <span class="pill">besoin_id : ${esc(row.besoin_id)}</span>
                     <span class="pill">candidat_id : ${esc(row.candidat_id)}</span>
