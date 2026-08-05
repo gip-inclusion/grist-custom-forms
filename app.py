@@ -106,6 +106,9 @@ EURES_MATCHING_ADMIN_FIELDS = {
     'employer_response',
     'employer_response_at',
     'employer_response_source',
+    'employer_whatsapp_consent',
+    'employer_whatsapp_phone',
+    'employer_whatsapp_confirmed_at',
     'mise_en_relation_at',
     'mise_en_relation_by',
     'embauche_confirmee_at',
@@ -4840,6 +4843,11 @@ def _build_eures_feedback_url(record_id: int, response: str) -> str:
     return f"{get_public_app_base_url()}/eures-beta/matching-feedback?token={token}"
 
 
+def _normalize_phone(value) -> str:
+    """Normalize one phone value for display/storage without inventing formatting."""
+    return re.sub(r'\s+', ' ', str(value or '').strip())
+
+
 def _matching_outgoing_comment(row: dict, recipient: str) -> str:
     """Return the optional admin comment to inject into outgoing matching emails."""
     if not isinstance(row, dict):
@@ -4912,7 +4920,8 @@ def build_brevo_matching_email(row: dict) -> tuple[str, str, str, str]:
     )
     signature_name = get_eures_mail_signature_name()
     privacy_url = get_eures_privacy_url('fr')
-    contact_yes_url = _build_eures_feedback_url(int(row.get('record_id') or 0), 'contact')
+    contact_whatsapp_url = _build_eures_feedback_url(int(row.get('record_id') or 0), 'contact_whatsapp')
+    contact_no_whatsapp_url = _build_eures_feedback_url(int(row.get('record_id') or 0), 'contact_no_whatsapp')
     contact_no_url = _build_eures_feedback_url(int(row.get('record_id') or 0), 'not_contact')
     body_text = (
         f"Bonjour,\n\n"
@@ -4936,7 +4945,8 @@ def build_brevo_matching_email(row: dict) -> tuple[str, str, str, str]:
         f"{reasons_text}\n\n"
         f"{comment_block_text}"
         "Actions rapides\n"
-        f"- Je vais le contacter : {contact_yes_url}\n"
+        f"- J’accepte la mise en relation via WhatsApp : {contact_whatsapp_url}\n"
+        f"- Je suis intéressé mais sans WhatsApp : {contact_no_whatsapp_url}\n"
         f"- Je ne vais pas le contacter : {contact_no_url}\n\n"
         "Vous pouvez aussi répondre directement à cet email afin que nous poursuivions la mise en relation.\n\n"
         f"Informations sur vos données : {privacy_url}\n\n"
@@ -5022,12 +5032,16 @@ def build_brevo_matching_email(row: dict) -> tuple[str, str, str, str]:
                 <div style="background:#103a2b;border-radius:14px;padding:22px;color:#ffffff;">
                   <p style="margin:0 0 10px;font-size:17px;line-height:1.6;"><strong>Suite proposée</strong></p>
                   <p style="margin:0;font-size:15px;line-height:1.7;">
-                    Si ce profil retient votre attention, vous pouvez le contacter directement ou nous répondre par email.
+                    Si ce profil retient votre attention, vous pouvez accepter une mise en relation avec ou sans WhatsApp.
+                    L’option WhatsApp vous demandera de vérifier le numéro à utiliser pour ce matching.
                   </p>
                   <table role="presentation" cellspacing="0" cellpadding="0" style="margin-top:18px;">
                     <tr>
                       <td style="padding:0 12px 12px 0;">
-                        <a href="{escape(contact_yes_url)}" style="display:inline-block;padding:12px 18px;border-radius:999px;background:#f2c04c;color:#173a2a;text-decoration:none;font-size:14px;font-weight:700;">Je vais le contacter</a>
+                        <a href="{escape(contact_whatsapp_url)}" style="display:inline-block;padding:12px 18px;border-radius:999px;background:#f2c04c;color:#173a2a;text-decoration:none;font-size:14px;font-weight:700;">J’accepte WhatsApp</a>
+                      </td>
+                      <td style="padding:0 12px 12px 0;">
+                        <a href="{escape(contact_no_whatsapp_url)}" style="display:inline-block;padding:12px 18px;border-radius:999px;background:#dbe9df;color:#173a2a;text-decoration:none;font-size:14px;font-weight:700;">Intéressé sans WhatsApp</a>
                       </td>
                       <td style="padding:0 0 12px 0;">
                         <a href="{escape(contact_no_url)}" style="display:inline-block;padding:12px 18px;border-radius:999px;background:#ffffff;color:#173a2a;text-decoration:none;font-size:14px;font-weight:700;">Je ne vais pas le contacter</a>
@@ -5412,6 +5426,9 @@ def list_eures_admin_matchings(status: str = 'all', include_candidate_cv: bool =
             'sent_to_employer_by': fields.get('sent_to_employer_by', ''),
             'employer_response': fields.get('employer_response', ''),
             'employer_response_at': fields.get('employer_response_at', ''),
+            'employer_whatsapp_consent': fields.get('employer_whatsapp_consent', ''),
+            'employer_whatsapp_phone': fields.get('employer_whatsapp_phone', ''),
+            'employer_whatsapp_confirmed_at': fields.get('employer_whatsapp_confirmed_at', ''),
             'mise_en_relation_at': fields.get('mise_en_relation_at', ''),
             'mise_en_relation_by': fields.get('mise_en_relation_by', ''),
             'embauche_confirmee_at': fields.get('embauche_confirmee_at', ''),
@@ -5435,6 +5452,7 @@ def list_eures_admin_matchings(status: str = 'all', include_candidate_cv: bool =
                 'employeur': besoin.get('employeur', ''),
                 'contact': besoin.get('contact', ''),
                 'email': _resolve_employer_recipient(besoin),
+                'telephone': besoin.get('telephone', ''),
                 'pays': besoin.get('pays', ''),
                 'poste': besoin.get('poste', ''),
                 'intitules_poste': employeur_job_titles,
@@ -7866,12 +7884,95 @@ def admin_eures_matching_workflow(form_id: str, record_id: int):
         return jsonify({'error': str(e)}), 500
 
 
-@app.route('/eures-beta/matching-feedback', methods=['GET'])
+def _find_eures_employer_fields_for_matching(matching_fields: dict, headers: dict) -> dict:
+    """Return employer need fields associated with one matching, when available."""
+    besoin_id = str((matching_fields or {}).get('besoin_id') or '').strip()
+    if not besoin_id:
+        return {}
+    employer_config = _get_eures_role_table_config('employer')
+    if not employer_config:
+        return {}
+    employer_headers = _eures_admin_headers(employer_config)
+    for rec in fetch_table_records(employer_config['doc_id'], EURES_BESOINS_TABLE, employer_headers):
+        fields = rec.get('fields', {}) if isinstance(rec, dict) else {}
+        if str(fields.get('id_tally') or fields.get('uuid') or '').strip() == besoin_id:
+            return fields
+    return {}
+
+
+def _render_eures_whatsapp_phone_confirmation(token: str, record_id: int, matching_fields: dict, employer_fields: dict) -> Response:
+    """Render the employer phone confirmation page before recording WhatsApp consent."""
+    current_phone = _normalize_phone(
+        (matching_fields or {}).get('employer_whatsapp_phone')
+        or (employer_fields or {}).get('telephone')
+    )
+    employer_name = str((employer_fields or {}).get('employeur') or 'votre structure')
+    contact_name = str((employer_fields or {}).get('contact') or '').strip()
+    poste = str((employer_fields or {}).get('poste') or 'le poste proposé')
+    phone_required_note = (
+        "Le numéro est prérempli avec celui déjà renseigné dans le questionnaire employeur. Vérifiez-le avant de confirmer."
+        if current_phone
+        else "Aucun numéro exploitable n’est encore renseigné. Merci d’indiquer le numéro WhatsApp à utiliser pour ce matching."
+    )
+    html = f"""<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Match Europe - Confirmation WhatsApp</title>
+  </head>
+  <body style="margin:0;background:#f4efe6;font-family:Georgia,'Times New Roman',serif;color:#1f1f1f;">
+    <div style="max-width:760px;margin:32px auto;padding:0 16px;">
+      <div style="background:#fffdf9;border:1px solid #e7dcc7;border-radius:18px;overflow:hidden;">
+        <div style="padding:28px 32px;background:linear-gradient(135deg,#103a2b 0%,#1f5a45 100%);color:#fff;">
+          <div style="font-size:13px;letter-spacing:1.4px;text-transform:uppercase;opacity:0.82;">Match Europe</div>
+          <h1 style="margin:10px 0 0;font-size:30px;line-height:1.2;">Confirmer la mise en relation WhatsApp</h1>
+        </div>
+        <form method="post" style="padding:28px 32px;">
+          <input type="hidden" name="token" value="{escape(token)}">
+          <p style="margin:0 0 16px;font-size:17px;line-height:1.7;">
+            Vous acceptez d’être mis en relation via WhatsApp pour le matching concernant
+            <strong>{escape(poste)}</strong> chez <strong>{escape(employer_name)}</strong>.
+          </p>
+          {f'<p style="margin:0 0 16px;font-size:15px;line-height:1.7;">Contact : <strong>{escape(contact_name)}</strong></p>' if contact_name else ''}
+          <label style="display:block;margin:22px 0 8px;font-size:14px;font-weight:700;color:#103a2b;" for="employer_phone">
+            Numéro WhatsApp à utiliser
+          </label>
+          <input
+            id="employer_phone"
+            name="employer_phone"
+            type="tel"
+            required
+            value="{escape(current_phone)}"
+            placeholder="+33 6 00 00 00 00"
+            style="box-sizing:border-box;width:100%;padding:14px 16px;border:1px solid #cdbf9f;border-radius:12px;background:#fff;font-size:17px;color:#1f1f1f;"
+          >
+          <p style="margin:10px 0 22px;font-size:14px;line-height:1.6;color:#6b6256;">
+            {escape(phone_required_note)}
+          </p>
+          <div style="background:#f8f4ec;border:1px solid #eadfcb;border-radius:14px;padding:16px 18px;margin:0 0 22px;">
+            <p style="margin:0;font-size:14px;line-height:1.6;color:#4b4236;">
+              En confirmant, votre numéro pourra être visible par le candidat dans le groupe WhatsApp créé pour cette mise en relation.
+              Si vous préférez ne pas utiliser WhatsApp, revenez à l’email reçu et choisissez l’option de refus.
+            </p>
+          </div>
+          <button type="submit" style="display:inline-block;padding:13px 20px;border:0;border-radius:999px;background:#f2c04c;color:#173a2a;font-size:15px;font-weight:700;cursor:pointer;">
+            Confirmer WhatsApp
+          </button>
+        </form>
+      </div>
+    </div>
+  </body>
+</html>"""
+    return Response(html, status=200, mimetype='text/html')
+
+
+@app.route('/eures-beta/matching-feedback', methods=['GET', 'POST'])
 def eures_matching_feedback():
     """Record employer feedback from email CTA links."""
     if should_proxy_eures_public_request('eures-beta'):
         return proxy_eures_public_request(request.path)
-    token = str(request.args.get('token') or '').strip()
+    token = str((request.form.get('token') if request.method == 'POST' else request.args.get('token')) or '').strip()
     if not token:
         return Response('Lien invalide : token manquant.', status=400, mimetype='text/plain')
 
@@ -7885,7 +7986,9 @@ def eures_matching_feedback():
 
     record_id = int(payload.get('record_id') or 0)
     response_code = str(payload.get('response') or '').strip().lower()
-    if not record_id or response_code not in {'contact', 'not_contact'}:
+    if response_code == 'contact':
+        response_code = 'contact_whatsapp'
+    if not record_id or response_code not in {'contact_whatsapp', 'contact_no_whatsapp', 'not_contact'}:
         return Response('Lien invalide : données incomplètes.', status=400, mimetype='text/plain')
 
     config = get_eures_matching_config()
@@ -7893,11 +7996,44 @@ def eures_matching_feedback():
         return Response('Configuration EURES incomplète.', status=500, mimetype='text/plain')
 
     headers = _eures_admin_headers(config)
-    response_label = 'je vais le contacter' if response_code == 'contact' else 'je ne vais pas le contacter'
+    response_label = {
+        'contact_whatsapp': 'j’accepte la mise en relation via WhatsApp',
+        'contact_no_whatsapp': 'je suis intéressé mais sans WhatsApp',
+        'not_contact': 'je ne vais pas le contacter',
+    }[response_code]
+
+    if response_code == 'contact_whatsapp' and request.method == 'GET':
+        try:
+            matching_record = fetch_record_by_id(config['doc_id'], EURES_MATCHINGS_TABLE, record_id, headers)
+            matching_fields = matching_record.get('fields', {}) if isinstance(matching_record, dict) else {}
+            employer_fields = _find_eures_employer_fields_for_matching(matching_fields, headers)
+            return _render_eures_whatsapp_phone_confirmation(token, record_id, matching_fields, employer_fields)
+        except Exception as e:
+            app.logger.exception('EURES employer WhatsApp confirmation page failed')
+            return Response(f'Erreur lors de la préparation de la confirmation WhatsApp : {e}', status=500, mimetype='text/plain')
+
     update_fields = _matching_workflow_update_fields(
-        'accepte_employeur' if response_code == 'contact' else 'refuse_employeur',
+        'accepte_employeur' if response_code in {'contact_whatsapp', 'contact_no_whatsapp'} else 'refuse_employeur',
         'employer_email_link',
     )
+    if response_code == 'contact_whatsapp':
+        employer_phone = _normalize_phone(request.form.get('employer_phone'))
+        if not employer_phone:
+            return Response('Le numéro WhatsApp est obligatoire pour confirmer cette option.', status=400, mimetype='text/plain')
+        now = datetime.now(timezone.utc).isoformat()
+        update_fields.update({
+            'employer_whatsapp_consent': 'yes',
+            'employer_whatsapp_phone': employer_phone,
+            'employer_whatsapp_confirmed_at': now,
+        })
+    elif response_code == 'contact_no_whatsapp':
+        update_fields.update({
+            'employer_whatsapp_consent': 'no',
+        })
+    else:
+        update_fields.update({
+            'employer_whatsapp_consent': 'no',
+        })
 
     try:
         update_matching_record_by_id(config['doc_id'], record_id, update_fields, headers)

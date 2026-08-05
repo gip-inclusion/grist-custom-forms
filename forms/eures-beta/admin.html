@@ -3830,6 +3830,8 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,</pre>
                   <dl class="detail-list">
                     <div class="detail-row"><dt>Entreprise</dt><dd>${esc(row.employeur?.employeur || "-")}</dd></div>
                     <div class="detail-row"><dt>Contact</dt><dd>${esc(row.employeur?.contact || "-")}</dd></div>
+                    <div class="detail-row"><dt>Téléphone employeur</dt><dd>${esc(row.employer_whatsapp_phone || row.employeur?.telephone || "-")}</dd></div>
+                    <div class="detail-row"><dt>Accord WhatsApp employeur</dt><dd>${esc(row.employer_whatsapp_consent === "yes" ? `Oui${row.employer_whatsapp_confirmed_at ? ` · confirmé le ${row.employer_whatsapp_confirmed_at}` : ""}` : row.employer_whatsapp_consent === "no" ? "Non" : "Non renseigné")}</dd></div>
                     <div class="detail-row"><dt>Pays / lieu</dt><dd>${esc(row.employeur?.pays || "-")}</dd></div>
                     <div class="detail-row"><dt>Poste</dt><dd>${esc(row.employeur?.poste || "-")}</dd></div>
                     <div class="detail-row"><dt>Intitulés proposés</dt><dd>${esc(row.employeur?.intitules_poste || "-")}</dd></div>

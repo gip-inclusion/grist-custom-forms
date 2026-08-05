@@ -100,8 +100,95 @@ class BrevoHealthTest(unittest.TestCase):
 
         self.assertEqual(recipient, 'julie.barthelemy@arhis.lu')
         self.assertIn('Nettoyage et entretien', subject)
-        self.assertIn('Je vais le contacter', text_body)
+        self.assertIn('J’accepte la mise en relation via WhatsApp', text_body)
+        self.assertIn('Je suis intéressé mais sans WhatsApp', text_body)
+        self.assertIn('J’accepte WhatsApp', html_body)
+        self.assertIn('Intéressé sans WhatsApp', html_body)
         self.assertIn('julie.barthelemy@arhis.lu', recipient)
+
+    @patch.object(app, 'should_proxy_eures_public_request', return_value=False)
+    @patch.object(app, 'get_eures_matching_config')
+    @patch.object(app, 'fetch_record_by_id')
+    @patch.object(app, '_find_eures_employer_fields_for_matching')
+    def test_matching_feedback_contact_first_confirms_employer_phone(
+        self,
+        find_employer_fields,
+        fetch_record_by_id,
+        get_eures_matching_config,
+        _should_proxy,
+    ):
+        get_eures_matching_config.return_value = {'doc_id': 'doc', 'table_id': 'Matchings'}
+        fetch_record_by_id.return_value = {'id': 57, 'fields': {'besoin_id': 'EMP-1'}}
+        find_employer_fields.return_value = {
+            'employeur': 'ARHIS',
+            'contact': 'Julie',
+            'poste': 'Nettoyage',
+            'telephone': '+352 123456',
+        }
+        token = app.get_eures_email_action_serializer().dumps({
+            'record_id': 57,
+            'response': 'contact_whatsapp',
+        })
+
+        response = self.client.get(f'/eures-beta/matching-feedback?token={token}')
+
+        self.assertEqual(response.status_code, 200)
+        body = response.get_data(as_text=True)
+        self.assertIn('Confirmer la mise en relation WhatsApp', body)
+        self.assertIn('name="employer_phone"', body)
+        self.assertIn('+352 123456', body)
+
+    @patch.object(app, 'should_proxy_eures_public_request', return_value=False)
+    @patch.object(app, 'get_eures_matching_config')
+    @patch.object(app, 'update_matching_record_by_id')
+    def test_matching_feedback_contact_post_records_whatsapp_phone(
+        self,
+        update_matching_record_by_id,
+        get_eures_matching_config,
+        _should_proxy,
+    ):
+        get_eures_matching_config.return_value = {'doc_id': 'doc', 'table_id': 'Matchings'}
+        token = app.get_eures_email_action_serializer().dumps({
+            'record_id': 57,
+            'response': 'contact_whatsapp',
+        })
+
+        response = self.client.post('/eures-beta/matching-feedback', data={
+            'token': token,
+            'employer_phone': ' +352 123456 ',
+        })
+
+        self.assertEqual(response.status_code, 200)
+        update_matching_record_by_id.assert_called_once()
+        fields = update_matching_record_by_id.call_args.args[2]
+        self.assertEqual(fields['employer_response'], 'contact')
+        self.assertEqual(fields['employer_whatsapp_consent'], 'yes')
+        self.assertEqual(fields['employer_whatsapp_phone'], '+352 123456')
+        self.assertIn('employer_whatsapp_confirmed_at', fields)
+
+    @patch.object(app, 'should_proxy_eures_public_request', return_value=False)
+    @patch.object(app, 'get_eures_matching_config')
+    @patch.object(app, 'update_matching_record_by_id')
+    def test_matching_feedback_contact_without_whatsapp_records_no_whatsapp(
+        self,
+        update_matching_record_by_id,
+        get_eures_matching_config,
+        _should_proxy,
+    ):
+        get_eures_matching_config.return_value = {'doc_id': 'doc', 'table_id': 'Matchings'}
+        token = app.get_eures_email_action_serializer().dumps({
+            'record_id': 57,
+            'response': 'contact_no_whatsapp',
+        })
+
+        response = self.client.get(f'/eures-beta/matching-feedback?token={token}')
+
+        self.assertEqual(response.status_code, 200)
+        update_matching_record_by_id.assert_called_once()
+        fields = update_matching_record_by_id.call_args.args[2]
+        self.assertEqual(fields['employer_response'], 'contact')
+        self.assertEqual(fields['employer_whatsapp_consent'], 'no')
+        self.assertNotIn('employer_whatsapp_phone', fields)
 
     def test_build_candidate_matching_notification_email_mentions_company_and_spam_check(self):
         row = {
