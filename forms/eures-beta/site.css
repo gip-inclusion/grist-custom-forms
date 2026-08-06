@@ -142,6 +142,11 @@ textarea {
     width: min(210px, 60vw);
     max-width: 100%;
   }
+  .editorial-subtitle {
+    font-size: 1.08rem;
+    max-width: none;
+  }
+
 }
 
 .nav {
@@ -1088,8 +1093,123 @@ textarea {
   color: var(--accent-strong);
 }
 
+
+
+/* Public editorial pages: project and journal */
+.editorial-card {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.editorial-subtitle {
+  color: var(--accent-strong);
+  font-weight: 700;
+  max-width: 32rem;
+  line-height: 1.28;
+}
+
+.editorial-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.summary-panel {
+  display: grid;
+  gap: 1rem;
+}
+
+.summary-grid {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.summary-link {
+  display: flex;
+  align-items: center;
+  min-height: 52px;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  text-decoration: none;
+  background: rgba(255, 255, 255, 0.72);
+  transition: transform 120ms ease, border-color 120ms ease, background 120ms ease;
+}
+
+.summary-link:hover,
+.summary-link:focus-visible {
+  transform: translateY(-1px);
+  border-color: rgba(0, 68, 148, 0.22);
+  background: var(--accent-soft);
+}
+
+.steps-grid {
+  display: grid;
+  gap: 0.9rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: 1rem;
+}
+
+.step-card {
+  display: grid;
+  gap: 0.5rem;
+  padding: 1rem;
+  border-radius: 20px;
+  border: 1px solid rgba(0, 68, 148, 0.10);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(244, 248, 255, 0.94));
+}
+
+.step-card strong {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #fff;
+}
+
+.journal-list {
+  display: grid;
+  gap: 1rem;
+}
+
+.closing-panel h2,
+.journal-entry h2 {
+  margin: 0.6rem 0 0.8rem;
+}
+
+.journal-block p {
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.journal-entry {
+  border-left: 6px solid var(--accent);
+}
+
+.journal-date {
+  color: var(--accent-strong);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.journal-block + .journal-block {
+  margin-top: 1rem;
+}
+
+.journal-block h3 {
+  margin: 0 0 0.45rem;
+  font-size: 1rem;
+}
+
 @media (max-width: 940px) {
   .hero-grid,
+  .editorial-grid,
+  .steps-grid,
+  .summary-grid,
   .landing-grid,
   .candidate-landing-layout,
   .questionnaire-grid,

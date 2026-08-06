@@ -357,6 +357,18 @@ const copy = {
       loading: "Chargement des statistiques...",
       error: "Impossible de charger les statistiques pour le moment."
     },
+    projectPage: {
+      eyebrow: "Présentation institutionnelle",
+      title: "Match Europe",
+      subtitle: "Connecter les talents et les emplois d’un même bassin économique",
+      intro: "Match Europe est un dispositif public de mise en relation transfrontalière. Il s’appuie sur les services publics de l’emploi, un matching explicable et une validation humaine pour faciliter la rencontre entre candidats et employeurs à l’échelle d’un même bassin économique."
+    },
+    journalPage: {
+      eyebrow: "Suivi public",
+      title: "Journal du projet",
+      subtitle: "Les étapes franchies, les enseignements de l’expérimentation et les choix structurants.",
+      intro: "Cette page documente les évolutions significatives du projet pouvant être partagées avec des partenaires, des directions ou des acteurs institutionnels."
+    },
     matchingPage: {
       eyebrow: "Transparence",
       title: "Comment fonctionne le matching EURES beta",
@@ -780,6 +792,18 @@ const copy = {
       emptyBreakdown: "No usable data yet.",
       loading: "Loading statistics...",
       error: "Unable to load statistics right now."
+    },
+    projectPage: {
+      eyebrow: "Institutional presentation",
+      title: "Match Europe",
+      subtitle: "Connecting talent and jobs across a shared economic area",
+      intro: "Match Europe is a public cross-border introduction service. It relies on public employment services, explainable matching and human validation to make it easier for candidates and employers to connect across the same economic area."
+    },
+    journalPage: {
+      eyebrow: "Public updates",
+      title: "Project journal",
+      subtitle: "Key milestones, lessons from the experiment and major decisions.",
+      intro: "This page documents the project’s significant developments that can be shared with partners, leadership teams or institutional stakeholders."
     },
     matchingPage: {
       eyebrow: "Transparency",
@@ -1205,6 +1229,18 @@ const copy = {
       loading: "Statistiken werden geladen...",
       error: "Die Statistiken können derzeit nicht geladen werden."
     },
+    projectPage: {
+      eyebrow: "Institutionelle Darstellung",
+      title: "Match Europe",
+      subtitle: "Talente und Arbeitsplätze in einem gemeinsamen Wirtschaftsraum zusammenführen",
+      intro: "Match Europe ist ein öffentlicher Dienst für grenzüberschreitende Vermittlung. Er stützt sich auf öffentliche Arbeitsverwaltungen, nachvollziehbares Matching und menschliche Validierung, um die Begegnung zwischen Kandidaten und Arbeitgebern in einem gemeinsamen Wirtschaftsraum zu erleichtern."
+    },
+    journalPage: {
+      eyebrow: "Öffentliche Entwicklung",
+      title: "Projektjournal",
+      subtitle: "Wichtige Etappen, Erkenntnisse aus der Erprobung und strukturierende Entscheidungen.",
+      intro: "Diese Seite dokumentiert die wichtigsten Entwicklungen des Projekts, die mit Partnern, Leitungen oder institutionellen Akteuren geteilt werden können."
+    },
     matchingPage: {
       eyebrow: "Transparenz",
       title: "Wie das Matching in EURES beta funktioniert",
@@ -1277,6 +1313,35 @@ const copy = {
     }
   }
 };
+
+const journalLabels = {
+  fr: {
+    observed: "Ce que nous avons observé",
+    decided: "Ce que nous avons décidé",
+    changed: "Ce que cela change",
+    next: "Prochaine étape",
+  },
+  en: {
+    observed: "What we observed",
+    decided: "What we decided",
+    changed: "What this changes",
+    next: "Next step",
+  },
+  de: {
+    observed: "Was wir beobachtet haben",
+    decided: "Was wir entschieden haben",
+    changed: "Was sich dadurch ändert",
+    next: "Nächster Schritt",
+  },
+};
+
+function sortJournalEntries(entries) {
+  return [...entries].sort((left, right) => {
+    const leftValue = String(left.sort_date || "");
+    const rightValue = String(right.sort_date || "");
+    return rightValue.localeCompare(leftValue);
+  });
+}
 
 const candidateTallyMeta = {
   formId: "449blX",
@@ -2713,6 +2778,865 @@ function footer(t) {
   `;
 }
 
+const projectContentFR = {
+  summary: {
+    title: "Sommaire",
+    items: [
+      ["constat", "Le constat"],
+      ["situation", "Une situation concrète"],
+      ["probleme-public", "Le problème public"],
+      ["acquis", "Ce que l’expérimentation a validé"],
+      ["proposition", "La proposition de valeur"],
+      ["fonctionnement", "Comment fonctionne le service"],
+      ["pilote", "Un pilote sur trois versants"],
+      ["partenaires", "Le rôle des partenaires"],
+      ["vivier", "La stratégie de constitution du vivier"],
+      ["impasses", "Les situations d’impasse professionnelle"],
+      ["confiance", "Les conditions de confiance"],
+      ["impact", "La mesure de l’impact"],
+      ["methode", "La méthode Startup d’État"],
+      ["partenaires-suite", "Ce que nous proposons aux partenaires"],
+      ["sources", "Sources et données à consolider"]
+    ]
+  },
+  constats: {
+    title: "Le constat",
+    body: "La Grande Région constitue déjà un bassin d’emploi transfrontalier: environ 280 000 personnes franchissent quotidiennement une frontière pour travailler. Des personnes disposant d’une expérience transfrontalière recherchent un emploi, des entreprises rencontrent des difficultés de recrutement, mais les outils, les offres et les accompagnements restent encore largement organisés à l’échelle nationale.",
+    highlight: "Le marché du travail fonctionne déjà à l’échelle transfrontalière, mais les parcours de retour à l’emploi et les outils de mise en relation ne suivent pas encore pleinement cette réalité."
+  },
+  example: {
+    title: "Une situation concrète",
+    body: "Sophie habite à Thionville et a travaillé pendant huit ans au Luxembourg. À la suite d’une restructuration, elle perd son emploi. Son expérience peut correspondre à des besoins situés en France, au Luxembourg ou en Wallonie, mais elle ne dispose pas toujours des bons relais pour identifier ces opportunités et être mise en relation dans un cadre rassurant.",
+    note: "Cet exemple illustre une situation type. Il ne correspond pas à un cas réel identifié."
+  },
+  problem: {
+    title: "Le problème public",
+    items: [
+      "L’identification des candidats réellement intéressés par la mobilité.",
+      "La qualification des compétences, contraintes et attentes.",
+      "La compréhension des besoins employeurs.",
+      "La confiance accordée au premier contact.",
+      "L’accompagnement humain dans la mise en relation.",
+      "La coordination entre services publics de l’emploi."
+    ]
+  },
+  validation: {
+    title: "Ce que l’expérimentation a validé",
+    items: [
+      "La mobilisation d’employeurs.",
+      "Le recueil des besoins.",
+      "L’identification de candidats.",
+      "La qualification des profils.",
+      "Les propositions de matching pertinentes.",
+      "Les premières mises en relation."
+    ],
+    highlight: "Le principal frein n’est pas le matching. C’est la confiance au moment du premier contact."
+  },
+  value: {
+    title: "La proposition de valeur",
+    pillars: [
+      {
+        title: "La proximité des services publics de l’emploi",
+        text: "Les équipes locales présentent le service, expliquent son fonctionnement et contribuent à instaurer la confiance."
+      },
+      {
+        title: "Un matching transfrontalier explicable",
+        text: "Les rapprochements peuvent prendre en compte le métier, les compétences clés, les langues, la mobilité et la localisation, la disponibilité, les conditions de travail, les qualifications ou autorisations, ainsi que les attentes salariales. Les résultats doivent rester compréhensibles et validés humainement."
+      },
+      {
+        title: "Un accompagnement humain",
+        text: "La technologie facilite le rapprochement, mais la décision et la mise en relation restent humaines."
+      }
+    ]
+  },
+  journey: {
+    title: "Comment fonctionne le service",
+    steps: [
+      "Présentation du service",
+      "Inscription et consentement",
+      "Qualification du candidat ou du besoin employeur",
+      "Proposition de matching",
+      "Prise de contact par un canal identifié",
+      "Mise en relation et suivi"
+    ]
+  },
+  pilot: {
+    title: "Un pilote sur trois versants",
+    body: "Le pilote envisagé associe la France, la Wallonie et le Luxembourg. L’objectif n’est pas un déploiement immédiat à grande échelle, mais une coconstruction progressive pour adapter le parcours, préciser les rôles, identifier progressivement des équipes ou territoires volontaires, mobiliser des candidats, recueillir des besoins employeurs, tester les mises en relation et mesurer les résultats.",
+    territories: ["France", "Wallonie", "Luxembourg"]
+  },
+  partners: {
+    title: "Le rôle des partenaires",
+    body: "La première étape recherchée est l’identification, chez chaque partenaire, d’un interlocuteur susceptible de participer à la coconstruction.",
+    items: [
+      "Préciser les besoins du territoire.",
+      "Adapter le parcours candidat et employeur.",
+      "Définir les modalités de consentement.",
+      "Identifier les données et ressources disponibles.",
+      "Préparer progressivement l’implication des équipes locales.",
+      "Proposer des indicateurs communs.",
+      "Analyser les résultats."
+    ]
+  },
+  pool: {
+    title: "La stratégie de constitution du vivier",
+    body: "Un horizon expérimental d’environ 300 candidats qualifiés et informés du fonctionnement du service permettrait de disposer d’une diversité suffisante de profils, de mieux sécuriser le consentement, de produire des rapprochements plus pertinents et d’améliorer la réactivité face aux besoins employeurs.",
+    note: "Cet horizon n’est pas un quota imposé à chaque partenaire."
+  },
+  deadEnds: {
+    title: "Les situations d’impasse professionnelle",
+    body: "Le projet peut aussi aider à repérer les situations dans lesquelles un projet vers un marché donné devient durablement difficile.",
+    items: [
+      "Alerter un conseiller.",
+      "Proposer un diagnostic.",
+      "Identifier des besoins de formation.",
+      "Suggérer des métiers proches.",
+      "Proposer d’autres opportunités géographiques.",
+      "Éviter une recherche durablement sans issue."
+    ],
+    note: "Toute analyse doit rester explicable, contrôlée, utilisée comme aide à la décision et validée humainement."
+  },
+  trust: {
+    title: "Les conditions de confiance",
+    items: [
+      "Une identité institutionnelle claire du service.",
+      "Des canaux de contact maîtrisés.",
+      "Un consentement explicite.",
+      "Une protection des données adaptée.",
+      "Des habilitations définies.",
+      "Une validation humaine des décisions et des mises en relation."
+    ],
+    note: "WhatsApp Business peut constituer un canal envisagé, sans préjuger de son activation."
+  },
+  impact: {
+    title: "La mesure de l’impact",
+    categories: [
+      {
+        title: "Mobilisation",
+        items: ["Partenaires impliqués", "Interlocuteurs identifiés", "Équipes locales associées", "Candidats et employeurs informés"]
+      },
+      {
+        title: "Usage",
+        items: ["Inscriptions", "Profils qualifiés", "Besoins employeurs recueillis", "Taux de réponse"]
+      },
+      {
+        title: "Résultats",
+        items: ["Propositions de matching", "Mises en relation", "Entretiens", "Recrutements", "Délai entre besoin et mise en relation"]
+      },
+      {
+        title: "Accompagnement",
+        items: ["Situations d’impasse identifiées", "Diagnostics", "Alternatives ou réorientations proposées"]
+      }
+    ]
+  },
+  method: {
+    title: "La méthode Startup d’État",
+    items: [
+      "Partir du terrain.",
+      "Tester rapidement.",
+      "Progresser par itérations.",
+      "Mesurer l’impact réel.",
+      "Rester transparent.",
+      "Ajuster ou arrêter une hypothèse non concluante."
+    ]
+  },
+  proposal: {
+    title: "Ce que nous proposons aux partenaires",
+    body: "Examiner ensemble les conditions d’un pilote commun, identifier les interlocuteurs susceptibles de contribuer à sa conception et préparer progressivement l’implication d’équipes locales."
+  },
+  sources: {
+    title: "Sources et données à consolider",
+    items: [
+      "Le chiffre d’environ 280 000 travailleurs frontaliers dans la Grande Région est repris ici comme ordre de grandeur de cadrage déjà mobilisé dans le projet.",
+      "Les autres chiffres de cadrage mentionnés dans les documents de travail ne sont pas publiés dans cette version tant qu’ils ne sont pas consolidés, datés et vérifiables.",
+      "Cette section a vocation à être mise à jour au fil de la consolidation des données et des références publiables."
+    ]
+  }
+};
+
+const projectContentEN = {
+  summary: {
+    title: "Contents",
+    items: [
+      ["constat", "Observation"],
+      ["situation", "A practical situation"],
+      ["probleme-public", "The public challenge"],
+      ["acquis", "What the experiment validated"],
+      ["proposition", "Value proposition"],
+      ["fonctionnement", "How the service works"],
+      ["pilote", "A pilot across three sides"],
+      ["partenaires", "The role of partners"],
+      ["vivier", "Building the candidate pool"],
+      ["impasses", "Dead-end professional situations"],
+      ["confiance", "Conditions for trust"],
+      ["impact", "Measuring impact"],
+      ["methode", "The Startup d'Etat approach"],
+      ["partenaires-suite", "What we propose to partners"],
+      ["sources", "Sources and data still to be consolidated"]
+    ]
+  },
+  constats: {
+    title: "Observation",
+    body: "The Greater Region already functions as a cross-border labour market: around 280,000 people cross a border every day for work. People with cross-border experience are looking for jobs, companies face recruitment difficulties, yet tools, vacancies and support remain largely organised at national level.",
+    highlight: "The labour market already works across borders, but return-to-work pathways and introduction tools still do not fully reflect that reality."
+  },
+  example: {
+    title: "A practical situation",
+    body: "Sophie lives in Thionville and worked in Luxembourg for eight years. After a restructuring, she loses her job. Her experience could match needs in France, Luxembourg or Wallonia, but she does not always have the right channels to identify these opportunities and be introduced within a reassuring framework.",
+    note: "This example illustrates a typical situation. It does not refer to an identified real case."
+  },
+  problem: {
+    title: "The public challenge",
+    items: [
+      "Identifying candidates who are genuinely interested in mobility.",
+      "Qualifying skills, constraints and expectations.",
+      "Understanding employer needs.",
+      "Building trust at the time of first contact.",
+      "Providing human support during introductions.",
+      "Coordinating public employment services."
+    ]
+  },
+  validation: {
+    title: "What the experiment validated",
+    items: [
+      "Mobilising employers.",
+      "Collecting employer needs.",
+      "Identifying candidates.",
+      "Qualifying profiles.",
+      "Producing relevant matching proposals.",
+      "Organising first introductions."
+    ],
+    highlight: "The main obstacle is not matching. It is trust at the moment of first contact."
+  },
+  value: {
+    title: "Value proposition",
+    pillars: [
+      {
+        title: "Proximity of public employment services",
+        text: "Local teams present the service, explain how it works and help build trust."
+      },
+      {
+        title: "Explainable cross-border matching",
+        text: "Introductions may take into account occupation, key skills, languages, mobility and location, availability, working conditions, qualifications or authorisations, as well as salary expectations. Results must remain understandable and humanly validated."
+      },
+      {
+        title: "Human support",
+        text: "Technology facilitates introductions, but decisions and contacts remain human."
+      }
+    ]
+  },
+  journey: {
+    title: "How the service works",
+    steps: [
+      "Service presentation",
+      "Registration and consent",
+      "Qualification of the candidate or employer need",
+      "Matching proposal",
+      "Contact through an identified channel",
+      "Introduction and follow-up"
+    ]
+  },
+  pilot: {
+    title: "A pilot across three sides",
+    body: "The proposed pilot brings together France, Wallonia and Luxembourg. The aim is not immediate large-scale deployment, but gradual co-design in order to adapt the journey, clarify roles, progressively identify willing teams or territories, mobilise candidates, collect employer needs, test introductions and measure results.",
+    territories: ["France", "Wallonia", "Luxembourg"]
+  },
+  partners: {
+    title: "The role of partners",
+    body: "The first step sought is to identify, within each partner organisation, a contact person who could contribute to co-design.",
+    items: [
+      "Clarify territorial needs.",
+      "Adapt candidate and employer journeys.",
+      "Define consent arrangements.",
+      "Identify available data and resources.",
+      "Prepare the gradual involvement of local teams.",
+      "Suggest shared indicators.",
+      "Analyse results."
+    ]
+  },
+  pool: {
+    title: "Building the candidate pool",
+    body: "An experimental horizon of around 300 qualified candidates informed about how the service works would provide enough diversity of profiles, help secure consent, produce more relevant introductions and improve responsiveness to employer needs.",
+    note: "This horizon is not a quota imposed on each partner."
+  },
+  deadEnds: {
+    title: "Dead-end professional situations",
+    body: "The project may also help identify situations in which a plan focused on one labour market becomes durably difficult.",
+    items: [
+      "Alert an adviser.",
+      "Propose a diagnostic review.",
+      "Identify training needs.",
+      "Suggest adjacent occupations.",
+      "Propose other geographical opportunities.",
+      "Avoid a job search that remains blocked over time."
+    ],
+    note: "Any analysis must remain explainable, controlled, used as decision support and validated by a human."
+  },
+  trust: {
+    title: "Conditions for trust",
+    items: [
+      "A clear institutional identity for the service.",
+      "Well-managed contact channels.",
+      "Explicit consent.",
+      "Appropriate data protection.",
+      "Defined authorisations.",
+      "Human validation of decisions and introductions."
+    ],
+    note: "WhatsApp Business may be considered as a possible channel, without implying that it is already active."
+  },
+  impact: {
+    title: "Measuring impact",
+    categories: [
+      {
+        title: "Mobilisation",
+        items: ["Partners involved", "Contacts identified", "Local teams associated", "Candidates and employers informed"]
+      },
+      {
+        title: "Usage",
+        items: ["Registrations", "Qualified profiles", "Employer needs collected", "Response rate"]
+      },
+      {
+        title: "Results",
+        items: ["Matching proposals", "Introductions", "Interviews", "Hires", "Time between need and introduction"]
+      },
+      {
+        title: "Support",
+        items: ["Dead-end situations identified", "Diagnostic reviews", "Alternatives or reorientations proposed"]
+      }
+    ]
+  },
+  method: {
+    title: "The Startup d'Etat approach",
+    items: [
+      "Start from field realities.",
+      "Test quickly.",
+      "Progress through iterations.",
+      "Measure real impact.",
+      "Remain transparent.",
+      "Adjust or stop an unconvincing hypothesis."
+    ]
+  },
+  proposal: {
+    title: "What we propose to partners",
+    body: "Examine together the conditions for a shared pilot, identify the contacts who could contribute to its design and gradually prepare the involvement of local teams."
+  },
+  closingNote: "Candidate and employer journeys remain the operational entry points already open in this first version.",
+  sources: {
+    title: "Sources and data still to be consolidated",
+    items: [
+      "The figure of around 280,000 cross-border workers in the Greater Region is used here as a framing order of magnitude already referenced in the project.",
+      "Other contextual figures mentioned in working documents are not published in this version until they are consolidated, dated and verifiable.",
+      "This section is intended to be updated as data and publishable references are consolidated."
+    ]
+  }
+};
+
+const projectContentDE = {
+  summary: {
+    title: "Inhalt",
+    items: [
+      ["constat", "Beobachtung"],
+      ["situation", "Eine konkrete Situation"],
+      ["probleme-public", "Die öffentliche Herausforderung"],
+      ["acquis", "Was die Erprobung bestätigt hat"],
+      ["proposition", "Wertversprechen"],
+      ["fonctionnement", "Wie der Dienst funktioniert"],
+      ["pilote", "Ein Pilot auf drei Seiten"],
+      ["partenaires", "Die Rolle der Partner"],
+      ["vivier", "Aufbau des Kandidatenpools"],
+      ["impasses", "Berufliche Sackgassen"],
+      ["confiance", "Bedingungen des Vertrauens"],
+      ["impact", "Wirkungsmessung"],
+      ["methode", "Die Methode Startup d'Etat"],
+      ["partenaires-suite", "Was wir den Partnern vorschlagen"],
+      ["sources", "Quellen und noch zu konsolidierende Daten"]
+    ]
+  },
+  constats: {
+    title: "Beobachtung",
+    body: "Die Großregion funktioniert bereits als grenzüberschreitender Arbeitsmarkt: Rund 280.000 Menschen überschreiten täglich eine Grenze, um zu arbeiten. Menschen mit grenzüberschreitender Erfahrung suchen Arbeit, Unternehmen haben Rekrutierungsschwierigkeiten, doch Werkzeuge, Stellenangebote und Begleitung bleiben noch weitgehend national organisiert.",
+    highlight: "Der Arbeitsmarkt funktioniert bereits grenzüberschreitend, aber Wege zurück in Beschäftigung und Vermittlungsinstrumente folgen dieser Realität noch nicht vollständig."
+  },
+  example: {
+    title: "Eine konkrete Situation",
+    body: "Sophie lebt in Thionville und hat acht Jahre in Luxemburg gearbeitet. Nach einer Umstrukturierung verliert sie ihre Stelle. Ihre Erfahrung könnte zu Bedarfen in Frankreich, Luxemburg oder Wallonien passen, doch sie verfügt nicht immer über die richtigen Zugänge, um diese Chancen zu identifizieren und in einem verlässlichen Rahmen vermittelt zu werden.",
+    note: "Dieses Beispiel veranschaulicht eine typische Situation. Es bezieht sich nicht auf einen identifizierten realen Fall."
+  },
+  problem: {
+    title: "Die öffentliche Herausforderung",
+    items: [
+      "Kandidaten identifizieren, die tatsächlich an Mobilität interessiert sind.",
+      "Kompetenzen, Einschränkungen und Erwartungen qualifizieren.",
+      "Arbeitgeberbedarfe verstehen.",
+      "Vertrauen beim Erstkontakt schaffen.",
+      "Menschliche Begleitung bei der Vermittlung sicherstellen.",
+      "Öffentliche Arbeitsverwaltungen koordinieren."
+    ]
+  },
+  validation: {
+    title: "Was die Erprobung bestätigt hat",
+    items: [
+      "Arbeitgeber mobilisieren.",
+      "Bedarfe erfassen.",
+      "Kandidaten identifizieren.",
+      "Profile qualifizieren.",
+      "Relevante Matching-Vorschläge erstellen.",
+      "Erste Vermittlungen organisieren."
+    ],
+    highlight: "Das Haupthemmnis ist nicht das Matching. Es ist das Vertrauen im Moment des Erstkontakts."
+  },
+  value: {
+    title: "Wertversprechen",
+    pillars: [
+      {
+        title: "Nähe der öffentlichen Arbeitsverwaltungen",
+        text: "Lokale Teams stellen den Dienst vor, erklären seine Funktionsweise und tragen dazu bei, Vertrauen aufzubauen."
+      },
+      {
+        title: "Nachvollziehbares grenzüberschreitendes Matching",
+        text: "Vermittlungen können Beruf, Schlüsselkompetenzen, Sprachen, Mobilität und Standort, Verfügbarkeit, Arbeitsbedingungen, Qualifikationen oder Berechtigungen sowie Gehaltserwartungen berücksichtigen. Die Ergebnisse müssen verständlich und menschlich validiert bleiben."
+      },
+      {
+        title: "Menschliche Begleitung",
+        text: "Technologie erleichtert die Vermittlung, doch Entscheidung und Kontaktaufnahme bleiben menschlich."
+      }
+    ]
+  },
+  journey: {
+    title: "Wie der Dienst funktioniert",
+    steps: [
+      "Vorstellung des Dienstes",
+      "Registrierung und Einwilligung",
+      "Qualifizierung des Kandidaten oder des Arbeitgeberbedarfs",
+      "Matching-Vorschlag",
+      "Kontakt über einen identifizierten Kanal",
+      "Vermittlung und Nachverfolgung"
+    ]
+  },
+  pilot: {
+    title: "Ein Pilot auf drei Seiten",
+    body: "Der vorgeschlagene Pilot verbindet Frankreich, Wallonien und Luxemburg. Ziel ist keine sofortige großflächige Ausweitung, sondern eine schrittweise gemeinsame Ausgestaltung, um den Weg anzupassen, Rollen zu klären, schrittweise interessierte Teams oder Gebiete zu identifizieren, Kandidaten zu mobilisieren, Arbeitgeberbedarfe zu erfassen, Vermittlungen zu testen und Ergebnisse zu messen.",
+    territories: ["Frankreich", "Wallonien", "Luxemburg"]
+  },
+  partners: {
+    title: "Die Rolle der Partner",
+    body: "Der erste gesuchte Schritt ist die Identifikation einer Kontaktperson bei jedem Partner, die sich an der gemeinsamen Ausgestaltung beteiligen könnte.",
+    items: [
+      "Territoriale Bedarfe präzisieren.",
+      "Kandidaten- und Arbeitgeberwege anpassen.",
+      "Einwilligungsmodalitäten definieren.",
+      "Verfügbare Daten und Ressourcen identifizieren.",
+      "Die schrittweise Beteiligung lokaler Teams vorbereiten.",
+      "Gemeinsame Indikatoren vorschlagen.",
+      "Ergebnisse analysieren."
+    ]
+  },
+  pool: {
+    title: "Aufbau des Kandidatenpools",
+    body: "Ein experimenteller Horizont von rund 300 qualifizierten Kandidaten, die über die Funktionsweise des Dienstes informiert sind, würde eine ausreichende Vielfalt an Profilen ermöglichen, die Einwilligung besser absichern, relevantere Vermittlungen hervorbringen und die Reaktionsfähigkeit auf Arbeitgeberbedarfe verbessern.",
+    note: "Dieser Horizont ist keine jedem Partner auferlegte Quote."
+  },
+  deadEnds: {
+    title: "Berufliche Sackgassen",
+    body: "Das Projekt kann auch helfen, Situationen zu erkennen, in denen ein auf einen bestimmten Arbeitsmarkt ausgerichteter Plan dauerhaft schwierig wird.",
+    items: [
+      "Eine Beraterin oder einen Berater aufmerksam machen.",
+      "Eine Diagnose vorschlagen.",
+      "Weiterbildungsbedarfe identifizieren.",
+      "Nahe Berufsprofile vorschlagen.",
+      "Andere geografische Möglichkeiten vorschlagen.",
+      "Eine dauerhaft blockierte Arbeitssuche vermeiden."
+    ],
+    note: "Jede Analyse muss nachvollziehbar, kontrolliert, als Entscheidungshilfe genutzt und menschlich validiert bleiben."
+  },
+  trust: {
+    title: "Bedingungen des Vertrauens",
+    items: [
+      "Eine klare institutionelle Identität des Dienstes.",
+      "Kontrollierte Kontaktkanäle.",
+      "Eine ausdrückliche Einwilligung.",
+      "Ein angemessener Datenschutz.",
+      "Definierte Berechtigungen.",
+      "Menschliche Validierung von Entscheidungen und Vermittlungen."
+    ],
+    note: "WhatsApp Business kann als möglicher Kanal in Betracht kommen, ohne dass damit seine bereits aktive Nutzung behauptet wird."
+  },
+  impact: {
+    title: "Wirkungsmessung",
+    categories: [
+      {
+        title: "Mobilisierung",
+        items: ["Beteiligte Partner", "Identifizierte Kontakte", "Eingebundene lokale Teams", "Informierte Kandidaten und Arbeitgeber"]
+      },
+      {
+        title: "Nutzung",
+        items: ["Registrierungen", "Qualifizierte Profile", "Erfasste Arbeitgeberbedarfe", "Antwortquote"]
+      },
+      {
+        title: "Ergebnisse",
+        items: ["Matching-Vorschläge", "Vermittlungen", "Vorstellungsgespräche", "Einstellungen", "Zeit zwischen Bedarf und Vermittlung"]
+      },
+      {
+        title: "Begleitung",
+        items: ["Identifizierte Sackgassen", "Diagnosen", "Vorgeschlagene Alternativen oder Neuorientierungen"]
+      }
+    ]
+  },
+  method: {
+    title: "Die Methode Startup d'Etat",
+    items: [
+      "Vom Feld ausgehen.",
+      "Schnell testen.",
+      "In Iterationen vorankommen.",
+      "Die tatsächliche Wirkung messen.",
+      "Transparent bleiben.",
+      "Eine nicht überzeugende Hypothese anpassen oder beenden."
+    ]
+  },
+  proposal: {
+    title: "Was wir den Partnern vorschlagen",
+    body: "Gemeinsam die Bedingungen eines gemeinsamen Piloten prüfen, die Kontakte identifizieren, die zu seiner Konzeption beitragen könnten, und die Beteiligung lokaler Teams schrittweise vorbereiten."
+  },
+  closingNote: "Kandidaten- und Arbeitgeberwege bleiben die operativen Einstiegspunkte, die in dieser ersten Version bereits geöffnet sind.",
+  sources: {
+    title: "Quellen und noch zu konsolidierende Daten",
+    items: [
+      "Die Zahl von rund 280.000 Grenzpendlern in der Großregion wird hier als im Projekt bereits genutzte Einordnungsgröße verwendet.",
+      "Andere in Arbeitsdokumenten genannte Kontextzahlen werden in dieser Version nicht veröffentlicht, solange sie nicht konsolidiert, datiert und überprüfbar sind.",
+      "Dieser Abschnitt soll im Zuge der Konsolidierung von Daten und veröffentlichbaren Referenzen aktualisiert werden."
+    ]
+  }
+};
+
+const projectContentByLang = {
+  fr: projectContentFR,
+  en: projectContentEN,
+  de: projectContentDE,
+};
+
+const journalEntriesFR = [
+  {
+    sort_date: "2026-07-20",
+    date: "Juillet 2026",
+    title: "Ouvrir le projet et documenter ses décisions",
+    observed: "Le projet entre dans une phase où plusieurs catégories d’acteurs doivent pouvoir en comprendre rapidement la raison d’être, les résultats obtenus, les enseignements, les choix opérés, la méthode et les prochaines étapes. Une page d’inscription seule ne permet pas à un décideur, un partenaire ou un média de présenter correctement le projet.",
+    decided: "Créer un espace institutionnel public autour de deux pages complémentaires : Le projet, qui présente le problème, la solution, les enseignements, la méthode et les modalités de coopération ; et Journal du projet, qui retrace les étapes franchies, les observations et les décisions structurantes. Le nom Match Europe est utilisé comme identité éditoriale, tandis que les fondations techniques existantes d’EURES Beta sont conservées.",
+    changed: [
+      "Le projet devient plus lisible et plus transparent.",
+      "Les partenaires peuvent désormais disposer d’une référence commune pour présenter l’expérimentation.",
+      "Les évolutions du projet et sa trajectoire peuvent être suivies plus facilement."
+    ],
+    next: "Enrichir régulièrement le journal, consolider les données publiées et préparer la coconstruction du pilote avec les trois services publics de l’emploi."
+  },
+  {
+    sort_date: "2026-07-15",
+    date: "15 juillet 2026",
+    title: "La confiance devient le principal enjeu",
+    observed: "L’expérimentation confirme qu’il est possible de convaincre des employeurs, de recueillir leurs besoins, d’identifier des candidats, de qualifier les profils, de produire des propositions de matching et d’organiser des premières mises en relation. Le principal frein ne se situe donc plus dans la faisabilité du matching. Une partie importante des candidats hésite toutefois à répondre lorsqu’elle ne reconnaît pas immédiatement l’origine institutionnelle du service ou le cadre dans lequel ses données sont utilisées.",
+    decided: "Faire évoluer Match Europe vers un dispositif de mise en relation davantage incarné par les services publics de l’emploi et leurs relais locaux. La stratégie consiste à construire un environnement de confiance avant d’intensifier les campagnes de recrutement.",
+    changed: [
+      "La présentation du service par des professionnels connus devient une priorité.",
+      "Le consentement des candidats et une identité institutionnelle claire prennent une place centrale.",
+      "Les canaux de contact maîtrisés et l’accompagnement humain deviennent des composantes clés du service.",
+      "L’implication progressive des agences locales et la constitution d’un vivier d’environ 300 candidats informés et qualifiés deviennent des objectifs structurants."
+    ],
+    next: "Coconstruire avec les services publics de l’emploi français, wallon et luxembourgeois les conditions d’un pilote sur les trois versants."
+  },
+  {
+    sort_date: "2026-07-01",
+    date: "Juin–juillet 2026",
+    title: "Tester les canaux de prise de contact",
+    observed: "La capacité à identifier un candidat pertinent ne garantit pas qu’il répondra à la sollicitation. Les courriers électroniques ou messages provenant d’un service encore peu connu peuvent être ignorés ou susciter de la méfiance.",
+    decided: "Étudier des canaux de communication plus directs, notamment WhatsApp Business, en commençant par un usage manuel et limité. Ce canal doit rester encadré par des règles claires concernant le consentement, l’identité de l’émetteur, les personnes habilitées, les informations échangées, la conservation des messages, la traçabilité et l’interdiction d’utiliser des comptes personnels.",
+    changed: "La prise de contact est considérée comme une composante du produit à part entière, et non comme une simple étape secondaire après le matching.",
+    next: "Tester les canaux les plus efficaces tout en renforçant le caractère institutionnel et rassurant du service."
+  },
+  {
+    sort_date: "2026-06-20",
+    date: "Juin 2026",
+    title: "Construire un matching explicable et supervisé",
+    observed: "Un simple rapprochement par intitulé de métier ne suffit pas pour proposer un candidat à un employeur. La pertinence dépend de plusieurs dimensions : le métier et l’expérience, les compétences, les langues, la mobilité, la disponibilité, les conditions de travail, la rémunération, ainsi que les qualifications ou autorisations nécessaires.",
+    decided: "Construire un moteur de matching reposant sur des règles objectives et compréhensibles. Chaque proposition doit pouvoir être expliquée par les critères ayant conduit au rapprochement. La décision finale reste soumise à une validation humaine avant la mise en relation.",
+    changed: "Le score ne constitue pas une décision automatique. Il devient un outil d’aide à la décision permettant de comparer les profils, de comprendre leurs points forts et leurs limites et de préparer une intervention humaine plus efficace.",
+    next: "Enrichir progressivement le modèle, notamment par une meilleure prise en compte des compétences clés, tout en évaluant les risques de biais."
+  },
+  {
+    sort_date: "2026-06-15",
+    date: "Juin 2026",
+    title: "Mettre en ligne une première version opérationnelle",
+    observed: "Les outils de collecte initialement utilisés permettaient de démarrer rapidement, mais ils devenaient insuffisants pour suivre l’augmentation du nombre de profils, des besoins et des propositions de matching. Le service devait également mieux prendre en compte la protection des données, la sécurité, la traçabilité, la conformité, ainsi que le suivi des décisions et des échanges.",
+    decided: "Développer une première version opérationnelle d’EURES Beta comprenant une entrée dédiée aux candidats, une entrée dédiée aux employeurs, une page de statistiques, un espace d’administration, un moteur de matching automatisé, une validation manuelle avant toute transmission à un employeur, ainsi que la traçabilité des propositions et des réponses.",
+    changed: "Le projet ne repose plus uniquement sur des traitements manuels dispersés. Il dispose d’un service en ligne capable de structurer les données, de produire des propositions de matching et d’enregistrer les principales étapes de la mise en relation.",
+    next: "Tester l’usage du service, améliorer les formulaires et rendre les critères de rapprochement plus précis et plus explicables."
+  },
+  {
+    sort_date: "2026-06-05",
+    date: "Début juin 2026",
+    title: "Obtenir les premiers résultats terrain",
+    observed: "En deux semaines d’expérimentation avec des employeurs luxembourgeois : 2 employeurs ont participé ; 5 besoins de recrutement ont été recueillis ; 158 candidats ont été contactés ; 35 profils ont été obtenus ; 22 propositions de matching ont été produites ; de premiers entretiens ont été engagés. Ces résultats montrent qu’il est possible de mobiliser des employeurs, d’identifier des candidats et de réaliser des rapprochements dans des délais courts.",
+    decided: "Poursuivre l’expérimentation et transformer le mode de conciergerie initial en un service plus structuré et plus traçable.",
+    changed: [
+      "Le projet dispose désormais de premiers résultats concrets.",
+      "L’hypothèse d’un service de mise en relation transfrontalière est suffisamment crédible pour justifier le développement d’un premier outil opérationnel."
+    ],
+    next: "Créer un environnement permettant de recueillir les informations, automatiser une partie du matching et conserver une validation humaine."
+  },
+  {
+    sort_date: "2026-05-15",
+    date: "Mai 2026",
+    title: "Lancer une première expérimentation de matching",
+    observed: "Pour comprendre les conditions réelles d’une mise en relation transfrontalière, il était nécessaire de sortir d’une réflexion uniquement théorique. Une première expérimentation a donc été engagée autour de besoins d’employeurs luxembourgeois et de candidats susceptibles de travailler au Luxembourg. Les premiers métiers ciblés concernaient notamment le nettoyage et l’entretien, avant une ouverture progressive à d’autres secteurs.",
+    decided: "Tester le service selon un mode de « conciergerie » : recueillir directement les besoins des employeurs, identifier des candidats potentiels, les contacter, qualifier leur intérêt et leurs contraintes, analyser les correspondances et proposer les mises en relation les plus pertinentes.",
+    changed: "Le service est évalué sur des situations réelles et non uniquement sur la qualité théorique d’un algorithme. Chaque échange permet d’identifier les informations réellement utiles au matching et les difficultés rencontrées par les utilisateurs.",
+    next: "Structurer les données recueillies et formaliser les premiers critères de rapprochement."
+  },
+  {
+    sort_date: "2026-04-20",
+    date: "Avril 2026",
+    title: "Choisir la méthode Startup d’État",
+    observed: "Le problème à résoudre est complexe et implique plusieurs administrations, pays, systèmes d’information et catégories d’utilisateurs. Dans ce contexte, définir à l’avance une solution complète présenterait un risque important : construire un service long et coûteux avant d’avoir vérifié son utilité réelle.",
+    decided: "Appliquer les principes de la démarche Startup d’État : partir des besoins des utilisateurs, travailler avec une équipe resserrée, tester rapidement, progresser par itérations, mesurer l’impact et conserver la possibilité d’ajuster ou d’arrêter une hypothèse qui ne fonctionne pas.",
+    changed: "Les partenaires ne sont pas sollicités pour valider un cahier des charges figé. Ils sont invités à contribuer à une expérimentation progressive, en donnant accès aux utilisateurs, aux données utiles, aux professionnels et aux dispositifs existants.",
+    next: "Construire une première version du parcours candidat et employeur suffisamment simple pour être testée sur le terrain."
+  },
+  {
+    sort_date: "2026-04-15",
+    date: "15 avril 2026",
+    title: "Articuler l’expérimentation avec les travaux européens",
+    observed: "Les échanges avec la coordination EURES de France Travail ont confirmé plusieurs difficultés d’usage du portail EURES, ainsi qu’une articulation encore insuffisante avec Europass. Ils ont également permis d’identifier des travaux européens déjà engagés autour de trois priorités : un service plus personnalisé, une application mobile et un tableau de bord commun.",
+    decided: "Positionner l’expérimentation comme une contribution concrète et complémentaire aux réflexions déjà engagées au niveau européen. Le projet doit démontrer, par l’usage, ce qu’une approche plus simple, personnalisée et pilotée par les résultats peut apporter.",
+    changed: "L’expérimentation est pensée comme un terrain d’apprentissage pouvant nourrir les travaux plus larges sur l’évolution d’EURES, sans attendre une transformation complète des outils européens.",
+    next: "Accéder aux environnements et ressources utiles, puis préparer un premier parcours testable avec de vrais candidats et de vrais employeurs."
+  },
+  {
+    sort_date: "2026-04-01",
+    date: "Avril 2026",
+    title: "Comprendre les limites du fonctionnement actuel",
+    observed: "Les premiers échanges menés avec les acteurs de l’emploi transfrontalier ont permis de mieux comprendre le fonctionnement actuel du marché de l’emploi dans la Grande Région. Plusieurs limites ont été relevées : les outils restent largement organisés par pays ; la navigation entre les offres peut conduire à de nombreuses redirections ; les profils de candidats disponibles sont parfois peu exploitables ou anonymisés ; les services existants ne facilitent pas toujours une mise en relation rapide et personnalisée ; les différents acteurs disposent d’informations et de ressources qui restent difficiles à mobiliser dans un parcours unique.",
+    decided: "Tester une approche plus directe, centrée sur un problème concret : mieux rapprocher les candidats et les employeurs d’un même bassin économique transfrontalier. Le projet adopte une démarche inspirée des Startups d’État : partir du terrain, expérimenter rapidement et mesurer les résultats obtenus.",
+    changed: "Le projet ne cherche pas d’abord à refondre l’ensemble du système EURES. Il vise à tester une solution limitée, utilisable rapidement, puis à l’ajuster à partir des retours des candidats, des employeurs et des professionnels de l’emploi.",
+    next: "Définir un premier cas d’usage et identifier les partenaires susceptibles de contribuer à l’expérimentation."
+  }
+];
+
+const journalEntriesEN = [
+  {
+    sort_date: "2026-07-20",
+    date: "July 2026",
+    title: "Open up the project and document its decisions",
+    observed: "The project is entering a phase in which several categories of actors need to be able to quickly understand its purpose, results, lessons learned, key choices, method and next steps. A sign-up page alone is not enough for a decision-maker, a partner or a media outlet to present the project properly.",
+    decided: "Create a public institutional space built around two complementary pages: The project, presenting the problem, the solution, the lessons learned, the method and the cooperation framework; and Project journal, retracing the milestones reached, the observations made and the structuring decisions taken. Match Europe is used as the editorial identity, while the existing EURES Beta technical foundations are kept in place.",
+    changed: [
+      "The project becomes more readable and more transparent.",
+      "Partners can now rely on a shared reference point to present the experiment.",
+      "The project’s developments and trajectory can be followed more easily."
+    ],
+    next: "Update the journal regularly, consolidate published data and prepare the co-design of the pilot with the three public employment services."
+  },
+  {
+    sort_date: "2026-07-15",
+    date: "July 15, 2026",
+    title: "Trust becomes the main issue",
+    observed: "The experiment confirms that it is possible to convince employers, collect their needs, identify candidates, qualify profiles, produce matching proposals and organise first introductions. The main obstacle therefore no longer lies in the feasibility of matching itself. However, a significant share of candidates still hesitate to respond when they do not immediately recognise the institutional origin of the service or the framework in which their data is used.",
+    decided: "Evolve Match Europe towards an introduction service more clearly embodied by public employment services and their local relays. The strategy is to build an environment of trust before intensifying recruitment campaigns.",
+    changed: [
+      "Presenting the service through recognised professionals becomes a priority.",
+      "Candidate consent and a clear institutional identity become central.",
+      "Well-managed contact channels and human support become key components of the service.",
+      "The gradual involvement of local agencies and the creation of a pool of around 300 informed and qualified candidates become structuring goals."
+    ],
+    next: "Co-design with French, Walloon and Luxembourg public employment services the conditions for a pilot across the three sides."
+  },
+  {
+    sort_date: "2026-07-01",
+    date: "June-July 2026",
+    title: "Test contact channels",
+    observed: "Being able to identify a relevant candidate does not guarantee that the person will respond to outreach. Emails or messages coming from a service that is still little known may be ignored or may trigger mistrust.",
+    decided: "Study more direct communication channels, including WhatsApp Business, starting with a limited manual use. This channel must remain governed by clear rules on consent, sender identity, authorised staff, exchanged information, message retention, traceability and the prohibition on using personal accounts.",
+    changed: "Initial contact is now treated as a product component in its own right, not as a secondary step after matching.",
+    next: "Test the most effective channels while reinforcing the service’s institutional and reassuring character."
+  },
+  {
+    sort_date: "2026-06-20",
+    date: "June 2026",
+    title: "Build explainable and supervised matching",
+    observed: "A simple match based on a job title is not enough to suggest a candidate to an employer. Relevance depends on several dimensions: occupation and experience, skills, languages, mobility, availability, working conditions, pay, as well as required qualifications or authorisations.",
+    decided: "Build a matching engine based on objective and understandable rules. Each proposal must be explainable through the criteria that led to the suggested match. The final decision remains subject to human validation before any introduction takes place.",
+    changed: "The score is not an automatic decision. It becomes a decision-support tool used to compare profiles, understand their strengths and limits, and prepare a more effective human intervention.",
+    next: "Gradually enrich the model, especially through a better account of key skills, while assessing the risks of bias."
+  },
+  {
+    sort_date: "2026-06-15",
+    date: "June 2026",
+    title: "Put a first operational version online",
+    observed: "The initial collection tools made it possible to start quickly, but they were becoming insufficient to handle the growing number of profiles, needs and matching proposals. The service also needed to better address data protection, security, traceability, compliance, and the follow-up of decisions and exchanges.",
+    decided: "Develop a first operational version of EURES Beta including a dedicated candidate entry point, a dedicated employer entry point, a statistics page, an administration space, an automated matching engine, manual validation before any transmission to an employer, and traceability of proposals and responses.",
+    changed: "The project no longer relies only on scattered manual processing. It now has an online service capable of structuring data, producing matching proposals and recording the main steps of the introduction process.",
+    next: "Test how the service is used, improve the forms and make the matching criteria more precise and more explainable."
+  },
+  {
+    sort_date: "2026-06-05",
+    date: "Early June 2026",
+    title: "Obtain the first field results",
+    observed: "Within two weeks of experimentation with employers in Luxembourg: 2 employers took part; 5 recruitment needs were collected; 158 candidates were contacted; 35 profiles were obtained; 22 matching proposals were produced; and first interviews were initiated. These results show that it is possible to mobilise employers, identify candidates and produce matches within short timeframes.",
+    decided: "Continue the experiment and transform the initial concierge-style mode into a more structured and traceable service.",
+    changed: [
+      "The project now has its first concrete results.",
+      "The hypothesis of a cross-border introduction service is credible enough to justify developing a first operational tool."
+    ],
+    next: "Create an environment capable of collecting information, automating part of the matching process and preserving human validation."
+  },
+  {
+    sort_date: "2026-05-15",
+    date: "May 2026",
+    title: "Launch a first matching experiment",
+    observed: "To understand the real conditions of cross-border introductions, it was necessary to move beyond purely theoretical reflection. A first experiment was therefore launched around the needs of employers in Luxembourg and candidates who might work in Luxembourg. The first targeted occupations notably concerned cleaning and maintenance, before a gradual opening to other sectors.",
+    decided: "Test the service in a concierge-style mode: collect employer needs directly, identify potential candidates, contact them, qualify their interest and constraints, analyse possible matches and propose the most relevant introductions.",
+    changed: "The service is assessed on real situations and not only on the theoretical quality of an algorithm. Each exchange helps identify the information that is actually useful for matching and the difficulties faced by users.",
+    next: "Structure the collected data and formalise the first matching criteria."
+  },
+  {
+    sort_date: "2026-04-20",
+    date: "April 2026",
+    title: "Choose the Startup d'Etat approach",
+    observed: "The problem to be solved is complex and involves several administrations, countries, information systems and categories of users. In this context, defining a complete solution in advance would create a significant risk: building a long and costly service before verifying its real usefulness.",
+    decided: "Apply the principles of the Startup d'Etat approach: start from user needs, work with a small team, test quickly, progress through iterations, measure impact, and keep the possibility of adjusting or stopping a hypothesis that does not work.",
+    changed: "Partners are not asked to validate a fixed specification. They are invited to contribute to a gradual experiment by providing access to users, useful data, professionals and existing schemes.",
+    next: "Build a first version of the candidate and employer journeys that is simple enough to be tested in the field."
+  },
+  {
+    sort_date: "2026-04-15",
+    date: "April 15, 2026",
+    title: "Connect the experiment with European workstreams",
+    observed: "Discussions with the EURES coordination team at France Travail confirmed several usability difficulties with the EURES portal, as well as an articulation with Europass that remains insufficient. They also made it possible to identify European work already under way around three priorities: a more personalised service, a mobile application and a shared dashboard.",
+    decided: "Position the experiment as a concrete and complementary contribution to reflections already under way at European level. The project must demonstrate, through real use, what a simpler, more personalised and results-driven approach can bring.",
+    changed: "The experiment is conceived as a learning ground that can feed broader work on the evolution of EURES, without waiting for a complete transformation of European tools.",
+    next: "Gain access to the useful environments and resources, then prepare a first testable journey with real candidates and real employers."
+  },
+  {
+    sort_date: "2026-04-01",
+    date: "April 2026",
+    title: "Understand the limits of the current system",
+    observed: "Initial discussions with cross-border employment stakeholders helped clarify how the labour market currently works in the Greater Region. Several limits were identified: tools remain largely organised by country; navigating between vacancies can lead to multiple redirects; available candidate profiles are sometimes only partially usable or anonymised; existing services do not always support quick and personalised introductions; and the various actors hold information and resources that remain difficult to mobilise within a single journey.",
+    decided: "Test a more direct approach focused on a concrete problem: better connect candidates and employers within the same cross-border economic area. The project adopts an approach inspired by Startup d'Etat: start from the field, experiment quickly and measure the results obtained.",
+    changed: "The project does not seek first to redesign the entire EURES system. It aims to test a limited solution that can be used quickly and then adjust it on the basis of feedback from candidates, employers and employment professionals.",
+    next: "Define a first use case and identify the partners who may contribute to the experiment."
+  }
+];
+
+const journalEntriesDE = [
+  {
+    sort_date: "2026-07-20",
+    date: "Juli 2026",
+    title: "Das Projekt öffnen und seine Entscheidungen dokumentieren",
+    observed: "Das Projekt tritt in eine Phase ein, in der mehrere Gruppen von Akteuren seinen Zweck, die erreichten Ergebnisse, die gewonnenen Erkenntnisse, die getroffenen Entscheidungen, die Methode und die nächsten Schritte rasch verstehen können müssen. Eine reine Registrierungsseite genügt nicht, damit Entscheidungsträger, Partner oder Medien das Projekt angemessen darstellen können.",
+    decided: "Einen öffentlichen institutionellen Bereich rund um zwei ergänzende Seiten schaffen: Projekt, das Problem, Lösung, Erkenntnisse, Methode und Kooperationsrahmen darstellt, und Projektjournal, das die erreichten Etappen, Beobachtungen und strukturierenden Entscheidungen nachzeichnet. Der Name Match Europe wird als redaktionelle Identität genutzt, während die bestehenden technischen Grundlagen von EURES Beta erhalten bleiben.",
+    changed: [
+      "Das Projekt wird lesbarer und transparenter.",
+      "Partner verfügen nun über einen gemeinsamen Bezugspunkt, um die Erprobung darzustellen.",
+      "Die Entwicklung des Projekts und seine Richtung lassen sich leichter verfolgen."
+    ],
+    next: "Das Journal regelmäßig ergänzen, veröffentlichte Daten konsolidieren und die gemeinsame Ausgestaltung des Piloten mit den drei öffentlichen Arbeitsverwaltungen vorbereiten."
+  },
+  {
+    sort_date: "2026-07-15",
+    date: "15. Juli 2026",
+    title: "Vertrauen wird zum zentralen Thema",
+    observed: "Die Erprobung bestätigt, dass es möglich ist, Arbeitgeber zu überzeugen, ihre Bedarfe zu erfassen, Kandidaten zu identifizieren, Profile zu qualifizieren, Matching-Vorschläge zu erstellen und erste Vermittlungen zu organisieren. Das Haupthemmnis liegt damit nicht mehr in der grundsätzlichen Machbarkeit des Matchings. Ein wichtiger Teil der Kandidaten zögert jedoch zu antworten, wenn die institutionelle Herkunft des Dienstes oder der Rahmen der Datennutzung nicht sofort erkennbar sind.",
+    decided: "Match Europe zu einem Vermittlungsdienst weiterzuentwickeln, der stärker von öffentlichen Arbeitsverwaltungen und ihren lokalen Anlaufstellen getragen wird. Die Strategie besteht darin, vor einer Ausweitung der Rekrutierungsmaßnahmen zunächst ein Vertrauensumfeld aufzubauen.",
+    changed: [
+      "Die Vorstellung des Dienstes durch bekannte Fachkräfte wird zu einer Priorität.",
+      "Die Einwilligung der Kandidaten und eine klare institutionelle Identität rücken in den Mittelpunkt.",
+      "Kontrollierte Kontaktkanäle und menschliche Begleitung werden zu Schlüsselfaktoren des Dienstes.",
+      "Die schrittweise Einbindung lokaler Agenturen und der Aufbau eines Pools von rund 300 informierten und qualifizierten Kandidaten werden zu strukturierenden Zielen."
+    ],
+    next: "Mit den öffentlichen Arbeitsverwaltungen aus Frankreich, Wallonien und Luxemburg die Bedingungen eines Piloten auf den drei Seiten gemeinsam ausarbeiten."
+  },
+  {
+    sort_date: "2026-07-01",
+    date: "Juni-Juli 2026",
+    title: "Kontaktkanäle testen",
+    observed: "Die Fähigkeit, einen passenden Kandidaten zu identifizieren, garantiert noch nicht, dass dieser auf eine Kontaktaufnahme reagiert. E-Mails oder Nachrichten eines noch wenig bekannten Dienstes können ignoriert werden oder Misstrauen auslösen.",
+    decided: "Direktere Kommunikationskanäle prüfen, insbesondere WhatsApp Business, zunächst in einer manuellen und begrenzten Nutzung. Dieser Kanal muss durch klare Regeln zu Einwilligung, Absenderidentität, berechtigten Personen, ausgetauschten Informationen, Aufbewahrung der Nachrichten, Nachvollziehbarkeit und dem Verbot persönlicher Konten eingerahmt bleiben.",
+    changed: "Die Kontaktaufnahme wird als eigenständiger Bestandteil des Produkts verstanden und nicht als bloßer nachgelagerter Schritt nach dem Matching.",
+    next: "Die wirksamsten Kanäle testen und zugleich den institutionellen und vertrauensstiftenden Charakter des Dienstes stärken."
+  },
+  {
+    sort_date: "2026-06-20",
+    date: "Juni 2026",
+    title: "Ein nachvollziehbares und beaufsichtigtes Matching aufbauen",
+    observed: "Eine bloße Zuordnung über Berufsbezeichnungen reicht nicht aus, um einem Arbeitgeber einen Kandidaten vorzuschlagen. Die Relevanz hängt von mehreren Dimensionen ab: Beruf und Erfahrung, Kompetenzen, Sprachen, Mobilität, Verfügbarkeit, Arbeitsbedingungen, Vergütung sowie erforderliche Qualifikationen oder Berechtigungen.",
+    decided: "Einen Matching-Motor auf Grundlage objektiver und verständlicher Regeln entwickeln. Jeder Vorschlag muss durch die Kriterien erklärbar sein, die zu dieser Zuordnung geführt haben. Die endgültige Entscheidung bleibt vor jeder Vermittlung einer menschlichen Validierung vorbehalten.",
+    changed: "Der Score ist keine automatische Entscheidung. Er wird zu einem Entscheidungsunterstützungsinstrument, mit dem Profile verglichen, ihre Stärken und Grenzen verstanden und menschliche Eingriffe wirksamer vorbereitet werden können.",
+    next: "Das Modell schrittweise anreichern, insbesondere durch eine bessere Berücksichtigung von Schlüsselkompetenzen, und gleichzeitig mögliche Bias-Risiken bewerten."
+  },
+  {
+    sort_date: "2026-06-15",
+    date: "Juni 2026",
+    title: "Eine erste operative Version online stellen",
+    observed: "Die zunächst verwendeten Erfassungstools ermöglichten einen schnellen Start, reichten aber nicht mehr aus, um die wachsende Zahl von Profilen, Bedarfen und Matching-Vorschlägen zu verfolgen. Der Dienst musste zudem Datenschutz, Sicherheit, Nachvollziehbarkeit, Konformität sowie die Nachverfolgung von Entscheidungen und Austausch besser berücksichtigen.",
+    decided: "Eine erste operative Version von EURES Beta entwickeln, die einen eigenen Zugang für Kandidaten, einen eigenen Zugang für Arbeitgeber, eine Statistikseite, einen Administrationsbereich, einen automatisierten Matching-Motor, eine manuelle Validierung vor jeder Weitergabe an einen Arbeitgeber sowie die Nachvollziehbarkeit von Vorschlägen und Antworten umfasst.",
+    changed: "Das Projekt beruht nicht mehr nur auf verstreuten manuellen Bearbeitungen. Es verfügt nun über einen Online-Dienst, der Daten strukturieren, Matching-Vorschläge erzeugen und die wichtigsten Schritte der Vermittlung dokumentieren kann.",
+    next: "Die Nutzung des Dienstes testen, die Formulare verbessern und die Zuordnungskriterien präziser und besser erklärbar machen."
+  },
+  {
+    sort_date: "2026-06-05",
+    date: "Anfang Juni 2026",
+    title: "Erste Ergebnisse aus dem Feld erzielen",
+    observed: "In zwei Wochen Erprobung mit Arbeitgebern in Luxemburg: 2 Arbeitgeber haben teilgenommen; 5 Rekrutierungsbedarfe wurden erfasst; 158 Kandidaten wurden kontaktiert; 35 Profile wurden gewonnen; 22 Matching-Vorschläge wurden erstellt; erste Vorstellungsgespräche wurden angestoßen. Diese Ergebnisse zeigen, dass Arbeitgeber mobilisiert, Kandidaten identifiziert und Zuordnungen in kurzer Zeit vorgenommen werden können.",
+    decided: "Die Erprobung fortsetzen und den anfänglichen Concierge-Modus in einen strukturierteren und besser nachvollziehbaren Dienst überführen.",
+    changed: [
+      "Das Projekt verfügt nun über erste konkrete Ergebnisse.",
+      "Die Hypothese eines grenzüberschreitenden Vermittlungsdienstes ist glaubwürdig genug, um die Entwicklung eines ersten operativen Werkzeugs zu rechtfertigen."
+    ],
+    next: "Eine Umgebung schaffen, die Informationen erfassen, einen Teil des Matchings automatisieren und zugleich eine menschliche Validierung erhalten kann."
+  },
+  {
+    sort_date: "2026-05-15",
+    date: "Mai 2026",
+    title: "Eine erste Matching-Erprobung starten",
+    observed: "Um die realen Bedingungen grenzüberschreitender Vermittlung zu verstehen, war es notwendig, über eine rein theoretische Betrachtung hinauszugehen. Deshalb wurde eine erste Erprobung rund um Bedarfe luxemburgischer Arbeitgeber und Kandidaten gestartet, die in Luxemburg arbeiten könnten. Die zuerst anvisierten Berufe betrafen insbesondere Reinigung und Instandhaltung, bevor schrittweise weitere Sektoren hinzukamen.",
+    decided: "Den Dienst in einem „Concierge“-Modus testen: Arbeitgeberbedarfe direkt erfassen, potenzielle Kandidaten identifizieren, sie kontaktieren, ihr Interesse und ihre Einschränkungen qualifizieren, Übereinstimmungen analysieren und die relevantesten Vermittlungen vorschlagen.",
+    changed: "Der Dienst wird an realen Situationen bewertet und nicht nur an der theoretischen Qualität eines Algorithmus. Jeder Austausch hilft dabei, die für das Matching tatsächlich nützlichen Informationen und die bei den Nutzern auftretenden Schwierigkeiten zu identifizieren.",
+    next: "Die erfassten Daten strukturieren und die ersten Zuordnungskriterien formalisieren."
+  },
+  {
+    sort_date: "2026-04-20",
+    date: "April 2026",
+    title: "Die Methode Startup d'Etat wählen",
+    observed: "Das zu lösende Problem ist komplex und betrifft mehrere Verwaltungen, Länder, Informationssysteme und Nutzergruppen. In diesem Kontext würde die vorherige Definition einer vollständigen Lösung ein erhebliches Risiko bergen: einen langen und kostspieligen Dienst aufzubauen, bevor sein tatsächlicher Nutzen überprüft wurde.",
+    decided: "Die Prinzipien der Methode Startup d'Etat anwenden: von den Bedürfnissen der Nutzer ausgehen, mit einem kleinen Team arbeiten, schnell testen, iterativ vorgehen, Wirkung messen und die Möglichkeit behalten, eine nicht funktionierende Hypothese anzupassen oder zu stoppen.",
+    changed: "Die Partner werden nicht gebeten, ein starres Lastenheft zu validieren. Sie sind eingeladen, zu einer schrittweisen Erprobung beizutragen, indem sie Zugang zu Nutzern, nützlichen Daten, Fachkräften und bestehenden Instrumenten ermöglichen.",
+    next: "Eine erste Version des Kandidaten- und Arbeitgeberwegs entwickeln, die einfach genug ist, um im Feld getestet zu werden."
+  },
+  {
+    sort_date: "2026-04-15",
+    date: "15. April 2026",
+    title: "Die Erprobung mit europäischen Arbeiten verzahnen",
+    observed: "Die Gespräche mit der EURES-Koordination von France Travail bestätigten mehrere Nutzungsprobleme des EURES-Portals sowie eine noch unzureichende Verzahnung mit Europass. Sie machten zudem bereits laufende europäische Arbeiten zu drei Prioritäten sichtbar: ein stärker personalisierter Dienst, eine mobile Anwendung und ein gemeinsames Dashboard.",
+    decided: "Die Erprobung als konkreten und komplementären Beitrag zu den bereits auf europäischer Ebene laufenden Überlegungen positionieren. Das Projekt soll durch reale Nutzung zeigen, welchen Mehrwert ein einfacherer, personalisierter und stärker ergebnisorientierter Ansatz bringen kann.",
+    changed: "Die Erprobung wird als Lernfeld gedacht, das breitere Arbeiten zur Weiterentwicklung von EURES speisen kann, ohne auf eine vollständige Transformation der europäischen Werkzeuge zu warten.",
+    next: "Zugang zu den nützlichen Umgebungen und Ressourcen erhalten und anschließend einen ersten testbaren Weg mit echten Kandidaten und echten Arbeitgebern vorbereiten."
+  },
+  {
+    sort_date: "2026-04-01",
+    date: "April 2026",
+    title: "Die Grenzen des aktuellen Systems verstehen",
+    observed: "Die ersten Gespräche mit Akteuren der grenzüberschreitenden Beschäftigung haben geholfen, die aktuelle Funktionsweise des Arbeitsmarkts in der Großregion besser zu verstehen. Mehrere Grenzen wurden deutlich: Werkzeuge bleiben weitgehend nach Ländern organisiert; die Navigation zwischen Stellenangeboten führt mitunter zu vielen Weiterleitungen; verfügbare Kandidatenprofile sind teilweise wenig nutzbar oder anonymisiert; bestehende Dienste erleichtern eine schnelle und personalisierte Vermittlung nicht immer; und die verschiedenen Akteure verfügen über Informationen und Ressourcen, die sich in einem einheitlichen Weg nur schwer mobilisieren lassen.",
+    decided: "Einen direkteren Ansatz testen, der sich auf ein konkretes Problem konzentriert: Kandidaten und Arbeitgeber innerhalb desselben grenzüberschreitenden Wirtschaftsraums besser zusammenführen. Das Projekt übernimmt einen von Startup d'Etat inspirierten Ansatz: vom Feld ausgehen, schnell experimentieren und die erzielten Ergebnisse messen.",
+    changed: "Das Projekt versucht nicht zuerst, das gesamte EURES-System neu zu gestalten. Es zielt darauf ab, eine begrenzte Lösung zu testen, die schnell nutzbar ist und anschließend anhand der Rückmeldungen von Kandidaten, Arbeitgebern und Beschäftigungsfachleuten angepasst werden kann.",
+    next: "Einen ersten Anwendungsfall definieren und die Partner identifizieren, die zur Erprobung beitragen können."
+  }
+];
+
+const journalEntriesByLang = {
+  fr: journalEntriesFR,
+  en: journalEntriesEN,
+  de: journalEntriesDE,
+};
+
+
+
 function list(items) {
   return `<ul>${items.map((item) => `<li>${item}</li>`).join("")}</ul>`;
 }
@@ -3238,6 +4162,238 @@ function privacyTemplate(lang, t) {
             <p>${data.rightsText}</p>
             <p class="mini-note">${data.note}</p>
           </article>
+        </div>
+      </section>
+    </main>
+    ${footer(t)}
+  `;
+}
+
+function partnerLogosMarkup(lang) {
+  const logos = (copy[lang] || copy.fr).candidateLanding.logos;
+  return `
+    <div class="candidate-logos partner-logos" aria-label="Partners">
+      <img src="${logos.eures.src}" alt="${logos.eures.alt}" class="logo-eures">
+      <div class="candidate-badge">
+        <img src="${logos.franceTravail.src}" alt="${logos.franceTravail.alt}" class="logo-france-travail">
+        <span>France Travail</span>
+      </div>
+      <img src="${logos.europeanUnion.src}" alt="${logos.europeanUnion.alt}" class="logo-eu">
+    </div>
+  `;
+}
+
+function editorialHero(lang, title, eyebrow, subtitle, intro) {
+  return `
+    <section class="section editorial-hero">
+      <div class="shell">
+        <article class="hero-card editorial-card">
+          ${partnerLogosMarkup(lang)}
+          <div class="eyebrow">${eyebrow}</div>
+          <h1>${title}</h1>
+          <p class="lede editorial-subtitle">${subtitle}</p>
+          <p class="lede">${intro}</p>
+        </article>
+      </div>
+    </section>
+  `;
+}
+
+function renderJournalEntry(entry, labels) {
+  return `
+    <article class="panel journal-entry">
+      <div class="journal-date">${entry.date}</div>
+      <h2>${entry.title}</h2>
+      <div class="journal-block">
+        <h3>${labels.observed}</h3>
+        <p>${entry.observed}</p>
+      </div>
+      <div class="journal-block">
+        <h3>${labels.decided}</h3>
+        <p>${entry.decided}</p>
+      </div>
+      <div class="journal-block">
+        <h3>${labels.changed}</h3>
+        ${Array.isArray(entry.changed) ? list(entry.changed) : `<p>${entry.changed}</p>`}
+      </div>
+      <div class="journal-block">
+        <h3>${labels.next}</h3>
+        <p>${entry.next}</p>
+      </div>
+    </article>
+  `;
+}
+
+function projectTemplate(lang, t) {
+  const content = projectContentByLang[lang] || projectContentFR;
+
+  return `
+    ${nav("project", lang, t)}
+    <main>
+      ${editorialHero(lang, t.projectPage.title, t.projectPage.eyebrow, t.projectPage.subtitle, t.projectPage.intro)}
+      <section class="section" id="sommaire">
+        <div class="shell">
+          <article class="panel summary-panel">
+            <h2>${content.summary.title}</h2>
+            <nav aria-label="Sommaire de la page projet">
+              <div class="summary-grid">
+                ${content.summary.items.map(([anchor, label]) => `
+                  <a class="summary-link" href="#${anchor}">${label}</a>
+                `).join("")}
+              </div>
+            </nav>
+          </article>
+        </div>
+      </section>
+      <section class="section" id="constat">
+        <div class="shell editorial-grid">
+          <article class="panel">
+            <h2>${content.constats.title}</h2>
+            <p>${content.constats.body}</p>
+            <div class="candidate-highlight">${content.constats.highlight}</div>
+          </article>
+          <article class="panel" id="situation">
+            <h2>${content.example.title}</h2>
+            <p>${content.example.body}</p>
+            <p class="mini-note">${content.example.note}</p>
+          </article>
+        </div>
+      </section>
+      <section class="section" id="probleme-public">
+        <div class="shell editorial-grid">
+          <article class="panel">
+            <h2>${content.problem.title}</h2>
+            ${list(content.problem.items)}
+          </article>
+          <article class="panel" id="acquis">
+            <h2>${content.validation.title}</h2>
+            ${list(content.validation.items)}
+            <div class="candidate-highlight">${content.validation.highlight}</div>
+          </article>
+        </div>
+      </section>
+      <section class="section" id="proposition">
+        <div class="shell">
+          <div class="panel"><h2>${content.value.title}</h2></div>
+          <div class="principles-grid" style="margin-top: 1rem;">
+            ${content.value.pillars.map((pillar) => `
+              <article class="surface-card">
+                <h2>${pillar.title}</h2>
+                <p>${pillar.text}</p>
+              </article>
+            `).join("")}
+          </div>
+        </div>
+      </section>
+      <section class="section" id="fonctionnement">
+        <div class="shell">
+          <article class="panel">
+            <h2>${content.journey.title}</h2>
+            <div class="steps-grid">
+              ${content.journey.steps.map((step, index) => `
+                <div class="step-card">
+                  <strong>${index + 1}</strong>
+                  <span>${step}</span>
+                </div>
+              `).join("")}
+            </div>
+          </article>
+        </div>
+      </section>
+      <section class="section" id="pilote">
+        <div class="shell editorial-grid">
+          <article class="panel">
+            <h2>${content.pilot.title}</h2>
+            <p>${content.pilot.body}</p>
+            <div class="tag-row">
+              ${content.pilot.territories.map((territory) => `<span class="tag">${territory}</span>`).join("")}
+            </div>
+          </article>
+          <article class="panel" id="partenaires">
+            <h2>${content.partners.title}</h2>
+            <p>${content.partners.body}</p>
+            ${list(content.partners.items)}
+          </article>
+        </div>
+      </section>
+      <section class="section" id="vivier">
+        <div class="shell editorial-grid">
+          <article class="panel">
+            <h2>${content.pool.title}</h2>
+            <p>${content.pool.body}</p>
+            <p class="mini-note">${content.pool.note}</p>
+          </article>
+          <article class="panel" id="impasses">
+            <h2>${content.deadEnds.title}</h2>
+            <p>${content.deadEnds.body}</p>
+            ${list(content.deadEnds.items)}
+            <p class="mini-note">${content.deadEnds.note}</p>
+          </article>
+        </div>
+      </section>
+      <section class="section" id="confiance">
+        <div class="shell editorial-grid">
+          <article class="panel">
+            <h2>${content.trust.title}</h2>
+            ${list(content.trust.items)}
+            <p class="mini-note">${content.trust.note}</p>
+          </article>
+          <article class="panel" id="methode">
+            <h2>${content.method.title}</h2>
+            ${list(content.method.items)}
+          </article>
+        </div>
+      </section>
+      <section class="section" id="impact">
+        <div class="shell">
+          <div class="panel"><h2>${content.impact.title}</h2></div>
+          <div class="dashboard-grid" style="margin-top: 1rem;">
+            ${content.impact.categories.map((category) => `
+              <article class="surface-card">
+                <h2>${category.title}</h2>
+                ${list(category.items)}
+              </article>
+            `).join("")}
+          </div>
+        </div>
+      </section>
+      <section class="section" id="partenaires-suite">
+        <div class="shell">
+          <article class="panel closing-panel">
+            <h2>${content.proposal.title}</h2>
+            <p>${content.proposal.body}</p>
+            <p class="mini-note">${content.closingNote || "Les parcours candidat et employeur restent les portes d’entrée opérationnelles déjà ouvertes dans cette première version."}</p>
+            <div class="hero-actions">
+              <a class="secondary-action" href="${pageUrl("candidate-landing", lang)}">${t.common.navCandidate}</a>
+              <a class="ghost-action" href="${pageUrl("employer-landing", lang)}">${t.common.navEmployer}</a>
+            </div>
+          </article>
+        </div>
+      </section>
+      <section class="section" id="sources">
+        <div class="shell">
+          <article class="panel">
+            <h2>${content.sources.title}</h2>
+            ${list(content.sources.items)}
+          </article>
+        </div>
+      </section>
+    </main>
+    ${footer(t)}
+  `;
+}
+
+function journalTemplate(lang, t) {
+  const entries = sortJournalEntries(journalEntriesByLang[lang] || journalEntriesFR);
+  const labels = journalLabels[lang] || journalLabels.fr;
+
+  return `
+    ${nav("journal", lang, t)}
+    <main>
+      ${editorialHero(lang, t.journalPage.title, t.journalPage.eyebrow, t.journalPage.subtitle, t.journalPage.intro)}
+      <section class="section">
+        <div class="shell journal-list">
+          ${entries.map((entry) => renderJournalEntry(entry, labels)).join("")}
         </div>
       </section>
     </main>
@@ -5401,6 +6557,16 @@ function render() {
 
   if (page === "home") {
     root.innerHTML = homeTemplate(lang, t);
+    return;
+  }
+
+  if (page === "project") {
+    root.innerHTML = projectTemplate(lang, t);
+    return;
+  }
+
+  if (page === "journal") {
+    root.innerHTML = journalTemplate(lang, t);
     return;
   }
 
