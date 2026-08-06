@@ -1430,6 +1430,12 @@ const candidateTallyCopy = {
     salaryExpectationIntro: "Indiquez ici votre attente salariale pour ce métier, en euros, en précisant s'il s'agit d'un montant brut ou net.",
     fileNote: "Le nom du fichier sera enregistré. Le fichier lui-même n’est pas encore stocké côté plateforme.",
     consentText: "J’accepte que mes réponses soient utilisées par les équipes et partenaires EURES dans le cadre de l’accompagnement à la mobilité professionnelle et des mises en relation proposées. Vos données seront utilisées uniquement dans le cadre de votre accompagnement et conformément à la réglementation européenne sur la protection des données (RGPD).",
+    whatsappTitle: "Contact WhatsApp",
+    whatsappHint: "Ce choix sert uniquement à faciliter une mise en relation lorsqu’une opportunité pertinente est identifiée. En cas de refus, les échanges se feront par e-mail ou téléphone.",
+    whatsappOptions: [
+      { value: "yes", label: "J’accepte que Match Europe utilise mon numéro pour créer, lorsqu’une opportunité pertinente est identifiée, un groupe WhatsApp réunissant l’employeur concerné, le conseiller Match Europe et moi-même. Mon numéro sera visible par les membres du groupe. Je pourrai refuser ou retirer cet accord à tout moment." },
+      { value: "no", label: "Je refuse l’utilisation de WhatsApp pour les mises en relation. En cas d’opportunité pertinente, les échanges se feront par e-mail ou téléphone." }
+    ],
     rankingError: "Chaque priorité d'expatriation doit avoir un rang unique de 1 à 7.",
     errors: {
       maxFour: "Vous avez déjà choisi 4 éléments pour cette section."
@@ -1655,6 +1661,12 @@ const candidateTallyCopy = {
     salaryExpectationIntro: "Indicate your salary expectation for this role here, in euros, and specify whether it is gross or net.",
     fileNote: "The file name will be recorded. The file itself is not yet stored on the platform.",
     consentText: "I agree that my answers may be used by EURES teams and partners for professional mobility support and the proposed introductions. Your data will only be used for your support and in accordance with European data protection rules (GDPR).",
+    whatsappTitle: "WhatsApp contact",
+    whatsappHint: "This choice is only used to facilitate an introduction when a relevant opportunity is identified. If you refuse, exchanges will take place by email or phone.",
+    whatsappOptions: [
+      { value: "yes", label: "I agree that Match Europe may use my number to create, when a relevant opportunity is identified, a WhatsApp group including the employer concerned, the Match Europe adviser and myself. My number will be visible to the group members. I may refuse or withdraw this agreement at any time." },
+      { value: "no", label: "I refuse the use of WhatsApp for introductions. If a relevant opportunity is identified, exchanges will take place by email or phone." }
+    ],
     rankingError: "Each relocation priority must have a unique rank from 1 to 7.",
     errors: {
       maxFour: "You have already selected 4 items for this section."
@@ -1807,6 +1819,12 @@ const candidateTallyCopy = {
     salaryExpectationIntro: "Geben Sie hier Ihre Gehaltserwartung für diesen Beruf in Euro an und präzisieren Sie, ob es sich um einen Brutto- oder Nettobetrag handelt.",
     fileNote: "Der Dateiname wird gespeichert. Die Datei selbst wird derzeit noch nicht auf der Plattform gespeichert.",
     consentText: "Ich stimme zu, dass meine Antworten von EURES-Teams und Partnern für die Begleitung der beruflichen Mobilität und die vorgeschlagenen Vermittlungen verwendet werden dürfen. Ihre Daten werden nur im Rahmen Ihrer Begleitung und gemäß den europäischen Datenschutzvorschriften (DSGVO) verwendet.",
+    whatsappTitle: "Kontakt über WhatsApp",
+    whatsappHint: "Diese Auswahl dient nur dazu, eine Kontaktaufnahme zu erleichtern, wenn eine passende Gelegenheit identifiziert wird. Bei Ablehnung erfolgen die Kontakte per E-Mail oder Telefon.",
+    whatsappOptions: [
+      { value: "yes", label: "Ich stimme zu, dass Match Europe meine Nummer verwenden darf, um bei einer passenden Gelegenheit eine WhatsApp-Gruppe mit dem betreffenden Arbeitgeber, dem Match-Europe-Berater und mir zu erstellen. Meine Nummer ist für die Gruppenmitglieder sichtbar. Ich kann diese Zustimmung jederzeit ablehnen oder widerrufen." },
+      { value: "no", label: "Ich lehne die Nutzung von WhatsApp für Vermittlungen ab. Bei einer passenden Gelegenheit erfolgen die Kontakte per E-Mail oder Telefon." }
+    ],
     rankingError: "Jede Umzugspriorität muss einen eindeutigen Rang von 1 bis 7 haben.",
     errors: {
       maxFour: "Sie haben für diesen Abschnitt bereits 4 Elemente ausgewählt."
@@ -4929,6 +4947,14 @@ function candidateTallyQuestionnaireTemplate(lang, t) {
             </section>
 
             <section class="form-section">
+              <fieldset class="fieldset">
+                <legend>${content.whatsappTitle}</legend>
+                ${radioPills("whatsapp_consent", content.whatsappOptions)}
+                <p class="mini-note">${content.whatsappHint}</p>
+              </fieldset>
+            </section>
+
+            <section class="form-section">
               <label class="checkbox-pill consent-pill">
                 <input type="checkbox" name="tally_q37" value="yes" required>
                 <span>${content.consentText}</span>
@@ -5495,6 +5521,10 @@ function humanizeCandidateRawAnswers(fields, fileMeta, rankingSummary) {
       email: fields.tally_q33 || "",
       telephone: fields.tally_q34 || "",
       ville: fields.tally_q35 || ""
+    },
+    whatsapp: {
+      consentement: fields.whatsapp_consent || "",
+      telephone: fields.tally_q34 || ""
     },
     cv: fileMeta,
     consentement_rgpd: fields.tally_q37 || ""
@@ -6138,7 +6168,9 @@ function attachCandidateTallyBehavior(lang, t) {
       contraintes_travail: Array.isArray(normalized.tally_q43) ? normalized.tally_q43.join(" | ") : (normalized.tally_q43 || ""),
       permis_autorisations: permitSummary.summary,
       permis_autorisations_autre: permitSummary.other,
-      form_version: "2026-06-tally-candidate-v2",
+      whatsapp_consent: normalized.whatsapp_consent || "",
+      whatsapp_phone: normalized.tally_q34 || "",
+      form_version: "2026-08-tally-candidate-whatsapp-v3",
       source_page: "candidate-questionnaire",
       ui_language: lang,
       flow_role: "candidate",
