@@ -1959,6 +1959,19 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,</pre>
       return "aucun retour employeur";
     }
 
+    function employerWhatsappBadge(row) {
+      const consent = row.employer_whatsapp_consent || "";
+      if (consent === "yes") {
+        const phone = row.employer_whatsapp_phone ? ` · ${row.employer_whatsapp_phone}` : "";
+        const confirmed = row.employer_whatsapp_confirmed_at ? ` · confirmé le ${row.employer_whatsapp_confirmed_at}` : "";
+        return `<span class="pill accepted">Employeur : WhatsApp OK${esc(phone)}${esc(confirmed)}</span>`;
+      }
+      if (consent === "no") {
+        return `<span class="pill refused">Employeur : sans WhatsApp</span>`;
+      }
+      return `<span class="pill pending">Employeur : WhatsApp non répondu</span>`;
+    }
+
     function workflowStatusLabel(status) {
       if (status === "calcule") return "calculé";
       if (status === "a_valider_admin") return "à valider";
@@ -3802,6 +3815,7 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,</pre>
                 <div class="matching-row-tags">
                   <span class="pill">Workflow : ${esc(workflowStatusLabel(row.workflow_status))}</span>
                   <span class="pill ${esc(row.admin_status)}">${esc(adminStatusLabel(row.admin_status))}</span>
+                  ${employerWhatsappBadge(row)}
                 </div>
                 <div class="matching-row-toggle">Détails</div>
               </div>
@@ -3816,6 +3830,7 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,</pre>
                     <span class="pill ${esc(row.admin_status)}">Décision admin : ${esc(adminStatusLabel(row.admin_status))}</span>
                     <span class="pill">Scoring initial : ${esc(scoreStatusLabel(row))}</span>
                     <span class="pill ${row.employer_response === "contact" ? "response-yes" : row.employer_response === "not_contact" ? "response-no" : ""}">Employeur : ${esc(employerResponseLabel(row.employer_response))}</span>
+                    ${employerWhatsappBadge(row)}
                     <span class="pill">besoin_id : ${esc(row.besoin_id)}</span>
                     <span class="pill">candidat_id : ${esc(row.candidat_id)}</span>
                   </div>
