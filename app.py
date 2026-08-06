@@ -8313,7 +8313,7 @@ def admin_eures_invitation_update(form_id: str, record_id: int):
 @app.route('/api/forms/<form_id>/admin/invitations/<int:record_id>', methods=['DELETE'])
 @admin_required
 def admin_eures_invitation_delete(form_id: str, record_id: int):
-    """Admin API: delete one invitation row in error state."""
+    """Admin API: delete one invitation row in a safe cleanup state."""
     proxied = maybe_proxy_eures_request(form_id)
     if proxied:
         return proxied
@@ -8331,13 +8331,19 @@ def admin_eures_invitation_delete(form_id: str, record_id: int):
             return jsonify({'error': 'Invitation not found'}), 404
         fields = existing.get('fields', {}) if isinstance(existing.get('fields'), dict) else {}
         current_status = str(fields.get('invitation_status') or '').strip().lower()
-        if current_status != 'erreur_envoi':
-            return jsonify({'error': "Seules les invitations en erreur d'envoi peuvent être supprimées."}), 400
+        followup_status = _normalize_eures_duplicate_followup_status(fields.get('duplicate_followup_status', ''))
+        if current_status != 'erreur_envoi' and followup_status != 'pending':
+            return jsonify({'error': "Seules les invitations en erreur d'envoi ou les doublons à arbitrer peuvent être supprimés."}), 400
 
         delete_eures_invitation_record_by_id(record_id, headers=headers)
         app.logger.info(
             'EURES invitation deleted',
-            extra={'form_id': form_id, 'record_id': record_id, 'status': current_status},
+            extra={
+                'form_id': form_id,
+                'record_id': record_id,
+                'status': current_status,
+                'duplicate_followup_status': followup_status,
+            },
         )
         return jsonify({
             'ok': True,

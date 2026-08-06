@@ -2323,6 +2323,7 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,</pre>
                 <textarea id="duplicate-followup-note-${esc(row.record_id)}" placeholder="Note interne optionnelle">${esc(row.duplicate_followup_note || "")}</textarea>
                 <div class="hero-actions">
                   ${row.duplicate_followup_type === "existing_invitation" && row.duplicate_followup_target_status === "invitation_envoyee" ? `<button type="button" data-duplicate-followup-action="remind" data-record-id="${esc(row.record_id)}">Envoyer la relance</button>` : ""}
+                  <button class="btn-refuse" type="button" data-delete-invitation="${esc(row.record_id)}" data-delete-kind="duplicate">Supprimer le doublon</button>
                   <button class="btn-refuse" type="button" data-duplicate-followup-action="ignore" data-record-id="${esc(row.record_id)}">Ignorer</button>
                 </div>
               </section>
@@ -2345,10 +2346,14 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,</pre>
       for (const button of list.querySelectorAll("[data-delete-invitation]")) {
         button.addEventListener("click", async (event) => {
           const recordId = event.currentTarget.dataset.deleteInvitation;
+          const kind = event.currentTarget.dataset.deleteKind || "error";
           if (!recordId) return;
-          const confirmed = window.confirm("Supprimer définitivement cette invitation en erreur d’envoi ?");
+          const confirmed = window.confirm(kind === "duplicate"
+            ? "Supprimer définitivement cette invitation doublon ? L’invitation ou le questionnaire déjà existant sera conservé."
+            : "Supprimer définitivement cette invitation en erreur d’envoi ?"
+          );
           if (!confirmed) return;
-          await deleteInvitationError(recordId);
+          await deleteInvitationError(recordId, kind);
         });
       }
       for (const button of list.querySelectorAll("[data-remind-invitation]")) {
@@ -3012,8 +3017,9 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,</pre>
       }
     }
 
-    async function deleteInvitationError(recordId) {
-      setStatus("invite-status-line", "Suppression de l’invitation en erreur...");
+    async function deleteInvitationError(recordId, kind = "error") {
+      const isDuplicate = kind === "duplicate";
+      setStatus("invite-status-line", isDuplicate ? "Suppression de l’invitation doublon..." : "Suppression de l’invitation en erreur...");
       try {
         const response = await fetch(apiUrl(`/admin/invitations/${recordId}`), {
           method: "DELETE",
@@ -3026,7 +3032,7 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,</pre>
         if (!response.ok || !payload.ok) {
           throw new Error(payload.error || `Erreur API (${response.status})`);
         }
-        setStatus("invite-status-line", "Invitation en erreur supprimée.");
+        setStatus("invite-status-line", isDuplicate ? "Invitation doublon supprimée." : "Invitation en erreur supprimée.");
         await loadInvitations();
         await loadCockpit();
         await loadTasks();
@@ -3618,6 +3624,7 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,</pre>
           `;
           actions = `
             ${duplicate.can_remind ? `<button class="btn-accept" type="button" data-task-duplicate-action="remind">Envoyer la relance</button>` : ""}
+            <button class="btn-refuse" type="button" data-task-delete-duplicate>Supprimer le doublon</button>
             <button class="btn-refuse" type="button" data-task-duplicate-action="ignore">Ignorer</button>
           `;
         }
@@ -3724,6 +3731,16 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,</pre>
           const note = document.getElementById(`task-note-duplicate_invitation_followup-${recordId}`)?.value || "";
           if (!recordId || !action) return;
           await submitDuplicateFollowup(recordId, action, note);
+        });
+      }
+      for (const button of list.querySelectorAll("[data-task-delete-duplicate]")) {
+        button.addEventListener("click", async (event) => {
+          const card = event.currentTarget.closest(".matching-card");
+          const recordId = card?.dataset.recordId;
+          if (!recordId) return;
+          await deleteInvitationError(recordId, "duplicate");
+          await loadTasks();
+          await loadCockpit();
         });
       }
     }
