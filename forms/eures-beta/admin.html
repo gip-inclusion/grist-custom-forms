@@ -2971,7 +2971,13 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,</pre>
           ? payload.skipped.filter((row) => row.followup_created).length
           : 0;
         const followupNote = followupCount ? `, ${followupCount} relance(s) à arbitrer` : "";
-        setStatus("invite-status-line", `Envoi terminé : ${sentCount} envoyé(s), ${errorCount} erreur(s)${followupNote}.`);
+        const processed = Number(payload.processed || sentCount + errorCount);
+        const requested = Number(payload.requested || processed);
+        const remaining = Number(payload.remaining_after_batch || 0);
+        const batchNote = remaining > 0
+          ? ` Lot traité : ${processed}/${requested}. ${remaining} invitation(s) restent à envoyer : relancez l’envoi pour le lot suivant.`
+          : "";
+        setStatus("invite-status-line", `Envoi terminé : ${sentCount} envoyé(s), ${errorCount} erreur(s)${followupNote}.${batchNote}`);
         await loadInvitations();
         await loadCockpit();
         await loadTasks();

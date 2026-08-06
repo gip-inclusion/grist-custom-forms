@@ -2350,6 +2350,107 @@ def check_eures_invitation_send_conflict(
     return None
 
 
+def build_eures_invitation_conflict_indexes(
+    invitation_records: list[dict],
+    target_records: list[dict],
+    invitation_headers: dict,
+) -> dict:
+    """Preload invitation/questionnaire lookups for bulk invitation sends.
+
+    The one-by-one path calls Grist repeatedly. For hundreds of invitations this
+    can exceed the sync worker timeout. Bulk sending uses this preloaded index
+    instead.
+    """
+    blocking_statuses = {
+        'invitation_envoyee',
+        'questionnaire_recu',
+        'rapprochement_a_confirmer',
+        'rapprochee',
+        'matching_calcule',
+        'traitee',
+    }
+    invitation_by_key: dict[tuple[str, str], list[dict]] = defaultdict(list)
+    for rec in invitation_records:
+        fields = rec.get('fields', {}) if isinstance(rec, dict) else {}
+        key = _eures_invitation_lookup_key(fields.get('role', ''), fields.get('email', ''))
+        if not all(key):
+            continue
+        invitation_by_key[key].append({
+            'record_id': int(rec.get('id') or 0),
+            'status': str(fields.get('invitation_status') or '').strip().lower(),
+        })
+
+    target_roles = {
+        _normalize_eures_invitation_role((rec.get('fields', {}) if isinstance(rec, dict) else {}).get('role', ''))
+        for rec in target_records
+    }
+    target_roles.discard('')
+
+    questionnaire_by_key: dict[tuple[str, str], dict] = {}
+    for role in sorted(target_roles):
+        config = _get_eures_role_table_config(role)
+        if not config:
+            continue
+        headers = _eures_admin_headers(config)
+        for rec in fetch_table_records(config['doc_id'], config['table_id'], headers):
+            fields = rec.get('fields', {}) if isinstance(rec, dict) else {}
+            if not isinstance(fields, dict):
+                continue
+            row_email = (
+                normalize_email(fields.get('email', ''))
+                if role == 'candidate'
+                else _resolve_employer_recipient(fields)
+            )
+            if row_email:
+                questionnaire_by_key[(role, row_email)] = rec
+
+    return {
+        'blocking_statuses': blocking_statuses,
+        'invitation_by_key': invitation_by_key,
+        'questionnaire_by_key': questionnaire_by_key,
+    }
+
+
+def check_eures_invitation_send_conflict_from_indexes(
+    role: str,
+    email: str,
+    *,
+    current_record_id: int,
+    indexes: dict,
+) -> dict | None:
+    """Return the same conflict payload as the one-by-one check using indexes."""
+    normalized_role = _normalize_eures_invitation_role(role)
+    normalized_email = normalize_email(email)
+    if not normalized_role or not normalized_email:
+        return None
+    key = (normalized_role, normalized_email)
+
+    blocking_statuses = indexes.get('blocking_statuses') or set()
+    invitation_by_key = indexes.get('invitation_by_key') or {}
+    for row in invitation_by_key.get(key, []):
+        record_id = int(row.get('record_id') or 0)
+        if record_id == int(current_record_id or 0):
+            continue
+        status = str(row.get('status') or '').strip().lower()
+        if status in blocking_statuses:
+            return {
+                'type': 'existing_invitation',
+                'record_id': record_id,
+                'status': status,
+                'message': 'Une invitation a déjà été envoyée à cette adresse.',
+            }
+
+    questionnaire = (indexes.get('questionnaire_by_key') or {}).get(key)
+    if questionnaire:
+        return {
+            'type': 'existing_questionnaire',
+            'record_id': int(questionnaire.get('id') or 0),
+            'status': 'questionnaire_recu',
+            'message': 'Un questionnaire a déjà été retourné avec cette adresse email.',
+        }
+    return None
+
+
 def mark_eures_duplicate_followup_pending(
     record_id: int,
     conflict: dict,
@@ -8315,6 +8416,11 @@ def admin_eures_invitations_send(form_id: str):
     data = request.get_json() or {}
     requested_ids = data.get('record_ids') or []
     force_resend = bool(data.get('force_resend'))
+    try:
+        requested_batch_limit = int(data.get('batch_limit') or os.environ.get('EURES_INVITATION_SEND_BATCH_LIMIT', '50'))
+    except Exception:
+        requested_batch_limit = 50
+    batch_limit = max(1, min(requested_batch_limit, 100))
     if requested_ids and not isinstance(requested_ids, list):
         return jsonify({'error': 'record_ids must be a list'}), 400
 
@@ -8336,6 +8442,11 @@ def admin_eures_invitations_send(form_id: str):
                 if str(fields.get('invitation_status') or '').strip().lower() == 'invitation_a_envoyer':
                     target_records.append(rec)
 
+        total_target_records = len(target_records)
+        remaining_after_batch = max(total_target_records - batch_limit, 0)
+        target_records = target_records[:batch_limit]
+        conflict_indexes = build_eures_invitation_conflict_indexes(records, target_records, headers)
+
         sent = []
         skipped = []
         errors = []
@@ -8353,11 +8464,11 @@ def admin_eures_invitations_send(form_id: str):
                     'reason': f'status_not_sendable:{current_status or "unknown"}',
                 })
                 continue
-            send_conflict = check_eures_invitation_send_conflict(
+            send_conflict = check_eures_invitation_send_conflict_from_indexes(
                 fields.get('role', ''),
                 fields.get('email', ''),
                 current_record_id=record_id,
-                invitation_headers=headers,
+                indexes=conflict_indexes,
             )
             if send_conflict:
                 followup_note = (
@@ -8418,7 +8529,10 @@ def admin_eures_invitations_send(form_id: str):
 
         return jsonify({
             'ok': True,
-            'requested': len(target_records),
+            'requested': total_target_records,
+            'processed': len(target_records),
+            'batch_limit': batch_limit,
+            'remaining_after_batch': remaining_after_batch,
             'force_resend': force_resend,
             'sent': sent,
             'skipped': skipped,
