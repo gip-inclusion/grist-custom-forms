@@ -1661,6 +1661,7 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,</pre>
                 <option value="all">Tous</option>
                 <option value="accepted">Acceptés</option>
                 <option value="refused">Refusés</option>
+                <option value="employer_responded">Employeur ayant répondu</option>
               </select>
               <select id="filter-source">
                 <option value="all">Toutes les sources</option>
@@ -3761,9 +3762,13 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,</pre>
     function renderMatchingRows() {
       const list = document.getElementById("matching-list");
       const search = normalizeText(document.getElementById("filter-search").value.trim());
+      const statusFilter = document.getElementById("filter-status").value;
       const sourceFilter = document.getElementById("filter-source").value;
       const filtered = state.matchings.rows.filter((row) => {
         if (!matchesSearch(row, search)) {
+          return false;
+        }
+        if (statusFilter === "employer_responded" && !String(row.employer_response || "").trim()) {
           return false;
         }
         const isManual = String(row.manual_matching_source || "").trim().toLowerCase() === "admin_manual";
@@ -4144,7 +4149,7 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,</pre>
 
       const status = document.getElementById("filter-status").value;
       const url = new URL(apiUrl("/admin/matchings"), window.location.origin);
-      if (status) url.searchParams.set("status", status);
+      if (status && status !== "employer_responded") url.searchParams.set("status", status);
 
       try {
         const response = await fetch(url.toString(), { credentials: "same-origin" });
