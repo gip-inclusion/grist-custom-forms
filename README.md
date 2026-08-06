@@ -81,6 +81,16 @@ uv run flask run -p 5005
   - `GET /health?deep=1`
   - returns HTTP `503` when Brevo is broken or unreachable, which is suitable for a monitor or scheduled probe
 
+### EURES regression guard
+
+Before deploying changes that touch `forms/eures-beta/app.js`, `forms/eures-beta/admin.html`, the public pages, or the matching flow, run:
+
+```bash
+node tools/check-eures-regressions.mjs
+```
+
+This guard checks that the public project/journal pages, candidate WhatsApp consent, employer WhatsApp confirmation, and the manual matching admin actions are still present.
+
 ### EURES deployment notes
 
 EURES beta now runs as a dedicated Scalingo app, but the public domain
