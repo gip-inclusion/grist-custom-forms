@@ -13,11 +13,14 @@ Environment variables:
 
 import os
 import base64
+import hmac
+import hashlib
 import re
 import json
 import time
 import csv
 import secrets
+import threading
 import unicodedata
 from html import escape
 from collections import Counter, defaultdict
@@ -62,8 +65,10 @@ app.config.update(
 _ADMIN_MAGIC_LINK_REQUESTS: dict[tuple[str, str], float] = {}
 _ADMIN_MAGIC_LINK_USED: dict[str, float] = {}
 _EURES_PUBLIC_WRITE_ATTEMPTS: dict[tuple[str, str], list[float]] = {}
+_EURES_TRACKING_SAVE_LOCK = threading.Lock()
 
 GRIST_BASE_URL = os.environ.get('GRIST_BASE_URL', 'https://grist.numerique.gouv.fr').rstrip('/')
+APP_MODE = os.environ.get('APP_MODE', '').strip().lower()
 _TABLE_COLUMNS_CACHE: dict[tuple[str, str], dict[str, object]] = {}
 _TABLE_COLUMNS_CACHE_TTL_SECONDS = 60
 EURES_CANDIDATS_TABLE = 'Candidats'
@@ -71,7 +76,285 @@ EURES_BESOINS_TABLE = 'Besoins_Employeurs'
 EURES_MATCHINGS_TABLE = 'Matchings'
 EURES_INVITATIONS_TABLE_DEFAULT = 'Invitations'
 EURES_STATS_TABLE_DEFAULT = 'Pilotage_EURES_Mensuel'
+EURES_TRACKING_TABLE_DEFAULT = 'Suivi_Projet'
 EURES_PUBLIC_PROXY_BASE_URL = os.environ.get('EURES_PUBLIC_PROXY_BASE_URL', 'https://eures-beta.osc-fr1.scalingo.io').rstrip('/')
+EURES_TRACKING_STATUSES = (
+    'a_qualifier',
+    'a_faire',
+    'en_cours',
+    'bloque',
+    'fait',
+)
+EURES_TRACKING_TYPES = (
+    'bug',
+    'evolution',
+    'question',
+    'decision',
+    'idee',
+)
+EURES_TRACKING_PRIORITIES = (
+    'basse',
+    'moyenne',
+    'haute',
+    'critique',
+)
+EURES_TRACKING_SIZES = (
+    'puce',
+    'souris',
+    'chat',
+    'elephant',
+    'montagne',
+    'soleil',
+)
+EURES_TRACKING_CARD_FIELDS = {
+    'card_id',
+    'langue_source',
+    'titre',
+    'type',
+    'description',
+    'attendu',
+    'observe',
+    'contexte',
+    'indicateurs_suivi',
+    'statut',
+    'priorite',
+    'taille_dev',
+    'segment',
+    'responsable',
+    'source',
+    'archived',
+    'archived_at',
+    'archived_by',
+    'images_json',
+    'liens_json',
+    'commentaires_json',
+    'historique_json',
+    'github_branch',
+    'github_pr_url',
+    'github_pr_number',
+    'github_pr_state',
+    'github_last_activity_at',
+    'production_url',
+    'production_environment',
+    'production_deployed_at',
+    'created_at',
+    'updated_at',
+}
+EURES_TRACKING_TABLE_COLUMNS = {
+    'card_id': 'Text',
+    'langue_source': 'Text',
+    'titre': 'Text',
+    'type': 'Text',
+    'description': 'Text',
+    'attendu': 'Text',
+    'observe': 'Text',
+    'contexte': 'Text',
+    'indicateurs_suivi': 'Text',
+    'statut': 'Text',
+    'priorite': 'Text',
+    'taille_dev': 'Text',
+    'segment': 'Text',
+    'responsable': 'Text',
+    'source': 'Text',
+    'archived': 'Bool',
+    'archived_at': 'Text',
+    'archived_by': 'Text',
+    'images_json': 'Text',
+    'liens_json': 'Text',
+    'commentaires_json': 'Text',
+    'historique_json': 'Text',
+    'github_branch': 'Text',
+    'github_pr_url': 'Text',
+    'github_pr_number': 'Numeric',
+    'github_pr_state': 'Text',
+    'github_last_activity_at': 'Text',
+    'production_url': 'Text',
+    'production_environment': 'Text',
+    'production_deployed_at': 'Text',
+    'created_at': 'Text',
+    'updated_at': 'Text',
+}
+EURES_TRACKING_UI_LABELS = {
+    'fr': {
+        'statuses': {
+            'a_qualifier': 'À qualifier',
+            'a_faire': 'À faire',
+            'en_cours': 'En cours',
+            'bloque': 'Bloqué',
+            'fait': 'Fait',
+        },
+        'types': {
+            'bug': '🐞 Bug',
+            'evolution': '✨ Évolution',
+            'question': '❓ Question',
+            'decision': '⚖️ Décision',
+            'idee': '💡 Idée',
+        },
+        'priorities': {
+            'basse': '🟢 Basse',
+            'moyenne': '🟡 Moyenne',
+            'haute': '🟠 Haute',
+            'critique': '🔴 Critique',
+        },
+        'sizes': {
+            'puce': '🦋 Papillon',
+            'souris': '🐭 Souris',
+            'chat': '🐱 Chat',
+            'elephant': '🐘 Éléphant',
+            'montagne': '⛰️ Montagne',
+            'soleil': '☀️ Soleil',
+        },
+        'scope_label': 'Global',
+    },
+    'en': {
+        'statuses': {
+            'a_qualifier': 'To qualify',
+            'a_faire': 'To do',
+            'en_cours': 'In progress',
+            'bloque': 'Blocked',
+            'fait': 'Done',
+        },
+        'types': {
+            'bug': '🐞 Bug',
+            'evolution': '✨ Enhancement',
+            'question': '❓ Question',
+            'decision': '⚖️ Decision',
+            'idee': '💡 Idea',
+        },
+        'priorities': {
+            'basse': '🟢 Low',
+            'moyenne': '🟡 Medium',
+            'haute': '🟠 High',
+            'critique': '🔴 Critical',
+        },
+        'sizes': {
+            'puce': '🦋 Butterfly',
+            'souris': '🐭 Small fix',
+            'chat': '🐱 Small feature',
+            'elephant': '🐘 Significant',
+            'montagne': '⛰️ Large effort',
+            'soleil': '☀️ Structural',
+        },
+        'scope_label': 'Global',
+    },
+    'de': {
+        'statuses': {
+            'a_qualifier': 'Zu qualifizieren',
+            'a_faire': 'Zu erledigen',
+            'en_cours': 'In Bearbeitung',
+            'bloque': 'Blockiert',
+            'fait': 'Erledigt',
+        },
+        'types': {
+            'bug': '🐞 Fehler',
+            'evolution': '✨ Weiterentwicklung',
+            'question': '❓ Frage',
+            'decision': '⚖️ Entscheidung',
+            'idee': '💡 Idee',
+        },
+        'priorities': {
+            'basse': '🟢 Niedrig',
+            'moyenne': '🟡 Mittel',
+            'haute': '🟠 Hoch',
+            'critique': '🔴 Kritisch',
+        },
+        'sizes': {
+            'puce': '🦋 Schmetterling',
+            'souris': '🐭 Klein',
+            'chat': '🐱 Kleine Entwicklung',
+            'elephant': '🐘 Umfangreich',
+            'montagne': '⛰️ Großes Vorhaben',
+            'soleil': '☀️ Strukturell',
+        },
+        'scope_label': 'Global',
+    },
+}
+EURES_TRACKING_MESSAGES = {
+    'fr': {
+        'invalid_image_format': "L'image {name} a été ignorée car son format est invalide.",
+        'invalid_image_type': "L'image {name} a été ignorée car son type n'est pas supporté.",
+        'invalid_image_too_large': "L'image {name} a été ignorée car elle est trop volumineuse.",
+        'only_max_images': "Seules {count} images ont été conservées.",
+        'title_derived': "Le titre a été déduit de la description.",
+        'title_required': "Le titre est obligatoire.",
+        'content_required': "Ajoutez au moins une description, un constat, un attendu, un contexte ou des indicateurs associés.",
+        'links_ignored': "Certains liens ont été ignorés car ils ne sont pas au format http(s).",
+        'history_created': "Carte créée.",
+        'history_archived': "Carte archivée.",
+        'history_restored': "Carte restaurée.",
+        'history_updated': "Carte mise à jour.",
+        'history_status_changed': "Déplacement vers {status}.",
+        'history_comment_added': "Commentaire ajouté.",
+        'history_images_added': "{count} image(s) ajoutée(s).",
+        'history_images_removed': "{count} image(s) supprimée(s).",
+        'draft_structured': "Carte structurée automatiquement à partir du texte libre.",
+        'comment_required': "Le commentaire est obligatoire.",
+        'card_not_found': "Carte de suivi introuvable.",
+        'tracking_config_incomplete': "La configuration du suivi EURES est incomplète.",
+        'github_pr_opened': "PR #{number} ouverte sur GitHub.",
+        'github_pr_updated': "PR #{number} mise à jour sur GitHub.",
+        'github_pr_merged': "PR #{number} fusionnée dans {branch}.",
+        'github_pr_closed': "PR #{number} fermée sans fusion.",
+        'deployment_succeeded': "Déploiement {environment} réussi.",
+        'unknown_target_branch': "la branche cible",
+    },
+    'en': {
+        'invalid_image_format': "Image {name} was ignored because its format is invalid.",
+        'invalid_image_type': "Image {name} was ignored because its type is not supported.",
+        'invalid_image_too_large': "Image {name} was ignored because it is too large.",
+        'only_max_images': "Only {count} images were kept.",
+        'title_derived': "The title was derived from the description.",
+        'title_required': "Title is required.",
+        'content_required': "Add at least a description, an observation, a solution idea, some context or success indicators.",
+        'links_ignored': "Some links were ignored because they are not valid http(s) URLs.",
+        'history_created': "Card created.",
+        'history_archived': "Card archived.",
+        'history_restored': "Card restored.",
+        'history_updated': "Card updated.",
+        'history_status_changed': "Moved to {status}.",
+        'history_comment_added': "Comment added.",
+        'history_images_added': "{count} image(s) added.",
+        'history_images_removed': "{count} image(s) removed.",
+        'draft_structured': "Card was structured automatically from the free text.",
+        'comment_required': "Comment is required.",
+        'card_not_found': "Tracking card not found.",
+        'tracking_config_incomplete': "EURES tracking configuration is incomplete.",
+        'github_pr_opened': "PR #{number} opened on GitHub.",
+        'github_pr_updated': "PR #{number} updated on GitHub.",
+        'github_pr_merged': "PR #{number} merged into {branch}.",
+        'github_pr_closed': "PR #{number} closed without merge.",
+        'deployment_succeeded': "{environment} deployment succeeded.",
+        'unknown_target_branch': "the target branch",
+    },
+    'de': {
+        'invalid_image_format': "Bild {name} wurde ignoriert, weil sein Format ungueltig ist.",
+        'invalid_image_type': "Bild {name} wurde ignoriert, weil sein Typ nicht unterstuetzt wird.",
+        'invalid_image_too_large': "Bild {name} wurde ignoriert, weil es zu gross ist.",
+        'only_max_images': "Es wurden nur {count} Bilder behalten.",
+        'title_derived': "Der Titel wurde aus der Beschreibung abgeleitet.",
+        'title_required': "Ein Titel ist erforderlich.",
+        'content_required': "Fugen Sie mindestens eine Beschreibung, eine aktuelle Situation, eine Losungsidee, Kontext oder Erfolgsindikatoren hinzu.",
+        'links_ignored': "Einige Links wurden ignoriert, weil sie keine gueltigen http(s)-Links sind.",
+        'history_created': "Karte erstellt.",
+        'history_archived': "Karte archiviert.",
+        'history_restored': "Karte wiederhergestellt.",
+        'history_updated': "Karte aktualisiert.",
+        'history_status_changed': "In {status} verschoben.",
+        'history_comment_added': "Kommentar hinzugefugt.",
+        'history_images_added': "{count} Bild(er) hinzugefugt.",
+        'history_images_removed': "{count} Bild(er) entfernt.",
+        'draft_structured': "Karte wurde automatisch aus dem Freitext strukturiert.",
+        'comment_required': "Ein Kommentar ist erforderlich.",
+        'card_not_found': "Tracking-Karte nicht gefunden.",
+        'tracking_config_incomplete': "Die EURES-Tracking-Konfiguration ist unvollstandig.",
+        'github_pr_opened': "PR #{number} auf GitHub geoffnet.",
+        'github_pr_updated': "PR #{number} auf GitHub aktualisiert.",
+        'github_pr_merged': "PR #{number} nach {branch} gemergt.",
+        'github_pr_closed': "PR #{number} ohne Merge geschlossen.",
+        'deployment_succeeded': "{environment}-Deployment erfolgreich.",
+        'unknown_target_branch': "die Ziel-Branch",
+    },
+}
 EURES_MATCHING_FIELDS = {
     'besoin_id',
     'candidat_id',
@@ -629,6 +912,11 @@ def get_admin_magic_link_serializer(form_id: str) -> URLSafeTimedSerializer:
     if not secret:
         raise RuntimeError('Missing admin magic link secret configuration.')
     return URLSafeTimedSerializer(secret_key=secret, salt=f'admin-magic-link:{form_id}')
+
+
+def is_eures_beta_only_mode() -> bool:
+    """Return whether this deployment serves only EURES beta."""
+    return APP_MODE in {'eures-beta', 'eures_beta', 'eures-only', 'eures_only'}
 
 
 def _admin_session_key(form_id: str) -> str:
@@ -1190,6 +1478,289 @@ def maybe_proxy_eures_request(form_id: str) -> Response | None:
 
 def get_default_home_form_id() -> str:
     """Resolve which form should be used as the root redirect for the current app."""
+    configured = str(os.environ.get('DEFAULT_HOME_FORM_ID') or '').strip()
+    if configured:
+        return configured
+
+    host = str(request.host or '').split(':', 1)[0].strip().lower()
+    if host in {
+        'eures-beta.osc-fr1.scalingo.io',
+        'www.eures-beta.osc-fr1.scalingo.io',
+    }:
+        return 'eures-beta'
+    return 'fagerh'
+
+
+def get_eures_tracking_config() -> dict | None:
+    """Get configuration for the EURES project tracking table."""
+    base = get_form_config('eures-beta', 'candidate') or get_form_config('eures-beta')
+    if not base:
+        return None
+    return {
+        'doc_id': base['doc_id'],
+        'table_id': os.environ.get('GRIST_TABLE_EURES_BETA_TRACKING', EURES_TRACKING_TABLE_DEFAULT),
+        'api_key': base.get('api_key'),
+    }
+
+
+def get_brevo_config() -> dict:
+    return {
+        'api_key': os.environ.get('BREVO_API_KEY', '').strip(),
+        'from_email': os.environ.get('BREVO_FROM_EMAIL', '').strip(),
+        'from_name': os.environ.get('BREVO_FROM_NAME', 'EURES beta').strip() or 'EURES beta',
+    }
+
+
+def get_brevo_health(check_api: bool = False, timeout: int = 8) -> dict:
+    """Return a sanitized Brevo health snapshot suitable for admin and health checks."""
+    brevo = get_brevo_config()
+    configured = bool(brevo['api_key'] and brevo['from_email'])
+    result = {
+        'configured': configured,
+        'from_email': brevo['from_email'],
+        'from_name': brevo['from_name'],
+        'api_ok': None,
+        'http_status': None,
+        'status': 'ok' if configured else 'missing_config',
+        'message': 'Brevo configuration complete.' if configured else 'BREVO_API_KEY or BREVO_FROM_EMAIL is missing.',
+    }
+    if not configured or not check_api:
+        return result
+
+    try:
+        response = requests.get(
+            'https://api.brevo.com/v3/account',
+            headers={
+                'accept': 'application/json',
+                'api-key': brevo['api_key'],
+            },
+            timeout=timeout,
+        )
+        result['http_status'] = response.status_code
+        if response.ok:
+            result['api_ok'] = True
+            result['status'] = 'ok'
+            result['message'] = 'Brevo API reachable.'
+            return result
+
+        result['api_ok'] = False
+        result['status'] = 'api_error'
+        try:
+            payload = response.json()
+        except ValueError:
+            payload = {}
+        result['message'] = str(payload.get('message') or payload.get('error') or f'Brevo API returned HTTP {response.status_code}.')
+        return result
+    except requests.RequestException as exc:
+        result['api_ok'] = False
+        result['status'] = 'request_error'
+        result['message'] = str(exc)
+        return result
+
+
+def ensure_brevo_ready(check_api: bool = False) -> dict:
+    """Raise a readable error when Brevo is not ready for transactional sends."""
+    health = get_brevo_health(check_api=check_api)
+    if not health['configured']:
+        raise RuntimeError('Brevo configuration is incomplete. Missing BREVO_API_KEY or BREVO_FROM_EMAIL.')
+    if check_api and health['api_ok'] is not True:
+        raise RuntimeError(f"Brevo API check failed: {health['message']}")
+    return health
+
+
+def _now_iso_utc() -> str:
+    return datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
+
+
+def _initial_matching_workflow_status(scoring_status: str) -> str:
+    return 'a_valider_admin' if str(scoring_status or '').strip().lower() in {'a_valider', 'auto_envoyable'} else 'calcule'
+
+
+def _matching_workflow_status(fields: dict) -> str:
+    current = str((fields or {}).get('workflow_status') or '').strip().lower()
+    if current:
+        return current
+    if (fields or {}).get('embauche_confirmee_at'):
+        return 'embauche_confirmee'
+    if (fields or {}).get('mise_en_relation_at'):
+        return 'mise_en_relation_faite'
+    employer_response = str((fields or {}).get('employer_response') or '').strip().lower()
+    if employer_response == 'contact':
+        return 'accepte_employeur'
+    if employer_response == 'not_contact':
+        return 'refuse_employeur'
+    if (fields or {}).get('sent_to_employer_at'):
+        return 'envoye_employeur'
+    admin_status = str((fields or {}).get('admin_status') or '').strip().lower()
+    if admin_status == 'accepted':
+        return 'envoye_employeur'
+    if admin_status == 'refused':
+        return 'refuse_admin'
+    return _initial_matching_workflow_status((fields or {}).get('statut', ''))
+
+
+def _matching_workflow_update_fields(target_status: str, actor: str) -> dict:
+    now = _now_iso_utc()
+    fields = {
+        'workflow_status': target_status,
+        'workflow_status_updated_at': now,
+        'workflow_status_updated_by': actor,
+    }
+    if target_status == 'envoye_employeur':
+        fields['sent_to_employer_at'] = now
+        fields['sent_to_employer_by'] = actor
+    elif target_status == 'accepte_employeur':
+        fields['employer_response'] = 'contact'
+        fields['employer_response_at'] = now
+        fields['employer_response_source'] = 'email_cta'
+    elif target_status == 'refuse_employeur':
+        fields['employer_response'] = 'not_contact'
+        fields['employer_response_at'] = now
+        fields['employer_response_source'] = 'email_cta'
+    elif target_status == 'mise_en_relation_faite':
+        fields['mise_en_relation_at'] = now
+        fields['mise_en_relation_by'] = actor
+    elif target_status == 'embauche_confirmee':
+        fields['embauche_confirmee_at'] = now
+        fields['embauche_confirmee_by'] = actor
+    return fields
+
+
+def _matching_workflow_label(status: str) -> str:
+    return {
+        'calcule': 'calculé',
+        'a_valider_admin': 'à valider',
+        'refuse_admin': 'refus admin',
+        'valide_admin': 'validé admin',
+        'envoye_employeur': 'envoyé employeur',
+        'accepte_employeur': 'accepté employeur',
+        'refuse_employeur': 'refusé employeur',
+        'mise_en_relation_faite': 'mise en relation faite',
+        'embauche_confirmee': 'embauche confirmée',
+    }.get(str(status or '').strip().lower(), str(status or '').strip() or 'inconnu')
+
+
+def get_eures_mail_signature_name() -> str:
+    return os.environ.get('EURES_SIGNATURE_NAME', 'Eric Barthélémy').strip() or 'Eric Barthélémy'
+
+
+def get_eures_mail_signature_role() -> str:
+    return os.environ.get('EURES_SIGNATURE_ROLE', 'Conseiller EURES - France Travail').strip() or 'Conseiller EURES - France Travail'
+
+
+def get_eures_privacy_url(lang: str = 'fr') -> str:
+    normalized_lang = str(lang or 'fr').strip().lower()
+    if normalized_lang not in {'fr', 'en', 'de'}:
+        normalized_lang = 'fr'
+    return f"{get_public_app_base_url()}/forms/eures-beta/privacy?lang={normalized_lang}"
+
+
+def get_public_app_base_url() -> str:
+    configured = os.environ.get('PUBLIC_APP_BASE_URL', '').strip()
+    if configured:
+        return configured.rstrip('/')
+    if request and request.url_root:
+        return request.url_root.rstrip('/')
+    return 'https://eures-beta.osc-fr1.scalingo.io'
+
+
+def get_eures_email_header_image_url() -> str:
+    configured = os.environ.get('EURES_EMAIL_HEADER_IMAGE_URL', '').strip()
+    if configured:
+        return configured
+    bundled = ASSETS_DIR / 'eures-email-header.png'
+    if bundled.exists():
+        return f"{get_public_app_base_url()}/assets/eures-email-header.png"
+    return ''
+
+
+def _proxy_eures_location_header(location: str) -> str:
+    """Rewrite absolute redirects back to the current public host."""
+    value = str(location or '').strip()
+    if not value:
+        return value
+    if value.startswith(EURES_PUBLIC_PROXY_BASE_URL):
+        current_base = request.host_url.rstrip('/')
+        return current_base + value[len(EURES_PUBLIC_PROXY_BASE_URL):]
+    return value
+
+
+def proxy_eures_public_request(path: str = '') -> Response:
+    """Proxy one public EURES beta request to the dedicated Scalingo app."""
+    target_path = '/' + str(path or '').lstrip('/')
+    target_url = f'{EURES_PUBLIC_PROXY_BASE_URL}{target_path}'
+    if request.query_string:
+        target_url = f'{target_url}?{request.query_string.decode("utf-8", errors="ignore")}'
+
+    excluded_headers = {
+        'host',
+        'content-length',
+        'connection',
+        'transfer-encoding',
+        'accept-encoding',
+    }
+    upstream_headers = {
+        key: value
+        for key, value in request.headers.items()
+        if key.lower() not in excluded_headers
+    }
+    upstream_headers['X-Forwarded-Host'] = request.host
+    upstream_headers['X-Forwarded-Proto'] = request.scheme
+    upstream_headers['X-Forwarded-For'] = request.headers.get('X-Forwarded-For', request.remote_addr or '')
+
+    upstream_response = requests.request(
+        method=request.method,
+        url=target_url,
+        headers=upstream_headers,
+        data=request.get_data(),
+        cookies=request.cookies,
+        allow_redirects=False,
+        timeout=60,
+    )
+
+    downstream = Response(upstream_response.content, status=upstream_response.status_code)
+    hop_by_hop = {
+        'content-length',
+        'connection',
+        'transfer-encoding',
+        'content-encoding',
+    }
+    for key, value in upstream_response.headers.items():
+        lowered = key.lower()
+        if lowered in hop_by_hop:
+            continue
+        if lowered == 'location':
+            value = _proxy_eures_location_header(value)
+        downstream.headers[key] = value
+    return downstream
+
+
+def should_proxy_eures_public_request(form_id: str) -> bool:
+    """Enable EURES proxying only on the public Fagerh domain."""
+    if is_eures_beta_only_mode():
+        return False
+    if str(form_id or '').strip().lower() != 'eures-beta':
+        return False
+    forced = os.environ.get('EURES_PUBLIC_PROXY_ENABLED', '').strip().lower()
+    if forced in {'1', 'true', 'yes', 'on'}:
+        return True
+    if forced in {'0', 'false', 'no', 'off'}:
+        return False
+    host = str(request.host or '').split(':', 1)[0].strip().lower()
+    return host == 'formulaires.inclusion.gouv.fr'
+
+
+def maybe_proxy_eures_request(form_id: str) -> Response | None:
+    """Proxy only the EURES beta public surface when served by Fagerh."""
+    if should_proxy_eures_public_request(form_id):
+        return proxy_eures_public_request(request.path)
+    return None
+
+
+def get_default_home_form_id() -> str:
+    """Resolve which form should be used as the root redirect for the current app."""
+    if is_eures_beta_only_mode():
+        return 'eures-beta'
     configured = str(os.environ.get('DEFAULT_HOME_FORM_ID') or '').strip()
     if configured:
         return configured
@@ -5782,6 +6353,978 @@ def build_eures_cockpit_summary() -> dict:
     }
 
 
+def _tracking_ui_language(value: str | None) -> str:
+    raw = str(value or '').strip().lower()
+    return raw if raw in EURES_TRACKING_UI_LABELS else 'fr'
+
+
+def _tracking_message(language: str | None, key: str, **kwargs) -> str:
+    lang = _tracking_ui_language(language)
+    template = (
+        EURES_TRACKING_MESSAGES.get(lang, {}).get(key)
+        or EURES_TRACKING_MESSAGES['fr'].get(key)
+        or key
+    )
+    try:
+        return template.format(**kwargs)
+    except Exception:
+        return template
+
+
+def _tracking_request_language(payload: dict | None = None) -> str:
+    header_lang = _tracking_ui_language(request.headers.get('X-UI-Language'))
+    if header_lang:
+        return header_lang
+    if isinstance(payload, dict):
+        return _tracking_ui_language(payload.get('langue_source'))
+    return 'fr'
+
+
+def _tracking_choice(value, allowed: tuple[str, ...], fallback: str) -> str:
+    raw = eures_fold_text(value)
+    aliases = {
+        'a qualifier': 'a_qualifier',
+        'to qualify': 'a_qualifier',
+        'zu qualifizieren': 'a_qualifier',
+        'a faire': 'a_faire',
+        'to do': 'a_faire',
+        'todo': 'a_faire',
+        'zu erledigen': 'a_faire',
+        'en cours': 'en_cours',
+        'in progress': 'en_cours',
+        'in bearbeitung': 'en_cours',
+        'bloque': 'bloque',
+        'blocked': 'bloque',
+        'blockiert': 'bloque',
+        'fait': 'fait',
+        'done': 'fait',
+        'erledigt': 'fait',
+        'critical': 'critique',
+        'high': 'haute',
+        'medium': 'moyenne',
+        'low': 'basse',
+        'idea': 'idee',
+        'enhancement': 'evolution',
+    }
+    normalized = aliases.get(raw, raw.replace(' ', '_'))
+    return normalized if normalized in allowed else fallback
+
+
+def _tracking_bool(value) -> bool:
+    return _as_bool(value)
+
+
+def _tracking_list(value) -> list:
+    parsed = _safe_json(value, [])
+    return parsed if isinstance(parsed, list) else []
+
+
+def _tracking_text(value) -> str:
+    return str(value or '').strip()
+
+
+def _tracking_images(value, language: str = 'fr', max_items: int = 4, max_data_url_length: int = 3_000_000) -> tuple[list[dict], list[str]]:
+    raw_items = _tracking_list(value)
+    images = []
+    warnings = []
+    allowed_mimes = {'image/png', 'image/jpeg', 'image/webp', 'image/gif'}
+    for item in raw_items:
+        if not isinstance(item, dict):
+            continue
+        name = _tracking_text(item.get('name')) or 'image'
+        mime = _tracking_text(item.get('mime')).lower()
+        data_url = str(item.get('data_url') or '').strip()
+        image_id = _tracking_text(item.get('id')) or secrets.token_urlsafe(8)
+        created_at = _tracking_text(item.get('created_at')) or _tracking_now()
+        if not data_url.startswith('data:image/'):
+            warnings.append(_tracking_message(language, 'invalid_image_format', name=name))
+            continue
+        if mime not in allowed_mimes:
+            warnings.append(_tracking_message(language, 'invalid_image_type', name=name))
+            continue
+        if len(data_url) > max_data_url_length:
+            warnings.append(_tracking_message(language, 'invalid_image_too_large', name=name))
+            continue
+        images.append({
+            'id': image_id,
+            'name': name[:160],
+            'mime': mime,
+            'size': max(0, int(item.get('size') or 0)),
+            'width': max(0, int(item.get('width') or 0)),
+            'height': max(0, int(item.get('height') or 0)),
+            'created_at': created_at,
+            'data_url': data_url,
+        })
+        if len(images) >= max_items:
+            if len(raw_items) > max_items:
+                warnings.append(_tracking_message(language, 'only_max_images', count=max_items))
+            break
+    return images, warnings
+
+
+def _tracking_summarize_title(value: str, max_length: int = 72) -> str:
+    text = ' '.join(str(value or '').split())
+    if not text:
+        return ''
+    trimmed = text[:max_length + 1]
+    if len(text) <= max_length:
+        return trimmed.rstrip(' .:;,-')
+    if ' ' in trimmed:
+        trimmed = trimmed.rsplit(' ', 1)[0]
+    return trimmed.rstrip(' .:;,-') + '...'
+
+
+def _tracking_title_from_free_text(value: str) -> str:
+    text = ' '.join(str(value or '').split())
+    if not text:
+        return ''
+    first_sentence = re.split(r'(?<=[\.\!\?\:])\s+|\n+', text, maxsplit=1)[0].strip(' -•\t')
+    first_sentence = re.sub(
+        r'^(dans un premier temps|aujourd[’\' ]hui|actuellement|pour le moment|j[’\' ]aimerais|je voudrais|il faudrait|possible de|peut[- ]on|est[- ]ce que|en fait)\s+',
+        '',
+        first_sentence,
+        flags=re.IGNORECASE,
+    ).strip(' ,:;-')
+    words = first_sentence.split()
+    if len(words) > 12:
+        first_sentence = ' '.join(words[:12])
+    return _tracking_summarize_title(first_sentence or text)
+
+
+def _tracking_now() -> str:
+    return _now_iso_utc()
+
+
+def _tracking_card_token() -> str:
+    return f"trk_{secrets.token_urlsafe(8).replace('-', '').replace('_', '').lower()}"
+
+
+def _tracking_reference(record_id: int | None, card_id: str | None = None) -> str:
+    if record_id:
+        return f"EURES-{int(record_id)}"
+    return _tracking_text(card_id)
+
+
+def _tracking_extract_links(value) -> tuple[list[str], list[str]]:
+    if isinstance(value, list):
+        raw_items = [str(item or '').strip() for item in value]
+    else:
+        raw = str(value or '').replace(',', '\n')
+        raw_items = [part.strip() for part in raw.splitlines()]
+    links = []
+    invalid = []
+    for item in raw_items:
+        if not item:
+            continue
+        parsed = urlparse(item)
+        if parsed.scheme in {'http', 'https'} and parsed.netloc:
+            if item not in links:
+                links.append(item)
+        else:
+            invalid.append(item)
+    return links, invalid
+
+
+def _tracking_history_event(actor: str, action: str, message: str, extra: dict | None = None) -> dict:
+    payload = {
+        'at': _tracking_now(),
+        'actor': _tracking_text(actor) or 'admin',
+        'action': _tracking_text(action) or 'updated',
+        'message': _tracking_text(message) or 'Mise à jour.',
+    }
+    if extra:
+        payload['extra'] = extra
+    return payload
+
+
+def _tracking_comment(author: str, body: str) -> dict:
+    return {
+        'id': secrets.token_urlsafe(8),
+        'author': _tracking_text(author) or 'admin',
+        'body': _tracking_text(body),
+        'created_at': _tracking_now(),
+    }
+
+
+def _tracking_default_card() -> dict:
+    return {
+        'reference': '',
+        'card_id': _tracking_card_token(),
+        'langue_source': 'fr',
+        'titre': '',
+        'type': 'evolution',
+        'description': '',
+        'attendu': '',
+        'observe': '',
+        'contexte': '',
+        'indicateurs_suivi': '',
+        'statut': 'a_qualifier',
+        'priorite': 'moyenne',
+        'taille_dev': 'chat',
+        'segment': '',
+        'responsable': '',
+        'source': 'admin_ui',
+        'archived': False,
+        'archived_at': '',
+        'archived_by': '',
+        'images': [],
+        'liens': [],
+        'commentaires': [],
+        'historique': [],
+        'github_branch': '',
+        'github_pr_url': '',
+        'github_pr_number': '',
+        'github_pr_state': '',
+        'github_last_activity_at': '',
+        'production_url': '',
+        'production_environment': '',
+        'production_deployed_at': '',
+        'created_at': '',
+        'updated_at': '',
+    }
+
+
+def tracking_metadata() -> dict:
+    return {
+        'languages': ['fr', 'en', 'de'],
+        'default_language': 'fr',
+        'scope': 'global',
+        'archive_filters': ['active', 'archived', 'all'],
+        'statuses': list(EURES_TRACKING_STATUSES),
+        'priorities': list(EURES_TRACKING_PRIORITIES),
+        'types': list(EURES_TRACKING_TYPES),
+        'sizes': list(EURES_TRACKING_SIZES),
+        'labels': EURES_TRACKING_UI_LABELS,
+        'ai': {
+            'draft_enabled': True,
+            'validation_enabled': True,
+            'translation_enabled': True,
+            'translation_model_configured': bool(os.environ.get('OPENAI_API_KEY', '').strip()),
+        },
+    }
+
+
+def _tracking_admin_headers(config: dict) -> dict:
+    headers = {'Accept': 'application/json', 'Content-Type': 'application/json'}
+    if config.get('api_key'):
+        headers['Authorization'] = f"Bearer {config['api_key']}"
+    return headers
+
+
+def _ensure_grist_table(config: dict, headers: dict, columns: dict[str, str]):
+    columns_url = f"{GRIST_BASE_URL}/api/docs/{config['doc_id']}/tables/{config['table_id']}/columns"
+    resp = requests.get(columns_url, headers=headers)
+    if resp.status_code == 200:
+        ensure_table_columns(config, set(columns.keys()), headers)
+        return
+    if resp.status_code != 404:
+        raise RuntimeError(f'Failed to inspect {config["table_id"]}: HTTP {resp.status_code} - {resp.text}')
+
+    create_url = f"{GRIST_BASE_URL}/api/docs/{config['doc_id']}/tables"
+    payload = {
+        'tables': [{
+            'id': config['table_id'],
+            'columns': [
+                {
+                    'id': column_id,
+                    'fields': {'label': column_id},
+                    'type': column_type,
+                }
+                for column_id, column_type in columns.items()
+            ],
+        }],
+    }
+    create_resp = requests.post(create_url, json=payload, headers=headers)
+    if create_resp.status_code != 200:
+        raise RuntimeError(f'Failed to create {config["table_id"]}: HTTP {create_resp.status_code} - {create_resp.text}')
+    _TABLE_COLUMNS_CACHE.pop((str(config.get('doc_id') or ''), str(config.get('table_id') or '')), None)
+
+
+def _tracking_table_ready() -> tuple[dict, dict]:
+    config = get_eures_tracking_config()
+    if not config:
+        raise RuntimeError(_tracking_message('fr', 'tracking_config_incomplete'))
+    headers = _tracking_admin_headers(config)
+    _ensure_grist_table(config, headers, EURES_TRACKING_TABLE_COLUMNS)
+    return config, headers
+
+
+def _tracking_card_from_record(rec: dict) -> dict | None:
+    fields = rec.get('fields', {}) if isinstance(rec, dict) else {}
+    if not isinstance(fields, dict):
+        return None
+    card = _tracking_default_card()
+    card.update({
+        'record_id': rec.get('id'),
+        'card_id': _tracking_text(fields.get('card_id')) or card['card_id'],
+        'langue_source': _tracking_ui_language(fields.get('langue_source')),
+        'titre': _tracking_text(fields.get('titre')),
+        'type': _tracking_choice(fields.get('type'), EURES_TRACKING_TYPES, 'evolution'),
+        'description': _tracking_text(fields.get('description')),
+        'attendu': _tracking_text(fields.get('attendu')),
+        'observe': _tracking_text(fields.get('observe')),
+        'contexte': _tracking_text(fields.get('contexte')),
+        'indicateurs_suivi': _tracking_text(fields.get('indicateurs_suivi')),
+        'statut': _tracking_choice(fields.get('statut'), EURES_TRACKING_STATUSES, 'a_qualifier'),
+        'priorite': _tracking_choice(fields.get('priorite'), EURES_TRACKING_PRIORITIES, 'moyenne'),
+        'taille_dev': _tracking_choice(fields.get('taille_dev'), EURES_TRACKING_SIZES, 'chat'),
+        'segment': _tracking_text(fields.get('segment')),
+        'responsable': _tracking_text(fields.get('responsable')),
+        'source': _tracking_text(fields.get('source')) or 'admin_ui',
+        'archived': _tracking_bool(fields.get('archived')),
+        'archived_at': _tracking_text(fields.get('archived_at')),
+        'archived_by': _tracking_text(fields.get('archived_by')),
+        'images': _tracking_images(fields.get('images_json'), fields.get('langue_source') or 'fr')[0],
+        'liens': _tracking_list(fields.get('liens_json')),
+        'commentaires': _tracking_list(fields.get('commentaires_json')),
+        'historique': _tracking_list(fields.get('historique_json')),
+        'github_branch': _tracking_text(fields.get('github_branch')),
+        'github_pr_url': _tracking_text(fields.get('github_pr_url')),
+        'github_pr_number': _tracking_text(fields.get('github_pr_number')),
+        'github_pr_state': _tracking_text(fields.get('github_pr_state')),
+        'github_last_activity_at': _tracking_text(fields.get('github_last_activity_at')),
+        'production_url': _tracking_text(fields.get('production_url')),
+        'production_environment': _tracking_text(fields.get('production_environment')),
+        'production_deployed_at': _tracking_text(fields.get('production_deployed_at')),
+        'created_at': _tracking_text(fields.get('created_at')),
+        'updated_at': _tracking_text(fields.get('updated_at')),
+    })
+    card['reference'] = _tracking_reference(rec.get('id'), card.get('card_id'))
+    return card
+
+
+def _tracking_record_fields(card: dict) -> dict:
+    return {
+        'card_id': card['card_id'],
+        'langue_source': card['langue_source'],
+        'titre': card['titre'],
+        'type': card['type'],
+        'description': card['description'],
+        'attendu': card['attendu'],
+        'observe': card['observe'],
+        'contexte': card['contexte'],
+        'indicateurs_suivi': card['indicateurs_suivi'],
+        'statut': card['statut'],
+        'priorite': card['priorite'],
+        'taille_dev': card['taille_dev'],
+        'segment': card['segment'],
+        'responsable': card['responsable'],
+        'source': card['source'],
+        'archived': card['archived'],
+        'archived_at': card['archived_at'],
+        'archived_by': card['archived_by'],
+        'images_json': json.dumps(card['images'], ensure_ascii=False),
+        'liens_json': json.dumps(card['liens'], ensure_ascii=False),
+        'commentaires_json': json.dumps(card['commentaires'], ensure_ascii=False),
+        'historique_json': json.dumps(card['historique'], ensure_ascii=False),
+        'github_branch': card['github_branch'],
+        'github_pr_url': card['github_pr_url'],
+        'github_pr_number': card['github_pr_number'],
+        'github_pr_state': card['github_pr_state'],
+        'github_last_activity_at': card['github_last_activity_at'],
+        'production_url': card['production_url'],
+        'production_environment': card['production_environment'],
+        'production_deployed_at': card['production_deployed_at'],
+        'created_at': card['created_at'],
+        'updated_at': card['updated_at'],
+    }
+
+
+def validate_tracking_card(payload: dict, existing: dict | None = None, actor: str = 'admin', language: str | None = None) -> dict:
+    base = _tracking_default_card()
+    if existing:
+        base.update(existing)
+    message_language = _tracking_ui_language(language or payload.get('langue_source') or base.get('langue_source'))
+    candidate = dict(base)
+    candidate.update({
+        'card_id': _tracking_text(payload.get('card_id')) or base['card_id'],
+        'langue_source': _tracking_ui_language(payload.get('langue_source') or base['langue_source']),
+        'titre': _tracking_summarize_title(payload.get('titre') or base['titre']),
+        'type': _tracking_choice(payload.get('type') or base['type'], EURES_TRACKING_TYPES, base['type']),
+        'description': _tracking_text(payload.get('description') or base['description']),
+        'attendu': _tracking_text(payload.get('attendu') or base['attendu']),
+        'observe': _tracking_text(payload.get('observe') or base['observe']),
+        'contexte': _tracking_text(payload.get('contexte') or base['contexte']),
+        'indicateurs_suivi': _tracking_text(payload.get('indicateurs_suivi') or base['indicateurs_suivi']),
+        'statut': _tracking_choice(payload.get('statut') or base['statut'], EURES_TRACKING_STATUSES, base['statut']),
+        'priorite': _tracking_choice(payload.get('priorite') or base['priorite'], EURES_TRACKING_PRIORITIES, base['priorite']),
+        'taille_dev': _tracking_choice(payload.get('taille_dev') or base['taille_dev'], EURES_TRACKING_SIZES, base['taille_dev']),
+        'segment': '',
+        'responsable': _tracking_text(payload.get('responsable') or base['responsable']),
+        'source': _tracking_text(payload.get('source') or base['source']) or 'admin_ui',
+        'archived': _tracking_bool(payload.get('archived') if 'archived' in payload else base['archived']),
+        'archived_at': _tracking_text(base.get('archived_at')),
+        'archived_by': _tracking_text(base.get('archived_by')),
+        'images': list(base.get('images') or []),
+        'commentaires': list(base.get('commentaires') or []),
+        'historique': list(base.get('historique') or []),
+        'github_branch': _tracking_text(payload.get('github_branch') if 'github_branch' in payload else base.get('github_branch')),
+        'github_pr_url': _tracking_text(payload.get('github_pr_url') if 'github_pr_url' in payload else base.get('github_pr_url')),
+        'github_pr_number': _tracking_text(payload.get('github_pr_number') if 'github_pr_number' in payload else base.get('github_pr_number')),
+        'github_pr_state': _tracking_text(payload.get('github_pr_state') if 'github_pr_state' in payload else base.get('github_pr_state')),
+        'github_last_activity_at': _tracking_text(payload.get('github_last_activity_at') if 'github_last_activity_at' in payload else base.get('github_last_activity_at')),
+        'production_url': _tracking_text(payload.get('production_url') if 'production_url' in payload else base.get('production_url')),
+        'production_environment': _tracking_text(payload.get('production_environment') if 'production_environment' in payload else base.get('production_environment')),
+        'production_deployed_at': _tracking_text(payload.get('production_deployed_at') if 'production_deployed_at' in payload else base.get('production_deployed_at')),
+        'created_at': _tracking_text(base.get('created_at')),
+        'updated_at': _tracking_now(),
+    })
+    images, image_warnings = _tracking_images(payload.get('images', base.get('images', [])), message_language)
+    candidate['images'] = images
+    links, invalid_links = _tracking_extract_links(payload.get('liens', base.get('liens', [])))
+    candidate['liens'] = links
+
+    errors = []
+    warnings = list(image_warnings)
+    if not candidate['titre'] and candidate['description']:
+        candidate['titre'] = _tracking_summarize_title(candidate['description'])
+        warnings.append(_tracking_message(message_language, 'title_derived'))
+    if not candidate['titre']:
+        errors.append(_tracking_message(message_language, 'title_required'))
+    if not candidate['description'] and not candidate['observe'] and not candidate['attendu'] and not candidate['contexte'] and not candidate['indicateurs_suivi']:
+        errors.append(_tracking_message(message_language, 'content_required'))
+    if invalid_links:
+        warnings.append(_tracking_message(message_language, 'links_ignored'))
+    if candidate['archived'] and not candidate['archived_at']:
+        candidate['archived_at'] = candidate['updated_at']
+        candidate['archived_by'] = actor
+    if not candidate['archived']:
+        candidate['archived_at'] = ''
+        candidate['archived_by'] = ''
+
+    if not candidate['created_at']:
+        candidate['created_at'] = candidate['updated_at']
+        candidate['historique'].append(_tracking_history_event(actor, 'created', _tracking_message(message_language, 'history_created')))
+    else:
+        if existing and _tracking_bool(existing.get('archived')) != candidate['archived']:
+            if candidate['archived']:
+                candidate['archived_at'] = candidate['updated_at']
+                candidate['archived_by'] = actor
+                candidate['historique'].append(
+                    _tracking_history_event(
+                        actor,
+                        'archived',
+                        _tracking_message(message_language, 'history_archived'),
+                    )
+                )
+            else:
+                candidate['historique'].append(
+                    _tracking_history_event(
+                        actor,
+                        'restored',
+                        _tracking_message(message_language, 'history_restored'),
+                    )
+                )
+                candidate['archived_at'] = ''
+                candidate['archived_by'] = ''
+        if existing and existing.get('statut') != candidate['statut']:
+            candidate['historique'].append(
+                _tracking_history_event(
+                    actor,
+                    'status_changed',
+                    _tracking_message(message_language, 'history_status_changed', status=candidate['statut']),
+                    {'from': existing.get('statut'), 'to': candidate['statut']},
+                )
+            )
+        existing_image_ids = {str(item.get('id') or '') for item in (existing.get('images') or []) if isinstance(item, dict)} if existing else set()
+        next_image_ids = {str(item.get('id') or '') for item in candidate['images'] if isinstance(item, dict)}
+        added_images = len([image_id for image_id in next_image_ids if image_id and image_id not in existing_image_ids])
+        removed_images = len([image_id for image_id in existing_image_ids if image_id and image_id not in next_image_ids])
+        if added_images:
+            candidate['historique'].append(_tracking_history_event(actor, 'images_added', _tracking_message(message_language, 'history_images_added', count=added_images)))
+        if removed_images:
+            candidate['historique'].append(_tracking_history_event(actor, 'images_removed', _tracking_message(message_language, 'history_images_removed', count=removed_images)))
+        candidate['historique'].append(_tracking_history_event(actor, 'updated', _tracking_message(message_language, 'history_updated')))
+    return {
+        'card': candidate,
+        'errors': errors,
+        'warnings': warnings,
+    }
+
+
+def draft_tracking_card_from_text(text: str, source_language: str = 'fr', actor: str = 'assistant', source: str = 'free_text', language: str | None = None) -> dict:
+    normalized = _tracking_text(text)
+    folded = eures_fold_text(normalized)
+    lines = [line.strip(' -•\t') for line in normalized.splitlines() if line.strip()]
+    title = _tracking_title_from_free_text(lines[0] if lines else normalized)
+
+    detected_type = 'evolution'
+    if any(token in folded for token in ('bug', 'erreur', 'anomal', 'incident', 'defect', 'fehler')):
+        detected_type = 'bug'
+    elif any(token in folded for token in ('question', 'clarif', 'frage')):
+        detected_type = 'question'
+    elif any(token in folded for token in ('decision', 'arbitrage', 'entscheid')):
+        detected_type = 'decision'
+    elif any(token in folded for token in ('idee', 'idea')):
+        detected_type = 'idee'
+
+    priority = 'moyenne'
+    if any(token in folded for token in ('critique', 'critical', 'urgent', 'urgence', 'blocker', 'bloquant')):
+        priority = 'critique'
+    elif any(token in folded for token in ('important', 'major', 'haut', 'high')):
+        priority = 'haute'
+
+    size = 'chat'
+    if any(token in folded for token in ('micro', 'tiny', 'minime')):
+        size = 'puce'
+    elif any(token in folded for token in ('petit correctif', 'small', 'leger')):
+        size = 'souris'
+    elif any(token in folded for token in ('structurant', 'structural')):
+        size = 'soleil'
+    elif any(token in folded for token in ('chantier', 'massif', 'large effort')):
+        size = 'montagne'
+    elif any(token in folded for token in ('consequent', 'significant')):
+        size = 'elephant'
+
+    validated = validate_tracking_card({
+        'langue_source': _tracking_ui_language(source_language),
+        'titre': title or 'Carte à qualifier',
+        'type': detected_type,
+        'description': normalized,
+        'observe': normalized if detected_type == 'bug' else '',
+        'statut': 'a_qualifier',
+        'priorite': priority,
+        'taille_dev': size,
+        'responsable': '',
+        'source': source,
+        'liens': re.findall(r'https?://\S+', normalized),
+    }, actor=actor, language=language or source_language)
+    if not validated['errors']:
+        validated['warnings'].append(_tracking_message(language or source_language, 'draft_structured'))
+    return validated
+
+
+def _tracking_openai_json(prompt: str, schema_hint: str) -> tuple[dict | None, str | None]:
+    api_key = os.environ.get('OPENAI_API_KEY', '').strip()
+    if not api_key:
+        return None, 'missing_api_key'
+    model = os.environ.get('OPENAI_TEXT_MODEL', 'gpt-4.1-mini').strip() or 'gpt-4.1-mini'
+    try:
+        response = requests.post(
+            'https://api.openai.com/v1/responses',
+            headers={
+                'Authorization': f'Bearer {api_key}',
+                'Content-Type': 'application/json',
+            },
+            json={
+                'model': model,
+                'input': [
+                    {
+                        'role': 'system',
+                        'content': [{'type': 'input_text', 'text': f'Réponds uniquement en JSON valide. Schéma attendu: {schema_hint}'}],
+                    },
+                    {
+                        'role': 'user',
+                        'content': [{'type': 'input_text', 'text': prompt}],
+                    },
+                ],
+            },
+            timeout=25,
+        )
+        if response.status_code != 200:
+            return None, f'openai_http_{response.status_code}'
+        payload = _parse_response_json_safe(response)
+        chunks = []
+        for item in payload.get('output', []) if isinstance(payload, dict) else []:
+            for content in item.get('content', []):
+                if content.get('type') in {'output_text', 'text'} and content.get('text'):
+                    chunks.append(content.get('text'))
+        raw = ''.join(chunks).strip()
+        if not raw:
+            return None, 'empty_response'
+        parsed = json.loads(raw)
+        return parsed, None
+    except Exception:
+        return None, 'invalid_response'
+
+
+def _tracking_translation_warning(target_language: str, error_code: str | None) -> str:
+    target = _tracking_ui_language(target_language)
+    messages = {
+        'fr': {
+            'missing_api_key': "Traduction automatique non activée. Utilisez les outils de traduction intégrés à votre ordinateur ou un autre outil de traduction, puis collez ici le texte traduit.",
+            'invalid_response': "Traduction automatique indisponible. Utilisez les outils de traduction intégrés à votre ordinateur ou un autre outil de traduction, puis collez ici le texte traduit.",
+            'empty_response': "Traduction automatique indisponible. Utilisez les outils de traduction intégrés à votre ordinateur ou un autre outil de traduction, puis collez ici le texte traduit.",
+            'default': "Traduction automatique indisponible. Utilisez les outils de traduction intégrés à votre ordinateur ou un autre outil de traduction, puis collez ici le texte traduit.",
+        },
+        'en': {
+            'missing_api_key': "Automatic translation is not enabled. Use your computer's built-in translation tools or another translation tool, then paste the translated text here.",
+            'invalid_response': "Automatic translation is unavailable. Use your computer's built-in translation tools or another translation tool, then paste the translated text here.",
+            'empty_response': "Automatic translation is unavailable. Use your computer's built-in translation tools or another translation tool, then paste the translated text here.",
+            'default': "Automatic translation is unavailable. Use your computer's built-in translation tools or another translation tool, then paste the translated text here.",
+        },
+        'de': {
+            'missing_api_key': "Die automatische Ubersetzung ist nicht aktiviert. Nutzen Sie die integrierten Ubersetzungstools Ihres Computers oder ein anderes Ubersetzungstool und fugen Sie den ubersetzten Text anschliessend hier ein.",
+            'invalid_response': "Die automatische Ubersetzung ist nicht verfugbar. Nutzen Sie die integrierten Ubersetzungstools Ihres Computers oder ein anderes Ubersetzungstool und fugen Sie den ubersetzten Text anschliessend hier ein.",
+            'empty_response': "Die automatische Ubersetzung ist nicht verfugbar. Nutzen Sie die integrierten Ubersetzungstools Ihres Computers oder ein anderes Ubersetzungstool und fugen Sie den ubersetzten Text anschliessend hier ein.",
+            'default': "Die automatische Ubersetzung ist nicht verfugbar. Nutzen Sie die integrierten Ubersetzungstools Ihres Computers oder ein anderes Ubersetzungstool und fugen Sie den ubersetzten Text anschliessend hier ein.",
+        },
+    }
+    lang_messages = messages.get(target, messages['fr'])
+    if error_code and error_code.startswith('openai_http_'):
+        status_code = error_code.replace('openai_http_', '')
+        if target == 'en':
+            return f"Automatic translation is unavailable right now (OpenAI HTTP {status_code}). Use your computer's built-in translation tools or another translation tool, then paste the translated text here."
+        if target == 'de':
+            return f"Die automatische Ubersetzung ist derzeit nicht verfugbar (OpenAI HTTP {status_code}). Nutzen Sie die integrierten Ubersetzungstools Ihres Computers oder ein anderes Ubersetzungstool und fugen Sie den ubersetzten Text anschliessend hier ein."
+        return f"Traduction automatique indisponible pour le moment (OpenAI HTTP {status_code}). Utilisez les outils de traduction intégrés à votre ordinateur ou un autre outil de traduction, puis collez ici le texte traduit."
+    return lang_messages.get(error_code or '', lang_messages['default'])
+
+
+def translate_tracking_card_payload(card: dict, target_language: str) -> tuple[dict, list[str]]:
+    target = _tracking_ui_language(target_language)
+    source = _tracking_ui_language(card.get('langue_source'))
+    translated = {
+        'langue_source': source,
+        'target_language': target,
+        'fields': {
+            'titre': card.get('titre', ''),
+            'description': card.get('description', ''),
+            'attendu': card.get('attendu', ''),
+            'observe': card.get('observe', ''),
+            'contexte': card.get('contexte', ''),
+        },
+    }
+    if target == source:
+        return translated, []
+
+    llm_payload, translate_error = _tracking_openai_json(
+        (
+            f"Traduis les champs textuels d'une carte projet de {source} vers {target}. "
+            "Conserve le sens métier et ne traduis pas les codes structurés.\n"
+            f"{json.dumps(translated['fields'], ensure_ascii=False)}"
+        ),
+        '{"titre":"...", "description":"...", "attendu":"...", "observe":"...", "contexte":"..."}',
+    )
+    if isinstance(llm_payload, dict):
+        for key in list(translated['fields'].keys()):
+            translated['fields'][key] = _tracking_text(llm_payload.get(key) or translated['fields'][key])
+        return translated, []
+
+    return translated, [
+        _tracking_translation_warning(target, translate_error),
+    ]
+
+
+def list_tracking_cards() -> list[dict]:
+    config, headers = _tracking_table_ready()
+    cards = []
+    for rec in fetch_table_records(config['doc_id'], config['table_id'], headers):
+        card = _tracking_card_from_record(rec)
+        if card:
+            cards.append(card)
+    cards.sort(
+        key=lambda row: (
+            1 if row.get('archived') else 0,
+            EURES_TRACKING_STATUSES.index(row['statut']),
+            row['updated_at'],
+            row['created_at'],
+        )
+    )
+    return cards
+
+
+def _tracking_find_record_by_card_id(card_id: str) -> tuple[dict | None, dict, dict]:
+    config, headers = _tracking_table_ready()
+    base_url = f"{GRIST_BASE_URL}/api/docs/{config['doc_id']}/tables/{config['table_id']}"
+    record, resp = fetch_record_by_field(base_url, 'card_id', card_id, headers)
+    if resp.status_code != 200:
+        raise RuntimeError(f'Failed to read tracking card: HTTP {resp.status_code} - {resp.text}')
+    return record, config, headers
+
+
+def _tracking_find_record_by_reference(reference: str) -> tuple[dict | None, dict, dict]:
+    ref = _tracking_text(reference).upper()
+    if ref.startswith('EURES-'):
+        suffix = ''.join(ch for ch in ref[6:] if ch.isdigit())
+        if suffix:
+            config, headers = _tracking_table_ready()
+            record = fetch_record_by_id(config['doc_id'], config['table_id'], int(suffix), headers)
+            return record, config, headers
+    return _tracking_find_record_by_card_id(reference)
+
+
+def _tracking_get_github_webhook_secret() -> str:
+    return (
+        os.environ.get('GITHUB_WEBHOOK_SECRET_EURES_BETA', '').strip()
+        or os.environ.get('GITHUB_WEBHOOK_SECRET', '').strip()
+    )
+
+
+def _tracking_get_deploy_webhook_secret() -> str:
+    return (
+        os.environ.get('EURES_TRACKING_DEPLOY_WEBHOOK_SECRET', '').strip()
+        or os.environ.get('TRACKING_DEPLOY_WEBHOOK_SECRET', '').strip()
+    )
+
+
+def _tracking_verify_hmac_signature(secret: str, payload: bytes, signature_header: str, prefix: str = 'sha256=') -> bool:
+    if not secret or not signature_header or not signature_header.startswith(prefix):
+        return False
+    digest = hmac.new(secret.encode('utf-8'), payload, hashlib.sha256).hexdigest()
+    return hmac.compare_digest(f'{prefix}{digest}', signature_header)
+
+
+def _tracking_verify_deployment_webhook(secret: str, payload: bytes) -> bool:
+    signature = request.headers.get('X-Tracking-Signature-256', '')
+    if signature:
+        return _tracking_verify_hmac_signature(secret, payload, signature)
+    header_secret = _tracking_text(request.headers.get('X-Tracking-Webhook-Secret'))
+    return bool(secret and header_secret and hmac.compare_digest(header_secret, secret))
+
+
+def _tracking_extract_reference_from_texts(*values) -> str:
+    for value in values:
+        text = _tracking_text(value)
+        if not text:
+            continue
+        match = re.search(r'\bEURES-(\d+)\b', text, flags=re.IGNORECASE)
+        if match:
+            return f"EURES-{match.group(1)}"
+    return ''
+
+
+def _tracking_history_append_unique(history: list[dict], actor: str, action: str, message: str, extra: dict | None = None):
+    if history:
+        last = history[-1]
+        if (
+            _tracking_text(last.get('action')) == _tracking_text(action)
+            and _tracking_text(last.get('message')) == _tracking_text(message)
+            and (last.get('extra') or {}) == (extra or {})
+        ):
+            return
+    history.append(_tracking_history_event(actor, action, message, extra))
+
+
+def _tracking_update_card_record(record: dict, config: dict, headers: dict, card: dict):
+    card['reference'] = _tracking_reference(record.get('id') if isinstance(record, dict) else card.get('record_id'), card.get('card_id'))
+    update_table_record_by_id(
+        config,
+        int(record['id']),
+        _tracking_record_fields(card),
+        headers,
+        EURES_TRACKING_CARD_FIELDS,
+    )
+    card['record_id'] = int(record['id'])
+    card['reference'] = _tracking_reference(card['record_id'], card.get('card_id'))
+    return card
+
+
+def apply_tracking_github_event(payload: dict, event_name: str) -> dict:
+    if event_name != 'pull_request':
+        return {'ok': True, 'updated': False, 'reason': 'ignored_event'}
+    action = _tracking_text(payload.get('action'))
+    pr = payload.get('pull_request') if isinstance(payload, dict) else {}
+    pr = pr if isinstance(pr, dict) else {}
+    head = pr.get('head') if isinstance(pr.get('head'), dict) else {}
+    base = pr.get('base') if isinstance(pr.get('base'), dict) else {}
+    labels = pr.get('labels') if isinstance(pr.get('labels'), list) else []
+    reference = _tracking_extract_reference_from_texts(
+        pr.get('title'),
+        pr.get('body'),
+        head.get('ref'),
+        base.get('ref'),
+        *[label.get('name') for label in labels if isinstance(label, dict)],
+    )
+    if not reference:
+        return {'ok': True, 'updated': False, 'reason': 'reference_not_found'}
+    record, config, headers = _tracking_find_record_by_reference(reference)
+    if not record:
+        return {'ok': True, 'updated': False, 'reason': 'card_not_found', 'reference': reference}
+    card = _tracking_card_from_record(record)
+    if not card:
+        return {'ok': False, 'error': 'Tracking card payload is invalid.'}
+    language = card.get('langue_source') or 'fr'
+
+    pr_number = str(pr.get('number') or payload.get('number') or '')
+    pr_url = _tracking_text(pr.get('html_url'))
+    branch = _tracking_text(head.get('ref'))
+    merged = bool(pr.get('merged'))
+    actor = 'github'
+    history = list(card.get('historique') or [])
+
+    if branch:
+        card['github_branch'] = branch
+    if pr_url:
+        card['github_pr_url'] = pr_url
+        if pr_url not in (card.get('liens') or []):
+            card['liens'] = list(card.get('liens') or []) + [pr_url]
+    if pr_number:
+        card['github_pr_number'] = pr_number
+    card['github_last_activity_at'] = _tracking_now()
+
+    if action in {'opened', 'reopened'}:
+        card['github_pr_state'] = 'open'
+        if card.get('statut') in {'a_qualifier', 'a_faire'}:
+            card['statut'] = 'en_cours'
+        _tracking_history_append_unique(
+            history,
+            actor,
+            'github_pr_opened',
+            _tracking_message(language, 'github_pr_opened', number=pr_number or '?'),
+            {'reference': reference, 'branch': branch, 'url': pr_url},
+        )
+    elif action == 'synchronize':
+        card['github_pr_state'] = 'open'
+        _tracking_history_append_unique(
+            history,
+            actor,
+            'github_pr_updated',
+            _tracking_message(language, 'github_pr_updated', number=pr_number or '?'),
+            {'reference': reference, 'branch': branch, 'url': pr_url},
+        )
+    elif action == 'closed' and merged:
+        card['github_pr_state'] = 'merged'
+        if card.get('statut') == 'a_qualifier':
+            card['statut'] = 'en_cours'
+        _tracking_history_append_unique(
+            history,
+            actor,
+            'github_pr_merged',
+            _tracking_message(language, 'github_pr_merged', number=pr_number or '?', branch=base.get('ref') or _tracking_message(language, 'unknown_target_branch')),
+            {'reference': reference, 'branch': branch, 'url': pr_url},
+        )
+    elif action == 'closed':
+        card['github_pr_state'] = 'closed'
+        _tracking_history_append_unique(
+            history,
+            actor,
+            'github_pr_closed',
+            _tracking_message(language, 'github_pr_closed', number=pr_number or '?'),
+            {'reference': reference, 'branch': branch, 'url': pr_url},
+        )
+    else:
+        return {'ok': True, 'updated': False, 'reason': 'ignored_action', 'reference': reference}
+
+    card['historique'] = history
+    card['updated_at'] = _tracking_now()
+    if not card.get('created_at'):
+        card['created_at'] = card['updated_at']
+    _tracking_update_card_record(record, config, headers, card)
+    return {'ok': True, 'updated': True, 'reference': card['reference'], 'card': card}
+
+
+def apply_tracking_deployment_event(payload: dict, actor: str = 'deployment-bot') -> dict:
+    reference = _tracking_extract_reference_from_texts(
+        payload.get('reference'),
+        payload.get('card_reference'),
+        payload.get('branch'),
+        payload.get('description'),
+        payload.get('message'),
+    )
+    if not reference:
+        return {'ok': True, 'updated': False, 'reason': 'reference_not_found'}
+    status = _tracking_text(payload.get('status') or payload.get('state'))
+    environment = _tracking_text(payload.get('environment') or 'production')
+    if status not in {'success', 'ok', 'completed'}:
+        return {'ok': True, 'updated': False, 'reason': 'ignored_status', 'reference': reference}
+    record, config, headers = _tracking_find_record_by_reference(reference)
+    if not record:
+        return {'ok': True, 'updated': False, 'reason': 'card_not_found', 'reference': reference}
+    card = _tracking_card_from_record(record)
+    if not card:
+        return {'ok': False, 'error': 'Tracking card payload is invalid.'}
+    language = card.get('langue_source') or 'fr'
+
+    production_url = _tracking_text(payload.get('url') or payload.get('deployment_url'))
+    if production_url:
+        card['production_url'] = production_url
+        if production_url not in (card.get('liens') or []):
+            card['liens'] = list(card.get('liens') or []) + [production_url]
+    card['production_environment'] = environment or 'production'
+    card['production_deployed_at'] = _tracking_now()
+    card['statut'] = 'fait'
+    history = list(card.get('historique') or [])
+    _tracking_history_append_unique(
+        history,
+        actor,
+        'deployment_succeeded',
+        _tracking_message(language, 'deployment_succeeded', environment=card['production_environment']),
+        {'reference': reference, 'url': production_url},
+    )
+    card['historique'] = history
+    card['updated_at'] = card['production_deployed_at']
+    _tracking_update_card_record(record, config, headers, card)
+    return {'ok': True, 'updated': True, 'reference': card['reference'], 'card': card}
+
+
+def save_tracking_card(payload: dict, actor: str = 'admin', language: str | None = None) -> dict:
+    with _EURES_TRACKING_SAVE_LOCK:
+        existing_record = None
+        existing_card = None
+        config = None
+        headers = None
+        record_id = payload.get('record_id')
+        if record_id:
+            config, headers = _tracking_table_ready()
+            existing_record = fetch_record_by_id(config['doc_id'], config['table_id'], int(record_id), headers)
+        else:
+            existing_record, config, headers = _tracking_find_record_by_card_id(_tracking_text(payload.get('card_id')))
+        if existing_record:
+            existing_card = _tracking_card_from_record(existing_record)
+
+        validated = validate_tracking_card(payload, existing=existing_card, actor=actor, language=language)
+        if validated['errors']:
+            return {'ok': False, **validated}
+
+        card = validated['card']
+        fields = _tracking_record_fields(card)
+        base_url = f"{GRIST_BASE_URL}/api/docs/{config['doc_id']}/tables/{config['table_id']}/records"
+        if existing_record:
+            resp = write_grist_records('PATCH', base_url, {'records': [{'id': existing_record['id'], 'fields': fields}]}, headers)
+            card['record_id'] = existing_record['id']
+        else:
+            resp = write_grist_records('POST', base_url, {'records': [{'fields': fields}]}, headers)
+        if resp.status_code != 200:
+            raise RuntimeError(f'Failed to save tracking card: HTTP {resp.status_code} - {resp.text}')
+        if not existing_record:
+            payload_json = _parse_response_json_safe(resp)
+            records = payload_json.get('records', []) if isinstance(payload_json, dict) else []
+            if records:
+                card['record_id'] = records[0].get('id')
+        card['reference'] = _tracking_reference(card.get('record_id'), card.get('card_id'))
+        return {'ok': True, 'card': card, 'warnings': validated['warnings'], 'errors': []}
+
+
+def delete_tracking_card(record_id: int):
+    config, headers = _tracking_table_ready()
+    delete_url = f"{GRIST_BASE_URL}/api/docs/{config['doc_id']}/tables/{config['table_id']}/records/delete"
+    resp = write_grist_records('POST', delete_url, [int(record_id)], headers)
+    if resp.status_code not in {200, 202, 204}:
+        raise RuntimeError(f'Failed to delete tracking card: HTTP {resp.status_code} - {resp.text}')
+
+
+def add_tracking_comment(record_id: int, body: str, actor: str, language: str = 'fr') -> dict:
+    config, headers = _tracking_table_ready()
+    record = fetch_record_by_id(config['doc_id'], config['table_id'], record_id, headers)
+    if not record:
+        raise RuntimeError(_tracking_message(language, 'card_not_found'))
+    card = _tracking_card_from_record(record)
+    comment = _tracking_comment(actor, body)
+    if not comment['body']:
+        raise RuntimeError(_tracking_message(language, 'comment_required'))
+    comments = list(card.get('commentaires') or [])
+    history = list(card.get('historique') or [])
+    comments.append(comment)
+    history.append(_tracking_history_event(actor, 'commented', _tracking_message(language, 'history_comment_added')))
+    updated_at = _tracking_now()
+    update_table_record_by_id(
+        config,
+        record_id,
+        {
+            'commentaires_json': json.dumps(comments, ensure_ascii=False),
+            'historique_json': json.dumps(history, ensure_ascii=False),
+            'updated_at': updated_at,
+        },
+        headers,
+        EURES_TRACKING_CARD_FIELDS,
+    )
+    card['commentaires'] = comments
+    card['historique'] = history
+    card['updated_at'] = updated_at
+    return card
+
+
 def normalize_finess(value) -> str:
     """Normalize FINESS value for duplicate checks."""
     raw = str(value or '').strip()
@@ -8078,6 +9621,164 @@ def eures_matching_feedback():
     return Response(html, status=200, mimetype='text/html')
 
 
+@app.route('/api/forms/<form_id>/admin/tracking/metadata', methods=['GET'])
+@admin_required
+def admin_eures_tracking_metadata(form_id: str):
+    if form_id != 'eures-beta':
+        return jsonify({'error': f'Unknown tracking admin form: {form_id}'}), 404
+    return jsonify({'ok': True, 'metadata': tracking_metadata()})
+
+
+@app.route('/api/forms/<form_id>/admin/tracking/cards', methods=['GET', 'POST'])
+@admin_required
+def admin_eures_tracking_cards(form_id: str):
+    if form_id != 'eures-beta':
+        return jsonify({'error': f'Unknown tracking admin form: {form_id}'}), 404
+    actor = get_admin_actor(form_id, fallback='admin')
+    language = _tracking_request_language()
+    try:
+        if request.method == 'GET':
+            return jsonify({'ok': True, 'cards': list_tracking_cards(), 'metadata': tracking_metadata()})
+        payload = request.get_json(silent=True) or {}
+        result = save_tracking_card(payload, actor=actor, language=language)
+        return jsonify(result), (200 if result.get('ok') else 400)
+    except Exception as e:
+        app.logger.exception('EURES tracking cards failed')
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/forms/<form_id>/admin/tracking/cards/<int:record_id>', methods=['GET', 'PATCH', 'DELETE'])
+@admin_required
+def admin_eures_tracking_card(form_id: str, record_id: int):
+    if form_id != 'eures-beta':
+        return jsonify({'error': f'Unknown tracking admin form: {form_id}'}), 404
+    actor = get_admin_actor(form_id, fallback='admin')
+    language = _tracking_request_language()
+    try:
+        config, headers = _tracking_table_ready()
+        record = fetch_record_by_id(config['doc_id'], config['table_id'], record_id, headers)
+        if not record:
+            return jsonify({'error': 'Tracking card not found.'}), 404
+        if request.method == 'GET':
+            return jsonify({'ok': True, 'card': _tracking_card_from_record(record)})
+        if request.method == 'DELETE':
+            delete_tracking_card(record_id)
+            return jsonify({'ok': True})
+        payload = request.get_json(silent=True) or {}
+        payload['record_id'] = record_id
+        result = save_tracking_card(payload, actor=actor, language=language)
+        return jsonify(result), (200 if result.get('ok') else 400)
+    except Exception as e:
+        app.logger.exception('EURES tracking card failed')
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/forms/<form_id>/admin/tracking/cards/<int:record_id>/comments', methods=['POST'])
+@admin_required
+def admin_eures_tracking_card_comment(form_id: str, record_id: int):
+    if form_id != 'eures-beta':
+        return jsonify({'error': f'Unknown tracking admin form: {form_id}'}), 404
+    actor = get_admin_actor(form_id, fallback='admin')
+    language = _tracking_request_language()
+    payload = request.get_json(silent=True) or {}
+    try:
+        card = add_tracking_comment(record_id, payload.get('body') or '', actor, language=language)
+        return jsonify({'ok': True, 'card': card})
+    except Exception as e:
+        app.logger.exception('EURES tracking comment failed')
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/forms/<form_id>/admin/tracking/ai/draft', methods=['POST'])
+@admin_required
+def admin_eures_tracking_ai_draft(form_id: str):
+    if form_id != 'eures-beta':
+        return jsonify({'error': f'Unknown tracking admin form: {form_id}'}), 404
+    payload = request.get_json(silent=True) or {}
+    actor = get_admin_actor(form_id, fallback='assistant')
+    language = _tracking_request_language(payload)
+    draft = draft_tracking_card_from_text(
+        payload.get('text') or '',
+        source_language=payload.get('langue_source') or 'fr',
+        actor=actor,
+        source=payload.get('source') or 'free_text',
+        language=language,
+    )
+    if payload.get('create') and not draft['errors']:
+        created = save_tracking_card(draft['card'], actor=actor, language=language)
+        created['warnings'] = list(dict.fromkeys((draft.get('warnings') or []) + (created.get('warnings') or [])))
+        return jsonify(created), (200 if created.get('ok') else 400)
+    return jsonify({'ok': not bool(draft['errors']), **draft}), (200 if not draft['errors'] else 400)
+
+
+@app.route('/api/forms/<form_id>/admin/tracking/ai/validate', methods=['POST'])
+@admin_required
+def admin_eures_tracking_ai_validate(form_id: str):
+    if form_id != 'eures-beta':
+        return jsonify({'error': f'Unknown tracking admin form: {form_id}'}), 404
+    payload = request.get_json(silent=True) or {}
+    actor = get_admin_actor(form_id, fallback='assistant')
+    language = _tracking_request_language(payload)
+    existing = None
+    record_id = payload.get('record_id')
+    try:
+        if record_id:
+            config, headers = _tracking_table_ready()
+            record = fetch_record_by_id(config['doc_id'], config['table_id'], int(record_id), headers)
+            existing = _tracking_card_from_record(record) if record else None
+        result = validate_tracking_card(payload, existing=existing, actor=actor, language=language)
+        return jsonify({'ok': not bool(result['errors']), **result}), (200 if not result['errors'] else 400)
+    except Exception as e:
+        app.logger.exception('EURES tracking validation failed')
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/forms/<form_id>/admin/tracking/ai/translate', methods=['POST'])
+@admin_required
+def admin_eures_tracking_ai_translate(form_id: str):
+    if form_id != 'eures-beta':
+        return jsonify({'error': f'Unknown tracking admin form: {form_id}'}), 404
+    payload = request.get_json(silent=True) or {}
+    translated, warnings = translate_tracking_card_payload(payload.get('card') or {}, payload.get('target_language') or 'fr')
+    return jsonify({'ok': True, 'translated': translated, 'warnings': warnings})
+
+
+@app.route('/api/forms/<form_id>/tracking/github/webhook', methods=['POST'])
+def eures_tracking_github_webhook(form_id: str):
+    if form_id != 'eures-beta':
+        return jsonify({'error': f'Unknown tracking webhook form: {form_id}'}), 404
+    secret = _tracking_get_github_webhook_secret()
+    signature = request.headers.get('X-Hub-Signature-256', '')
+    raw_payload = request.get_data()
+    if not _tracking_verify_hmac_signature(secret, raw_payload, signature):
+        return jsonify({'error': 'Invalid webhook signature.'}), 403
+    event_name = _tracking_text(request.headers.get('X-GitHub-Event'))
+    payload = request.get_json(silent=True) or {}
+    try:
+        result = apply_tracking_github_event(payload, event_name)
+        return jsonify(result), 200
+    except Exception as e:
+        app.logger.exception('EURES tracking GitHub webhook failed')
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/forms/<form_id>/tracking/deployments/webhook', methods=['POST'])
+def eures_tracking_deployment_webhook(form_id: str):
+    if form_id != 'eures-beta':
+        return jsonify({'error': f'Unknown tracking deployment form: {form_id}'}), 404
+    secret = _tracking_get_deploy_webhook_secret()
+    raw_payload = request.get_data()
+    if not _tracking_verify_deployment_webhook(secret, raw_payload):
+        return jsonify({'error': 'Invalid deployment webhook secret.'}), 403
+    payload = request.get_json(silent=True) or {}
+    try:
+        result = apply_tracking_deployment_event(payload)
+        return jsonify(result), 200
+    except Exception as e:
+        app.logger.exception('EURES tracking deployment webhook failed')
+        return jsonify({'error': str(e)}), 500
+
+
 @app.route('/api/forms/<form_id>/public-stats', methods=['GET'])
 def public_stats(form_id: str):
     """Public aggregated stats page data."""
@@ -8292,6 +9993,18 @@ def serve_admin(form_id: str):
     if proxied:
         return proxied
     return send_from_directory(FORMS_DIR / form_id, 'admin.html')
+
+
+@app.route('/admin/<form_id>/suivi')
+@admin_required
+def serve_admin_tracking(form_id: str):
+    """Serve the project tracking admin page for a form."""
+    proxied = maybe_proxy_eures_request(form_id)
+    if proxied:
+        return proxied
+    if form_id != 'eures-beta':
+        return jsonify({'error': f'Unknown tracking admin form: {form_id}'}), 404
+    return send_from_directory(FORMS_DIR / form_id, 'admin-suivi.html')
 
 
 @app.route('/assets/<path:filename>')
