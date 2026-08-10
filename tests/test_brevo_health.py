@@ -226,9 +226,9 @@ class BrevoHealthTest(unittest.TestCase):
         self.assertEqual(recipient, 'candidate@example.org')
         self.assertEqual(invite_token, 'token-demo')
         self.assertEqual(invite_link, invitation['invite_link'])
-        self.assertIn('Questionnaire candidat', subject)
+        self.assertIn('votre profil nous intéresse', subject)
         self.assertTrue(text_body.startswith("Bonjour,\n\n"))
-        self.assertIn("conseiller EURES", text_body)
+        self.assertIn("Conseiller EURES - France Travail", text_body)
         self.assertNotIn("Questionnaire candidat EURES beta", text_body)
         self.assertNotIn("Repères de vérification", text_body)
         self.assertIn("France Travail", html_body)
@@ -256,12 +256,18 @@ class BrevoHealthTest(unittest.TestCase):
 
     @patch.object(app, 'send_brevo_transactional_email')
     @patch.object(app, 'update_eures_invitation_record_by_id')
+    @patch.object(app, 'build_eures_invitation_conflict_indexes', return_value={
+        'blocking_statuses': set(),
+        'invitation_by_key': {},
+        'questionnaire_by_key': {},
+    })
     @patch.object(app, 'fetch_table_records')
     @patch.object(app, 'get_eures_invitations_config')
     def test_admin_invitation_send_allows_force_resend_for_sent_rows(
         self,
         get_eures_invitations_config,
         fetch_table_records,
+        build_eures_invitation_conflict_indexes,
         update_eures_invitation_record_by_id,
         send_brevo_transactional_email,
     ):

@@ -1,3 +1,4 @@
+import os
 import unittest
 from unittest.mock import Mock, patch
 
@@ -6,6 +7,9 @@ import app
 
 class SaveRecordTest(unittest.TestCase):
     def setUp(self):
+        self.read_only_patch = patch.dict(os.environ, {'FORM_READONLY_FAGERH': 'false'}, clear=False)
+        self.read_only_patch.start()
+        self.addCleanup(self.read_only_patch.stop)
         self.client = app.app.test_client()
         self.fields = {
             'uuid': 'fagerh-test-uuid',
@@ -46,6 +50,9 @@ class SaveRecordTest(unittest.TestCase):
             'record_id': 42,
             'matching': None,
             'invitation_linking': None,
+            'no_match_notification': None,
+            'new_job_request': None,
+            'new_employer_alert': None,
         })
 
     @patch.object(app, 'write_grist_records')

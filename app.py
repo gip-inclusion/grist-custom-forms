@@ -563,12 +563,12 @@ EURES_SECTOR_CANONICAL_MAP = {
     'accessible rapidement': 'polyvalent',
 }
 EURES_CANDIDAT_SECTOR_SALARY_FIELDS = {
-    'vente': ('tally_q20_salary_type', 'tally_q20_salary_min'),
-    'nettoyage': ('tally_q22_salary_type', 'tally_q22_salary_min'),
-    'hotellerie': ('tally_q25_salary_type', 'tally_q25_salary_min'),
-    'agriculture': ('tally_q27_salary_type', 'tally_q27_salary_min'),
-    'polyvalent': ('tally_q29_salary_type', 'tally_q29_salary_min'),
-    'industrie_production': ('tally_q38_salary_type', 'tally_q38_salary_min'),
+    'vente': ('tally_q20_salary_type', 'tally_q20_salary_amount_type', 'tally_q20_salary_min'),
+    'nettoyage': ('tally_q22_salary_type', 'tally_q22_salary_amount_type', 'tally_q22_salary_min'),
+    'hotellerie': ('tally_q25_salary_type', 'tally_q25_salary_amount_type', 'tally_q25_salary_min'),
+    'agriculture': ('tally_q27_salary_type', 'tally_q27_salary_amount_type', 'tally_q27_salary_min'),
+    'polyvalent': ('tally_q29_salary_type', 'tally_q29_salary_amount_type', 'tally_q29_salary_min'),
+    'industrie_production': ('tally_q38_salary_type', 'tally_q38_salary_amount_type', 'tally_q38_salary_min'),
 }
 EURES_CANDIDAT_SECTOR_JOB_TITLE_FIELDS = {
     'vente': 'tally_q20_job_title',
@@ -579,12 +579,12 @@ EURES_CANDIDAT_SECTOR_JOB_TITLE_FIELDS = {
     'industrie_production': 'tally_q38_job_title',
 }
 EURES_EMPLOYEUR_SECTOR_SALARY_FIELDS = {
-    'vente': ('tally_q10_salary_type', 'tally_q10_salary_min', 'tally_q10_salary_max'),
-    'nettoyage': ('tally_q11_salary_type', 'tally_q11_salary_min', 'tally_q11_salary_max'),
-    'hotellerie': ('tally_q12_salary_type', 'tally_q12_salary_min', 'tally_q12_salary_max'),
-    'agriculture': ('tally_q13_salary_type', 'tally_q13_salary_min', 'tally_q13_salary_max'),
-    'polyvalent': ('tally_q14_salary_type', 'tally_q14_salary_min', 'tally_q14_salary_max'),
-    'industrie_production': ('tally_q40_salary_type', 'tally_q40_salary_min', 'tally_q40_salary_max'),
+    'vente': ('tally_q10_salary_type', 'tally_q10_salary_amount_type', 'tally_q10_salary_min', 'tally_q10_salary_max'),
+    'nettoyage': ('tally_q11_salary_type', 'tally_q11_salary_amount_type', 'tally_q11_salary_min', 'tally_q11_salary_max'),
+    'hotellerie': ('tally_q12_salary_type', 'tally_q12_salary_amount_type', 'tally_q12_salary_min', 'tally_q12_salary_max'),
+    'agriculture': ('tally_q13_salary_type', 'tally_q13_salary_amount_type', 'tally_q13_salary_min', 'tally_q13_salary_max'),
+    'polyvalent': ('tally_q14_salary_type', 'tally_q14_salary_amount_type', 'tally_q14_salary_min', 'tally_q14_salary_max'),
+    'industrie_production': ('tally_q40_salary_type', 'tally_q40_salary_amount_type', 'tally_q40_salary_min', 'tally_q40_salary_max'),
 }
 EURES_EMPLOYEUR_SECTOR_JOB_TITLE_FIELDS = {
     'vente': 'tally_q10_job_title',
@@ -4547,16 +4547,37 @@ def eures_score_permits(expected: str, actual: str) -> tuple[int, str]:
     return 0, 'permis: exigence non couverte'
 
 
+def eures_normalize_salary_period(value: str) -> str:
+    folded = eures_fold_text(value)
+    if any(token in folded for token in ('heure', 'hour', 'stunde')):
+        return 'hour'
+    if any(token in folded for token in ('mois', 'month', 'monat')):
+        return 'month'
+    if any(token in folded for token in ('par an', 'year', 'jahr')):
+        return 'year'
+    return ''
+
+
+def eures_normalize_salary_amount_type(value: str) -> str:
+    folded = eures_fold_text(value)
+    if folded in {'gross', 'brut', 'brutto'}:
+        return 'gross'
+    if folded in {'net', 'netto'}:
+        return 'net'
+    return ''
+
+
 def eures_candidate_salary_expectation(secteur: str, fields: dict):
     salary_fields = EURES_CANDIDAT_SECTOR_SALARY_FIELDS.get(secteur)
     if not salary_fields:
         return None
-    type_field, min_field = salary_fields
-    salary_type = str(fields.get(type_field) or '').strip()
+    type_field, amount_type_field, min_field = salary_fields
+    salary_type = eures_normalize_salary_period(fields.get(type_field))
+    salary_amount_type = eures_normalize_salary_amount_type(fields.get(amount_type_field))
     salary_min = eures_to_float(fields.get(min_field))
     if salary_min is None:
         return None
-    return salary_type, salary_min
+    return salary_type, salary_amount_type, salary_min
 
 
 def eures_candidate_job_title(secteur: str, fields: dict) -> str:
@@ -4568,13 +4589,14 @@ def eures_employer_salary_offer(secteur: str, fields: dict):
     salary_fields = EURES_EMPLOYEUR_SECTOR_SALARY_FIELDS.get(secteur)
     if not salary_fields:
         return None
-    type_field, min_field, max_field = salary_fields
-    salary_type = str(fields.get(type_field) or '').strip()
+    type_field, amount_type_field, min_field, max_field = salary_fields
+    salary_type = eures_normalize_salary_period(fields.get(type_field))
+    salary_amount_type = eures_normalize_salary_amount_type(fields.get(amount_type_field))
     salary_min = eures_to_float(fields.get(min_field))
     salary_max = eures_to_float(fields.get(max_field))
     if salary_min is None and salary_max is None:
         return None
-    return salary_type, salary_min, salary_max
+    return salary_type, salary_amount_type, salary_min, salary_max
 
 
 def eures_employer_job_title(secteur: str, fields: dict) -> str:
@@ -4663,8 +4685,12 @@ def eures_score_salary(secteur: str, candidat_fields: dict, besoin_fields: dict)
     employeur_salary = eures_employer_salary_offer(secteur, besoin_fields)
     if candidat_salary is None or employeur_salary is None:
         return 6, 'salaire: donnees absentes, verification manuelle'
-    _, candidat_min = candidat_salary
-    _, employeur_min, employeur_max = employeur_salary
+    candidat_period, candidat_amount_type, candidat_min = candidat_salary
+    employeur_period, employeur_amount_type, employeur_min, employeur_max = employeur_salary
+    if not candidat_period or not employeur_period or candidat_period != employeur_period:
+        return 6, 'salaire: periodicites absentes ou differentes, verification manuelle'
+    if not candidat_amount_type or not employeur_amount_type or candidat_amount_type != employeur_amount_type:
+        return 6, 'salaire: brut/net absent ou different, verification manuelle'
     if employeur_max and candidat_min <= employeur_max:
         if employeur_min and candidat_min < employeur_min:
             return 12, 'salaire: attente sous la fourchette proposee'
@@ -5216,11 +5242,12 @@ def _eures_questionnaire_field_label(key: str, role: str = '') -> str:
     tally_labels = EURES_CANDIDATE_TALLY_LABELS if role == 'candidate' else EURES_EMPLOYER_TALLY_LABELS if role == 'employer' else {}
     if key in tally_labels:
         return tally_labels[key]
-    salary_match = re.match(r'^(tally_q\d+)_salary_(type|min|max|note)$', str(key or ''))
+    salary_match = re.match(r'^(tally_q\d+)_salary_(type|amount_type|min|max|note)$', str(key or ''))
     if salary_match:
         sector_label = EURES_TALLY_SECTOR_LABELS.get(salary_match.group(1), salary_match.group(1))
         suffix_label = {
             'type': 'Type de salaire',
+            'amount_type': 'Montant brut ou net',
             'min': 'Salaire minimum',
             'max': 'Salaire maximum',
             'note': 'Précision salaire',

@@ -1427,7 +1427,7 @@ const candidateTallyCopy = {
     sidebarAfterText: "Si votre profil semble correspondre à un besoin en cours, il pourra être étudié pour une mise en relation. Si ce n’est pas encore le bon moment, vos réponses nous aident aussi à mieux préparer les prochaines opportunités.",
     sidebarResumeTitle: "Reprendre plus tard",
     sidebarResumeText: "Un identifiant est conservé pour retrouver votre progression si besoin.",
-    salaryExpectationIntro: "Indiquez ici votre attente salariale pour ce métier, en euros, en précisant s'il s'agit d'un montant brut ou net.",
+    salaryExpectationIntro: "Indiquez ici votre attente salariale pour ce métier, en euros.",
     fileNote: "Le nom du fichier sera enregistré. Le fichier lui-même n’est pas encore stocké côté plateforme.",
     consentText: "J’accepte que mes réponses soient utilisées par les équipes et partenaires EURES dans le cadre de l’accompagnement à la mobilité professionnelle et des mises en relation proposées. Vos données seront utilisées uniquement dans le cadre de votre accompagnement et conformément à la réglementation européenne sur la protection des données (RGPD).",
     whatsappTitle: "Contact WhatsApp",
@@ -1534,9 +1534,14 @@ const candidateTallyCopy = {
       permits: ["Permis B", "Permis C", "Permis CE", "Permis D", "Permis DE", "CACES", "Autre"]
     },
     salaryUnits: ["Par heure", "Par mois", "Par an"],
+    salaryAmountTypes: [
+      { value: "gross", label: "Brut" },
+      { value: "net", label: "Net" }
+    ],
     salaryFields: {
       type: "Sous quelle forme pensez-vous à votre salaire ?",
-      min: "Quel est le minimum que vous souhaiteriez pour ce métier, en euros bruts ou nets ?"
+      amountType: "Votre attente est-elle exprimée en brut ou en net ?",
+      min: "Quel est le minimum que vous souhaiteriez pour ce métier, en euros ?"
     },
     sectorTitles: {
       vente: "Vente et commerce",
@@ -1658,7 +1663,7 @@ const candidateTallyCopy = {
     sidebarAfterText: "If your profile seems to match an active need, it may be reviewed for a possible introduction. If the timing is not right yet, your answers still help us prepare upcoming opportunities better.",
     sidebarResumeTitle: "Continue later",
     sidebarResumeText: "An identifier is kept so your progress can be found again if needed.",
-    salaryExpectationIntro: "Indicate your salary expectation for this role here, in euros, and specify whether it is gross or net.",
+    salaryExpectationIntro: "Indicate your salary expectation for this role here, in euros.",
     fileNote: "The file name will be recorded. The file itself is not yet stored on the platform.",
     consentText: "I agree that my answers may be used by EURES teams and partners for professional mobility support and the proposed introductions. Your data will only be used for your support and in accordance with European data protection rules (GDPR).",
     whatsappTitle: "WhatsApp contact",
@@ -1765,9 +1770,14 @@ const candidateTallyCopy = {
       permits: ["Category B driving licence", "Category C driving licence", "Category CE driving licence", "Category D driving licence", "Category DE driving licence", "CACES", "Other"]
     },
     salaryUnits: ["Per hour", "Per month", "Per year"],
+    salaryAmountTypes: [
+      { value: "gross", label: "Gross" },
+      { value: "net", label: "Net" }
+    ],
     salaryFields: {
       type: "How do you think about your salary?",
-      min: "What is the minimum you would like for this role, in gross or net euros?"
+      amountType: "Is your expectation expressed as gross or net?",
+      min: "What is the minimum you would like for this role, in euros?"
     },
     sectorTitles: {
       vente: "Sales and retail",
@@ -1816,7 +1826,7 @@ const candidateTallyCopy = {
     sidebarAfterText: "Wenn Ihr Profil zu einem aktuellen Bedarf zu passen scheint, kann es für eine mögliche Vermittlung geprüft werden. Wenn der Zeitpunkt noch nicht passt, helfen uns Ihre Antworten trotzdem dabei, kommende Chancen besser vorzubereiten.",
     sidebarResumeTitle: "Später fortsetzen",
     sidebarResumeText: "Eine Kennung wird gespeichert, damit Ihr Fortschritt bei Bedarf wiedergefunden werden kann.",
-    salaryExpectationIntro: "Geben Sie hier Ihre Gehaltserwartung für diesen Beruf in Euro an und präzisieren Sie, ob es sich um einen Brutto- oder Nettobetrag handelt.",
+    salaryExpectationIntro: "Geben Sie hier Ihre Gehaltserwartung für diesen Beruf in Euro an.",
     fileNote: "Der Dateiname wird gespeichert. Die Datei selbst wird derzeit noch nicht auf der Plattform gespeichert.",
     consentText: "Ich stimme zu, dass meine Antworten von EURES-Teams und Partnern für die Begleitung der beruflichen Mobilität und die vorgeschlagenen Vermittlungen verwendet werden dürfen. Ihre Daten werden nur im Rahmen Ihrer Begleitung und gemäß den europäischen Datenschutzvorschriften (DSGVO) verwendet.",
     whatsappTitle: "Kontakt über WhatsApp",
@@ -1923,9 +1933,14 @@ const candidateTallyCopy = {
       permits: ["Führerschein B", "Führerschein C", "Führerschein CE", "Führerschein D", "Führerschein DE", "CACES", "Andere"]
     },
     salaryUnits: ["Pro Stunde", "Pro Monat", "Pro Jahr"],
+    salaryAmountTypes: [
+      { value: "gross", label: "Brutto" },
+      { value: "net", label: "Netto" }
+    ],
     salaryFields: {
       type: "In welcher Form denken Sie an Ihr Gehalt?",
-      min: "Was ist das Minimum, das Sie für diesen Beruf in Euro brutto oder netto erwarten würden?"
+      amountType: "Ist Ihre Erwartung als Brutto- oder Nettobetrag angegeben?",
+      min: "Was ist das Minimum, das Sie für diesen Beruf in Euro erwarten würden?"
     },
     sectorTitles: {
       vente: "Verkauf und Handel",
@@ -2090,7 +2105,7 @@ const employerTallyCopy = {
     sidebarAfterText: "Si des profils semblent correspondre, votre besoin peut être repris pour une mise en relation. Sinon, les réponses servent déjà à mieux structurer les prochains recrutements.",
     sidebarResumeTitle: "Reprendre plus tard",
     sidebarResumeText: "Un identifiant est conservé pour retrouver votre progression si besoin.",
-    salaryOfferIntro: "Indiquez ici le salaire proposé pour ce métier, en euros, en précisant s'il s'agit d'un montant brut ou net.",
+    salaryOfferIntro: "Indiquez ici le salaire proposé pour ce métier, en euros.",
     introNote: "Ce formulaire prend 2 à 3 minutes et s’adresse aux employeurs ayant des besoins de recrutement ouverts à la mobilité européenne et aux recrutements hors frontières.",
     introNote2: "Nous travaillons actuellement sur quelques métiers prioritaires, afin de tester le service sur des cas concrets.",
     matrixMobileHint: "Sur téléphone et tablette, chaque ligne s'affiche verticalement pour faciliter la lecture.",
@@ -2151,10 +2166,15 @@ const employerTallyCopy = {
       permits: ["Permis B", "Permis C", "Permis CE", "Permis D", "Permis DE", "CACES", "Autre"]
     },
     salaryUnits: ["Par heure", "Par mois", "Par an"],
+    salaryAmountTypes: [
+      { value: "gross", label: "Brut" },
+      { value: "net", label: "Net" }
+    ],
     salaryFields: {
       type: "Sous quelle forme exprimez-vous le salaire proposé ?",
-      min: "Montant minimum proposé, en euros bruts ou nets",
-      max: "Montant maximum proposé, en euros bruts ou nets"
+      amountType: "Le montant est-il exprimé en brut ou en net ?",
+      min: "Montant minimum proposé, en euros",
+      max: "Montant maximum proposé, en euros"
     },
     sectorTitles: {
       tally_q10: "Vente et commerce",
@@ -2181,7 +2201,7 @@ const employerTallyCopy = {
     sidebarAfterText: "If some profiles seem compatible, your need can be used for an introduction. Otherwise, the answers already help us structure future recruitments better.",
     sidebarResumeTitle: "Continue later",
     sidebarResumeText: "An identifier is kept so your progress can be found again if needed.",
-    salaryOfferIntro: "Indicate the salary offered for this role here, in euros, and specify whether it is gross or net.",
+    salaryOfferIntro: "Indicate the salary offered for this role here, in euros.",
     introNote: "This form takes 2 to 3 minutes and is intended for employers with hiring needs open to European mobility and cross-border recruitment.",
     introNote2: "We are currently working on a few priority occupations in order to test the service on concrete cases.",
     matrixMobileHint: "On mobile and tablet, each row is displayed vertically for easier reading.",
@@ -2244,10 +2264,15 @@ const employerTallyCopy = {
       permits: ["Category B driving licence", "Category C driving licence", "Category CE driving licence", "Category D driving licence", "Category DE driving licence", "CACES", "Other"]
     },
     salaryUnits: ["Per hour", "Per month", "Per year"],
+    salaryAmountTypes: [
+      { value: "gross", label: "Gross" },
+      { value: "net", label: "Net" }
+    ],
     salaryFields: {
       type: "How do you express the salary offered?",
-      min: "Minimum amount offered, in gross or net euros",
-      max: "Maximum amount offered, in gross or net euros"
+      amountType: "Is the amount expressed as gross or net?",
+      min: "Minimum amount offered, in euros",
+      max: "Maximum amount offered, in euros"
     },
     sectorTitles: {
       tally_q10: "Sales and retail",
@@ -2282,7 +2307,7 @@ const employerTallyCopy = {
     sidebarAfterText: "Wenn einige Profile kompatibel erscheinen, kann Ihr Bedarf für eine Vermittlung genutzt werden. Andernfalls helfen die Antworten bereits dabei, künftige Einstellungen besser zu strukturieren.",
     sidebarResumeTitle: "Später fortsetzen",
     sidebarResumeText: "Eine Kennung wird gespeichert, damit Ihr Fortschritt bei Bedarf wiedergefunden werden kann.",
-    salaryOfferIntro: "Geben Sie hier das für diesen Beruf angebotene Gehalt in Euro an und präzisieren Sie, ob es sich um einen Brutto- oder Nettobetrag handelt.",
+    salaryOfferIntro: "Geben Sie hier das für diesen Beruf angebotene Gehalt in Euro an.",
     introNote: "Dieses Formular dauert 2 bis 3 Minuten und richtet sich an Arbeitgeber mit Personalbedarf, der für europäische Mobilität und grenzüberschreitende Rekrutierung offen ist.",
     introNote2: "Wir arbeiten derzeit an einigen prioritären Berufen, um den Dienst an konkreten Fällen zu testen.",
     matrixMobileHint: "Auf Smartphone und Tablet wird jede Zeile untereinander angezeigt, damit sie leichter lesbar ist.",
@@ -2345,10 +2370,15 @@ const employerTallyCopy = {
       permits: ["Führerschein B", "Führerschein C", "Führerschein CE", "Führerschein D", "Führerschein DE", "CACES", "Andere"]
     },
     salaryUnits: ["Pro Stunde", "Pro Monat", "Pro Jahr"],
+    salaryAmountTypes: [
+      { value: "gross", label: "Brutto" },
+      { value: "net", label: "Netto" }
+    ],
     salaryFields: {
       type: "In welcher Form geben Sie das angebotene Gehalt an?",
-      min: "Angebotener Mindestbetrag in Euro brutto oder netto",
-      max: "Angebotener Höchstbetrag in Euro brutto oder netto"
+      amountType: "Ist der Betrag als Brutto- oder Nettobetrag angegeben?",
+      min: "Angebotener Mindestbetrag in Euro",
+      max: "Angebotener Höchstbetrag in Euro"
     },
     sectorTitles: {
       tally_q10: "Verkauf und Handel",
@@ -4635,6 +4665,10 @@ function salaryExpectationFields(baseName, content) {
         <legend>${content.salaryFields.type}</legend>
         ${radioPills(`${baseName}_salary_type`, content.salaryUnits)}
       </fieldset>
+      <fieldset class="fieldset">
+        <legend>${content.salaryFields.amountType}</legend>
+        ${radioPills(`${baseName}_salary_amount_type`, content.salaryAmountTypes)}
+      </fieldset>
       <label class="field">
         <span>${content.salaryFields.min}</span>
         <input type="number" name="${baseName}_salary_min" min="0" step="0.01" required>
@@ -4661,6 +4695,10 @@ function salaryOfferFields(baseName, content) {
       <fieldset class="fieldset">
         <legend>${content.salaryFields.type}</legend>
         ${radioPills(`${baseName}_salary_type`, content.salaryUnits)}
+      </fieldset>
+      <fieldset class="fieldset">
+        <legend>${content.salaryFields.amountType}</legend>
+        ${radioPills(`${baseName}_salary_amount_type`, content.salaryAmountTypes)}
       </fieldset>
       <label class="field">
         <span>${content.salaryFields.min}</span>
@@ -5482,38 +5520,38 @@ function humanizeCandidateRawAnswers(fields, fileMeta, rankingSummary) {
       intitule_poste: fields.tally_q20_job_title || "",
       qualites: fields.tally_q20 || [],
       experience: fields.tally_q21 || "",
-      salaire: { type: fields.tally_q20_salary_type || "", minimum: fields.tally_q20_salary_min || "", note: fields.tally_q20_salary_note || "" }
+      salaire: { type: fields.tally_q20_salary_type || "", brut_net: fields.tally_q20_salary_amount_type || "", minimum: fields.tally_q20_salary_min || "", note: fields.tally_q20_salary_note || "" }
     },
     nettoyage: {
       intitule_poste: fields.tally_q22_job_title || "",
       qualites: fields.tally_q22 || [],
       experience: fields.tally_q23 || "",
       casier: fields.tally_q24 || "",
-      salaire: { type: fields.tally_q22_salary_type || "", minimum: fields.tally_q22_salary_min || "", note: fields.tally_q22_salary_note || "" }
+      salaire: { type: fields.tally_q22_salary_type || "", brut_net: fields.tally_q22_salary_amount_type || "", minimum: fields.tally_q22_salary_min || "", note: fields.tally_q22_salary_note || "" }
     },
     hotel_restaurant: {
       intitule_poste: fields.tally_q25_job_title || "",
       qualites: fields.tally_q25 || [],
       experience: fields.tally_q26 || "",
-      salaire: { type: fields.tally_q25_salary_type || "", minimum: fields.tally_q25_salary_min || "", note: fields.tally_q25_salary_note || "" }
+      salaire: { type: fields.tally_q25_salary_type || "", brut_net: fields.tally_q25_salary_amount_type || "", minimum: fields.tally_q25_salary_min || "", note: fields.tally_q25_salary_note || "" }
     },
     agriculture: {
       intitule_poste: fields.tally_q27_job_title || "",
       qualites: fields.tally_q27 || [],
       experience: fields.tally_q28 || "",
-      salaire: { type: fields.tally_q27_salary_type || "", minimum: fields.tally_q27_salary_min || "", note: fields.tally_q27_salary_note || "" }
+      salaire: { type: fields.tally_q27_salary_type || "", brut_net: fields.tally_q27_salary_amount_type || "", minimum: fields.tally_q27_salary_min || "", note: fields.tally_q27_salary_note || "" }
     },
     missions_polyvalentes: {
       intitule_poste: fields.tally_q29_job_title || "",
       qualites: fields.tally_q29 || [],
       experience: fields.tally_q30 || "",
-      salaire: { type: fields.tally_q29_salary_type || "", minimum: fields.tally_q29_salary_min || "", note: fields.tally_q29_salary_note || "" }
+      salaire: { type: fields.tally_q29_salary_type || "", brut_net: fields.tally_q29_salary_amount_type || "", minimum: fields.tally_q29_salary_min || "", note: fields.tally_q29_salary_note || "" }
     },
     industrie_production: {
       intitule_poste: fields.tally_q38_job_title || "",
       qualites: fields.tally_q38 || [],
       experience: fields.tally_q39 || "",
-      salaire: { type: fields.tally_q38_salary_type || "", minimum: fields.tally_q38_salary_min || "", note: fields.tally_q38_salary_note || "" }
+      salaire: { type: fields.tally_q38_salary_type || "", brut_net: fields.tally_q38_salary_amount_type || "", minimum: fields.tally_q38_salary_min || "", note: fields.tally_q38_salary_note || "" }
     },
     contact: {
       prenom: fields.tally_q31 || "",
@@ -5642,32 +5680,32 @@ function humanizeEmployerRawAnswers(fields) {
     priorites_vente: {
       intitule_poste: fields.tally_q10_job_title || "",
       choix: fields.tally_q10 || [],
-      salaire: { type: fields.tally_q10_salary_type || "", minimum: fields.tally_q10_salary_min || "", maximum: fields.tally_q10_salary_max || "", note: fields.tally_q10_salary_note || "" }
+      salaire: { type: fields.tally_q10_salary_type || "", brut_net: fields.tally_q10_salary_amount_type || "", minimum: fields.tally_q10_salary_min || "", maximum: fields.tally_q10_salary_max || "", note: fields.tally_q10_salary_note || "" }
     },
     priorites_nettoyage: {
       intitule_poste: fields.tally_q11_job_title || "",
       choix: fields.tally_q11 || [],
-      salaire: { type: fields.tally_q11_salary_type || "", minimum: fields.tally_q11_salary_min || "", maximum: fields.tally_q11_salary_max || "", note: fields.tally_q11_salary_note || "" }
+      salaire: { type: fields.tally_q11_salary_type || "", brut_net: fields.tally_q11_salary_amount_type || "", minimum: fields.tally_q11_salary_min || "", maximum: fields.tally_q11_salary_max || "", note: fields.tally_q11_salary_note || "" }
     },
     priorites_hotel: {
       intitule_poste: fields.tally_q12_job_title || "",
       choix: fields.tally_q12 || [],
-      salaire: { type: fields.tally_q12_salary_type || "", minimum: fields.tally_q12_salary_min || "", maximum: fields.tally_q12_salary_max || "", note: fields.tally_q12_salary_note || "" }
+      salaire: { type: fields.tally_q12_salary_type || "", brut_net: fields.tally_q12_salary_amount_type || "", minimum: fields.tally_q12_salary_min || "", maximum: fields.tally_q12_salary_max || "", note: fields.tally_q12_salary_note || "" }
     },
     priorites_agriculture: {
       intitule_poste: fields.tally_q13_job_title || "",
       choix: fields.tally_q13 || [],
-      salaire: { type: fields.tally_q13_salary_type || "", minimum: fields.tally_q13_salary_min || "", maximum: fields.tally_q13_salary_max || "", note: fields.tally_q13_salary_note || "" }
+      salaire: { type: fields.tally_q13_salary_type || "", brut_net: fields.tally_q13_salary_amount_type || "", minimum: fields.tally_q13_salary_min || "", maximum: fields.tally_q13_salary_max || "", note: fields.tally_q13_salary_note || "" }
     },
     priorites_polyvalent: {
       intitule_poste: fields.tally_q14_job_title || "",
       choix: fields.tally_q14 || [],
-      salaire: { type: fields.tally_q14_salary_type || "", minimum: fields.tally_q14_salary_min || "", maximum: fields.tally_q14_salary_max || "", note: fields.tally_q14_salary_note || "" }
+      salaire: { type: fields.tally_q14_salary_type || "", brut_net: fields.tally_q14_salary_amount_type || "", minimum: fields.tally_q14_salary_min || "", maximum: fields.tally_q14_salary_max || "", note: fields.tally_q14_salary_note || "" }
     },
     priorites_industrie_production: {
       intitule_poste: fields.tally_q40_job_title || "",
       choix: fields.tally_q40 || [],
-      salaire: { type: fields.tally_q40_salary_type || "", minimum: fields.tally_q40_salary_min || "", maximum: fields.tally_q40_salary_max || "", note: fields.tally_q40_salary_note || "" }
+      salaire: { type: fields.tally_q40_salary_type || "", brut_net: fields.tally_q40_salary_amount_type || "", minimum: fields.tally_q40_salary_min || "", maximum: fields.tally_q40_salary_max || "", note: fields.tally_q40_salary_note || "" }
     },
     conditions_travail: fields.tally_q15 || [],
     permis_autorisations: {
@@ -5846,7 +5884,7 @@ function attachEmployerTallyBehavior(lang, t) {
       flow_role: "employer",
       ui_language: lang,
       source_page: "employer-questionnaire",
-      form_version: "2026-06-tally-employer-v2",
+      form_version: "2026-08-tally-employer-salary-v3",
       ...Object.fromEntries(
         Object.entries(normalized).map(([key, value]) => [
           key,
@@ -6170,7 +6208,7 @@ function attachCandidateTallyBehavior(lang, t) {
       permis_autorisations_autre: permitSummary.other,
       whatsapp_consent: normalized.whatsapp_consent || "",
       whatsapp_phone: normalized.tally_q34 || "",
-      form_version: "2026-08-tally-candidate-whatsapp-v3",
+      form_version: "2026-08-tally-candidate-salary-v4",
       source_page: "candidate-questionnaire",
       ui_language: lang,
       flow_role: "candidate",
