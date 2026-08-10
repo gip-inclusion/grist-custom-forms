@@ -6083,7 +6083,16 @@ def build_brevo_candidate_matching_notification_email(row: dict) -> tuple[str, s
     return recipient, subject, body_text, body_html
 
 
-def build_brevo_spontaneous_candidate_email(candidate: dict, employer: dict, comment: str = '') -> tuple[str, str, str, str]:
+def _build_eures_spontaneous_feedback_url(record_id: int, response_code: str) -> str:
+    token = get_eures_email_action_serializer().dumps({
+        'kind': 'spontaneous_candidate',
+        'record_id': int(record_id),
+        'response': str(response_code or '').strip().lower(),
+    })
+    return f"{get_public_app_base_url()}/eures-beta/spontaneous-feedback?token={token}"
+
+
+def build_brevo_spontaneous_candidate_email(candidate: dict, employer: dict, comment: str = '', feedback_urls: dict | None = None) -> tuple[str, str, str, str]:
     """Build the first-contact email sent to an employer who does not use Match Europe yet."""
     recipient = normalize_email(employer.get('email', ''))
     if not recipient:
@@ -6101,6 +6110,13 @@ def build_brevo_spontaneous_candidate_email(candidate: dict, employer: dict, com
     need_text = f" pour votre activité de {need}" if need else ''
     comment_block = f"\nMessage complémentaire\n{comment_text}\n" if comment_text else ''
     privacy_url = get_eures_privacy_url('fr')
+    feedback_urls = feedback_urls or {}
+    interested_url = str(feedback_urls.get('interested') or '').strip()
+    not_interested_url = str(feedback_urls.get('not_interested') or '').strip()
+    actions_text = (
+        f"\nRéponse rapide\n- Je suis intéressé : {interested_url}\n- Ce profil ne correspond pas : {not_interested_url}\n"
+        if interested_url and not_interested_url else ''
+    )
     body_text = (
         f"{hello}\n\n"
         f"Je travaille chez France Travail dans le cadre du réseau EURES et du service Match Europe. "
@@ -6110,6 +6126,7 @@ def build_brevo_spontaneous_candidate_email(candidate: dict, employer: dict, com
         f"Profil transmis\n- Nom : {candidate_name}\n- Métier / secteur : {candidate_job}\n"
         f"- Ville : {candidate_city}\n- Disponibilité : {candidate_availability}\n"
         f"{comment_block}\n"
+        f"{actions_text}\n"
         "Vous pouvez répondre directement à cet email en indiquant simplement si vous êtes intéressé, "
         "si vous souhaitez davantage d’informations ou si le profil ne correspond pas à vos besoins.\n\n"
         "Si vous souhaitez poursuivre, je pourrai ensuite vous présenter plus précisément Match Europe et, si utile, "
@@ -6122,6 +6139,11 @@ def build_brevo_spontaneous_candidate_email(candidate: dict, employer: dict, com
         f'<strong>Message complémentaire</strong><br>{_format_email_comment_html(comment_text)}</div>'
         if comment_text else ''
     )
+    actions_html = (
+        f'<div style="margin:20px 0;"><a href="{escape(interested_url)}" style="display:inline-block;margin:0 10px 10px 0;padding:12px 18px;border-radius:999px;background:#1f6f4a;color:#fff;text-decoration:none;font-weight:700;">Je suis intéressé</a>'
+        f'<a href="{escape(not_interested_url)}" style="display:inline-block;padding:12px 18px;border-radius:999px;background:#f3ece2;color:#70352f;text-decoration:none;font-weight:700;">Ce profil ne correspond pas</a></div>'
+        if interested_url and not_interested_url else ''
+    )
     body_html = f"""<!doctype html><html lang="fr"><body style="margin:0;background:#f4efe6;font-family:Arial,sans-serif;color:#1f1f1f;">
 <div style="max-width:680px;margin:24px auto;background:#fff;border:1px solid #e3dacb;border-radius:16px;overflow:hidden;">
 <div style="padding:26px 30px;background:#103a2b;color:#fff;"><div style="font-size:12px;letter-spacing:1.4px;text-transform:uppercase;">France Travail · EURES · Match Europe</div><h1 style="margin:10px 0 0;font-size:27px;">Une candidature susceptible de vous intéresser</h1></div>
@@ -6130,6 +6152,7 @@ def build_brevo_spontaneous_candidate_email(candidate: dict, employer: dict, com
 <p><strong>Son CV est joint à cet email.</strong> Vous n’avez aucun questionnaire à compléter à ce stade : je souhaite simplement savoir si cette candidature peut retenir votre attention.</p>
 <div style="padding:18px;background:#f8f4ec;border-radius:12px;"><strong>{escape(candidate_name)}</strong><br>Métier / secteur : {escape(candidate_job)}<br>Ville : {escape(candidate_city)}<br>Disponibilité : {escape(candidate_availability)}</div>
 {comment_html}
+{actions_html}
 <p>Vous pouvez répondre directement à cet email : <strong>intéressé</strong>, <strong>besoin de précisions</strong> ou <strong>profil non adapté</strong>.</p>
 <p>Si vous souhaitez poursuivre, je pourrai ensuite vous présenter Match Europe et, si utile, vous proposer de décrire vos besoins de recrutement.</p>
 <p style="margin-top:24px;">Cordialement,<br><strong>{escape(get_eures_mail_signature_name())}</strong><br>France Travail – EURES / Match Europe</p>
@@ -9937,7 +9960,13 @@ def admin_eures_spontaneous_candidate(form_id: str):
         })
 
         employer_to, employer_subject, employer_text, employer_html = build_brevo_spontaneous_candidate_email(
-            candidate, employer, employer_comment
+            candidate,
+            employer,
+            employer_comment,
+            {
+                'interested': _build_eures_spontaneous_feedback_url(tracking_record_id, 'interested'),
+                'not_interested': _build_eures_spontaneous_feedback_url(tracking_record_id, 'not_interested'),
+            },
         )
         employer_result = send_brevo_transactional_email(
             employer_to, employer_subject, employer_text, employer_html, attachments=[attachment]
@@ -10027,6 +10056,40 @@ def admin_eures_spontaneous_candidate_status(form_id: str, record_id: int):
     except Exception as e:
         app.logger.exception('EURES spontaneous application status update failed')
         return jsonify({'error': str(e)}), 500
+
+
+@app.route('/eures-beta/spontaneous-feedback', methods=['GET'])
+def eures_spontaneous_feedback():
+    token = str(request.args.get('token') or '').strip()
+    if not token:
+        return Response('Lien invalide : token manquant.', status=400, mimetype='text/plain')
+    try:
+        payload = get_eures_email_action_serializer().loads(token)
+    except BadSignature:
+        return Response('Lien invalide ou expiré.', status=400, mimetype='text/plain')
+    if payload.get('kind') != 'spontaneous_candidate':
+        return Response('Lien invalide.', status=400, mimetype='text/plain')
+    record_id = int(payload.get('record_id') or 0)
+    response_code = str(payload.get('response') or '').strip().lower()
+    if not record_id or response_code not in {'interested', 'not_interested'}:
+        return Response('Lien invalide : données incomplètes.', status=400, mimetype='text/plain')
+    try:
+        update_eures_spontaneous_record(record_id, {
+            'status': response_code,
+            'employer_response_at': _now_iso_utc(),
+            'employer_response_source': 'email_button',
+            'updated_at': _now_iso_utc(),
+            'updated_by': 'employer_email_button',
+        })
+        message = (
+            'Votre intérêt a bien été enregistré. Eric Barthélémy pourra revenir vers vous pour la suite.'
+            if response_code == 'interested'
+            else 'Votre réponse a bien été enregistrée. Merci pour votre retour.'
+        )
+        return Response(message, status=200, mimetype='text/plain')
+    except Exception as e:
+        app.logger.exception('EURES spontaneous employer feedback failed')
+        return Response(f'Erreur lors de l’enregistrement : {e}', status=500, mimetype='text/plain')
 
 
 @app.route('/api/forms/<form_id>/admin/brevo-health', methods=['GET'])

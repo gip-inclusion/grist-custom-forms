@@ -280,6 +280,33 @@ class BrevoHealthTest(unittest.TestCase):
         self.assertIn('répondre directement', text_body)
         self.assertIn('CV est joint', html_body)
 
+    def test_spontaneous_employer_email_includes_tracking_buttons(self):
+        _, _, text_body, html_body = app.build_brevo_spontaneous_candidate_email(
+            {'nom': 'Flora A'},
+            {'company': 'Entreprise Démo', 'email': 'test@example.org'},
+            feedback_urls={
+                'interested': 'https://example.org/interested',
+                'not_interested': 'https://example.org/not-interested',
+            },
+        )
+        self.assertIn('Je suis intéressé : https://example.org/interested', text_body)
+        self.assertIn('Je suis intéressé', html_body)
+        self.assertIn('Ce profil ne correspond pas', html_body)
+
+    @patch.object(app, 'update_eures_spontaneous_record')
+    def test_spontaneous_feedback_button_updates_tracking(self, update_eures_spontaneous_record):
+        token = app.get_eures_email_action_serializer().dumps({
+            'kind': 'spontaneous_candidate',
+            'record_id': 73,
+            'response': 'interested',
+        })
+        response = self.client.get(f'/eures-beta/spontaneous-feedback?token={token}')
+
+        self.assertEqual(response.status_code, 200)
+        update_eures_spontaneous_record.assert_called_once()
+        self.assertEqual(update_eures_spontaneous_record.call_args.args[0], 73)
+        self.assertEqual(update_eures_spontaneous_record.call_args.args[1]['status'], 'interested')
+
     def test_spontaneous_candidate_notice_does_not_imply_employer_interest(self):
         candidate = {'nom': 'Flora A', 'email': 'flora@example.org'}
         employer = {'company': 'Entreprise Démo'}
