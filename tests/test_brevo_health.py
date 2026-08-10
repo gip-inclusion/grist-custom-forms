@@ -326,6 +326,43 @@ class BrevoHealthTest(unittest.TestCase):
         ensure_brevo_ready.assert_called_once_with(check_api=True)
         send_brevo_transactional_email.assert_called_once()
 
+    @patch.object(app, 'send_brevo_transactional_email')
+    @patch.object(app, 'ensure_brevo_ready')
+    def test_admin_matching_test_emails_send_only_to_fixed_test_recipients(
+        self,
+        ensure_brevo_ready,
+        send_brevo_transactional_email,
+    ):
+        send_brevo_transactional_email.side_effect = [
+            {'messageId': 'brevo-employer-test'},
+            {'messageId': 'brevo-candidate-test'},
+        ]
+
+        with patch.dict(os.environ, {
+            'ADMIN_USERNAME': 'admin',
+            'ADMIN_PASSWORD': 'AdminEures2026',
+            'BREVO_API_KEY': 'brevo-key',
+            'BREVO_FROM_EMAIL': 'eures@example.org',
+        }, clear=False):
+            response = self.client.post(
+                '/api/forms/eures-beta/admin/matchings/test-emails',
+                headers=self.admin_auth,
+            )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.get_json()
+        self.assertTrue(payload['ok'])
+        self.assertEqual(payload['employer_email'], 'sci.europe@icloud.com')
+        self.assertEqual(payload['candidate_email'], 'eric.barthelemy@me.com')
+        ensure_brevo_ready.assert_called_once_with(check_api=True)
+        self.assertEqual(send_brevo_transactional_email.call_count, 2)
+        employer_call = send_brevo_transactional_email.call_args_list[0]
+        candidate_call = send_brevo_transactional_email.call_args_list[1]
+        self.assertEqual(employer_call.args[0], 'sci.europe@icloud.com')
+        self.assertEqual(candidate_call.args[0], 'eric.barthelemy@me.com')
+        self.assertTrue(employer_call.args[1].startswith('[TEST] '))
+        self.assertTrue(candidate_call.args[1].startswith('[TEST] '))
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -1714,8 +1714,12 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,</pre>
             <div class="inline-actions" style="margin-top:0.9rem;">
               <button id="manual-match-create-btn" type="button">Créer le matching</button>
               <button class="btn-secondary" id="manual-match-send-btn" type="button">Créer et envoyer directement</button>
+              <button class="btn-secondary" id="matching-test-emails-btn" type="button">Envoyer les mails tests</button>
             </div>
             <div class="status-line" id="manual-match-status-line"></div>
+            <p class="microcopy">
+              Test sécurisé : le mail employeur part uniquement vers sci.europe@icloud.com et le mail candidat vers eric.barthelemy@me.com.
+            </p>
           </div>
         </section>
 
@@ -2779,6 +2783,35 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,</pre>
         await loadCockpit();
       } catch (error) {
         setStatus("manual-match-status-line", `Erreur : ${error.message || (sendDirectly ? "création / envoi impossible" : "création impossible")}`);
+      }
+    }
+
+    async function sendMatchingTestEmails() {
+      const button = document.getElementById("matching-test-emails-btn");
+      if (button) button.disabled = true;
+      setStatus("manual-match-status-line", "Envoi des mails tests en cours...");
+      try {
+        const response = await fetch(apiUrl("/admin/matchings/test-emails"), {
+          method: "POST",
+          credentials: "same-origin",
+          headers: {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+          },
+          body: JSON.stringify({}),
+        });
+        const payload = await response.json();
+        if (!response.ok || !payload.ok) {
+          throw new Error(payload.error || `Erreur API (${response.status})`);
+        }
+        setStatus(
+          "manual-match-status-line",
+          `Mails tests envoyés : employeur ${payload.employer_email || "-"} ; candidat ${payload.candidate_email || "-"}.`
+        );
+      } catch (error) {
+        setStatus("manual-match-status-line", `Erreur test mails : ${error.message || "envoi impossible"}`);
+      } finally {
+        if (button) button.disabled = false;
       }
     }
 
@@ -4491,6 +4524,7 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,</pre>
     });
     document.getElementById("manual-match-create-btn").addEventListener("click", () => createManualMatching(false));
     document.getElementById("manual-match-send-btn").addEventListener("click", () => createManualMatching(true));
+    document.getElementById("matching-test-emails-btn").addEventListener("click", sendMatchingTestEmails);
     document.getElementById("manual-match-candidate").addEventListener("change", renderManualMatchingPreview);
     document.getElementById("manual-match-employer").addEventListener("change", renderManualMatchingPreview);
     document.getElementById("filter-status").addEventListener("change", loadMatchings);

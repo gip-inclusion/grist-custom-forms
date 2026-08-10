@@ -5851,6 +5851,79 @@ def build_brevo_candidate_matching_notification_email(row: dict) -> tuple[str, s
     return recipient, subject, body_text, body_html
 
 
+EURES_MATCHING_TEST_EMPLOYER_EMAIL = 'sci.europe@icloud.com'
+EURES_MATCHING_TEST_CANDIDATE_EMAIL = 'eric.barthelemy@me.com'
+
+
+def build_eures_matching_test_row() -> dict:
+    """Return a safe synthetic matching row used only for admin email tests."""
+    return {
+        'record_id': 999999999,
+        'raisons': [
+            'Test technique : vérification du rendu du mail employeur.',
+            'Test technique : vérification du rendu du mail candidat.',
+            'Aucune donnée réelle de candidat ou d’employeur n’est utilisée.',
+        ],
+        'employer_email_comment': (
+            'Message de test envoyé depuis l’admin Match Europe. '
+            'Ce mail sert uniquement à vérifier le fonctionnement de l’envoi Brevo.'
+        ),
+        'candidate_email_comment': (
+            'Message de test envoyé depuis l’admin Match Europe. '
+            'Aucune candidature réelle n’a été transmise.'
+        ),
+        'candidat': {
+            'nom': 'Candidat test Match Europe',
+            'email': EURES_MATCHING_TEST_CANDIDATE_EMAIL,
+            'telephone': '+33 6 00 00 00 00',
+            'ville': 'Metz',
+            'pays': 'France',
+            'metier': 'Nettoyage et entretien',
+            'competences': 'Test de présentation des compétences',
+            'langues': 'Français',
+            'mobilite': 'Luxembourg',
+            'disponibilite': 'Dès que possible',
+        },
+        'employeur': {
+            'employeur': 'SCI Europe — test',
+            'contact': EURES_MATCHING_TEST_EMPLOYER_EMAIL,
+            'email': EURES_MATCHING_TEST_EMPLOYER_EMAIL,
+            'poste': 'Poste test Match Europe',
+            'pays': 'Luxembourg',
+            'langues_requises': 'Français',
+            'date_debut': 'Test uniquement',
+        },
+    }
+
+
+def send_eures_matching_test_emails() -> dict:
+    """Send the two synthetic matching emails to the configured test recipients."""
+    ensure_brevo_ready(check_api=True)
+    row = build_eures_matching_test_row()
+
+    employer_to, employer_subject, employer_text, employer_html = build_brevo_matching_email(row)
+    candidate_to, candidate_subject, candidate_text, candidate_html = build_brevo_candidate_matching_notification_email(row)
+
+    employer_result = send_brevo_transactional_email(
+        employer_to,
+        f'[TEST] {employer_subject}',
+        employer_text,
+        employer_html,
+    )
+    candidate_result = send_brevo_transactional_email(
+        candidate_to,
+        f'[TEST] {candidate_subject}',
+        candidate_text,
+        candidate_html,
+    )
+    return {
+        'employer_email': employer_to,
+        'candidate_email': candidate_to,
+        'employer_result': employer_result,
+        'candidate_result': candidate_result,
+    }
+
+
 def send_brevo_transactional_email(
     to_email: str,
     subject: str,
@@ -9316,6 +9389,36 @@ def admin_eures_brevo_health(form_id: str):
         'ok': status_code == 200,
         'brevo': health,
     }), status_code
+
+
+@app.route('/api/forms/<form_id>/admin/matchings/test-emails', methods=['POST'])
+@admin_required
+def admin_eures_matching_test_emails(form_id: str):
+    """Admin API: send safe synthetic matching emails to fixed test recipients."""
+    proxied = maybe_proxy_eures_request(form_id)
+    if proxied:
+        return proxied
+    if form_id != 'eures-beta':
+        return jsonify({'error': f'Unknown admin matching form: {form_id}'}), 404
+
+    try:
+        result = send_eures_matching_test_emails()
+        app.logger.info(
+            'EURES matching test emails sent',
+            extra={
+                'form_id': form_id,
+                'employer_email': result.get('employer_email'),
+                'candidate_email': result.get('candidate_email'),
+                'sent_by': get_admin_actor(form_id),
+            },
+        )
+        return jsonify({
+            'ok': True,
+            **result,
+        }), 200
+    except Exception as e:
+        app.logger.exception('EURES matching test emails failed')
+        return jsonify({'error': str(e)}), 500
 
 
 @app.route('/api/forms/<form_id>/admin/matchings/<int:record_id>/decision', methods=['POST'])
