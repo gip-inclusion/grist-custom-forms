@@ -132,6 +132,46 @@
       border-color: rgba(15, 77, 169, 0.16);
     }
 
+    .history-response-details {
+      margin-top: 1rem;
+      border-top: 1px solid var(--line);
+      padding-top: 0.9rem;
+    }
+
+    .history-response-details summary {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      min-height: 40px;
+      border: 1px solid rgba(15, 77, 169, 0.18);
+      border-radius: 999px;
+      padding: 0.55rem 0.9rem;
+      background: rgba(15, 77, 169, 0.08);
+      color: var(--accent-strong);
+      font-weight: 800;
+      cursor: pointer;
+      list-style: none;
+    }
+
+    .history-response-details summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .history-response-details summary::after {
+      content: "▼";
+      font-size: 0.78rem;
+    }
+
+    .history-response-details[open] summary::after {
+      content: "▲";
+    }
+
+    .history-response-content {
+      margin-top: 1rem;
+      display: grid;
+      gap: 0.65rem;
+    }
+
     .toolbar select,
     .toolbar input,
     .toolbar button,
@@ -2698,8 +2738,59 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,,</pre>
               </div>
             </div>
           </div>
+          <details class="history-response-details">
+            <summary>${esc(isCandidate ? "Déplier la réponse candidat" : "Déplier la réponse employeur")}</summary>
+            <div class="history-response-content">
+              ${row.summary ? `<p style="margin:0; color:var(--muted); line-height:1.7;">${esc(row.summary)}</p>` : ""}
+              ${row.response_disabled_reason ? `<p style="margin:0; line-height:1.7;"><strong>Motif de désactivation :</strong> ${esc(row.response_disabled_reason)}</p>` : ""}
+              ${Array.isArray(row.matchings) && row.matchings.length ? `
+                <section class="notes-box">
+                  <h4>${esc(isCandidate ? "Matchings liés" : "Matchings liés")}</h4>
+                  <div class="detail-list">
+                    ${row.matchings.map((matching) => `
+                      <div class="detail-row" style="grid-template-columns:minmax(0, 1fr) auto; align-items:center;">
+                        <div>
+                          <strong>${esc(matching.counterpart_name || "-")}</strong>
+                          <div style="color:var(--muted); margin-top:0.2rem;">${esc(matching.counterpart_subtitle || "-")}</div>
+                          <div class="summary-tags" style="margin-top:0.45rem;">
+                            <span class="pill">Score : ${esc(matching.score ?? 0)}</span>
+                            <span class="pill">${esc(matching.workflow_status || "-")}</span>
+                          </div>
+                        </div>
+                        <button class="btn-neutral" type="button" data-open-matching="${esc(matching.matching_record_id)}">Voir</button>
+                      </div>
+                    `).join("")}
+                  </div>
+                </section>
+              ` : ""}
+              ${row.cv_download_url ? `
+                <section class="notes-box">
+                  <h4>CV du candidat</h4>
+                  <p style="margin:0; color:var(--muted); line-height:1.7;">${esc(row.cv_file_name || "CV")}</p>
+                  <div class="hero-actions" style="margin-top:0.8rem;">
+                    <a class="btn-neutral" href="${esc(row.cv_download_url)}" target="_blank" rel="noopener noreferrer">Télécharger le CV</a>
+                  </div>
+                </section>
+              ` : ""}
+              <dl class="detail-list">
+                ${(Array.isArray(row.fields) && row.fields.length ? row.fields : []).map((field) => `
+                  <div class="detail-row">
+                    <dt>${esc(field.label || field.key || "-")}</dt>
+                    <dd>${esc(field.value || "-")}</dd>
+                  </div>
+                `).join("") || `<div class="empty-state">Aucun champ détaillé disponible pour cette réponse.</div>`}
+              </dl>
+            </div>
+          </details>
         </article>
       `).join("");
+      for (const button of list.querySelectorAll("[data-open-matching]")) {
+        button.addEventListener("click", async (event) => {
+          const matchingRecordId = Number(event.currentTarget.dataset.openMatching || 0);
+          if (!matchingRecordId) return;
+          await openMatchingRecord(matchingRecordId);
+        });
+      }
     }
 
     function renderHistoryMatchingRows() {
