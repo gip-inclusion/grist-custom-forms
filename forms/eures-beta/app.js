@@ -3364,6 +3364,19 @@ const projectContentByLang = {
 
 const journalEntriesFR = [
   {
+    sort_date: "2026-08-10",
+    date: "10 août 2026",
+    title: "Tester la candidature spontanée auprès d’un nouvel employeur",
+    observed: "Un profil peut être pertinent pour une entreprise qui n’utilise pas encore Match Europe et qui n’a donc pas décrit de besoin dans le service. Imposer le questionnaire employeur avant de lui présenter ce profil créerait une friction inutile et empêcherait de mesurer simplement son intérêt.",
+    decided: "Créer un parcours de candidature spontanée distinct. Le CV est transmis à l’employeur, qui peut répondre « Intéressé » ou « Pas intéressé » sans remplir immédiatement de questionnaire. Le candidat est informé séparément de la transmission et chaque envoi est inscrit dans un registre de suivi.",
+    changed: [
+      "Match Europe peut désormais ouvrir une relation avec un nouvel employeur à partir d’un profil concret.",
+      "Le questionnaire employeur n’est proposé que si l’entreprise souhaite poursuivre.",
+      "Les envois et les réponses employeur deviennent traçables dans l’administration."
+    ],
+    next: "Mesurer les réponses, les délais, les échanges, les entretiens et les recrutements afin d’évaluer l’utilité de ce nouveau canal."
+  },
+  {
     sort_date: "2026-07-20",
     date: "Juillet 2026",
     title: "Ouvrir le projet et documenter ses décisions",
@@ -3469,6 +3482,19 @@ const journalEntriesFR = [
 
 const journalEntriesEN = [
   {
+    sort_date: "2026-08-10",
+    date: "August 10, 2026",
+    title: "Test unsolicited applications with a new employer",
+    observed: "A candidate profile may be relevant to a company that does not yet use Match Europe and has therefore not described a vacancy in the service. Requiring the employer questionnaire before presenting the profile would create unnecessary friction and make it harder to measure simple interest.",
+    decided: "Create a separate unsolicited-application flow. The CV is sent to the employer, who can answer ‘Interested’ or ‘Not interested’ without immediately completing a questionnaire. The candidate is informed separately and every send is recorded for follow-up.",
+    changed: [
+      "Match Europe can now open a relationship with a new employer through a concrete profile.",
+      "The employer questionnaire is only proposed if the company wants to continue.",
+      "Sends and employer responses can be tracked in the administration area."
+    ],
+    next: "Measure responses, delays, exchanges, interviews and hires to assess the usefulness of this new channel."
+  },
+  {
     sort_date: "2026-07-20",
     date: "July 2026",
     title: "Open up the project and document its decisions",
@@ -3573,6 +3599,19 @@ const journalEntriesEN = [
 ];
 
 const journalEntriesDE = [
+  {
+    sort_date: "2026-08-10",
+    date: "10. August 2026",
+    title: "Initiativbewerbungen bei einem neuen Arbeitgeber testen",
+    observed: "Ein Kandidatenprofil kann für ein Unternehmen relevant sein, das Match Europe noch nicht nutzt und daher keinen Bedarf im Dienst beschrieben hat. Ein verpflichtender Arbeitgeberfragebogen vor der Vorstellung des Profils würde unnötige Reibung erzeugen und die einfache Messung des Interesses erschweren.",
+    decided: "Einen eigenen Ablauf für Initiativbewerbungen schaffen. Der Lebenslauf wird dem Arbeitgeber übermittelt, der ohne sofortigen Fragebogen mit „Interessiert“ oder „Nicht interessiert“ antworten kann. Der Kandidat wird getrennt informiert und jeder Versand für die Nachverfolgung registriert.",
+    changed: [
+      "Match Europe kann nun über ein konkretes Profil eine Beziehung zu einem neuen Arbeitgeber eröffnen.",
+      "Der Arbeitgeberfragebogen wird erst angeboten, wenn das Unternehmen fortfahren möchte.",
+      "Versand und Arbeitgeberantworten können im Administrationsbereich nachverfolgt werden."
+    ],
+    next: "Antworten, Fristen, Austausche, Vorstellungsgespräche und Einstellungen messen, um den Nutzen dieses neuen Kanals zu bewerten."
+  },
   {
     sort_date: "2026-07-20",
     date: "Juli 2026",
