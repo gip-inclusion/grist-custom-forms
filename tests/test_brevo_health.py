@@ -21,6 +21,27 @@ class BrevoHealthTest(unittest.TestCase):
         self.assertEqual(health['status'], 'missing_config')
         self.assertIn('BREVO_API_KEY', health['message'])
 
+    @patch.object(app.requests, 'post')
+    def test_transactional_email_uses_configured_reply_to(self, requests_post):
+        response = Mock(status_code=201, text='')
+        response.json.return_value = {'messageId': 'brevo-123'}
+        requests_post.return_value = response
+        with patch.dict(os.environ, {
+            'BREVO_API_KEY': 'brevo-key',
+            'BREVO_FROM_EMAIL': 'sender@example.org',
+            'BREVO_FROM_NAME': 'Match Europe',
+            'BREVO_REPLY_TO_EMAIL': 'eric.barthelemy@francetravail.fr',
+            'BREVO_REPLY_TO_NAME': 'Eric Barthélémy',
+        }, clear=False):
+            app.send_brevo_transactional_email('employer@example.org', 'Sujet', 'Texte', '<p>Texte</p>')
+
+        payload = requests_post.call_args.kwargs['json']
+        self.assertEqual(payload['sender']['email'], 'sender@example.org')
+        self.assertEqual(payload['replyTo'], {
+            'email': 'eric.barthelemy@francetravail.fr',
+            'name': 'Eric Barthélémy',
+        })
+
     @patch.object(app.requests, 'get')
     def test_get_brevo_health_checks_api_successfully(self, requests_get):
         requests_get.return_value = Mock(status_code=200, ok=True)
@@ -234,6 +255,43 @@ class BrevoHealthTest(unittest.TestCase):
         self.assertIn("France Travail", html_body)
         self.assertNotIn("Questionnaire candidat EURES beta", html_body)
         self.assertNotIn("Repères de vérification", html_body)
+
+    def test_build_spontaneous_candidate_email_does_not_require_questionnaire(self):
+        candidate = {
+            'nom': 'Flora A',
+            'metier': 'Production industrielle',
+            'ville': 'Berchem',
+            'disponibilite': 'Dès que possible',
+        }
+        employer = {
+            'company': 'Entreprise Démo',
+            'contact': 'Mme Martin',
+            'email': 'recrutement@example.org',
+            'need': 'production',
+        }
+
+        recipient, subject, text_body, html_body = app.build_brevo_spontaneous_candidate_email(
+            candidate, employer, 'Profil disponible rapidement.'
+        )
+
+        self.assertEqual(recipient, 'recrutement@example.org')
+        self.assertIn('Candidature spontanée', subject)
+        self.assertIn('pas demandé de compléter un questionnaire', text_body)
+        self.assertIn('répondre directement', text_body)
+        self.assertIn('CV est joint', html_body)
+
+    def test_spontaneous_candidate_notice_does_not_imply_employer_interest(self):
+        candidate = {'nom': 'Flora A', 'email': 'flora@example.org'}
+        employer = {'company': 'Entreprise Démo'}
+
+        recipient, subject, text_body, html_body = app.build_brevo_spontaneous_candidate_notice(
+            candidate, employer
+        )
+
+        self.assertEqual(recipient, 'flora@example.org')
+        self.assertIn('candidature spontanée', subject)
+        self.assertIn("ne signifie pas encore que l’employeur est intéressé", text_body)
+        self.assertIn("ne signifie pas encore que l’employeur est intéressé", html_body)
 
     def test_build_candidate_invitation_email_for_eures_cv_deposit_campaign(self):
         invitation = {

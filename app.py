@@ -1242,6 +1242,8 @@ def get_brevo_config() -> dict:
         'api_key': os.environ.get('BREVO_API_KEY', '').strip(),
         'from_email': os.environ.get('BREVO_FROM_EMAIL', '').strip(),
         'from_name': os.environ.get('BREVO_FROM_NAME', 'EURES beta').strip() or 'EURES beta',
+        'reply_to_email': os.environ.get('BREVO_REPLY_TO_EMAIL', '').strip(),
+        'reply_to_name': os.environ.get('BREVO_REPLY_TO_NAME', '').strip(),
     }
 
 
@@ -1575,6 +1577,8 @@ def get_brevo_config() -> dict:
         'api_key': os.environ.get('BREVO_API_KEY', '').strip(),
         'from_email': os.environ.get('BREVO_FROM_EMAIL', '').strip(),
         'from_name': os.environ.get('BREVO_FROM_NAME', 'EURES beta').strip() or 'EURES beta',
+        'reply_to_email': os.environ.get('BREVO_REPLY_TO_EMAIL', '').strip(),
+        'reply_to_name': os.environ.get('BREVO_REPLY_TO_NAME', '').strip(),
     }
 
 
@@ -6044,6 +6048,82 @@ def build_brevo_candidate_matching_notification_email(row: dict) -> tuple[str, s
     return recipient, subject, body_text, body_html
 
 
+def build_brevo_spontaneous_candidate_email(candidate: dict, employer: dict, comment: str = '') -> tuple[str, str, str, str]:
+    """Build the first-contact email sent to an employer who does not use Match Europe yet."""
+    recipient = normalize_email(employer.get('email', ''))
+    if not recipient:
+        raise RuntimeError('Employer email is missing for spontaneous application.')
+    company = str(employer.get('company') or 'votre entreprise').strip()
+    contact = str(employer.get('contact') or '').strip()
+    need = str(employer.get('need') or '').strip()
+    candidate_name = str(candidate.get('nom') or 'un candidat').strip()
+    candidate_city = str(candidate.get('ville') or 'Non renseignée').strip()
+    candidate_job = str(candidate.get('metier') or 'Non renseigné').strip()
+    candidate_availability = str(candidate.get('disponibilite') or 'Non renseignée').strip()
+    comment_text = _format_email_comment_text(comment)
+    hello = f"Bonjour {contact}," if contact else "Bonjour,"
+    subject = f"Candidature spontanée – {candidate_name}"
+    need_text = f" pour votre activité de {need}" if need else ''
+    comment_block = f"\nMessage complémentaire\n{comment_text}\n" if comment_text else ''
+    privacy_url = get_eures_privacy_url('fr')
+    body_text = (
+        f"{hello}\n\n"
+        f"Je travaille chez France Travail dans le cadre du réseau EURES et du service Match Europe. "
+        f"J’ai identifié un profil qui pourrait vous intéresser{need_text}.\n\n"
+        "Vous trouverez son CV en pièce jointe. Il ne vous est pas demandé de compléter un questionnaire à ce stade. "
+        "Je souhaite simplement savoir si cette candidature peut retenir votre attention.\n\n"
+        f"Profil transmis\n- Nom : {candidate_name}\n- Métier / secteur : {candidate_job}\n"
+        f"- Ville : {candidate_city}\n- Disponibilité : {candidate_availability}\n"
+        f"{comment_block}\n"
+        "Vous pouvez répondre directement à cet email en indiquant simplement si vous êtes intéressé, "
+        "si vous souhaitez davantage d’informations ou si le profil ne correspond pas à vos besoins.\n\n"
+        "Si vous souhaitez poursuivre, je pourrai ensuite vous présenter plus précisément Match Europe et, si utile, "
+        "vous proposer de décrire vos besoins de recrutement.\n\n"
+        f"Informations sur les données : {privacy_url}\n\n"
+        f"Cordialement,\n{get_eures_mail_signature_name()}\nFrance Travail – EURES / Match Europe\n"
+    )
+    comment_html = (
+        f'<div style="margin:18px 0;padding:16px 18px;border-left:4px solid #004494;background:#f3f7fc;">'
+        f'<strong>Message complémentaire</strong><br>{_format_email_comment_html(comment_text)}</div>'
+        if comment_text else ''
+    )
+    body_html = f"""<!doctype html><html lang="fr"><body style="margin:0;background:#f4efe6;font-family:Arial,sans-serif;color:#1f1f1f;">
+<div style="max-width:680px;margin:24px auto;background:#fff;border:1px solid #e3dacb;border-radius:16px;overflow:hidden;">
+<div style="padding:26px 30px;background:#103a2b;color:#fff;"><div style="font-size:12px;letter-spacing:1.4px;text-transform:uppercase;">France Travail · EURES · Match Europe</div><h1 style="margin:10px 0 0;font-size:27px;">Une candidature susceptible de vous intéresser</h1></div>
+<div style="padding:28px 30px;font-size:16px;line-height:1.65;"><p>{escape(hello)}</p>
+<p>Je travaille chez France Travail dans le cadre du réseau EURES et du service Match Europe. J’ai identifié un profil qui pourrait vous intéresser{escape(need_text)}.</p>
+<p><strong>Son CV est joint à cet email.</strong> Vous n’avez aucun questionnaire à compléter à ce stade : je souhaite simplement savoir si cette candidature peut retenir votre attention.</p>
+<div style="padding:18px;background:#f8f4ec;border-radius:12px;"><strong>{escape(candidate_name)}</strong><br>Métier / secteur : {escape(candidate_job)}<br>Ville : {escape(candidate_city)}<br>Disponibilité : {escape(candidate_availability)}</div>
+{comment_html}
+<p>Vous pouvez répondre directement à cet email : <strong>intéressé</strong>, <strong>besoin de précisions</strong> ou <strong>profil non adapté</strong>.</p>
+<p>Si vous souhaitez poursuivre, je pourrai ensuite vous présenter Match Europe et, si utile, vous proposer de décrire vos besoins de recrutement.</p>
+<p style="margin-top:24px;">Cordialement,<br><strong>{escape(get_eures_mail_signature_name())}</strong><br>France Travail – EURES / Match Europe</p>
+<p style="font-size:13px;color:#666;">Informations sur les données : <a href="{escape(privacy_url)}">notice de confidentialité</a></p></div></div></body></html>"""
+    return recipient, subject, body_text, body_html
+
+
+def build_brevo_spontaneous_candidate_notice(candidate: dict, employer: dict, comment: str = '') -> tuple[str, str, str, str]:
+    """Inform the candidate that their CV was sent without implying employer interest."""
+    row = {
+        'candidat': candidate,
+        'employeur': {'employeur': str(employer.get('company') or 'un employeur').strip()},
+        'candidate_email_comment': comment,
+    }
+    recipient, _, body_text, body_html = build_brevo_candidate_matching_notification_email(row)
+    company = str(employer.get('company') or 'un employeur').strip()
+    subject = f"[Match Europe] Votre candidature spontanée a été transmise à {company}"
+    clarification = "Cette transmission ne signifie pas encore que l’employeur est intéressé."
+    body_text = body_text.replace(
+        "Si cet employeur souhaite echanger avec vous, il pourra vous contacter directement.",
+        f"{clarification}\n\nSi cet employeur souhaite échanger avec vous, il pourra vous contacter directement.",
+    )
+    body_html = body_html.replace(
+        "Si cet employeur souhaite echanger avec vous, il pourra vous contacter directement.",
+        f"<strong>{escape(clarification)}</strong><br><br>Si cet employeur souhaite échanger avec vous, il pourra vous contacter directement.",
+    )
+    return recipient, subject, body_text, body_html
+
+
 EURES_MATCHING_TEST_EMPLOYER_EMAIL = 'sci.europe@icloud.com'
 EURES_MATCHING_TEST_CANDIDATE_EMAIL = 'eric.barthelemy@me.com'
 
@@ -6246,6 +6326,11 @@ def send_brevo_transactional_email(
         'textContent': text_body,
         'htmlContent': html_body,
     }
+    if brevo.get('reply_to_email'):
+        payload['replyTo'] = {
+            'email': brevo['reply_to_email'],
+            'name': brevo.get('reply_to_name') or brevo['from_name'],
+        }
     if attachments:
         payload['attachment'] = attachments
     resp = requests.post(
@@ -9685,6 +9770,76 @@ def admin_eures_manual_matching(form_id: str):
         }), 200
     except Exception as e:
         app.logger.exception('EURES manual matching failed')
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/forms/<form_id>/admin/spontaneous-candidate', methods=['POST'])
+@admin_required
+def admin_eures_spontaneous_candidate(form_id: str):
+    """Send one candidate CV to a new employer and notify the candidate."""
+    proxied = maybe_proxy_eures_request(form_id)
+    if proxied:
+        return proxied
+    if form_id != 'eures-beta':
+        return jsonify({'error': f'Unknown spontaneous application form: {form_id}'}), 404
+
+    data = request.get_json() or {}
+    candidate_record_id = int(data.get('candidate_record_id') or 0)
+    employer = {
+        'company': str(data.get('employer_company') or '').strip(),
+        'contact': str(data.get('employer_contact') or '').strip(),
+        'email': normalize_email(data.get('employer_email') or ''),
+        'need': str(data.get('employer_need') or '').strip(),
+    }
+    employer_comment = str(data.get('employer_comment') or '').strip()
+    candidate_comment = str(data.get('candidate_comment') or '').strip()
+    if not candidate_record_id or not employer['company'] or not employer['email']:
+        return jsonify({'error': 'Candidate, employer company and employer email are required'}), 400
+
+    candidate_config = get_form_config('eures-beta', 'candidate')
+    if not candidate_config:
+        return jsonify({'error': 'EURES candidate configuration is incomplete.'}), 500
+    headers = _eures_admin_headers(candidate_config)
+    try:
+        ensure_brevo_ready(check_api=True)
+        record = fetch_record_by_id(candidate_config['doc_id'], EURES_CANDIDATS_TABLE, candidate_record_id, headers)
+        if not record:
+            return jsonify({'error': 'Candidate record not found'}), 404
+        candidate = record.get('fields', {}) if isinstance(record.get('fields'), dict) else {}
+        if not _is_eures_response_active(candidate):
+            return jsonify({'error': 'Le candidat sélectionné est désactivé.'}), 400
+        attachment = get_candidate_cv_attachment(candidate)
+        if not attachment:
+            return jsonify({'error': 'Le candidat sélectionné ne possède pas de CV transmissible.'}), 400
+
+        employer_to, employer_subject, employer_text, employer_html = build_brevo_spontaneous_candidate_email(
+            candidate, employer, employer_comment
+        )
+        employer_result = send_brevo_transactional_email(
+            employer_to, employer_subject, employer_text, employer_html, attachments=[attachment]
+        )
+        candidate_to, candidate_subject, candidate_text, candidate_html = build_brevo_spontaneous_candidate_notice(
+            candidate, employer, candidate_comment
+        )
+        candidate_result = send_brevo_transactional_email(
+            candidate_to, candidate_subject, candidate_text, candidate_html
+        )
+        app.logger.info('EURES spontaneous candidate application sent', extra={
+            'form_id': form_id,
+            'candidate_record_id': candidate_record_id,
+            'employer_email': employer_to,
+            'sent_by': get_admin_actor(form_id),
+        })
+        return jsonify({
+            'ok': True,
+            'candidate_record_id': candidate_record_id,
+            'employer_email': employer_to,
+            'candidate_email': candidate_to,
+            'employer_email_result': employer_result,
+            'candidate_email_result': candidate_result,
+        }), 200
+    except Exception as e:
+        app.logger.exception('EURES spontaneous candidate application failed')
         return jsonify({'error': str(e)}), 500
 
 

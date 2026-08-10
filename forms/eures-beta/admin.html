@@ -2030,6 +2030,32 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,,</pre>
             </p>
           </div>
 
+          <div class="admin-card" data-invitation-section="manual-matching" hidden>
+            <div class="section-title">Proposer spontanément un candidat à un nouvel employeur</div>
+            <p class="microcopy">
+              Le CV est transmis à l’employeur sans lui imposer le questionnaire. Un second email informe le candidat de la transmission, sans laisser entendre que l’employeur a déjà manifesté un intérêt.
+            </p>
+            <div class="form-grid" style="margin-top:0.9rem;">
+              <label class="field"><span>Candidat</span><select id="spontaneous-candidate"><option value="">Sélectionner un candidat</option></select></label>
+              <label class="field"><span>Entreprise</span><input id="spontaneous-employer-company" type="text" placeholder="Nom de l’entreprise"></label>
+              <label class="field"><span>Contact employeur</span><input id="spontaneous-employer-contact" type="text" placeholder="Prénom ou nom, facultatif"></label>
+              <label class="field"><span>Email employeur</span><input id="spontaneous-employer-email" type="email" placeholder="contact@entreprise.eu"></label>
+              <label class="field"><span>Activité ou besoin repéré</span><input id="spontaneous-employer-need" type="text" placeholder="Production, conditionnement…"></label>
+            </div>
+            <div class="field-stack" style="margin-top:0.9rem;">
+              <label for="spontaneous-employer-comment">Message complémentaire à l’employeur</label>
+              <textarea id="spontaneous-employer-comment" placeholder="Facultatif. Expliquez brièvement pourquoi vous lui adressez ce profil."></textarea>
+            </div>
+            <div class="field-stack" style="margin-top:0.9rem;">
+              <label for="spontaneous-candidate-comment">Message complémentaire au candidat</label>
+              <textarea id="spontaneous-candidate-comment" placeholder="Facultatif. Précisez le contexte de la candidature spontanée."></textarea>
+            </div>
+            <div class="inline-actions" style="margin-top:0.9rem;">
+              <button class="btn-accept" id="spontaneous-send-btn" type="button">Envoyer le CV et prévenir le candidat</button>
+            </div>
+            <div class="status-line" id="spontaneous-status-line"></div>
+          </div>
+
           <div class="admin-card operational-control-card compact" data-invitation-section="list" id="invitation-list-card">
             <div class="toolbar legacy-invitation-toolbar">
               <select id="invite-filter-status">
@@ -3861,6 +3887,7 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,,</pre>
 
     function renderManualMatchingOptions() {
       const candidateSelect = document.getElementById("manual-match-candidate");
+      const spontaneousCandidateSelect = document.getElementById("spontaneous-candidate");
       const employerSelect = document.getElementById("manual-match-employer");
       const currentCandidate = candidateSelect.value;
       const currentEmployer = employerSelect.value;
@@ -3868,6 +3895,9 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,,</pre>
       const activeEmployerRows = state.employerResponses.rows.filter((row) => row.is_active !== false);
 
       candidateSelect.innerHTML = `<option value="">Sélectionner un candidat</option>` + activeCandidateRows.map((row) => `
+        <option value="${esc(row.record_id)}">${esc(optionLabelForCandidate(row))}</option>
+      `).join("");
+      spontaneousCandidateSelect.innerHTML = `<option value="">Sélectionner un candidat</option>` + activeCandidateRows.map((row) => `
         <option value="${esc(row.record_id)}">${esc(optionLabelForCandidate(row))}</option>
       `).join("");
       employerSelect.innerHTML = `<option value="">Sélectionner un besoin employeur</option>` + activeEmployerRows.map((row) => `
@@ -4256,6 +4286,42 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,,</pre>
         setStatus("manual-match-status-line", `Erreur test mails : ${error.message || "envoi impossible"}`);
       } finally {
         if (button) button.disabled = false;
+      }
+    }
+
+    async function sendSpontaneousCandidate() {
+      const candidateRecordId = Number(document.getElementById("spontaneous-candidate").value || 0);
+      const employerCompany = document.getElementById("spontaneous-employer-company").value.trim();
+      const employerContact = document.getElementById("spontaneous-employer-contact").value.trim();
+      const employerEmail = document.getElementById("spontaneous-employer-email").value.trim();
+      const employerNeed = document.getElementById("spontaneous-employer-need").value.trim();
+      const employerComment = document.getElementById("spontaneous-employer-comment").value.trim();
+      const candidateComment = document.getElementById("spontaneous-candidate-comment").value.trim();
+      if (!candidateRecordId || !employerCompany || !employerEmail) {
+        setStatus("spontaneous-status-line", "Erreur : sélectionnez un candidat et renseignez l’entreprise et son email.");
+        return;
+      }
+      setStatus("spontaneous-status-line", "Envoi de la candidature à l’employeur, puis information du candidat...");
+      try {
+        const response = await fetch(apiUrl("/admin/spontaneous-candidate"), {
+          method: "POST",
+          credentials: "same-origin",
+          headers: { "Content-Type": "application/json", "Accept": "application/json" },
+          body: JSON.stringify({
+            candidate_record_id: candidateRecordId,
+            employer_company: employerCompany,
+            employer_contact: employerContact,
+            employer_email: employerEmail,
+            employer_need: employerNeed,
+            employer_comment: employerComment,
+            candidate_comment: candidateComment,
+          }),
+        });
+        const payload = await response.json();
+        if (!response.ok || !payload.ok) throw new Error(payload.error || `Erreur API (${response.status})`);
+        setStatus("spontaneous-status-line", `Candidature envoyée à ${payload.employer_email} ; candidat informé à ${payload.candidate_email}.`);
+      } catch (error) {
+        setStatus("spontaneous-status-line", `Erreur : ${error.message || "envoi impossible"}`);
       }
     }
 
@@ -6285,6 +6351,7 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,,</pre>
     document.getElementById("manual-match-create-btn").addEventListener("click", () => createManualMatching(false));
     document.getElementById("manual-match-send-btn").addEventListener("click", () => createManualMatching(true));
     document.getElementById("matching-test-emails-btn").addEventListener("click", sendMatchingTestEmails);
+    document.getElementById("spontaneous-send-btn").addEventListener("click", sendSpontaneousCandidate);
     document.getElementById("manual-match-candidate").addEventListener("change", renderManualMatchingPreview);
     document.getElementById("manual-match-employer").addEventListener("change", renderManualMatchingPreview);
     document.getElementById("filter-status").addEventListener("change", loadMatchings);
