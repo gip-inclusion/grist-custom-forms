@@ -321,7 +321,7 @@ class BrevoHealthTest(unittest.TestCase):
         self.assertIn("ne signifie pas encore que l’employeur est intéressé", html_body)
 
     def test_admin_email_tests_include_both_spontaneous_templates(self):
-        employer_to, employer_subject, employer_text, _ = app.build_eures_admin_email_test_message(
+        employer_to, employer_subject, employer_text, employer_html = app.build_eures_admin_email_test_message(
             'employer_spontaneous_candidate', 'test@example.org'
         )
         candidate_to, candidate_subject, candidate_text, _ = app.build_eures_admin_email_test_message(
@@ -331,9 +331,16 @@ class BrevoHealthTest(unittest.TestCase):
         self.assertEqual(employer_to, 'test@example.org')
         self.assertIn('Candidature spontanée', employer_subject)
         self.assertIn('Aucune candidature réelle', employer_text)
+        self.assertIn('Je suis intéressé', employer_html)
+        self.assertIn('spontaneous-feedback-test?response=interested', employer_html)
         self.assertEqual(candidate_to, 'test@example.org')
         self.assertIn('candidature spontanée', candidate_subject)
         self.assertIn('Aucun CV réel', candidate_text)
+
+    def test_spontaneous_feedback_test_does_not_write_business_data(self):
+        response = self.client.get('/eures-beta/spontaneous-feedback-test?response=interested')
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('Aucune donnée métier', response.get_data(as_text=True))
 
     def test_build_candidate_invitation_email_for_eures_cv_deposit_campaign(self):
         invitation = {

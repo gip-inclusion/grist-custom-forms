@@ -6382,6 +6382,10 @@ def build_eures_admin_email_test_message(test_type: str, recipient_email: str) -
                 'need': 'production et conditionnement',
             },
             'Ceci est un message de test. Aucune candidature réelle n’est transmise.',
+            {
+                'interested': f"{get_public_app_base_url()}/eures-beta/spontaneous-feedback-test?response=interested",
+                'not_interested': f"{get_public_app_base_url()}/eures-beta/spontaneous-feedback-test?response=not_interested",
+            },
         )
     if normalized_type == 'candidate_spontaneous_notice':
         return build_brevo_spontaneous_candidate_notice(
@@ -10090,6 +10094,19 @@ def eures_spontaneous_feedback():
     except Exception as e:
         app.logger.exception('EURES spontaneous employer feedback failed')
         return Response(f'Erreur lors de l’enregistrement : {e}', status=500, mimetype='text/plain')
+
+
+@app.route('/eures-beta/spontaneous-feedback-test', methods=['GET'])
+def eures_spontaneous_feedback_test():
+    response_code = str(request.args.get('response') or '').strip().lower()
+    if response_code not in {'interested', 'not_interested'}:
+        return Response('Lien de test invalide.', status=400, mimetype='text/plain')
+    label = 'Je suis intéressé' if response_code == 'interested' else 'Ce profil ne correspond pas'
+    return Response(
+        f'Test uniquement : le bouton « {label} » fonctionne visuellement. Aucune donnée métier n’a été enregistrée.',
+        status=200,
+        mimetype='text/plain',
+    )
 
 
 @app.route('/api/forms/<form_id>/admin/brevo-health', methods=['GET'])
