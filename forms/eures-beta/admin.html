@@ -858,6 +858,12 @@
       border-color: #eec17d;
     }
 
+    .pill.warning {
+      background: #fff4e8;
+      color: #8d5311;
+      border-color: #e7bc77;
+    }
+
     .pill.accepted {
       background: #ebf8ef;
       color: #19663c;
@@ -2701,6 +2707,33 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,,</pre>
       }
     }
 
+    function responseEmailKey(row) {
+      return normalizeText(row?.email || "").trim();
+    }
+
+    function responseDateValue(row) {
+      const raw = row?.response_received_at || row?.submitted_at || "";
+      const timestamp = Date.parse(raw);
+      return Number.isFinite(timestamp) ? timestamp : 0;
+    }
+
+    function responseDuplicateRows(sourceRows, row) {
+      const key = responseEmailKey(row);
+      if (!key) return [];
+      return sourceRows
+        .filter((candidate) => responseEmailKey(candidate) === key && String(candidate.record_id) !== String(row.record_id))
+        .sort((a, b) => responseDateValue(b) - responseDateValue(a));
+    }
+
+    function isLatestResponseForEmail(sourceRows, row) {
+      const key = responseEmailKey(row);
+      if (!key) return true;
+      const sameEmailRows = sourceRows.filter((candidate) => responseEmailKey(candidate) === key);
+      if (sameEmailRows.length <= 1) return true;
+      const latest = sameEmailRows.sort((a, b) => responseDateValue(b) - responseDateValue(a))[0];
+      return String(latest?.record_id || "") === String(row?.record_id || "");
+    }
+
     function renderHistoryQuestionnaireRows(role) {
       const isCandidate = role === "candidate";
       const search = normalizeText(state.dataHistorySearch || "");
@@ -2724,7 +2757,11 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,,</pre>
         list.innerHTML = `<div class="empty-state">${search ? "Aucune réponse ne correspond à la recherche." : "Aucune réponse chargée."}</div>`;
         return;
       }
-      list.innerHTML = rows.map((row) => `
+      list.innerHTML = rows.map((row) => {
+        const duplicates = responseDuplicateRows(sourceRows, row);
+        const hasDuplicates = duplicates.length > 0;
+        const latestForEmail = isLatestResponseForEmail(sourceRows, row);
+        return `
         <article class="matching-card">
           <div class="matching-summary">
             <div>
@@ -2735,6 +2772,8 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,,</pre>
                 <span class="pill ${row.is_active === false ? "refused" : "accepted"}">${esc(row.is_active === false ? "Désactivée" : "Active")}</span>
                 <span class="pill">Réponse : ${esc(row.response_received_at || row.submitted_at || "-")}</span>
                 <span class="pill">${esc(row.matching_count || 0)} matching(s)</span>
+                ${hasDuplicates ? `<span class="pill warning">Doublon email : ${esc(duplicates.length + 1)} réponses</span>` : ""}
+                ${hasDuplicates ? `<span class="pill ${latestForEmail ? "accepted" : "refused"}">${esc(latestForEmail ? "Réponse la plus récente" : "Ancienne réponse")}</span>` : ""}
               </div>
             </div>
           </div>
@@ -2743,6 +2782,29 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,,</pre>
             <div class="history-response-content">
               ${row.summary ? `<p style="margin:0; color:var(--muted); line-height:1.7;">${esc(row.summary)}</p>` : ""}
               ${row.response_disabled_reason ? `<p style="margin:0; line-height:1.7;"><strong>Motif de désactivation :</strong> ${esc(row.response_disabled_reason)}</p>` : ""}
+              ${hasDuplicates ? `
+                <section class="notes-box">
+                  <h4>Doublons détectés sur cet email</h4>
+                  <p style="margin:0 0 0.8rem; color:var(--muted); line-height:1.7;">
+                    Règle pilote : garder la réponse la plus récente et désactiver les anciennes si elles ne doivent plus servir aux matchings.
+                  </p>
+                  <div class="detail-list">
+                    ${duplicates.map((duplicate) => `
+                      <div class="detail-row" style="grid-template-columns:minmax(0, 1fr) auto; align-items:center;">
+                        <div>
+                          <strong>${esc(duplicate.title || duplicate.email || "-")}</strong>
+                          <div style="color:var(--muted); margin-top:0.2rem;">
+                            Réponse : ${esc(duplicate.response_received_at || duplicate.submitted_at || "-")} ·
+                            ${esc(duplicate.is_active === false ? "désactivée" : "active")} ·
+                            ${esc(duplicate.matching_count || 0)} matching(s)
+                          </div>
+                        </div>
+                        <span class="pill">${esc(isLatestResponseForEmail(sourceRows, duplicate) ? "plus récente" : "ancienne")}</span>
+                      </div>
+                    `).join("")}
+                  </div>
+                </section>
+              ` : ""}
               ${Array.isArray(row.matchings) && row.matchings.length ? `
                 <section class="notes-box">
                   <h4>${esc(isCandidate ? "Matchings liés" : "Matchings liés")}</h4>
@@ -2780,15 +2842,39 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,,</pre>
                   </div>
                 `).join("") || `<div class="empty-state">Aucun champ détaillé disponible pour cette réponse.</div>`}
               </dl>
+              <section class="notes-box">
+                <h4>Gestion de cette réponse</h4>
+                <div class="compact-response-actions">
+                  <input id="history-response-note-${esc(role)}-${esc(row.record_id)}" type="text" placeholder="Motif optionnel" value="${esc(row.response_disabled_reason || (hasDuplicates && !latestForEmail ? "Ancienne réponse remplacée par une réponse plus récente." : ""))}">
+                  <div class="hero-actions">
+                    ${row.is_active === false
+                      ? `<button type="button" data-history-response-status-action="active" data-role="${esc(role)}" data-record-id="${esc(row.record_id)}">Réactiver</button>`
+                      : `<button class="btn-refuse" type="button" data-history-response-status-action="disabled" data-role="${esc(role)}" data-record-id="${esc(row.record_id)}">Désactiver cette réponse</button>`
+                    }
+                  </div>
+                </div>
+              </section>
             </div>
           </details>
         </article>
-      `).join("");
+      `;
+      }).join("");
       for (const button of list.querySelectorAll("[data-open-matching]")) {
         button.addEventListener("click", async (event) => {
           const matchingRecordId = Number(event.currentTarget.dataset.openMatching || 0);
           if (!matchingRecordId) return;
           await openMatchingRecord(matchingRecordId);
+        });
+      }
+      for (const button of list.querySelectorAll("[data-history-response-status-action]")) {
+        button.addEventListener("click", async (event) => {
+          const recordId = Number(event.currentTarget.dataset.recordId || 0);
+          const roleValue = event.currentTarget.dataset.role || "";
+          const status = event.currentTarget.dataset.historyResponseStatusAction || "";
+          const note = document.getElementById(`history-response-note-${roleValue}-${recordId}`)?.value || "";
+          if (!recordId || !roleValue || !status) return;
+          await updateQuestionnaireResponseStatus(roleValue, recordId, status, note);
+          renderDataHistoryView();
         });
       }
     }
