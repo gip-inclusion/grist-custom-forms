@@ -496,6 +496,52 @@ class BrevoHealthTest(unittest.TestCase):
         self.assertEqual(send_brevo_transactional_email.call_args.args[0], 'test@example.org')
         self.assertTrue(send_brevo_transactional_email.call_args.args[1].startswith('[TEST] '))
 
+    @patch.object(app, 'send_brevo_transactional_email')
+    @patch.object(app, 'update_eures_spontaneous_record')
+    @patch.object(app, 'create_eures_spontaneous_record', return_value=73)
+    @patch.object(app, 'fetch_record_by_id')
+    @patch.object(app, 'get_form_config')
+    @patch.object(app, 'ensure_brevo_ready')
+    def test_spontaneous_send_creates_and_completes_tracking_record(
+        self,
+        ensure_brevo_ready,
+        get_form_config,
+        fetch_record_by_id,
+        create_eures_spontaneous_record,
+        update_eures_spontaneous_record,
+        send_brevo_transactional_email,
+    ):
+        get_form_config.return_value = {'doc_id': 'doc-id', 'table_id': 'Candidats', 'api_key': 'key'}
+        fetch_record_by_id.return_value = {'fields': {
+            'id_tally': 'candidate-1',
+            'nom': 'Flora A',
+            'email': 'flora@example.org',
+            'metier': 'Production',
+            'cv_file_name': 'cv.pdf',
+            'cv_file_base64': 'dGVzdA==',
+        }}
+        send_brevo_transactional_email.side_effect = [{'messageId': 'employer'}, {'messageId': 'candidate'}]
+
+        with patch.dict(os.environ, {'ADMIN_USERNAME': 'admin', 'ADMIN_PASSWORD': 'AdminEures2026'}, clear=False):
+            response = self.client.post(
+                '/api/forms/eures-beta/admin/spontaneous-candidate',
+                headers=self.admin_auth,
+                json={
+                    'candidate_record_id': 12,
+                    'employer_company': 'Entreprise Démo',
+                    'employer_email': 'recrutement@example.org',
+                    'employer_need': 'production',
+                },
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.get_json()['tracking_record_id'], 73)
+        create_eures_spontaneous_record.assert_called_once()
+        self.assertEqual(update_eures_spontaneous_record.call_count, 2)
+        self.assertEqual(update_eures_spontaneous_record.call_args_list[-1].args[1]['status'], 'waiting_employer')
+        self.assertEqual(send_brevo_transactional_email.call_count, 2)
+        self.assertEqual(send_brevo_transactional_email.call_args_list[0].kwargs['attachments'][0]['name'], 'cv.pdf')
+
 
 if __name__ == '__main__':
     unittest.main()

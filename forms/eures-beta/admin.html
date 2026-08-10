@@ -2056,6 +2056,11 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,,</pre>
               <button class="btn-accept" id="spontaneous-send-btn" type="button">Envoyer le CV et prévenir le candidat</button>
             </div>
             <div class="status-line" id="spontaneous-status-line"></div>
+            <div class="toolbar" style="margin-top:1rem;">
+              <strong>Historique des candidatures spontanées</strong>
+              <button class="btn-secondary" id="spontaneous-reload-btn" type="button">Rafraîchir</button>
+            </div>
+            <section class="invitation-list" id="spontaneous-list"><div class="empty-state">Chargement...</div></section>
           </div>
 
           <div class="admin-card operational-control-card compact" data-invitation-section="list" id="invitation-list-card">
@@ -2683,6 +2688,7 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,,</pre>
       if (normalizedView === "manual-matching") {
         renderManualMatchingOptions();
         renderManualMatchingPreview();
+        loadSpontaneousCandidates();
       }
     }
 
@@ -4322,8 +4328,62 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,,</pre>
         const payload = await response.json();
         if (!response.ok || !payload.ok) throw new Error(payload.error || `Erreur API (${response.status})`);
         setStatus("spontaneous-status-line", `Candidature envoyée à ${payload.employer_email} ; candidat informé à ${payload.candidate_email}.`);
+        await loadSpontaneousCandidates();
       } catch (error) {
         setStatus("spontaneous-status-line", `Erreur : ${error.message || "envoi impossible"}`);
+      }
+    }
+
+    function spontaneousStatusLabel(status) {
+      return ({
+        sending: "Envoi en cours",
+        employer_sent: "Employeur contacté",
+        waiting_employer: "En attente employeur",
+        interested: "Employeur intéressé",
+        not_interested: "Employeur non intéressé",
+        no_response: "Sans réponse",
+        closed: "Clôturée",
+        send_error: "Erreur d’envoi",
+      })[String(status || "").toLowerCase()] || status || "Inconnu";
+    }
+
+    async function loadSpontaneousCandidates() {
+      const target = document.getElementById("spontaneous-list");
+      try {
+        const response = await fetch(apiUrl("/admin/spontaneous-candidates"), { credentials: "same-origin", headers: { "Accept": "application/json" } });
+        const payload = await response.json();
+        if (!response.ok || !payload.ok) throw new Error(payload.error || `Erreur API (${response.status})`);
+        const rows = Array.isArray(payload.rows) ? payload.rows : [];
+        target.innerHTML = rows.length ? rows.map((row) => `
+          <article class="invitation-card" data-spontaneous-id="${esc(row.record_id)}">
+            <div class="matching-row-main">${esc(row.candidate_name || "Candidat")} → ${esc(row.employer_company || "Employeur")}</div>
+            <div class="matching-row-sub">${esc(row.employer_email || "-")} · ${esc(row.sent_at || "-")}</div>
+            <div class="inline-actions" style="margin-top:0.7rem;">
+              <span class="pill pending">${esc(spontaneousStatusLabel(row.status))}</span>
+              <button class="btn-secondary" type="button" data-spontaneous-status="interested">Intéressé</button>
+              <button class="btn-secondary" type="button" data-spontaneous-status="not_interested">Non intéressé</button>
+              <button class="btn-secondary" type="button" data-spontaneous-status="no_response">Sans réponse</button>
+              <button class="btn-secondary" type="button" data-spontaneous-status="closed">Clôturer</button>
+            </div>
+          </article>`).join("") : `<div class="empty-state">Aucune candidature spontanée enregistrée.</div>`;
+        for (const button of target.querySelectorAll("[data-spontaneous-status]")) {
+          button.addEventListener("click", async (event) => {
+            const recordId = Number(event.currentTarget.closest("[data-spontaneous-id]")?.dataset.spontaneousId || 0);
+            const status = event.currentTarget.dataset.spontaneousStatus;
+            if (!recordId || !status) return;
+            const update = await fetch(apiUrl(`/admin/spontaneous-candidates/${recordId}/status`), {
+              method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json", "Accept": "application/json" }, body: JSON.stringify({ status }),
+            });
+            const result = await update.json();
+            if (!update.ok || !result.ok) {
+              setStatus("spontaneous-status-line", `Erreur : ${result.error || "mise à jour impossible"}`);
+              return;
+            }
+            await loadSpontaneousCandidates();
+          });
+        }
+      } catch (error) {
+        target.innerHTML = `<div class="empty-state">Erreur : ${esc(error.message || "chargement impossible")}</div>`;
       }
     }
 
@@ -6354,6 +6414,7 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,,</pre>
     document.getElementById("manual-match-send-btn").addEventListener("click", () => createManualMatching(true));
     document.getElementById("matching-test-emails-btn").addEventListener("click", sendMatchingTestEmails);
     document.getElementById("spontaneous-send-btn").addEventListener("click", sendSpontaneousCandidate);
+    document.getElementById("spontaneous-reload-btn").addEventListener("click", loadSpontaneousCandidates);
     document.getElementById("manual-match-candidate").addEventListener("change", renderManualMatchingPreview);
     document.getElementById("manual-match-employer").addEventListener("change", renderManualMatchingPreview);
     document.getElementById("filter-status").addEventListener("change", loadMatchings);

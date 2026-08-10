@@ -77,6 +77,7 @@ EURES_MATCHINGS_TABLE = 'Matchings'
 EURES_INVITATIONS_TABLE_DEFAULT = 'Invitations'
 EURES_STATS_TABLE_DEFAULT = 'Pilotage_EURES_Mensuel'
 EURES_TRACKING_TABLE_DEFAULT = 'Suivi_Projet'
+EURES_SPONTANEOUS_TABLE_DEFAULT = 'Candidatures_spontanees'
 EURES_PUBLIC_PROXY_BASE_URL = os.environ.get('EURES_PUBLIC_PROXY_BASE_URL', 'https://eures-beta.osc-fr1.scalingo.io').rstrip('/')
 EURES_TRACKING_STATUSES = (
     'a_qualifier',
@@ -403,6 +404,28 @@ EURES_MATCHING_ADMIN_FIELDS = {
     'relation_result_note',
     'embauche_confirmee_at',
     'embauche_confirmee_by',
+}
+EURES_SPONTANEOUS_COLUMNS = {
+    'candidate_record_id': 'Int',
+    'candidate_id': 'Text',
+    'candidate_name': 'Text',
+    'candidate_email': 'Text',
+    'employer_company': 'Text',
+    'employer_contact': 'Text',
+    'employer_email': 'Text',
+    'employer_need': 'Text',
+    'employer_comment': 'Text',
+    'candidate_comment': 'Text',
+    'status': 'Text',
+    'sent_at': 'Text',
+    'sent_by': 'Text',
+    'employer_email_status': 'Text',
+    'candidate_email_status': 'Text',
+    'employer_response_at': 'Text',
+    'employer_response_source': 'Text',
+    'status_note': 'Text',
+    'updated_at': 'Text',
+    'updated_by': 'Text',
 }
 EURES_NO_MATCH_NOTIFICATION_FIELDS = {
     'no_match_notification_status',
@@ -1221,6 +1244,18 @@ def get_eures_matching_config() -> dict | None:
     return {
         'doc_id': base['doc_id'],
         'table_id': EURES_MATCHINGS_TABLE,
+        'api_key': base.get('api_key'),
+    }
+
+
+def get_eures_spontaneous_config() -> dict | None:
+    """Get configuration for spontaneous candidate outreach tracking."""
+    base = get_form_config('eures-beta', 'candidate') or get_form_config('eures-beta')
+    if not base:
+        return None
+    return {
+        'doc_id': base['doc_id'],
+        'table_id': os.environ.get('GRIST_TABLE_EURES_BETA_SPONTANEOUS', EURES_SPONTANEOUS_TABLE_DEFAULT),
         'api_key': base.get('api_key'),
     }
 
@@ -6124,6 +6159,49 @@ def build_brevo_spontaneous_candidate_notice(candidate: dict, employer: dict, co
     return recipient, subject, body_text, body_html
 
 
+def _spontaneous_table_ready() -> tuple[dict, dict]:
+    config = get_eures_spontaneous_config()
+    if not config:
+        raise RuntimeError('EURES spontaneous application configuration is incomplete.')
+    headers = _eures_admin_headers(config)
+    _ensure_grist_table(config, headers, EURES_SPONTANEOUS_COLUMNS)
+    return config, headers
+
+
+def create_eures_spontaneous_record(fields: dict) -> int:
+    config, headers = _spontaneous_table_ready()
+    allowed = get_table_columns(config, headers)
+    filtered = {key: value for key, value in fields.items() if key in allowed}
+    url = f"{GRIST_BASE_URL}/api/docs/{config['doc_id']}/tables/{config['table_id']}/records"
+    resp = write_grist_records('POST', url, {'records': [{'fields': filtered}]}, headers)
+    if resp.status_code != 200:
+        raise RuntimeError(f'Failed to create spontaneous application: HTTP {resp.status_code} - {resp.text}')
+    payload = _parse_response_json_safe(resp)
+    records = payload.get('records', []) if isinstance(payload, dict) else []
+    return int((records[0] if records else {}).get('id') or 0)
+
+
+def update_eures_spontaneous_record(record_id: int, fields: dict):
+    config, headers = _spontaneous_table_ready()
+    allowed = get_table_columns(config, headers)
+    filtered = {key: value for key, value in fields.items() if key in allowed}
+    url = f"{GRIST_BASE_URL}/api/docs/{config['doc_id']}/tables/{config['table_id']}/records"
+    resp = write_grist_records('PATCH', url, {'records': [{'id': int(record_id), 'fields': filtered}]}, headers)
+    if resp.status_code != 200:
+        raise RuntimeError(f'Failed to update spontaneous application: HTTP {resp.status_code} - {resp.text}')
+
+
+def list_eures_spontaneous_records() -> list[dict]:
+    config, headers = _spontaneous_table_ready()
+    rows = []
+    for rec in fetch_table_records(config['doc_id'], config['table_id'], headers):
+        fields = rec.get('fields', {}) if isinstance(rec, dict) else {}
+        if isinstance(fields, dict):
+            rows.append({'record_id': rec.get('id'), **fields})
+    rows.sort(key=lambda row: (str(row.get('sent_at') or ''), int(row.get('record_id') or 0)), reverse=True)
+    return rows
+
+
 EURES_MATCHING_TEST_EMPLOYER_EMAIL = 'sci.europe@icloud.com'
 EURES_MATCHING_TEST_CANDIDATE_EMAIL = 'eric.barthelemy@me.com'
 
@@ -9836,34 +9914,118 @@ def admin_eures_spontaneous_candidate(form_id: str):
         if not attachment:
             return jsonify({'error': 'Le candidat sélectionné ne possède pas de CV transmissible.'}), 400
 
+        actor = get_admin_actor(form_id)
+        now = _now_iso_utc()
+        tracking_record_id = create_eures_spontaneous_record({
+            'candidate_record_id': candidate_record_id,
+            'candidate_id': str(candidate.get('id_tally') or candidate.get('uuid') or ''),
+            'candidate_name': str(candidate.get('nom') or ''),
+            'candidate_email': normalize_email(candidate.get('email') or ''),
+            'employer_company': employer['company'],
+            'employer_contact': employer['contact'],
+            'employer_email': employer['email'],
+            'employer_need': employer['need'],
+            'employer_comment': employer_comment,
+            'candidate_comment': candidate_comment,
+            'status': 'sending',
+            'sent_at': now,
+            'sent_by': actor,
+            'employer_email_status': 'pending',
+            'candidate_email_status': 'pending',
+            'updated_at': now,
+            'updated_by': actor,
+        })
+
         employer_to, employer_subject, employer_text, employer_html = build_brevo_spontaneous_candidate_email(
             candidate, employer, employer_comment
         )
         employer_result = send_brevo_transactional_email(
             employer_to, employer_subject, employer_text, employer_html, attachments=[attachment]
         )
+        update_eures_spontaneous_record(tracking_record_id, {
+            'employer_email_status': 'sent',
+            'status': 'employer_sent',
+            'updated_at': _now_iso_utc(),
+            'updated_by': actor,
+        })
         candidate_to, candidate_subject, candidate_text, candidate_html = build_brevo_spontaneous_candidate_notice(
             candidate, employer, candidate_comment
         )
         candidate_result = send_brevo_transactional_email(
             candidate_to, candidate_subject, candidate_text, candidate_html
         )
+        update_eures_spontaneous_record(tracking_record_id, {
+            'candidate_email_status': 'sent',
+            'status': 'waiting_employer',
+            'updated_at': _now_iso_utc(),
+            'updated_by': actor,
+        })
         app.logger.info('EURES spontaneous candidate application sent', extra={
             'form_id': form_id,
             'candidate_record_id': candidate_record_id,
+            'tracking_record_id': tracking_record_id,
             'employer_email': employer_to,
             'sent_by': get_admin_actor(form_id),
         })
         return jsonify({
             'ok': True,
             'candidate_record_id': candidate_record_id,
+            'tracking_record_id': tracking_record_id,
             'employer_email': employer_to,
             'candidate_email': candidate_to,
             'employer_email_result': employer_result,
             'candidate_email_result': candidate_result,
         }), 200
     except Exception as e:
+        if 'tracking_record_id' in locals() and tracking_record_id:
+            try:
+                update_eures_spontaneous_record(tracking_record_id, {
+                    'status': 'send_error',
+                    'status_note': str(e)[:500],
+                    'updated_at': _now_iso_utc(),
+                    'updated_by': get_admin_actor(form_id),
+                })
+            except Exception:
+                app.logger.exception('EURES spontaneous tracking error update failed')
         app.logger.exception('EURES spontaneous candidate application failed')
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/forms/<form_id>/admin/spontaneous-candidates', methods=['GET'])
+@admin_required
+def admin_eures_spontaneous_candidates(form_id: str):
+    if form_id != 'eures-beta':
+        return jsonify({'error': f'Unknown spontaneous application form: {form_id}'}), 404
+    try:
+        return jsonify({'ok': True, 'rows': list_eures_spontaneous_records()}), 200
+    except Exception as e:
+        app.logger.exception('EURES spontaneous applications list failed')
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/forms/<form_id>/admin/spontaneous-candidates/<int:record_id>/status', methods=['POST'])
+@admin_required
+def admin_eures_spontaneous_candidate_status(form_id: str, record_id: int):
+    if form_id != 'eures-beta':
+        return jsonify({'error': f'Unknown spontaneous application form: {form_id}'}), 404
+    data = request.get_json() or {}
+    status = str(data.get('status') or '').strip().lower()
+    if status not in {'waiting_employer', 'interested', 'not_interested', 'no_response', 'closed'}:
+        return jsonify({'error': 'Invalid spontaneous application status'}), 400
+    actor = get_admin_actor(form_id)
+    fields = {
+        'status': status,
+        'status_note': str(data.get('note') or '').strip(),
+        'updated_at': _now_iso_utc(),
+        'updated_by': actor,
+    }
+    if status in {'interested', 'not_interested'}:
+        fields.update({'employer_response_at': _now_iso_utc(), 'employer_response_source': 'admin_manual'})
+    try:
+        update_eures_spontaneous_record(record_id, fields)
+        return jsonify({'ok': True, 'record_id': record_id, 'status': status}), 200
+    except Exception as e:
+        app.logger.exception('EURES spontaneous application status update failed')
         return jsonify({'error': str(e)}), 500
 
 
