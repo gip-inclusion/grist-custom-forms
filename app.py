@@ -6203,6 +6203,8 @@ EURES_ADMIN_EMAIL_TEST_TYPES = {
     'employer_invitation',
     'candidate_matching_notification',
     'employer_matching_proposal',
+    'employer_spontaneous_candidate',
+    'candidate_spontaneous_notice',
     'candidate_no_match',
     'employer_no_match',
 }
@@ -6264,6 +6266,28 @@ def build_eures_admin_email_test_message(test_type: str, recipient_email: str) -
         return build_brevo_matching_email(matching_row)
     if normalized_type == 'candidate_matching_notification':
         return build_brevo_candidate_matching_notification_email(matching_row)
+    if normalized_type == 'employer_spontaneous_candidate':
+        return build_brevo_spontaneous_candidate_email(
+            {
+                'nom': 'Candidat test Match Europe',
+                'metier': 'Production industrielle',
+                'ville': 'Metz',
+                'disponibilite': 'Dès que possible',
+            },
+            {
+                'company': 'Entreprise test Match Europe',
+                'contact': 'Contact test',
+                'email': recipient,
+                'need': 'production et conditionnement',
+            },
+            'Ceci est un message de test. Aucune candidature réelle n’est transmise.',
+        )
+    if normalized_type == 'candidate_spontaneous_notice':
+        return build_brevo_spontaneous_candidate_notice(
+            {'nom': 'Candidat test Match Europe', 'email': recipient},
+            {'company': 'Entreprise test Match Europe'},
+            'Ceci est un message de test. Aucun CV réel n’a été transmis.',
+        )
 
     if normalized_type == 'candidate_no_match':
         return build_brevo_candidate_no_match_email({
