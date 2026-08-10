@@ -195,6 +195,98 @@ CANDIDATE_INVITATION_EMAIL_TEMPLATES = {
             },
         },
     },
+    "campaign:eures_cv_deposit": {
+        "initial": {
+            "fr": {
+                "subject": "Votre CV EURES peut correspondre à des besoins employeurs",
+                "preheader": "France Travail et EURES vous proposent de tester Match Europe après votre inscription sur EURES.",
+                "eyebrow": "Match Europe",
+                "title": "Votre CV EURES peut correspondre à des besoins employeurs",
+                "hook": "Vous venez de déposer ou d’actualiser votre CV sur EURES. Des employeurs recherchent actuellement des profils pouvant correspondre à votre situation.",
+                "body": [
+                    "Dans le cadre de Match Europe, une expérimentation portée avec EURES et France Travail, nous vous proposons de compléter un court questionnaire afin de préciser votre disponibilité, votre mobilité et les conditions d’emploi qui vous conviennent.",
+                    "Ces informations nous permettront de vérifier si votre profil peut être proposé à des employeurs partenaires lorsqu’un besoin correspond à votre situation.",
+                ],
+                "cta_label": "Compléter mon profil Match Europe",
+                "cta_note": "Le questionnaire prend 2 à 3 minutes. Il complète les informations de votre CV EURES pour faciliter une éventuelle mise en relation.",
+                "info_title": "À retenir",
+                "info_items": [
+                    "Vous êtes contacté parce que vous avez déposé ou actualisé un CV sur EURES",
+                    "Match Europe vise à faciliter les mises en relation avec des employeurs partenaires",
+                    "Votre accord sera demandé avant toute utilisation de WhatsApp",
+                ],
+                "legal_intro": "Vous recevez ce message dans le cadre d’une expérimentation Match Europe portée avec EURES et France Travail.",
+                "footer_network": "EURES est le réseau européen de coopération pour l’emploi, qui facilite les recrutements et les opportunités professionnelles en Europe.",
+            },
+            "en": {
+                "subject": "Your EURES CV may match employer needs",
+                "preheader": "France Travail and EURES invite you to test Match Europe after your registration on EURES.",
+                "eyebrow": "Match Europe",
+                "title": "Your EURES CV may match employer needs",
+                "hook": "You have recently uploaded or updated your CV on EURES. Employers are currently looking for profiles that may match your situation.",
+                "body": [
+                    "As part of Match Europe, an experiment run with EURES and France Travail, we invite you to complete a short questionnaire to clarify your availability, mobility and preferred working conditions.",
+                    "This information will help us check whether your profile can be shared with partner employers when a need matches your situation.",
+                ],
+                "cta_label": "Complete my Match Europe profile",
+                "cta_note": "The questionnaire takes 2 to 3 minutes and complements your EURES CV information to support a possible introduction.",
+                "info_title": "Key points",
+                "info_items": [
+                    "You are contacted because you uploaded or updated a CV on EURES",
+                    "Match Europe aims to facilitate introductions with partner employers",
+                    "Your consent will be requested before any WhatsApp use",
+                ],
+                "legal_intro": "You are receiving this message as part of the Match Europe experiment run with EURES and France Travail.",
+                "footer_network": "EURES is the European cooperation network for employment, helping with recruitment and professional opportunities across Europe.",
+            },
+            "de": {
+                "subject": "Ihr EURES-Lebenslauf könnte zu Arbeitgeberbedarfen passen",
+                "preheader": "France Travail und EURES laden Sie ein, Match Europe nach Ihrer Registrierung auf EURES zu testen.",
+                "eyebrow": "Match Europe",
+                "title": "Ihr EURES-Lebenslauf könnte zu Arbeitgeberbedarfen passen",
+                "hook": "Sie haben kürzlich Ihren Lebenslauf auf EURES hinterlegt oder aktualisiert. Arbeitgeber suchen derzeit Profile, die zu Ihrer Situation passen könnten.",
+                "body": [
+                    "Im Rahmen von Match Europe, einem Experiment mit EURES und France Travail, laden wir Sie ein, einen kurzen Fragebogen auszufüllen, um Ihre Verfügbarkeit, Mobilität und gewünschten Arbeitsbedingungen zu präzisieren.",
+                    "Diese Informationen helfen uns zu prüfen, ob Ihr Profil an Partnerarbeitgeber weitergeleitet werden kann, wenn ein Bedarf zu Ihrer Situation passt.",
+                ],
+                "cta_label": "Mein Match-Europe-Profil ergänzen",
+                "cta_note": "Der Fragebogen dauert 2 bis 3 Minuten und ergänzt die Angaben Ihres EURES-Lebenslaufs für eine mögliche Vermittlung.",
+                "info_title": "Wichtig zu wissen",
+                "info_items": [
+                    "Sie werden kontaktiert, weil Sie einen Lebenslauf auf EURES hinterlegt oder aktualisiert haben",
+                    "Match Europe soll Kontakte zu Partnerarbeitgebern erleichtern",
+                    "Ihre Zustimmung wird vor jeder Nutzung von WhatsApp eingeholt",
+                ],
+                "legal_intro": "Sie erhalten diese Nachricht im Rahmen des Experiments Match Europe mit EURES und France Travail.",
+                "footer_network": "EURES ist das europäische Kooperationsnetzwerk für Beschäftigung und unterstützt Rekrutierung sowie berufliche Chancen in Europa.",
+            },
+        },
+        "reminder": {
+            "fr": {
+                "subject": "Rappel — votre CV EURES peut correspondre à des besoins employeurs",
+                "preheader": "Vous pouvez encore compléter votre profil Match Europe en quelques minutes.",
+                "eyebrow": "Rappel Match Europe",
+                "title": "Votre profil Match Europe peut encore être complété",
+                "hook": "Votre CV EURES peut correspondre à des besoins employeurs actuellement identifiés.",
+                "body": [
+                    "Si vous êtes toujours disponible ou intéressé par des opportunités, vous pouvez encore compléter le court questionnaire Match Europe.",
+                    "Ces informations nous permettront de vérifier si votre profil peut être proposé à des employeurs partenaires lorsqu’un besoin correspond à votre situation.",
+                ],
+                "cta_label": "Compléter mon profil Match Europe",
+                "cta_note": "Le questionnaire prend 2 à 3 minutes.",
+                "info_title": "Pourquoi répondre",
+                "info_items": [
+                    "Votre CV EURES peut correspondre à des besoins employeurs",
+                    "Réponse rapide en 2 à 3 minutes",
+                    "Première étape avant une éventuelle proposition à un employeur partenaire",
+                ],
+                "legal_intro": "Ce rappel vous est adressé dans le cadre de l’expérimentation Match Europe portée avec EURES et France Travail.",
+                "footer_network": "EURES est le réseau européen de coopération pour l’emploi, qui facilite les recrutements et les opportunités professionnelles en Europe.",
+            },
+            "en": {},
+            "de": {},
+        },
+    },
     "industrie_production": {
         "initial": {
             "fr": {
@@ -303,12 +395,21 @@ def get_candidate_invitation_template(
     language: str = "fr",
     *,
     target_job_key: str = "",
+    campaign_type: str = "",
     kind: str = "initial",
 ) -> dict:
     """Return one candidate invitation template with generic fallback."""
     lang = normalize_email_template_language(language)
     normalized_kind = "reminder" if str(kind).strip().lower() == "reminder" else "initial"
     base = deepcopy(CANDIDATE_INVITATION_EMAIL_TEMPLATES["generic"][normalized_kind][lang])
+    normalized_campaign = str(campaign_type or "").strip().lower()
+    if normalized_campaign:
+        campaign_bundle = CANDIDATE_INVITATION_EMAIL_TEMPLATES.get(f"campaign:{normalized_campaign}", {}).get(normalized_kind, {})
+        campaign = campaign_bundle.get(lang) or campaign_bundle.get("fr") or {}
+        if campaign:
+            merged_campaign = deepcopy(base)
+            merged_campaign.update(campaign)
+            return merged_campaign
     job_key = normalize_target_job_key(target_job_key)
     if not job_key:
         return base

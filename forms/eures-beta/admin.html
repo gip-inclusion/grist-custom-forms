@@ -82,6 +82,56 @@
       grid-template-columns: 220px 220px minmax(0, 1fr) auto;
     }
 
+    .data-history-controls {
+      display: grid;
+      grid-template-columns: minmax(220px, 0.8fr) minmax(320px, 1.4fr) auto auto;
+      gap: 0.75rem;
+      align-items: center;
+      margin-top: 0.9rem;
+      padding-top: 0.9rem;
+      border-top: 1px solid var(--line);
+    }
+
+    .data-history-head {
+      grid-template-columns: 1fr;
+    }
+
+    .data-history-controls[hidden] {
+      display: none;
+    }
+
+    .data-history-controls input {
+      width: 100%;
+      min-height: 46px;
+      border-radius: 16px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.92);
+      color: var(--text);
+      padding: 0.75rem 1rem;
+      font: inherit;
+    }
+
+    .data-history-controls button {
+      min-height: 46px;
+      border-radius: 999px;
+      border: 1px solid transparent;
+      padding: 0.75rem 1rem;
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .data-history-controls .btn-primary {
+      background: var(--accent);
+      color: white;
+    }
+
+    .data-history-controls .btn-secondary {
+      background: rgba(15, 77, 169, 0.08);
+      color: var(--accent-strong);
+      border-color: rgba(15, 77, 169, 0.16);
+    }
+
     .toolbar select,
     .toolbar input,
     .toolbar button,
@@ -131,6 +181,31 @@
       color: var(--muted);
       font-size: 0.92rem;
       min-height: 1.2rem;
+    }
+
+    .operational-control-card.compact {
+      padding: 0.85rem 1.1rem;
+    }
+
+    .operational-control-card.compact .toolbar {
+      display: none;
+    }
+
+    .legacy-invitation-toolbar {
+      display: none;
+    }
+
+    .operational-control-card.compact .status-line {
+      margin-top: 0.1rem;
+      min-height: 0;
+    }
+
+    [data-invitation-section][hidden] {
+      display: none;
+    }
+
+    #invitation-search-toolbar {
+      grid-template-columns: minmax(0, 1fr) auto auto;
     }
 
     .global-watch {
@@ -530,6 +605,103 @@
       line-height: 1.6;
     }
 
+    .technical-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+      gap: 1rem;
+    }
+
+    .technical-grid > [data-technical-section] {
+      grid-column: 1 / -1;
+    }
+
+    .technical-status-card {
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      background: rgba(255, 255, 255, 0.92);
+      padding: 1rem;
+    }
+
+    .technical-status-card h3 {
+      margin: 0 0 0.5rem;
+      color: var(--accent-strong);
+    }
+
+    .technical-check-list {
+      display: grid;
+      gap: 0.65rem;
+      margin-top: 1rem;
+    }
+
+    .technical-check-item {
+      display: grid;
+      grid-template-columns: minmax(0, 0.7fr) minmax(0, 1.3fr);
+      gap: 0.75rem;
+      align-items: start;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.9);
+      padding: 0.85rem 1rem;
+    }
+
+    .technical-check-item strong {
+      color: var(--accent-strong);
+    }
+
+    .technical-check-item p {
+      margin: 0.2rem 0 0;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    .technical-check-status {
+      justify-self: start;
+      border-radius: 999px;
+      padding: 0.25rem 0.65rem;
+      font-size: 0.78rem;
+      font-weight: 800;
+      background: rgba(82, 94, 145, 0.12);
+      color: var(--accent-strong);
+    }
+
+    .technical-check-status.ok {
+      background: rgba(31, 127, 83, 0.12);
+      color: #14623e;
+    }
+
+    .technical-check-status.warning {
+      background: rgba(214, 138, 36, 0.14);
+      color: #8a4f07;
+    }
+
+    .technical-check-status.error {
+      background: rgba(185, 42, 42, 0.12);
+      color: #8f1f1f;
+    }
+
+    .technical-check-status.not_checked,
+    .technical-check-status.pending {
+      background: rgba(82, 94, 145, 0.12);
+      color: var(--accent-strong);
+    }
+
+    .technical-form {
+      display: grid;
+      gap: 0.9rem;
+    }
+
+    .technical-form select,
+    .technical-form input {
+      width: 100%;
+      min-height: 48px;
+      border-radius: 16px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.94);
+      color: var(--text);
+      padding: 0.8rem 1rem;
+      font: inherit;
+    }
+
     .metric-list,
     .activity-list {
       display: grid;
@@ -722,6 +894,30 @@
       gap: 0.6rem;
       flex-wrap: wrap;
       justify-content: flex-end;
+    }
+
+    .next-action-box {
+      border: 1px solid rgba(15, 77, 169, 0.18);
+      border-radius: 18px;
+      background: rgba(15, 77, 169, 0.07);
+      padding: 1rem;
+      margin: 0 0 1rem;
+    }
+
+    .next-action-box strong {
+      display: block;
+      color: var(--accent-strong);
+      margin-bottom: 0.35rem;
+    }
+
+    .next-action-box p {
+      margin: 0;
+      color: var(--text);
+      line-height: 1.45;
+    }
+
+    .next-action-box .microcopy {
+      margin-top: 0.45rem;
     }
 
     .btn-accept {
@@ -932,6 +1128,84 @@
     }
 
     .panel[hidden] {
+      display: none;
+    }
+
+    .admin-workspace {
+      display: grid;
+      grid-template-columns: 250px minmax(0, 1fr);
+      gap: 1rem;
+      align-items: start;
+    }
+
+    .admin-workspace > :not(.admin-side-nav) {
+      grid-column: 2;
+      min-width: 0;
+    }
+
+    .admin-side-nav {
+      grid-column: 1;
+      grid-row: 1 / span 30;
+      position: sticky;
+      top: 1rem;
+      display: grid;
+      gap: 0.65rem;
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      background: rgba(255, 255, 255, 0.88);
+      padding: 0.85rem;
+      box-shadow: var(--shadow);
+    }
+
+    .admin-side-title {
+      margin: 0 0 0.15rem;
+      color: var(--muted);
+      font-size: 0.75rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .admin-side-nav button {
+      width: 100%;
+      min-height: 42px;
+      border: 1px solid transparent;
+      border-radius: 14px;
+      background: transparent;
+      color: var(--text);
+      padding: 0.7rem 0.8rem;
+      text-align: left;
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.7rem;
+    }
+
+    .admin-side-nav button:hover,
+    .admin-side-nav button.active {
+      background: rgba(15, 77, 169, 0.08);
+      color: var(--accent-strong);
+    }
+
+    .nav-badge {
+      display: inline-flex;
+      min-width: 1.55rem;
+      height: 1.55rem;
+      align-items: center;
+      justify-content: center;
+      border-radius: 999px;
+      background: #c7352b;
+      color: #fff;
+      padding: 0 0.45rem;
+      font-size: 0.78rem;
+      font-weight: 900;
+      line-height: 1;
+    }
+
+    .nav-badge[hidden] {
       display: none;
     }
 
@@ -1238,8 +1512,20 @@
       .cockpit-health-grid,
       .cockpit-operations-grid,
       .cockpit-quick-grid,
-      .cockpit-hero-kpis {
+      .technical-grid,
+      .cockpit-hero-kpis,
+      .admin-workspace {
         grid-template-columns: 1fr;
+      }
+
+      .admin-workspace > :not(.admin-side-nav),
+      .admin-side-nav {
+        grid-column: 1;
+      }
+
+      .admin-side-nav {
+        grid-row: auto;
+        position: static;
       }
 
       .kpis,
@@ -1272,6 +1558,10 @@
       .matching-row-tags {
         grid-column: 1 / -1;
       }
+
+      .data-history-controls {
+        grid-template-columns: 1fr 1fr auto auto;
+      }
     }
 
     @media (max-width: 760px) {
@@ -1282,6 +1572,7 @@
       .kpis,
       .subscores-grid,
       .toolbar,
+      .data-history-controls,
       .form-split,
       .invitation-meta {
         grid-template-columns: 1fr;
@@ -1340,34 +1631,109 @@
 
     <section class="admin-card">
       <div class="tabs">
-        <button class="tab-btn active" type="button" data-tab="cockpit">Cockpit</button>
-        <button class="tab-btn" type="button" data-tab="tasks">À traiter</button>
-        <button class="tab-btn" type="button" data-tab="invitations">Invitations</button>
-        <button class="tab-btn" type="button" data-tab="candidate-responses">Réponses candidats</button>
-        <button class="tab-btn" type="button" data-tab="employer-responses">Réponses employeurs</button>
-        <button class="tab-btn" type="button" data-tab="matchings">Matchings</button>
-        <button class="tab-btn" type="button" data-tab="no-match">Sans matching</button>
-        <button class="tab-btn" type="button" data-tab="new-jobs">Nouveaux métiers</button>
+        <button class="tab-btn active" type="button" data-tab="tasks">À traiter</button>
+        <button class="tab-btn" type="button" data-tab="invitations">Inviter</button>
+        <button class="tab-btn" type="button" data-tab="relations">Mises en relation</button>
+        <button class="tab-btn" type="button" data-tab="cockpit">Technique & tests</button>
+        <button class="tab-btn" type="button" data-tab="data-history">Données & historique</button>
       </div>
     </section>
 
     <div class="panel-stack">
-      <section class="panel" id="panel-cockpit">
-        <section class="admin-top">
+      <section class="panel" id="panel-cockpit" hidden>
+        <section class="admin-top admin-workspace">
+          <aside class="admin-side-nav" aria-label="Sous-menu Technique et tests">
+            <p class="admin-side-title">Technique & tests</p>
+            <button type="button" data-open-list="technical-health">État du système</button>
+            <button type="button" data-open-list="technical-brevo">Brevo</button>
+            <button type="button" data-open-list="technical-email-tests">Emails tests</button>
+            <button type="button" data-open-list="technical-grist">Grist</button>
+            <button type="button" data-open-list="technical-public-links">Liens publics</button>
+            <button type="button" data-open-list="technical-candidate-flow">Parcours candidat</button>
+            <button type="button" data-open-list="technical-employer-flow">Parcours employeur</button>
+            <button type="button" data-open-list="technical-matching-flow">Matching</button>
+            <button type="button" data-open-list="technical-logs">Logs et erreurs</button>
+          </aside>
           <div class="admin-card">
             <div class="toolbar">
-              <div class="section-title">Cockpit de suivi EURES beta</div>
+              <div class="section-title">Technique & tests</div>
               <div></div>
               <button id="cockpit-reload-btn" type="button">Rafraîchir</button>
             </div>
+            <p class="microcopy">Cet écran sert uniquement à vérifier la partie technique : connexion Brevo et rendu/envoi des emails tests. Les réponses, matchings, doublons et décisions métier restent dans À traiter.</p>
             <div class="status-line" id="cockpit-status-line">Chargement...</div>
           </div>
-          <section class="cockpit-grid" id="cockpit-grid"></section>
+          <section class="technical-grid" id="technical-tests-screen">
+            <article class="admin-card" data-technical-section="health">
+              <div class="section-title">État du système</div>
+              <p class="microcopy">Vue synthétique pour confirmer que la zone technique de l’admin répond. Les contrôles détaillés sont séparés par rubrique.</p>
+              <div class="technical-status-card" style="margin-top:0.9rem;">
+                <h3>Admin accessible</h3>
+                <p class="status-line">L’écran technique est chargé. Utilisez le menu de gauche pour contrôler Brevo ou envoyer un email test.</p>
+              </div>
+            </article>
+
+            <article class="admin-card" data-technical-section="brevo" hidden>
+              <div class="section-title">Brevo</div>
+              <div class="technical-status-card" style="margin-top:0.9rem;">
+                <h3 id="brevo-health-title">État inconnu</h3>
+                <p class="status-line" id="brevo-status-line">Vérification Brevo...</p>
+              </div>
+              <div class="technical-check-list" id="brevo-diagnostic-list" aria-live="polite"></div>
+              <div class="inline-actions" style="margin-top:0.9rem;">
+                <button id="brevo-check-btn" type="button">Vérifier Brevo</button>
+              </div>
+            </article>
+
+            <article class="admin-card" data-technical-section="email-tests" hidden>
+              <div class="section-title">Envoyer un email test</div>
+              <p class="microcopy">Choisis le modèle et l’adresse de réception. L’objet sera préfixé par [TEST]. Aucune donnée métier réelle n’est modifiée.</p>
+              <div class="technical-form" style="margin-top:0.9rem;">
+                <label class="field-stack" for="email-test-type">
+                  <span>Type d’email</span>
+                  <select id="email-test-type">
+                    <option value="candidate_invitation_eures_cv">Invitation candidat — CV déposé sur EURES</option>
+                    <option value="candidate_invitation_generic">Invitation candidat — générique</option>
+                    <option value="employer_invitation">Invitation employeur</option>
+                    <option value="employer_matching_proposal">Proposition de candidature à l’employeur</option>
+                    <option value="candidate_matching_notification">Notification candidat — candidature transmise</option>
+                    <option value="candidate_no_match">Sans matching — candidat</option>
+                    <option value="employer_no_match">Sans matching — employeur</option>
+                  </select>
+                </label>
+                <label class="field-stack" for="email-test-recipient">
+                  <span>Adresse de réception du test</span>
+                  <input id="email-test-recipient" type="email" placeholder="exemple@domaine.fr">
+                </label>
+                <div class="inline-actions">
+                  <button id="email-test-send-btn" type="button">Envoyer le test</button>
+                </div>
+                <div class="status-line" id="email-test-status-line"></div>
+              </div>
+            </article>
+
+            <article class="admin-card" data-technical-section="placeholder" hidden>
+              <div class="section-title" id="technical-placeholder-title">Test à préparer</div>
+              <p class="microcopy" id="technical-placeholder-text">Cette rubrique est prévue dans le menu, mais son diagnostic n’est pas encore implémenté.</p>
+              <div class="technical-status-card" style="margin-top:0.9rem;">
+                <h3>À venir</h3>
+                <p class="status-line">L’entrée est volontairement visible pour stabiliser l’architecture de l’admin. Elle ne prétend pas encore réaliser un contrôle.</p>
+              </div>
+            </article>
+          </section>
         </section>
       </section>
 
-      <section class="panel" id="panel-tasks" hidden>
-        <section class="admin-top">
+      <section class="panel" id="panel-tasks">
+        <section class="admin-top admin-workspace">
+          <aside class="admin-side-nav" aria-label="Sous-menu À traiter">
+            <p class="admin-side-title">À traiter</p>
+            <button type="button" data-open-list="tasks"><span>Vue prioritaire</span><span class="nav-badge" data-task-menu-badge="tasks" hidden></span></button>
+            <button type="button" data-open-list="matchings-pending"><span>Matchings à valider</span><span class="nav-badge" data-task-menu-badge="matchings-pending" hidden></span></button>
+            <button type="button" data-open-list="matchings-employer-responded"><span>Employeurs ayant répondu</span><span class="nav-badge" data-task-menu-badge="matchings-employer-responded" hidden></span></button>
+            <button type="button" data-open-list="no-match"><span>Sans matching</span><span class="nav-badge" data-task-menu-badge="no-match" hidden></span></button>
+            <button type="button" data-open-list="new-jobs"><span>Nouveaux métiers</span><span class="nav-badge" data-task-menu-badge="new-jobs" hidden></span></button>
+          </aside>
           <div class="admin-card">
             <div class="kpis">
               <div class="kpi">
@@ -1388,7 +1754,7 @@
               </div>
             </div>
           </div>
-          <div class="admin-card">
+          <div class="admin-card operational-control-card compact">
             <div class="toolbar">
               <select id="task-filter-status">
                 <option value="pending">À traiter</option>
@@ -1405,9 +1771,19 @@
         </section>
       </section>
 
-      <section class="panel" id="panel-invitations">
-        <section class="admin-top">
-          <div class="admin-card">
+      <section class="panel" id="panel-invitations" hidden>
+        <section class="admin-top admin-workspace">
+          <aside class="admin-side-nav" aria-label="Sous-menu Inviter">
+            <p class="admin-side-title">Inviter</p>
+            <button type="button" data-open-list="invitations-dashboard">Tableau de bord</button>
+            <button type="button" data-open-list="invite-candidate">Inviter candidat</button>
+            <button type="button" data-open-list="invite-employer">Inviter employeur</button>
+            <button type="button" data-open-list="invite-import">Importer une liste</button>
+            <button type="button" data-open-list="matchings-manual-builder">Créer un matching manuel</button>
+            <button type="button" data-open-list="invite-reminders">Relancer</button>
+            <button type="button" data-open-list="invite-errors">Erreurs / doublons</button>
+          </aside>
+          <div class="admin-card" data-invitation-section="dashboard">
             <div class="kpis">
               <div class="kpi">
                 <div class="kpi-label">Total affiché</div>
@@ -1432,7 +1808,7 @@
             </div>
           </div>
 
-          <div class="admin-card send-panel">
+          <div class="admin-card send-panel" data-invitation-section="send">
             <div class="send-panel-head">
               <div class="send-panel-count">
                 <strong id="pending-send-count">0</strong>
@@ -1452,7 +1828,7 @@
             </div>
           </div>
 
-          <div class="admin-card send-panel">
+          <div class="admin-card send-panel" data-invitation-section="reminders">
             <div class="send-panel-head">
               <div class="send-panel-count">
                 <strong id="reminder-send-count">0</strong>
@@ -1464,8 +1840,8 @@
             </div>
           </div>
 
-          <div class="admin-card invitation-layout">
-            <div class="invitation-panel">
+          <div class="admin-card invitation-layout" data-invitation-section="compose">
+            <div class="invitation-panel" id="single-invitation-panel" data-invitation-compose="single">
               <div class="section-title">Ajouter une invitation unitaire</div>
               <div class="form-split">
                 <div class="field-stack">
@@ -1507,6 +1883,13 @@
                   <label for="single-source">Source</label>
                   <input id="single-source" type="text" value="admin_manual">
                 </div>
+                <div class="field-stack" id="candidate-campaign-type-block">
+                  <label for="single-campaign-type">Type de campagne</label>
+                  <select id="single-campaign-type">
+                    <option value="">Générique / métier ciblé</option>
+                    <option value="eures_cv_deposit">CV déposé sur EURES</option>
+                  </select>
+                </div>
               </div>
               <div class="field-stack" id="candidate-target-jobs-block">
                 <label for="single-target-job">Métier ciblé dans l’invitation candidat</label>
@@ -1531,7 +1914,7 @@
               <p class="help-text">Cette action crée une ligne dans la table <code>Invitations</code> avec le statut <code>invitation_a_envoyer</code>.</p>
             </div>
 
-            <div class="invitation-panel">
+            <div class="invitation-panel" id="csv-invitation-panel" data-invitation-compose="import">
               <div class="section-title">Importer un CSV</div>
               <div class="csv-box">
                 <div class="inline-actions csv-actions">
@@ -1543,141 +1926,20 @@
                 <div class="inline-actions">
                   <button id="csv-import-btn" type="button">Importer le CSV</button>
                 </div>
-                <p class="help-text">Colonnes recommandées : <code>role,email,first_name,last_name,company_name,language,source,external_ref,target_job_keys,notes</code></p>
-                <pre class="code-block" id="csv-example">role,email,first_name,last_name,company_name,language,source,external_ref,target_job_keys,notes
-candidate,alice@example.com,Alice,Martin,,fr,campagne_juin,CAND-001,industrie_production,
-employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,</pre>
+                <p class="help-text">Colonnes recommandées : <code>role,email,first_name,last_name,company_name,language,source,external_ref,campaign_type,target_job_keys,notes</code></p>
+                <pre class="code-block" id="csv-example">role,email,first_name,last_name,company_name,language,source,external_ref,campaign_type,target_job_keys,notes
+candidate,alice@example.com,Alice,Martin,,fr,campagne_juin,CAND-001,eures_cv_deposit,,
+employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,,</pre>
               </div>
             </div>
           </div>
 
-          <div class="admin-card">
-            <div class="toolbar">
-              <select id="invite-filter-status">
-                <option value="all">Tous les statuts</option>
-                <option value="invitation_a_envoyer">À envoyer</option>
-                <option value="duplicate_followup_pending">Relances à arbitrer</option>
-                <option value="invitation_envoyee">Envoyées</option>
-                <option value="reminder_due">À relancer</option>
-                <option value="questionnaire_recu">Questionnaires reçus</option>
-                <option value="erreur_envoi">Erreurs d’envoi</option>
-              </select>
-              <input id="invite-filter-search" type="search" placeholder="Rechercher un email, un nom, une structure, une référence">
-              <button id="invite-reload-btn" type="button">Rafraîchir</button>
-            </div>
-            <div class="status-line" id="invite-status-line">Chargement...</div>
-            <section class="invitation-list" id="invitation-list"></section>
-          </div>
-        </section>
-      </section>
-
-      <section class="panel" id="panel-candidate-responses" hidden>
-        <section class="admin-top">
-          <div class="admin-card">
-            <div class="kpis">
-              <div class="kpi">
-                <div class="kpi-label">Total affiché</div>
-                <div class="kpi-value" id="candidate-response-kpi-total">0</div>
-              </div>
-              <div class="kpi">
-                <div class="kpi-label">Actives</div>
-                <div class="kpi-value" id="candidate-response-kpi-active">0</div>
-              </div>
-              <div class="kpi">
-                <div class="kpi-label">Désactivées</div>
-                <div class="kpi-value" id="candidate-response-kpi-disabled">0</div>
-              </div>
-            </div>
-          </div>
-          <div class="admin-card">
-            <div class="toolbar">
-              <div></div>
-              <input id="candidate-response-filter-search" type="search" placeholder="Rechercher un nom, un email, un métier, un pays">
-              <button id="candidate-response-reload-btn" type="button">Rafraîchir</button>
-            </div>
-            <div class="status-line" id="candidate-response-status-line">Chargement...</div>
-            <section class="matching-list" id="candidate-response-list"></section>
-          </div>
-        </section>
-      </section>
-
-      <section class="panel" id="panel-employer-responses" hidden>
-        <section class="admin-top">
-          <div class="admin-card">
-            <div class="kpis">
-              <div class="kpi">
-                <div class="kpi-label">Total affiché</div>
-                <div class="kpi-value" id="employer-response-kpi-total">0</div>
-              </div>
-              <div class="kpi">
-                <div class="kpi-label">Actives</div>
-                <div class="kpi-value" id="employer-response-kpi-active">0</div>
-              </div>
-              <div class="kpi">
-                <div class="kpi-label">Désactivées</div>
-                <div class="kpi-value" id="employer-response-kpi-disabled">0</div>
-              </div>
-            </div>
-          </div>
-          <div class="admin-card">
-            <div class="toolbar">
-              <div></div>
-              <input id="employer-response-filter-search" type="search" placeholder="Rechercher une entreprise, un contact, un poste, un pays">
-              <button id="employer-response-reload-btn" type="button">Rafraîchir</button>
-            </div>
-            <div class="status-line" id="employer-response-status-line">Chargement...</div>
-            <section class="matching-list" id="employer-response-list"></section>
-          </div>
-        </section>
-      </section>
-
-      <section class="panel" id="panel-matchings" hidden>
-        <section class="admin-top">
-          <div class="admin-card">
-            <div class="kpis">
-              <div class="kpi">
-                <div class="kpi-label">Total affiché</div>
-                <div class="kpi-value" id="kpi-total">0</div>
-              </div>
-              <div class="kpi">
-                <div class="kpi-label">À valider</div>
-                <div class="kpi-value" id="kpi-pending">0</div>
-              </div>
-              <div class="kpi">
-                <div class="kpi-label">Acceptés</div>
-                <div class="kpi-value" id="kpi-accepted">0</div>
-              </div>
-              <div class="kpi">
-                <div class="kpi-label">Refusés</div>
-                <div class="kpi-value" id="kpi-refused">0</div>
-              </div>
-            </div>
-          </div>
-
-          <div class="admin-card">
-            <div class="toolbar">
-              <select id="filter-status">
-                <option value="pending">À valider</option>
-                <option value="all">Tous</option>
-                <option value="accepted">Acceptés</option>
-                <option value="refused">Refusés</option>
-                <option value="employer_responded">Employeur ayant répondu</option>
-              </select>
-              <select id="filter-source">
-                <option value="all">Toutes les sources</option>
-                <option value="manual">Matchings manuels</option>
-                <option value="auto">Matchings automatiques</option>
-              </select>
-              <input id="filter-search" type="search" placeholder="Rechercher un nom, une entreprise, un poste, un email">
-              <button id="reload-btn" type="button">Rafraîchir</button>
-            </div>
-            <div class="status-line" id="status-line">Chargement...</div>
-            <div class="status-line" id="brevo-status-line">Vérification Brevo...</div>
-          </div>
-
-          <div class="admin-card">
+          <div class="admin-card" id="manual-matching-card" data-invitation-section="manual-matching" hidden>
             <div class="section-title">Créer un matching manuel</div>
-            <div class="form-grid">
+            <p class="microcopy">
+              Action volontaire : sélectionner un candidat et un besoin employeur, puis créer un rapprochement hors proposition automatique.
+            </p>
+            <div class="form-grid" style="margin-top:0.9rem;">
               <label class="field">
                 <span>Candidat</span>
                 <select id="manual-match-candidate">
@@ -1721,13 +1983,266 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,</pre>
               Test sécurisé : le mail employeur part uniquement vers sci.europe@icloud.com et le mail candidat vers eric.barthelemy@me.com.
             </p>
           </div>
-        </section>
 
-        <section class="matching-list" id="matching-list"></section>
+          <div class="admin-card operational-control-card compact" data-invitation-section="list" id="invitation-list-card">
+            <div class="toolbar legacy-invitation-toolbar">
+              <select id="invite-filter-status">
+                <option value="all">Tous les statuts</option>
+                <option value="invitation_a_envoyer">À envoyer</option>
+                <option value="duplicate_followup_pending">Relances à arbitrer</option>
+                <option value="invitation_envoyee">Envoyées</option>
+                <option value="reminder_due">À relancer</option>
+                <option value="questionnaire_recu">Questionnaires reçus</option>
+                <option value="erreur_envoi">Erreurs d’envoi</option>
+              </select>
+              <input id="invite-filter-search" type="search" placeholder="Rechercher un email, un nom, une structure, une référence">
+              <button id="invite-reload-btn" type="button">Rafraîchir</button>
+            </div>
+            <div class="toolbar" id="invitation-search-toolbar" hidden>
+              <input id="invite-visible-search" type="search" placeholder="Rechercher un email, un nom, une structure, une référence">
+              <button id="invite-visible-search-clear" type="button">Effacer</button>
+              <button id="invite-visible-reload-btn" type="button">Rafraîchir</button>
+            </div>
+            <div class="status-line" id="invite-status-line">Chargement...</div>
+            <section class="invitation-list" id="invitation-list"></section>
+          </div>
+        </section>
+      </section>
+
+      <section class="panel" id="panel-relations" hidden>
+        <section class="admin-top admin-workspace">
+          <aside class="admin-side-nav" aria-label="Sous-menu Mises en relation">
+            <p class="admin-side-title">Mises en relation</p>
+            <button type="button" data-open-relations="to-launch">À lancer</button>
+            <button type="button" data-open-relations="in-progress">En cours</button>
+            <button type="button" data-open-relations="result-needed">Résultats à renseigner</button>
+            <button type="button" data-open-relations="done">Terminées</button>
+          </aside>
+          <div class="admin-card">
+            <div class="toolbar data-history-head">
+              <div>
+                <div class="section-title" id="relations-view-title">Mises en relation à lancer</div>
+                <p class="help-text" id="relations-view-copy">
+                  Matchings acceptés par l’employeur pour lesquels il faut organiser le canal de contact.
+                </p>
+              </div>
+            </div>
+            <div class="data-history-controls">
+              <span class="microcopy">Recherche dans la vue affichée</span>
+              <input id="relations-search" type="search" placeholder="Rechercher un candidat, employeur, poste, canal, statut..." />
+              <button class="btn-secondary" id="relations-search-clear" type="button">Effacer</button>
+              <button class="btn-primary" id="relations-reload-btn" type="button">Rafraîchir</button>
+            </div>
+            <div class="status-line" id="relations-status-line">Chargement...</div>
+          </div>
+          <section class="matching-list" id="relations-list"></section>
+        </section>
+      </section>
+
+      <section class="panel" id="panel-candidate-responses" hidden>
+        <section class="admin-top admin-workspace">
+          <aside class="admin-side-nav" aria-label="Sous-menu Données et historique">
+            <p class="admin-side-title">Données & historique</p>
+            <button type="button" data-open-history="candidate-responses">Réponses candidats</button>
+            <button type="button" data-open-history="employer-responses">Réponses employeurs</button>
+            <button type="button" data-open-history="matchings">Tous les matchings</button>
+            <button type="button" data-open-history="invitations">Invitations envoyées</button>
+          </aside>
+          <div class="admin-card">
+            <div class="kpis">
+              <div class="kpi">
+                <div class="kpi-label">Total affiché</div>
+                <div class="kpi-value" id="candidate-response-kpi-total">0</div>
+              </div>
+              <div class="kpi">
+                <div class="kpi-label">Actives</div>
+                <div class="kpi-value" id="candidate-response-kpi-active">0</div>
+              </div>
+              <div class="kpi">
+                <div class="kpi-label">Désactivées</div>
+                <div class="kpi-value" id="candidate-response-kpi-disabled">0</div>
+              </div>
+            </div>
+          </div>
+          <div class="admin-card">
+            <div class="toolbar">
+              <div></div>
+              <input id="candidate-response-filter-search" type="search" placeholder="Rechercher un nom, un email, un métier, un pays">
+              <button id="candidate-response-reload-btn" type="button">Rafraîchir</button>
+            </div>
+            <div class="status-line" id="candidate-response-status-line">Chargement...</div>
+            <section class="matching-list" id="candidate-response-list"></section>
+          </div>
+        </section>
+      </section>
+
+      <section class="panel" id="panel-employer-responses" hidden>
+        <section class="admin-top admin-workspace">
+          <aside class="admin-side-nav" aria-label="Sous-menu Données et historique">
+            <p class="admin-side-title">Données & historique</p>
+            <button type="button" data-open-history="candidate-responses">Réponses candidats</button>
+            <button type="button" data-open-history="employer-responses">Réponses employeurs</button>
+            <button type="button" data-open-history="matchings">Tous les matchings</button>
+            <button type="button" data-open-history="invitations">Invitations envoyées</button>
+          </aside>
+          <div class="admin-card">
+            <div class="kpis">
+              <div class="kpi">
+                <div class="kpi-label">Total affiché</div>
+                <div class="kpi-value" id="employer-response-kpi-total">0</div>
+              </div>
+              <div class="kpi">
+                <div class="kpi-label">Actives</div>
+                <div class="kpi-value" id="employer-response-kpi-active">0</div>
+              </div>
+              <div class="kpi">
+                <div class="kpi-label">Désactivées</div>
+                <div class="kpi-value" id="employer-response-kpi-disabled">0</div>
+              </div>
+            </div>
+          </div>
+          <div class="admin-card">
+            <div class="toolbar">
+              <div></div>
+              <input id="employer-response-filter-search" type="search" placeholder="Rechercher une entreprise, un contact, un poste, un pays">
+              <button id="employer-response-reload-btn" type="button">Rafraîchir</button>
+            </div>
+            <div class="status-line" id="employer-response-status-line">Chargement...</div>
+            <section class="matching-list" id="employer-response-list"></section>
+          </div>
+        </section>
+      </section>
+
+      <section class="panel" id="panel-matchings" hidden>
+        <section class="admin-top admin-workspace">
+          <aside class="admin-side-nav" aria-label="Sous-menu À traiter">
+            <p class="admin-side-title">À traiter</p>
+            <button type="button" data-open-list="tasks"><span>Vue prioritaire</span><span class="nav-badge" data-task-menu-badge="tasks" hidden></span></button>
+            <button type="button" data-open-list="matchings-pending"><span>Matchings à valider</span><span class="nav-badge" data-task-menu-badge="matchings-pending" hidden></span></button>
+            <button type="button" data-open-list="matchings-employer-responded"><span>Employeurs ayant répondu</span><span class="nav-badge" data-task-menu-badge="matchings-employer-responded" hidden></span></button>
+            <button type="button" data-open-list="no-match"><span>Sans matching</span><span class="nav-badge" data-task-menu-badge="no-match" hidden></span></button>
+            <button type="button" data-open-list="new-jobs"><span>Nouveaux métiers</span><span class="nav-badge" data-task-menu-badge="new-jobs" hidden></span></button>
+          </aside>
+          <div class="admin-card">
+            <div class="kpis">
+              <div class="kpi">
+                <div class="kpi-label">Total affiché</div>
+                <div class="kpi-value" id="kpi-total">0</div>
+              </div>
+              <div class="kpi">
+                <div class="kpi-label">À valider</div>
+                <div class="kpi-value" id="kpi-pending">0</div>
+              </div>
+              <div class="kpi">
+                <div class="kpi-label">Acceptés</div>
+                <div class="kpi-value" id="kpi-accepted">0</div>
+              </div>
+              <div class="kpi">
+                <div class="kpi-label">Refusés</div>
+                <div class="kpi-value" id="kpi-refused">0</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="admin-card operational-control-card compact">
+            <div class="section-title" id="matching-view-title">Matchings à valider</div>
+            <p class="microcopy" id="matching-view-copy">Liste des matchings proposés par le système qui demandent une décision admin.</p>
+            <div class="toolbar">
+              <select id="filter-status">
+                <option value="pending">À valider</option>
+                <option value="all">Tous</option>
+                <option value="accepted">Acceptés</option>
+                <option value="refused">Refusés</option>
+                <option value="employer_responded">Employeur ayant répondu</option>
+              </select>
+              <select id="filter-source">
+                <option value="all">Toutes les sources</option>
+                <option value="manual">Matchings manuels</option>
+                <option value="auto">Matchings automatiques</option>
+              </select>
+              <input id="filter-search" type="search" placeholder="Rechercher un nom, une entreprise, un poste, un email">
+              <button id="reload-btn" type="button">Rafraîchir</button>
+            </div>
+            <div class="status-line" id="status-line">Chargement...</div>
+            <div class="status-line" id="matching-brevo-status-line">Brevo est vérifiable dans Technique & tests.</div>
+          </div>
+
+          <section class="matching-list" id="matching-list"></section>
+        </section>
+      </section>
+
+      <section class="panel" id="panel-data-history" hidden>
+        <section class="admin-top admin-workspace">
+          <aside class="admin-side-nav" aria-label="Sous-menu Données et historique">
+            <p class="admin-side-title">Données & historique</p>
+            <button type="button" data-open-history="candidate-responses">Réponses candidats</button>
+            <button type="button" data-open-history="employer-responses">Réponses employeurs</button>
+            <button type="button" data-open-history="matchings">Tous les matchings</button>
+            <button type="button" data-open-history="invitations">Invitations envoyées</button>
+          </aside>
+          <div class="admin-card">
+            <div class="toolbar data-history-head">
+              <div>
+                <div class="section-title">Données & historique</div>
+                <p class="help-text">
+                  Ces vues servent à consulter, contrôler ou corriger les données. Elles ne sont pas le point d’entrée normal du travail quotidien.
+                </p>
+              </div>
+            </div>
+            <div class="data-history-controls" id="data-history-search-toolbar" hidden>
+              <span class="microcopy">Recherche dans la vue affichée</span>
+              <input id="data-history-search" type="search" placeholder="Rechercher un nom, email, entreprise, poste, statut..." />
+              <button class="btn-secondary" id="data-history-search-clear" type="button">Effacer</button>
+              <button class="btn-primary" id="data-history-reload-btn" type="button">Rafraîchir</button>
+            </div>
+            <div class="cockpit-quick-grid" data-history-section="home" style="margin-top:1rem;">
+              <article class="cockpit-quick-card">
+                <div class="cockpit-quick-head">
+                  <strong>Réponses candidats</strong>
+                </div>
+                <p>Consulter les questionnaires candidats, désactiver une réponse ou ouvrir les matchings liés.</p>
+                <footer><button type="button" data-open-history="candidate-responses">Ouvrir</button></footer>
+              </article>
+              <article class="cockpit-quick-card">
+                <div class="cockpit-quick-head">
+                  <strong>Réponses employeurs</strong>
+                </div>
+                <p>Consulter les besoins employeurs, désactiver une réponse ou ouvrir les matchings liés.</p>
+                <footer><button type="button" data-open-history="employer-responses">Ouvrir</button></footer>
+              </article>
+              <article class="cockpit-quick-card">
+                <div class="cockpit-quick-head">
+                  <strong>Tous les matchings</strong>
+                </div>
+                <p>Consulter l’historique complet des rapprochements, sans action opérationnelle imposée.</p>
+                <footer><button type="button" data-open-history="matchings">Ouvrir</button></footer>
+              </article>
+              <article class="cockpit-quick-card">
+                <div class="cockpit-quick-head">
+                  <strong>Invitations envoyées</strong>
+                </div>
+                <p>Consulter l’historique des invitations, envois, relances et réponses reçues.</p>
+                <footer><button type="button" data-open-history="invitations">Ouvrir</button></footer>
+              </article>
+            </div>
+            <section class="matching-list" data-history-section="candidate-responses" id="history-candidate-list" hidden></section>
+            <section class="matching-list" data-history-section="employer-responses" id="history-employer-list" hidden></section>
+            <section class="matching-list" data-history-section="matchings" id="history-matching-list" hidden></section>
+            <section class="invitation-list" data-history-section="invitations" id="history-invitation-list" hidden></section>
+          </div>
+        </section>
       </section>
 
       <section class="panel" id="panel-no-match" hidden>
-        <section class="admin-top">
+        <section class="admin-top admin-workspace">
+          <aside class="admin-side-nav" aria-label="Sous-menu À traiter">
+            <p class="admin-side-title">À traiter</p>
+            <button type="button" data-open-list="tasks"><span>Vue prioritaire</span><span class="nav-badge" data-task-menu-badge="tasks" hidden></span></button>
+            <button type="button" data-open-list="matchings-pending"><span>Matchings à valider</span><span class="nav-badge" data-task-menu-badge="matchings-pending" hidden></span></button>
+            <button type="button" data-open-list="matchings-employer-responded"><span>Employeurs ayant répondu</span><span class="nav-badge" data-task-menu-badge="matchings-employer-responded" hidden></span></button>
+            <button type="button" data-open-list="no-match"><span>Sans matching</span><span class="nav-badge" data-task-menu-badge="no-match" hidden></span></button>
+            <button type="button" data-open-list="new-jobs"><span>Nouveaux métiers</span><span class="nav-badge" data-task-menu-badge="new-jobs" hidden></span></button>
+          </aside>
           <div class="admin-card">
             <div class="kpis">
               <div class="kpi">
@@ -1749,7 +2264,7 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,</pre>
             </div>
           </div>
 
-          <div class="admin-card">
+          <div class="admin-card operational-control-card compact">
             <div class="toolbar">
               <select id="no-match-filter-status">
                 <option value="pending">À traiter</option>
@@ -1762,13 +2277,20 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,</pre>
             </div>
             <div class="status-line" id="no-match-status-line">Chargement...</div>
           </div>
+          <section class="matching-list" id="no-match-list"></section>
         </section>
-
-        <section class="matching-list" id="no-match-list"></section>
       </section>
 
       <section class="panel" id="panel-new-jobs" hidden>
-        <section class="admin-top">
+        <section class="admin-top admin-workspace">
+          <aside class="admin-side-nav" aria-label="Sous-menu À traiter">
+            <p class="admin-side-title">À traiter</p>
+            <button type="button" data-open-list="tasks"><span>Vue prioritaire</span><span class="nav-badge" data-task-menu-badge="tasks" hidden></span></button>
+            <button type="button" data-open-list="matchings-pending"><span>Matchings à valider</span><span class="nav-badge" data-task-menu-badge="matchings-pending" hidden></span></button>
+            <button type="button" data-open-list="matchings-employer-responded"><span>Employeurs ayant répondu</span><span class="nav-badge" data-task-menu-badge="matchings-employer-responded" hidden></span></button>
+            <button type="button" data-open-list="no-match"><span>Sans matching</span><span class="nav-badge" data-task-menu-badge="no-match" hidden></span></button>
+            <button type="button" data-open-list="new-jobs"><span>Nouveaux métiers</span><span class="nav-badge" data-task-menu-badge="new-jobs" hidden></span></button>
+          </aside>
           <div class="admin-card">
             <div class="kpis">
               <div class="kpi">
@@ -1790,7 +2312,7 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,</pre>
             </div>
           </div>
 
-          <div class="admin-card">
+          <div class="admin-card operational-control-card compact">
             <div class="toolbar">
               <select id="new-job-filter-status">
                 <option value="pending">À traiter</option>
@@ -1803,9 +2325,8 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,</pre>
             </div>
             <div class="status-line" id="new-job-status-line">Chargement...</div>
           </div>
+          <section class="matching-list" id="new-job-list"></section>
         </section>
-
-        <section class="matching-list" id="new-job-list"></section>
       </section>
     </div>
   </div>
@@ -1826,6 +2347,7 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,</pre>
         loading: false,
         selectionMode: false,
         selectedIds: [],
+        view: "dashboard",
       },
       candidateResponses: {
         rows: [],
@@ -1844,6 +2366,7 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,</pre>
       matchings: {
         rows: [],
         loading: false,
+        view: "pending",
       },
       noMatch: {
         rows: [],
@@ -1853,8 +2376,59 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,</pre>
         rows: [],
         loading: false,
       },
+      dataHistoryView: "home",
+      dataHistorySearch: "",
+      relationsView: "to-launch",
+      relationsSearch: "",
       brevo: null,
+      taskMenuCounts: {
+        tasks: 0,
+        "matchings-pending": 0,
+        "matchings-employer-responded": 0,
+        "no-match": 0,
+        "new-jobs": 0,
+      },
+      technicalView: "health",
       questionnaireAutoRefreshTimer: null,
+    };
+
+    const technicalViewByTarget = {
+      "technical-health": "health",
+      "technical-brevo": "brevo",
+      "technical-email-tests": "email-tests",
+      "technical-grist": "grist",
+      "technical-public-links": "public-links",
+      "technical-candidate-flow": "candidate-flow",
+      "technical-employer-flow": "employer-flow",
+      "technical-matching-flow": "matching-flow",
+      "technical-logs": "logs"
+    };
+
+    const technicalPlaceholderCopy = {
+      grist: {
+        title: "Diagnostic Grist",
+        text: "Contrôles prévus : accès API, tables candidats/employeurs/invitations/matchings et dernière écriture connue."
+      },
+      "public-links": {
+        title: "Diagnostic des liens publics",
+        text: "Contrôles prévus : questionnaires candidat/employeur, notice de confidentialité, pages publiques Match Europe et cohérence des liens Brevo."
+      },
+      "candidate-flow": {
+        title: "Test du parcours candidat",
+        text: "Contrôles prévus : invitation, formulaire, consentement WhatsApp, enregistrement Grist, email candidat et visibilité admin."
+      },
+      "employer-flow": {
+        title: "Test du parcours employeur",
+        text: "Contrôles prévus : invitation, formulaire besoin employeur, accord WhatsApp par matching, téléphone confirmé et visibilité admin."
+      },
+      "matching-flow": {
+        title: "Test du moteur de matching",
+        text: "Contrôles prévus : calcul automatique, création manuelle, validation avec ou sans email, envoi employeur/candidat et traçabilité."
+      },
+      logs: {
+        title: "Logs et erreurs",
+        text: "Contrôles prévus : dernières erreurs d’envoi, erreurs d’API, actions admin sensibles et événements à investiguer."
+      }
     };
 
     function esc(value) {
@@ -1915,6 +2489,308 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,</pre>
       }
     }
 
+    function setTaskMenuCount(key, value) {
+      const count = Math.max(0, Number(value || 0));
+      state.taskMenuCounts[key] = count;
+      for (const badge of document.querySelectorAll(`[data-task-menu-badge="${key}"]`)) {
+        badge.textContent = count > 99 ? "99+" : String(count);
+        badge.hidden = count === 0;
+      }
+    }
+
+    function updateTaskMenuBadgesFromCockpit() {
+      const priorities = state.cockpit.data?.priorities || {};
+      const total =
+        Number(priorities.matching_review || 0) +
+        Number(priorities.employer_response || 0) +
+        Number(priorities.no_match_followup || 0) +
+        Number(priorities.new_job_request || 0) +
+        Number(priorities.new_employer_alert || 0) +
+        Number(priorities.duplicate_invitation_followup || 0);
+      setTaskMenuCount("tasks", total);
+      setTaskMenuCount("matchings-pending", priorities.matching_review || 0);
+      setTaskMenuCount("matchings-employer-responded", priorities.employer_response || 0);
+      setTaskMenuCount("no-match", priorities.no_match_followup || 0);
+      setTaskMenuCount("new-jobs", priorities.new_job_request || 0);
+    }
+
+    function updateTaskMenuBadges() {
+      for (const [key, count] of Object.entries(state.taskMenuCounts)) {
+        setTaskMenuCount(key, count);
+      }
+    }
+
+    function invitationViewTarget(target) {
+      const map = {
+        invitations: "dashboard",
+        "invitations-dashboard": "dashboard",
+        "invite-candidate": "single-candidate",
+        "invite-employer": "single-employer",
+        "invite-import": "import",
+        "matchings-manual-builder": "manual-matching",
+        "invite-reminders": "reminders",
+        "invite-errors": "errors",
+      };
+      return map[target] || "";
+    }
+
+    function setInvitationView(view) {
+      const normalizedView = [
+        "dashboard",
+        "single-candidate",
+        "single-employer",
+        "import",
+        "manual-matching",
+        "reminders",
+        "errors",
+      ].includes(view) ? view : "dashboard";
+      state.invitations.view = normalizedView;
+
+      const visibleSections = {
+        dashboard: new Set(["dashboard", "send", "list"]),
+        "single-candidate": new Set(["compose"]),
+        "single-employer": new Set(["compose"]),
+        import: new Set(["compose"]),
+        "manual-matching": new Set(["manual-matching"]),
+        reminders: new Set(["reminders", "list"]),
+        errors: new Set(["list"]),
+      }[normalizedView];
+
+      for (const section of document.querySelectorAll("[data-invitation-section]")) {
+        section.hidden = !visibleSections.has(section.dataset.invitationSection);
+      }
+
+      for (const panel of document.querySelectorAll("[data-invitation-compose]")) {
+        const kind = panel.dataset.invitationCompose;
+        panel.hidden = !(
+          (kind === "single" && ["single-candidate", "single-employer"].includes(normalizedView)) ||
+          (kind === "import" && normalizedView === "import")
+        );
+      }
+
+      const roleSelect = document.getElementById("single-role");
+      if (roleSelect && ["single-candidate", "single-employer"].includes(normalizedView)) {
+        roleSelect.value = normalizedView === "single-employer" ? "employer" : "candidate";
+        updateSingleInvitationRoleUI();
+      }
+
+      const statusSelect = document.getElementById("invite-filter-status");
+      if (statusSelect) {
+        if (normalizedView === "dashboard") statusSelect.value = "invitation_a_envoyer";
+        if (normalizedView === "reminders") statusSelect.value = "reminder_due";
+        if (normalizedView === "errors") statusSelect.value = "all";
+      }
+
+      const listCard = document.getElementById("invitation-list-card");
+      const searchToolbar = document.getElementById("invitation-search-toolbar");
+      if (listCard) {
+        listCard.classList.toggle("compact", !["reminders", "errors"].includes(normalizedView));
+      }
+      if (searchToolbar) {
+        searchToolbar.hidden = !["reminders", "errors"].includes(normalizedView);
+      }
+      const hiddenSearch = document.getElementById("invite-filter-search");
+      const visibleSearch = document.getElementById("invite-visible-search");
+      if (!["reminders", "errors"].includes(normalizedView)) {
+        if (hiddenSearch) hiddenSearch.value = "";
+        if (visibleSearch) visibleSearch.value = "";
+      } else if (hiddenSearch && visibleSearch) {
+        visibleSearch.value = hiddenSearch.value;
+      }
+
+      for (const button of document.querySelectorAll(".admin-side-nav button")) {
+        const target = button.dataset.openList || "";
+        const viewForTarget = invitationViewTarget(target);
+        if (viewForTarget) {
+          button.classList.toggle("active", viewForTarget === normalizedView);
+        }
+      }
+
+      if (normalizedView === "manual-matching") {
+        renderManualMatchingOptions();
+        renderManualMatchingPreview();
+      }
+    }
+
+    function dataHistoryViewTarget(target) {
+      const map = {
+        "candidate-responses": "candidate-responses",
+        "employer-responses": "employer-responses",
+        matchings: "matchings",
+        invitations: "invitations",
+      };
+      return map[target] || "";
+    }
+
+    function setDataHistoryView(view) {
+      const normalizedView = ["home", "candidate-responses", "employer-responses", "matchings", "invitations"].includes(view)
+        ? view
+        : "home";
+      state.dataHistoryView = normalizedView;
+      for (const section of document.querySelectorAll("[data-history-section]")) {
+        section.hidden = section.dataset.historySection !== normalizedView;
+      }
+      for (const button of document.querySelectorAll("[data-open-history]")) {
+        button.classList.toggle("active", dataHistoryViewTarget(button.dataset.openHistory) === normalizedView);
+      }
+      const searchToolbar = document.getElementById("data-history-search-toolbar");
+      if (searchToolbar) {
+        searchToolbar.hidden = normalizedView === "home";
+      }
+      renderDataHistoryView();
+    }
+
+    async function openDataHistoryView(view) {
+      const normalizedView = dataHistoryViewTarget(view) || "home";
+      activateTab("data-history");
+      setDataHistoryView(normalizedView);
+      if (normalizedView === "candidate-responses") {
+        await loadQuestionnaireResponses("candidate", { clearUnseen: true });
+      }
+      if (normalizedView === "employer-responses") {
+        await loadQuestionnaireResponses("employer", { clearUnseen: true });
+      }
+      if (normalizedView === "matchings") {
+        document.getElementById("filter-status").value = "all";
+        document.getElementById("filter-source").value = "all";
+        await loadMatchings();
+      }
+      if (normalizedView === "invitations") {
+        document.getElementById("invite-filter-status").value = "all";
+        await loadInvitations();
+      }
+    }
+
+    function renderHistoryQuestionnaireRows(role) {
+      const isCandidate = role === "candidate";
+      const search = normalizeText(state.dataHistorySearch || "");
+      const sourceRows = isCandidate ? state.candidateResponses.rows : state.employerResponses.rows;
+      const rows = sourceRows.filter((row) => {
+        if (!search) return true;
+        return normalizeText([
+          row.title,
+          row.subtitle,
+          row.email,
+          row.company_name,
+          row.response_received_at,
+          row.submitted_at,
+          row.response_status,
+          row.matching_count,
+        ].join(" ")).includes(search);
+      });
+      const list = document.getElementById(isCandidate ? "history-candidate-list" : "history-employer-list");
+      if (!list) return;
+      if (!rows.length) {
+        list.innerHTML = `<div class="empty-state">${search ? "Aucune réponse ne correspond à la recherche." : "Aucune réponse chargée."}</div>`;
+        return;
+      }
+      list.innerHTML = rows.map((row) => `
+        <article class="matching-card">
+          <div class="matching-summary">
+            <div>
+              <h2>${esc(row.title || (isCandidate ? "Candidat" : "Employeur"))}</h2>
+              <p>${esc(row.subtitle || "-")}</p>
+              <div class="summary-tags">
+                <span class="pill ${isCandidate ? "role-candidate" : "role-employer"}">${esc(isCandidate ? "Candidat" : "Employeur")}</span>
+                <span class="pill ${row.is_active === false ? "refused" : "accepted"}">${esc(row.is_active === false ? "Désactivée" : "Active")}</span>
+                <span class="pill">Réponse : ${esc(row.response_received_at || row.submitted_at || "-")}</span>
+                <span class="pill">${esc(row.matching_count || 0)} matching(s)</span>
+              </div>
+            </div>
+          </div>
+        </article>
+      `).join("");
+    }
+
+    function renderHistoryMatchingRows() {
+      const list = document.getElementById("history-matching-list");
+      if (!list) return;
+      const search = normalizeText(state.dataHistorySearch || "");
+      const rows = state.matchings.rows.filter((row) => {
+        if (!search) return true;
+        return normalizeText([
+          row.candidat?.nom,
+          row.candidat?.email,
+          row.candidat_id,
+          row.employeur?.employeur,
+          row.employeur?.contact,
+          row.employeur?.poste,
+          row.employeur?.pays,
+          row.besoin_id,
+          row.score,
+          adminStatusLabel(row.admin_status),
+          workflowStatusLabel(row.workflow_status),
+          employerResponseLabel(row.employer_response),
+          row.date_calcul,
+        ].join(" ")).includes(search);
+      });
+      if (!rows.length) {
+        list.innerHTML = `<div class="empty-state">${search ? "Aucun matching ne correspond à la recherche." : "Aucun matching chargé."}</div>`;
+        return;
+      }
+      list.innerHTML = rows.map((row) => `
+        <article class="matching-card">
+          <div class="matching-summary">
+            <div>
+              <h2>${esc(row.candidat?.nom || "Candidat")} · ${esc(row.employeur?.employeur || "Employeur")}</h2>
+              <p>${esc(row.employeur?.poste || "-")} · ${esc(row.employeur?.pays || row.employeur?.localisation || "-")}</p>
+              <div class="summary-tags">
+                <span class="pill">Score : ${esc(row.score ?? "-")}/100</span>
+                <span class="pill">Décision : ${esc(adminStatusLabel(row.admin_status))}</span>
+                <span class="pill">Workflow : ${esc(workflowStatusLabel(row.workflow_status))}</span>
+                <span class="pill">Créé : ${esc(row.date_calcul || "-")}</span>
+              </div>
+            </div>
+          </div>
+        </article>
+      `).join("");
+    }
+
+    function renderHistoryInvitationRows() {
+      const list = document.getElementById("history-invitation-list");
+      if (!list) return;
+      const search = normalizeText(state.dataHistorySearch || "");
+      const rows = state.invitations.rows.filter((row) => {
+        if (row.invitation_status === "invitation_a_envoyer") return false;
+        if (!search) return true;
+        return normalizeText([
+          row.email,
+          row.role,
+          row.company_name,
+          row.first_name,
+          row.last_name,
+          row.invitation_status,
+          invitationStatusLabel(row.invitation_status),
+          row.sent_at,
+          row.invitation_status_updated_at,
+        ].join(" ")).includes(search);
+      });
+      if (!rows.length) {
+        list.innerHTML = `<div class="empty-state">${search ? "Aucune invitation ne correspond à la recherche." : "Aucune invitation envoyée ou historisée chargée."}</div>`;
+        return;
+      }
+      list.innerHTML = rows.map((row) => `
+        <article class="invitation-row">
+          <div>
+            <strong>${esc(row.email || "-")}</strong>
+            <div class="invitation-meta">
+              ${esc(row.role === "employer" ? "Employeur" : "Candidat")}
+              · ${esc(row.company_name || [row.first_name, row.last_name].filter(Boolean).join(" ") || "-")}
+              · ${esc(row.sent_at || row.invitation_status_updated_at || "-")}
+            </div>
+          </div>
+          <span class="pill ${esc(invitationStatusClass(row.invitation_status))}">${esc(invitationStatusLabel(row.invitation_status))}</span>
+        </article>
+      `).join("");
+    }
+
+    function renderDataHistoryView() {
+      if (state.dataHistoryView === "candidate-responses") renderHistoryQuestionnaireRows("candidate");
+      if (state.dataHistoryView === "employer-responses") renderHistoryQuestionnaireRows("employer");
+      if (state.dataHistoryView === "matchings") renderHistoryMatchingRows();
+      if (state.dataHistoryView === "invitations") renderHistoryInvitationRows();
+    }
+
     function clearResponseWatch(role) {
       const stateKey = role === "candidate" ? "candidateResponses" : "employerResponses";
       state[stateKey].unseenCount = 0;
@@ -1930,18 +2806,48 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,</pre>
 
     function renderBrevoStatus(health) {
       const message = health?.message || "état inconnu";
+      const diagnosticList = document.getElementById("brevo-diagnostic-list");
+      if (diagnosticList) {
+        const statusLabels = {
+          ok: "OK",
+          warning: "À vérifier",
+          error: "Erreur",
+          pending: "En cours",
+          not_checked: "Non vérifié"
+        };
+        const checks = Array.isArray(health?.checks) ? health.checks : [];
+        diagnosticList.innerHTML = checks.length
+          ? checks.map((check) => {
+              const status = String(check.status || "not_checked");
+              const label = statusLabels[status] || status;
+              return `
+                <div class="technical-check-item">
+                  <div>
+                    <strong>${esc(check.label || "Contrôle")}</strong>
+                    <p>${esc(check.detail || "")}</p>
+                  </div>
+                  <span class="technical-check-status ${esc(status)}">${esc(label)}</span>
+                </div>
+              `;
+            }).join("")
+          : `<div class="technical-check-item"><div><strong>Diagnostic indisponible</strong><p>Aucun détail technique n’a été renvoyé par le serveur.</p></div><span class="technical-check-status not_checked">Non vérifié</span></div>`;
+      }
       if (!health?.configured) {
+        document.getElementById("brevo-health-title").textContent = "Configuration incomplète";
         setStatus("brevo-status-line", `Brevo : configuration incomplète. ${message}`);
         return;
       }
       if (health.api_ok === false) {
+        document.getElementById("brevo-health-title").textContent = "Incident Brevo";
         setStatus("brevo-status-line", `Brevo : incident API. ${message}`);
         return;
       }
       if (health.api_ok === true) {
+        document.getElementById("brevo-health-title").textContent = "Brevo opérationnel";
         setStatus("brevo-status-line", `Brevo : opérationnel. ${message}`);
         return;
       }
+      document.getElementById("brevo-health-title").textContent = "Configuration OK";
       setStatus("brevo-status-line", `Brevo : configuration OK. ${message}`);
     }
 
@@ -1977,6 +2883,355 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,</pre>
       return `<span class="pill pending">Employeur : WhatsApp non répondu</span>`;
     }
 
+    function matchingNextAction(row) {
+      if (row.workflow_status === "accepte_employeur") {
+        if (row.employer_whatsapp_consent === "yes") {
+          return {
+            title: "Action attendue : créer ou renseigner la mise en relation",
+            text: "L’employeur a accepté le candidat et WhatsApp est validé. Tu dois créer le groupe WhatsApp, puis marquer la mise en relation comme faite.",
+            note: "Si le groupe est déjà créé, utilise directement “Mise en relation faite”."
+          };
+        }
+        if (row.employer_whatsapp_consent === "no") {
+          return {
+            title: "Action attendue : suivre la mise en relation hors WhatsApp",
+            text: "L’employeur a accepté le candidat mais ne souhaite pas WhatsApp. Tu dois suivre le contact par email ou téléphone, puis mettre à jour le résultat.",
+            note: "Cette situation reste utile pour comparer le parcours avec et sans WhatsApp."
+          };
+        }
+        return {
+          title: "Action attendue : choisir la suite de mise en relation",
+          text: "L’employeur a accepté le candidat, mais n’a pas répondu sur WhatsApp. Tu dois soit le relancer/confirmer son canal, soit traiter cette mise en relation hors WhatsApp.",
+          note: "Une fois la suite décidée, mets à jour le workflow ou le résultat pour sortir cette carte de la file."
+        };
+      }
+      if (row.workflow_status === "a_valider_admin" || row.admin_status === "pending") {
+        return {
+          title: "Action attendue : arbitrer le matching",
+          text: "Le système propose ce rapprochement. Tu dois vérifier les écarts candidat/employeur puis accepter ou refuser le matching.",
+          note: "Le score aide à prioriser, mais la décision finale reste métier."
+        };
+      }
+      if (row.workflow_status === "envoye_employeur") {
+        return {
+          title: "Action attendue : attendre ou relancer l’employeur",
+          text: "Le matching a été envoyé à l’employeur. Tant qu’il n’a pas répondu, il n’y a pas de décision métier à prendre ici.",
+          note: "La relance doit être gérée depuis la partie invitations/relances si elle est nécessaire."
+        };
+      }
+      return {
+        title: "Action attendue : contrôler l’état",
+        text: "Cette carte est surtout informative. Si elle apparaît dans une file à traiter, vérifie le workflow et mets-le à jour.",
+        note: ""
+      };
+    }
+
+    function renderMatchingNextAction(row) {
+      const action = matchingNextAction(row);
+      return `
+        <section class="next-action-box">
+          <strong>${esc(action.title)}</strong>
+          <p>${esc(action.text)}</p>
+          ${action.note ? `<p class="microcopy">${esc(action.note)}</p>` : ""}
+        </section>
+      `;
+    }
+
+    function relationChannel(row) {
+      if (row.relation_channel === "whatsapp") return "WhatsApp";
+      if (row.relation_channel === "email") return "Email";
+      if (row.relation_channel === "telephone") return "Téléphone";
+      if (row.relation_channel === "autre") return "Autre";
+      if (row.employer_whatsapp_consent === "yes") return "WhatsApp";
+      if (row.employer_whatsapp_consent === "no") return "Email / téléphone";
+      return "Canal à décider";
+    }
+
+    function relationResultLabel(result) {
+      const labels = {
+        contact_etabli: "Contact établi",
+        entretien_prevu: "Entretien prévu",
+        entretien_realise: "Entretien réalisé",
+        sans_reponse_candidat: "Sans réponse candidat",
+        sans_reponse_employeur: "Sans réponse employeur",
+        refus_candidat: "Refus candidat",
+        refus_employeur: "Refus employeur",
+        sans_suite: "Sans suite",
+        embauche_confirmee: "Embauche confirmée",
+        autre: "Autre",
+      };
+      return labels[result] || "Non renseigné";
+    }
+
+    function relationResultOptions(selectedValue = "") {
+      const options = [
+        ["", "Sélectionner un résultat"],
+        ["contact_etabli", "Contact établi"],
+        ["entretien_prevu", "Entretien prévu"],
+        ["entretien_realise", "Entretien réalisé"],
+        ["sans_reponse_candidat", "Sans réponse candidat"],
+        ["sans_reponse_employeur", "Sans réponse employeur"],
+        ["refus_candidat", "Refus candidat"],
+        ["refus_employeur", "Refus employeur"],
+        ["sans_suite", "Sans suite"],
+        ["embauche_confirmee", "Embauche confirmée"],
+        ["autre", "Autre"],
+      ];
+      return options.map(([value, label]) => `<option value="${esc(value)}" ${value === selectedValue ? "selected" : ""}>${esc(label)}</option>`).join("");
+    }
+
+    function relationChannelOptions(row) {
+      const selectedValue = row.relation_channel || (row.employer_whatsapp_consent === "yes" ? "whatsapp" : "");
+      const options = [
+        ["", "Choisir le canal réel"],
+        ["whatsapp", "WhatsApp"],
+        ["email", "Email"],
+        ["telephone", "Téléphone"],
+        ["autre", "Autre"],
+      ];
+      return options.map(([value, label]) => `<option value="${esc(value)}" ${value === selectedValue ? "selected" : ""}>${esc(label)}</option>`).join("");
+    }
+
+    function relationViewTarget(target) {
+      const map = {
+        "to-launch": "to-launch",
+        "in-progress": "in-progress",
+        "result-needed": "result-needed",
+        done: "done",
+      };
+      return map[target] || "";
+    }
+
+    function relationViewCopy(view) {
+      const copy = {
+        "to-launch": {
+          title: "Mises en relation à lancer",
+          text: "Matchings acceptés par l’employeur pour lesquels il faut organiser le canal de contact."
+        },
+        "in-progress": {
+          title: "Mises en relation en cours",
+          text: "Contacts déjà lancés. Il faut suivre l’échange jusqu’à un résultat exploitable."
+        },
+        "result-needed": {
+          title: "Résultats à renseigner",
+          text: "Mises en relation faites pour lesquelles il faut renseigner l’issue métier. Version actuelle : les résultats fins nécessitent encore une évolution des données."
+        },
+        done: {
+          title: "Mises en relation terminées",
+          text: "Historique des mises en relation arrivées à un statut final connu."
+        },
+      };
+      return copy[view] || copy["to-launch"];
+    }
+
+    function setRelationsView(view) {
+      const normalizedView = relationViewTarget(view) || "to-launch";
+      state.relationsView = normalizedView;
+      const copy = relationViewCopy(normalizedView);
+      document.getElementById("relations-view-title").textContent = copy.title;
+      document.getElementById("relations-view-copy").textContent = copy.text;
+      for (const button of document.querySelectorAll("[data-open-relations]")) {
+        button.classList.toggle("active", relationViewTarget(button.dataset.openRelations) === normalizedView);
+      }
+      renderRelationRows();
+    }
+
+    function relationRowsForView() {
+      const rows = Array.isArray(state.matchings.rows) ? state.matchings.rows : [];
+      if (state.relationsView === "to-launch") {
+        return rows.filter((row) => row.workflow_status === "accepte_employeur");
+      }
+      if (state.relationsView === "in-progress") {
+        return rows.filter((row) => row.workflow_status === "mise_en_relation_faite");
+      }
+      if (state.relationsView === "result-needed") {
+        return rows.filter((row) => row.workflow_status === "mise_en_relation_faite");
+      }
+      if (state.relationsView === "done") {
+        return rows.filter((row) => ["embauche_confirmee", "relation_terminee", "refuse_employeur", "refuse_admin"].includes(row.workflow_status));
+      }
+      return rows;
+    }
+
+    function relationActionBox(row) {
+      if (state.relationsView === "to-launch") {
+        if (row.employer_whatsapp_consent === "yes") {
+          return {
+            title: "Action attendue : créer le groupe WhatsApp",
+            text: "L’employeur a accepté WhatsApp. Prépare le groupe, copie le message d’ouverture, puis marque la mise en relation comme faite."
+          };
+        }
+        if (row.employer_whatsapp_consent === "no") {
+          return {
+            title: "Action attendue : traiter hors WhatsApp",
+            text: "L’employeur est intéressé sans WhatsApp. Lance le contact par email ou téléphone, puis marque la mise en relation comme faite."
+          };
+        }
+        return {
+          title: "Action attendue : choisir le canal",
+          text: "L’employeur a accepté le candidat mais n’a pas répondu sur WhatsApp. Décide si tu relances WhatsApp ou si tu traites hors WhatsApp."
+        };
+      }
+      if (state.relationsView === "result-needed") {
+        return {
+          title: "Action attendue : renseigner le résultat",
+          text: "La relation est lancée. Renseigne le résultat réel pour pouvoir comparer les parcours WhatsApp et hors WhatsApp."
+        };
+      }
+      if (state.relationsView === "in-progress") {
+        return {
+          title: "Action attendue : suivre l’échange",
+          text: "Surveille si le contact aboutit à un entretien, une embauche ou une clôture sans suite."
+        };
+      }
+      return {
+        title: "Aucune action attendue",
+        text: "Cette carte est conservée pour historique."
+      };
+    }
+
+    function renderRelationRows() {
+      const list = document.getElementById("relations-list");
+      if (!list) return;
+      const search = normalizeText(state.relationsSearch || "");
+      const rows = relationRowsForView().filter((row) => {
+        if (!search) return true;
+        return normalizeText([
+          row.candidat?.nom,
+          row.candidat?.email,
+          row.employeur?.employeur,
+          row.employeur?.poste,
+          row.employeur?.contact,
+          row.employeur?.pays,
+          relationChannel(row),
+          relationResultLabel(row.relation_result),
+          workflowStatusLabel(row.workflow_status),
+          employerResponseLabel(row.employer_response),
+        ].join(" ")).includes(search);
+      });
+      document.getElementById("relations-status-line").textContent = `${rows.length} mise(s) en relation affichée(s).`;
+      if (!rows.length) {
+        list.innerHTML = `<div class="empty-state">Aucune mise en relation ne correspond à cette vue.</div>`;
+        return;
+      }
+      list.innerHTML = rows.map((row) => {
+        const action = relationActionBox(row);
+        const whatsappMessage = `Bonjour, je crée ce groupe pour faciliter la mise en relation entre ${row.candidat?.nom || "le candidat"} et ${row.employeur?.employeur || "l’employeur"} dans le cadre de Match Europe.`;
+        const canMarkRelationDone = ["to-launch"].includes(state.relationsView);
+        const canSetResult = ["in-progress", "result-needed"].includes(state.relationsView);
+        return `
+          <article class="matching-card" data-record-id="${esc(row.record_id)}">
+            <div class="matching-summary">
+              <div>
+                <h2>${esc(row.candidat?.nom || "Candidat")} · ${esc(row.employeur?.employeur || "Employeur")}</h2>
+                <p>${esc(row.employeur?.poste || "-")} · ${esc(row.employeur?.pays || "-")}</p>
+                <div class="summary-tags">
+                  <span class="pill">Canal : ${esc(relationChannel(row))}</span>
+                  <span class="pill">Résultat : ${esc(relationResultLabel(row.relation_result))}</span>
+                  <span class="pill">Workflow : ${esc(workflowStatusLabel(row.workflow_status))}</span>
+                  ${employerWhatsappBadge(row)}
+                  <span class="pill">Employeur : ${esc(employerResponseLabel(row.employer_response))}</span>
+                </div>
+              </div>
+              <div class="summary-score">
+                <div class="score-box">
+                  <strong>${esc(row.score ?? "-")}</strong>
+                  <span>score global / 100</span>
+                </div>
+              </div>
+            </div>
+            <section class="next-action-box">
+              <strong>${esc(action.title)}</strong>
+              <p>${esc(action.text)}</p>
+            </section>
+            <div class="compare-grid">
+              <section class="compare-card">
+                <h3>Contact</h3>
+                <dl class="detail-list">
+                  <div class="detail-row"><dt>Candidat</dt><dd>${esc(row.candidat?.nom || "-")} · ${esc(row.candidat?.email || "-")}</dd></div>
+                  <div class="detail-row"><dt>Employeur</dt><dd>${esc(row.employeur?.contact || row.employeur?.employeur || "-")}</dd></div>
+                  <div class="detail-row"><dt>Téléphone employeur</dt><dd>${esc(row.employer_whatsapp_phone || row.employeur?.telephone || "-")}</dd></div>
+                  <div class="detail-row"><dt>Mise en relation</dt><dd>${esc(row.mise_en_relation_at || "-")}</dd></div>
+                  <div class="detail-row"><dt>Résultat</dt><dd>${esc(relationResultLabel(row.relation_result))}${row.relation_result_at ? ` · ${esc(row.relation_result_at)}` : ""}</dd></div>
+                </dl>
+              </section>
+              <section class="compare-card">
+                <h3>Message WhatsApp à copier</h3>
+                <p class="microcopy">${esc(whatsappMessage)}</p>
+              </section>
+            </div>
+            <section class="notes-box" style="margin-top:1rem;">
+              <h4>Note interne</h4>
+              <div class="form-grid">
+                <label class="field">
+                  <span>Canal réel utilisé</span>
+                  <select id="relation-channel-${esc(row.record_id)}">
+                    ${relationChannelOptions(row)}
+                  </select>
+                </label>
+                <label class="field">
+                  <span>Résultat</span>
+                  <select id="relation-result-${esc(row.record_id)}">
+                    ${relationResultOptions(row.relation_result || "")}
+                  </select>
+                </label>
+              </div>
+              <textarea id="relation-note-${esc(row.record_id)}" placeholder="Optionnel. Note interne conservée dans l’admin.">${esc(row.admin_decision_note || "")}</textarea>
+              <textarea id="relation-result-note-${esc(row.record_id)}" placeholder="Optionnel. Précision sur le résultat.">${esc(row.relation_result_note || "")}</textarea>
+              <div class="hero-actions">
+                ${canMarkRelationDone ? `<button class="btn-neutral" type="button" data-relation-workflow="mise_en_relation_faite">Mise en relation faite</button>` : ""}
+                ${canSetResult ? `<button class="btn-neutral" type="button" data-relation-result-action>Enregistrer le résultat</button>` : ""}
+              </div>
+            </section>
+          </article>
+        `;
+      }).join("");
+      for (const button of list.querySelectorAll("[data-relation-workflow]")) {
+        button.addEventListener("click", async (event) => {
+          const card = event.currentTarget.closest(".matching-card");
+          const recordId = card?.dataset.recordId;
+          const workflowStatus = event.currentTarget.dataset.relationWorkflow;
+          const relationChannelValue = document.getElementById(`relation-channel-${recordId}`)?.value || "";
+          const note = document.getElementById(`relation-note-${recordId}`)?.value || "";
+          if (!recordId || !workflowStatus) return;
+          await submitRelationWorkflow(recordId, workflowStatus, note, { relation_channel: relationChannelValue });
+        });
+      }
+      for (const button of list.querySelectorAll("[data-relation-result-action]")) {
+        button.addEventListener("click", async (event) => {
+          const card = event.currentTarget.closest(".matching-card");
+          const recordId = card?.dataset.recordId;
+          const relationChannelValue = document.getElementById(`relation-channel-${recordId}`)?.value || "";
+          const relationResultValue = document.getElementById(`relation-result-${recordId}`)?.value || "";
+          const note = document.getElementById(`relation-note-${recordId}`)?.value || "";
+          const relationResultNote = document.getElementById(`relation-result-note-${recordId}`)?.value || "";
+          if (!recordId || !relationResultValue) {
+            setStatus("relations-status-line", "Erreur : sélectionnez un résultat.");
+            return;
+          }
+          await submitRelationWorkflow(recordId, "mise_en_relation_faite", note, {
+            relation_channel: relationChannelValue,
+            relation_result: relationResultValue,
+            relation_result_note: relationResultNote,
+          });
+        });
+      }
+    }
+
+    async function loadRelations() {
+      document.getElementById("filter-status").value = "all";
+      document.getElementById("filter-source").value = "all";
+      await loadMatchings();
+      renderRelationRows();
+    }
+
+    async function submitRelationWorkflow(recordId, workflowStatus, note, extraPayload = {}) {
+      setStatus("relations-status-line", "Mise à jour de la mise en relation...");
+      await submitWorkflow(recordId, workflowStatus, note, extraPayload);
+      setStatus("relations-status-line", "Mise en relation mise à jour.");
+      await loadRelations();
+    }
+
     function workflowStatusLabel(status) {
       if (status === "calcule") return "calculé";
       if (status === "a_valider_admin") return "à valider";
@@ -1987,6 +3242,7 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,</pre>
       if (status === "refuse_employeur") return "refusé employeur";
       if (status === "mise_en_relation_faite") return "mise en relation faite";
       if (status === "embauche_confirmee") return "embauche confirmée";
+      if (status === "relation_terminee") return "relation terminée";
       return status || "inconnu";
     }
 
@@ -2218,6 +3474,11 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,</pre>
       const search = normalizeText(document.getElementById("invite-filter-search").value.trim());
       const statusFilter = document.getElementById("invite-filter-status").value;
       const filtered = state.invitations.rows.filter((row) => {
+        if (state.invitations.view === "errors") {
+          const isError = row.invitation_status === "erreur_envoi";
+          const isDuplicate = row.duplicate_followup_status === "pending";
+          if (!isError && !isDuplicate) return false;
+        } else {
         if (statusFilter === "duplicate_followup_pending") {
           return row.duplicate_followup_status === "pending";
         }
@@ -2231,6 +3492,7 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,</pre>
         }
         if (statusFilter !== "all" && statusFilter !== "reminder_due" && statusFilter !== "duplicate_followup_pending" && row.invitation_status !== statusFilter) {
           return false;
+        }
         }
         if (!search) return true;
         const haystack = [
@@ -2310,6 +3572,10 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,</pre>
                 <span>${esc(row.matching_status || "-")}</span>
               </div>
               ${row.role === "candidate" ? `
+                <div class="meta-box">
+                  <strong>Campagne</strong>
+                  <span>${esc(row.campaign_type === "eures_cv_deposit" ? "CV déposé sur EURES" : "Générique / métier ciblé")}</span>
+                </div>
                 <div class="meta-box">
                   <strong>Métiers ciblés</strong>
                   <span>${esc((row.target_job_labels || []).join(" · ") || "-")}</span>
@@ -2653,6 +3919,7 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,</pre>
         }
         if (!silent || hasChanged) {
           renderQuestionnaireResponses(role);
+          renderDataHistoryView();
           renderManualMatchingOptions();
         }
         renderGlobalResponseWatch();
@@ -2815,9 +4082,138 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,</pre>
       }
     }
 
+    async function sendSelectedEmailTest() {
+      const button = document.getElementById("email-test-send-btn");
+      const emailType = document.getElementById("email-test-type")?.value || "";
+      const recipientEmail = document.getElementById("email-test-recipient")?.value.trim() || "";
+      if (!recipientEmail) {
+        setStatus("email-test-status-line", "Erreur : indiquez l’adresse qui doit recevoir le test.");
+        return;
+      }
+      if (button) button.disabled = true;
+      setStatus("email-test-status-line", "Envoi du test en cours...");
+      try {
+        const response = await fetch(apiUrl("/admin/email-tests/send"), {
+          method: "POST",
+          credentials: "same-origin",
+          headers: {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+          },
+          body: JSON.stringify({
+            email_type: emailType,
+            recipient_email: recipientEmail,
+          }),
+        });
+        const payload = await response.json();
+        if (!response.ok || !payload.ok) {
+          throw new Error(payload.error || `Erreur API (${response.status})`);
+        }
+        setStatus(
+          "email-test-status-line",
+          `Email test envoyé à ${payload.recipient_email || recipientEmail}. Objet : ${payload.subject || "-"}`
+        );
+      } catch (error) {
+        setStatus("email-test-status-line", `Erreur : ${error.message || "envoi impossible"}`);
+      } finally {
+        if (button) button.disabled = false;
+      }
+    }
+
+    function setTechnicalView(view) {
+      const implementedViews = ["health", "brevo", "email-tests"];
+      const placeholderViews = Object.keys(technicalPlaceholderCopy);
+      const normalizedView = [...implementedViews, ...placeholderViews].includes(view) ? view : "health";
+      const visibleSection = implementedViews.includes(normalizedView) ? normalizedView : "placeholder";
+      state.technicalView = normalizedView;
+      for (const section of document.querySelectorAll("[data-technical-section]")) {
+        section.hidden = section.dataset.technicalSection !== visibleSection;
+      }
+      if (visibleSection === "placeholder") {
+        const copy = technicalPlaceholderCopy[normalizedView] || technicalPlaceholderCopy.logs;
+        document.getElementById("technical-placeholder-title").textContent = copy.title;
+        document.getElementById("technical-placeholder-text").textContent = copy.text;
+      }
+      for (const button of document.querySelectorAll(".admin-side-nav button")) {
+        const target = button.dataset.openList || "";
+        if (target.startsWith("technical-")) {
+          button.classList.toggle("active", technicalViewByTarget[target] === normalizedView);
+        }
+      }
+    }
+
+    function setMatchingAdminView(view) {
+      state.matchings.view = view || "pending";
+      const copyByView = {
+        all: {
+          title: "Tous les matchings",
+          copy: "Vue complète d’historique et de contrôle. Elle n’est pas une file imposée par le système."
+        },
+        pending: {
+          title: "Matchings à valider",
+          copy: "Matchings proposés par le système qui demandent une décision admin."
+        },
+        "employer-responded": {
+          title: "Employeurs ayant répondu",
+          copy: "Retours employeurs reçus qui demandent une suite opérationnelle."
+        },
+        accepted: {
+          title: "Mises en relation en cours",
+          copy: "Matchings déjà acceptés. Cette vue sert au suivi, pas au traitement initial."
+        },
+        "manual-sent": {
+          title: "Matchings manuels envoyés",
+          copy: "Historique des matchings créés manuellement et déjà envoyés."
+        }
+      };
+      const copy = copyByView[state.matchings.view] || copyByView.pending;
+      const titleEl = document.getElementById("matching-view-title");
+      const copyEl = document.getElementById("matching-view-copy");
+      if (titleEl) titleEl.textContent = copy.title;
+      if (copyEl) copyEl.textContent = copy.copy;
+      const statusFilter = document.getElementById("filter-status");
+      const sourceFilter = document.getElementById("filter-source");
+      if (statusFilter) {
+        statusFilter.hidden = ["pending", "employer-responded"].includes(state.matchings.view);
+      }
+      if (sourceFilter) {
+        sourceFilter.hidden = ["pending", "employer-responded"].includes(state.matchings.view);
+      }
+    }
+
+    function matchingViewTarget(target) {
+      const map = {
+        "matchings-all": "all",
+        "matchings-pending": "pending",
+        "matchings-employer-responded": "employer-responded",
+        "matchings-accepted": "accepted",
+        "matchings-manual-sent": "manual-sent"
+      };
+      return map[target] || "";
+    }
+
     function openAdminList(target) {
       if (target === "invitations") {
         activateTab("invitations");
+        setInvitationView("dashboard");
+        loadInvitations();
+        return;
+      }
+      if (target === "matchings-manual-builder") {
+        activateTab("invitations");
+        setInvitationView("manual-matching");
+        Promise.all([
+          loadQuestionnaireResponses("candidate"),
+          loadQuestionnaireResponses("employer"),
+        ]).then(() => {
+          renderManualMatchingOptions();
+          renderManualMatchingPreview();
+        });
+        return;
+      }
+      if (invitationViewTarget(target)) {
+        activateTab("invitations");
+        setInvitationView(invitationViewTarget(target));
         loadInvitations();
         return;
       }
@@ -2832,6 +4228,7 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,</pre>
         return;
       }
       if (target === "matchings-all") {
+        setMatchingAdminView("all");
         document.getElementById("filter-status").value = "all";
         document.getElementById("filter-source").value = "all";
         activateTab("matchings");
@@ -2839,13 +4236,23 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,</pre>
         return;
       }
       if (target === "matchings-pending") {
+        setMatchingAdminView("pending");
         document.getElementById("filter-status").value = "pending";
         document.getElementById("filter-source").value = "all";
         activateTab("matchings");
         loadMatchings();
         return;
       }
+      if (target === "matchings-employer-responded") {
+        setMatchingAdminView("employer-responded");
+        document.getElementById("filter-status").value = "employer_responded";
+        document.getElementById("filter-source").value = "all";
+        activateTab("matchings");
+        loadMatchings();
+        return;
+      }
       if (target === "matchings-accepted") {
+        setMatchingAdminView("accepted");
         document.getElementById("filter-status").value = "accepted";
         document.getElementById("filter-source").value = "all";
         activateTab("matchings");
@@ -2853,17 +4260,20 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,</pre>
         return;
       }
       if (target === "matchings-manual-sent") {
+        setMatchingAdminView("manual-sent");
         document.getElementById("filter-status").value = "accepted";
         document.getElementById("filter-source").value = "manual";
         activateTab("matchings");
         loadMatchings();
         return;
       }
-      if (target === "matchings-manual-builder") {
-        activateTab("matchings");
-        window.setTimeout(() => {
-          document.getElementById("manual-match-candidate")?.scrollIntoView({ behavior: "smooth", block: "start" });
-        }, 60);
+      if (target.startsWith("technical-")) {
+        activateTab("cockpit");
+        const technicalView = technicalViewByTarget[target] || "health";
+        setTechnicalView(technicalView);
+        if (technicalView === "brevo") {
+          loadBrevoHealth();
+        }
         return;
       }
       if (target === "tasks") {
@@ -2871,10 +4281,21 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,</pre>
         loadTasks();
         return;
       }
+      if (target === "no-match") {
+        activateTab("no-match");
+        loadNoMatch();
+        return;
+      }
+      if (target === "new-jobs") {
+        activateTab("new-jobs");
+        loadNewJobs();
+        return;
+      }
     }
 
     async function openMatchingRecord(recordId) {
       if (!recordId) return;
+      setMatchingAdminView("all");
       document.getElementById("filter-status").value = "all";
       document.getElementById("filter-source").value = "all";
       activateTab("matchings");
@@ -2894,7 +4315,7 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,</pre>
     async function loadCockpit() {
       if (state.cockpit.loading) return;
       state.cockpit.loading = true;
-      setStatus("cockpit-status-line", "Chargement du cockpit...");
+      setStatus("cockpit-status-line", "Vérification technique en cours...");
       try {
         const response = await fetch(apiUrl("/admin/cockpit"), { credentials: "same-origin" });
         const payload = await response.json();
@@ -2902,10 +4323,10 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,</pre>
           throw new Error(payload.error || `Erreur API (${response.status})`);
         }
         state.cockpit.data = payload.cockpit || null;
+        updateTaskMenuBadgesFromCockpit();
         renderCockpit();
-        setStatus("cockpit-status-line", "Cockpit chargé.");
+        setStatus("cockpit-status-line", "Contrôle technique chargé.");
       } catch (error) {
-        document.getElementById("cockpit-grid").innerHTML = `<div class="empty-state">${esc(error.message || "Erreur de chargement")}</div>`;
         setStatus("cockpit-status-line", `Erreur : ${error.message || "chargement impossible"}`);
       } finally {
         state.cockpit.loading = false;
@@ -2930,6 +4351,7 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,</pre>
         document.getElementById("task-kpi-pending").textContent = payload.stats?.pending ?? 0;
         document.getElementById("task-kpi-done").textContent = payload.stats?.done ?? 0;
         document.getElementById("task-kpi-dismissed").textContent = payload.stats?.dismissed ?? 0;
+        setTaskMenuCount("tasks", payload.stats?.pending ?? 0);
         renderTaskRows();
         setStatus("task-status-line", `${state.tasks.rows.length} tâche(s) chargée(s).`);
       } catch (error) {
@@ -2967,7 +4389,11 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,</pre>
         );
         updateInvitationKpis(payload.stats || {});
         renderInvitations();
+        renderDataHistoryView();
         setStatus("invite-status-line", `${state.invitations.rows.length} invitation(s) chargée(s).`);
+        if (state.invitations.view === "errors") {
+          await autoDeleteDuplicateInvitations();
+        }
       } catch (error) {
         document.getElementById("invitation-list").innerHTML = `<div class="empty-state">${esc(error.message || "Erreur de chargement")}</div>`;
         setStatus("invite-status-line", `Erreur : ${error.message || "chargement impossible"}`);
@@ -3088,6 +4514,38 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,</pre>
       }
     }
 
+    async function autoDeleteDuplicateInvitations() {
+      const duplicates = state.invitations.rows.filter((row) => row.duplicate_followup_status === "pending");
+      if (!duplicates.length) {
+        return 0;
+      }
+      setStatus("invite-status-line", `Suppression automatique de ${duplicates.length} doublon(s)...`);
+      let deletedCount = 0;
+      for (const row of duplicates) {
+        const recordId = Number(row.record_id || 0);
+        if (!recordId) continue;
+        const response = await fetch(apiUrl(`/admin/invitations/${recordId}`), {
+          method: "DELETE",
+          credentials: "same-origin",
+          headers: {
+            "Accept": "application/json",
+          },
+        });
+        const payload = await response.json();
+        if (!response.ok || !payload.ok) {
+          throw new Error(payload.error || `Erreur API (${response.status})`);
+        }
+        deletedCount += 1;
+      }
+      const deletedIds = new Set(duplicates.map((row) => Number(row.record_id || 0)).filter(Boolean));
+      state.invitations.rows = state.invitations.rows.filter((row) => !deletedIds.has(Number(row.record_id || 0)));
+      renderInvitations();
+      setStatus("invite-status-line", `${deletedCount} doublon(s) supprimé(s) automatiquement.`);
+      await loadCockpit();
+      await loadTasks();
+      return deletedCount;
+    }
+
     async function submitDuplicateFollowup(recordId, action, note) {
       setStatus("invite-status-line", action === "remind" ? "Envoi de la relance..." : "Clôture de la proposition...");
       try {
@@ -3132,6 +4590,7 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,</pre>
           language: document.getElementById("single-language").value.trim() || "fr",
           source: document.getElementById("single-source").value.trim() || "admin_manual",
           external_ref: document.getElementById("single-external-ref").value.trim(),
+          campaign_type: role === "candidate" ? document.getElementById("single-campaign-type").value.trim() : "",
           target_job_keys: selectedTargetJob ? [selectedTargetJob] : [],
           notes: document.getElementById("single-notes").value.trim(),
           invitation_status: "invitation_a_envoyer",
@@ -3142,12 +4601,16 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,</pre>
     function updateSingleInvitationRoleUI() {
       const role = document.getElementById("single-role").value;
       const targetBlock = document.getElementById("candidate-target-jobs-block");
+      const campaignBlock = document.getElementById("candidate-campaign-type-block");
       if (!targetBlock) return;
       const isCandidate = role === "candidate";
       targetBlock.hidden = !isCandidate;
+      if (campaignBlock) campaignBlock.hidden = !isCandidate;
       if (!isCandidate) {
         const select = document.getElementById("single-target-job");
         if (select) select.value = "";
+        const campaignSelect = document.getElementById("single-campaign-type");
+        if (campaignSelect) campaignSelect.value = "";
       }
     }
 
@@ -3157,6 +4620,7 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,</pre>
 
     function renderCockpit() {
       const container = document.getElementById("cockpit-grid");
+      if (!container) return;
       const data = state.cockpit.data;
       if (!data) {
         container.innerHTML = `<div class="empty-state">Aucune donnée cockpit disponible.</div>`;
@@ -3229,9 +4693,9 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,</pre>
         <article class="cockpit-card cockpit-hero-card">
           <div class="cockpit-hero-grid">
             <div class="cockpit-hero-main">
-              <span class="cockpit-hero-eyebrow">Pilotage quotidien</span>
-              <h2>Agir vite sur ce qui compte aujourd’hui</h2>
-              <p>Ce cockpit met en avant les arbitrages à prendre, les nouvelles entrées à surveiller et la santé du service. L’idée est de vous permettre de piloter l’expérimentation sans chercher l’information dans plusieurs onglets.</p>
+              <span class="cockpit-hero-eyebrow">Surveillance technique</span>
+              <h2>Vérifier que le service fonctionne</h2>
+              <p>Cet onglet sert aux contrôles système : santé Brevo, erreurs d’envoi, activité récente, volumes et délais. Les décisions métier restent dans l’onglet À traiter.</p>
               <div class="cockpit-hero-kpis">
                 <div class="cockpit-hero-kpi">
                   <strong>${esc(pendingDecisions)}</strong>
@@ -3247,7 +4711,7 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,</pre>
                 </div>
               </div>
               <div class="cockpit-hero-actions">
-                <button class="cockpit-primary-btn" type="button" data-open-list="tasks">Ouvrir les décisions à traiter</button>
+                <button class="cockpit-primary-btn" type="button" data-open-list="tasks">Aller aux actions à traiter</button>
                 <button class="cockpit-secondary-btn" type="button" data-open-list="matchings-pending">Voir les matchings à valider</button>
                 <button class="cockpit-secondary-btn" type="button" data-open-list="matchings-manual-builder">Créer un matching manuel</button>
               </div>
@@ -3801,8 +5265,8 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,</pre>
         if (!matchesSearch(row, search)) {
           return false;
         }
-        if (statusFilter === "employer_responded" && !String(row.employer_response || "").trim()) {
-          return false;
+        if (statusFilter === "employer_responded") {
+          return String(row.employer_response || "").trim() && row.workflow_status === "accepte_employeur";
         }
         const isManual = String(row.manual_matching_source || "").trim().toLowerCase() === "admin_manual";
         if (sourceFilter === "manual" && !isManual) {
@@ -3829,6 +5293,10 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,</pre>
           ? `<div class="decision-meta">Retour employeur : <strong>${esc(employerResponseLabel(row.employer_response))}</strong><br>Le : ${esc(row.employer_response_at || "-")}</div>`
           : `<div class="decision-meta">Retour employeur : <strong>aucun retour</strong></div>`;
         const workflowMeta = `<div class="decision-meta">Workflow : <strong>${esc(workflowStatusLabel(row.workflow_status))}</strong><br>Maj : ${esc(row.workflow_status_updated_at || "-")}<br>Par : ${esc(row.workflow_status_updated_by || "-")}</div>`;
+        const primaryActionsHtml = row.workflow_status === "accepte_employeur"
+          ? `<button class="btn-neutral" type="button" data-workflow="mise_en_relation_faite">Mise en relation faite</button>`
+          : `<button class="btn-accept" type="button" data-action="accepted">Accepter</button>
+             <button class="btn-refuse" type="button" data-action="refused">Refuser</button>`;
 
         return `
           <details class="matching-card matching-compact-card" data-record-id="${esc(row.record_id)}">
@@ -3880,11 +5348,12 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,</pre>
                     <span>score global / 100</span>
                   </div>
                   <div class="decision-actions">
-                    <button class="btn-accept" type="button" data-action="accepted">Accepter</button>
-                    <button class="btn-refuse" type="button" data-action="refused">Refuser</button>
+                    ${primaryActionsHtml}
                   </div>
                 </div>
               </div>
+
+              ${renderMatchingNextAction(row)}
 
               <div class="compare-grid">
                 <section class="compare-card">
@@ -4196,7 +5665,15 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,</pre>
         document.getElementById("kpi-pending").textContent = payload.stats?.pending ?? 0;
         document.getElementById("kpi-accepted").textContent = payload.stats?.accepted ?? 0;
         document.getElementById("kpi-refused").textContent = payload.stats?.refused ?? 0;
+        setTaskMenuCount("matchings-pending", payload.stats?.pending ?? 0);
+        if (status === "employer_responded") {
+          const actionableEmployerResponses = state.matchings.rows.filter((row) => (
+            String(row.employer_response || "").trim() && row.workflow_status === "accepte_employeur"
+          )).length;
+          setTaskMenuCount("matchings-employer-responded", actionableEmployerResponses);
+        }
         renderMatchingRows();
+        renderDataHistoryView();
         setStatus("status-line", `${state.matchings.rows.length} matching(s) chargés.`);
       } catch (error) {
         document.getElementById("matching-list").innerHTML = `<div class="empty-state">${esc(error.message || "Erreur de chargement")}</div>`;
@@ -4213,7 +5690,7 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,</pre>
         const health = payload?.brevo || null;
         state.brevo = health;
         renderBrevoStatus(health);
-        if (state.cockpit.data) {
+        if (state.cockpit.data && document.getElementById("cockpit-grid")) {
           renderCockpit();
         }
       } catch (error) {
@@ -4241,6 +5718,7 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,</pre>
         document.getElementById("no-match-kpi-pending").textContent = payload.stats?.pending ?? 0;
         document.getElementById("no-match-kpi-sent").textContent = payload.stats?.sent ?? 0;
         document.getElementById("no-match-kpi-dismissed").textContent = payload.stats?.dismissed ?? 0;
+        setTaskMenuCount("no-match", payload.stats?.pending ?? 0);
         renderNoMatchRows();
         setStatus("no-match-status-line", `${state.noMatch.rows.length} entrée(s) chargée(s).`);
       } catch (error) {
@@ -4271,6 +5749,7 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,</pre>
         document.getElementById("new-job-kpi-pending").textContent = payload.stats?.pending ?? 0;
         document.getElementById("new-job-kpi-processed").textContent = payload.stats?.processed ?? 0;
         document.getElementById("new-job-kpi-dismissed").textContent = payload.stats?.dismissed ?? 0;
+        setTaskMenuCount("new-jobs", payload.stats?.pending ?? 0);
         renderNewJobRows();
         setStatus("new-job-status-line", `${state.newJobs.rows.length} demande(s) chargée(s).`);
       } catch (error) {
@@ -4307,7 +5786,7 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,</pre>
       }
     }
 
-    async function submitWorkflow(recordId, workflowStatus, note) {
+    async function submitWorkflow(recordId, workflowStatus, note, extraPayload = {}) {
       setStatus("status-line", `Mise à jour du workflow ${workflowStatus}...`);
       try {
         const response = await fetch(apiUrl(`/admin/matchings/${recordId}/workflow`), {
@@ -4317,7 +5796,7 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,</pre>
             "Content-Type": "application/json",
             "Accept": "application/json",
           },
-          body: JSON.stringify({ workflow_status: workflowStatus, note }),
+          body: JSON.stringify({ workflow_status: workflowStatus, note, ...extraPayload }),
         });
         const payload = await response.json();
         if (!response.ok || !payload.ok) {
@@ -4429,17 +5908,43 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,</pre>
 
     function activateTab(tabName) {
       state.activeTab = tabName;
+      const mainTabMap = {
+        matchings: "tasks",
+        "no-match": "tasks",
+        "new-jobs": "tasks",
+        "candidate-responses": "data-history",
+        "employer-responses": "data-history",
+      };
+      const activeMainTab = mainTabMap[tabName] || tabName;
       document.getElementById("panel-cockpit").hidden = tabName !== "cockpit";
       document.getElementById("panel-tasks").hidden = tabName !== "tasks";
       document.getElementById("panel-invitations").hidden = tabName !== "invitations";
+      document.getElementById("panel-relations").hidden = tabName !== "relations";
       document.getElementById("panel-candidate-responses").hidden = tabName !== "candidate-responses";
       document.getElementById("panel-employer-responses").hidden = tabName !== "employer-responses";
       document.getElementById("panel-matchings").hidden = tabName !== "matchings";
+      document.getElementById("panel-data-history").hidden = tabName !== "data-history";
       document.getElementById("panel-no-match").hidden = tabName !== "no-match";
       document.getElementById("panel-new-jobs").hidden = tabName !== "new-jobs";
       for (const button of document.querySelectorAll("[data-tab]")) {
-        button.classList.toggle("active", button.dataset.tab === tabName);
+        button.classList.toggle("active", button.dataset.tab === activeMainTab);
       }
+      for (const button of document.querySelectorAll(".admin-side-nav button")) {
+        const target = button.dataset.openList || button.dataset.openAdminData || button.dataset.openHistory || "";
+        const isActive =
+          (tabName === "tasks" && target === "tasks") ||
+          (tabName === "invitations" && invitationViewTarget(target) === state.invitations.view) ||
+          (tabName === "relations" && relationViewTarget(button.dataset.openRelations || target) === state.relationsView) ||
+          (tabName === "cockpit" && target.startsWith("technical-") && technicalViewByTarget[target] === state.technicalView) ||
+          (tabName === "data-history" && dataHistoryViewTarget(target) === state.dataHistoryView) ||
+          (tabName === "matchings" && matchingViewTarget(target) === state.matchings.view) ||
+          (tabName === "no-match" && target === "no-match") ||
+          (tabName === "new-jobs" && target === "new-jobs") ||
+          (tabName === "candidate-responses" && target === "candidate-responses") ||
+          (tabName === "employer-responses" && target === "employer-responses");
+        button.classList.toggle("active", isActive);
+      }
+      updateTaskMenuBadges();
       if (tabName === "candidate-responses") {
         clearResponseWatch("candidate");
         loadQuestionnaireResponses("candidate", { clearUnseen: true });
@@ -4447,6 +5952,18 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,</pre>
       if (tabName === "employer-responses") {
         clearResponseWatch("employer");
         loadQuestionnaireResponses("employer", { clearUnseen: true });
+      }
+      if (tabName === "no-match") {
+        loadNoMatch();
+      }
+      if (tabName === "new-jobs") {
+        loadNewJobs();
+      }
+      if (tabName === "data-history") {
+        setDataHistoryView(state.dataHistoryView || "home");
+      }
+      if (tabName === "relations") {
+        setRelationsView(state.relationsView || "to-launch");
       }
     }
 
@@ -4503,8 +6020,10 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,</pre>
     });
     document.getElementById("cockpit-reload-btn").addEventListener("click", async () => {
       await loadCockpit();
-      await loadTasks();
+      await loadBrevoHealth();
     });
+    document.getElementById("brevo-check-btn").addEventListener("click", loadBrevoHealth);
+    document.getElementById("email-test-send-btn").addEventListener("click", sendSelectedEmailTest);
     updateSingleInvitationRoleUI();
     document.getElementById("task-reload-btn").addEventListener("click", loadTasks);
     document.getElementById("task-filter-status").addEventListener("change", loadTasks);
@@ -4512,12 +6031,76 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,</pre>
     document.getElementById("invite-reload-btn").addEventListener("click", loadInvitations);
     document.getElementById("invite-filter-status").addEventListener("change", loadInvitations);
     document.getElementById("invite-filter-search").addEventListener("input", renderInvitations);
+    document.getElementById("invite-visible-search").addEventListener("input", (event) => {
+      document.getElementById("invite-filter-search").value = event.currentTarget.value;
+      renderInvitations();
+    });
+    document.getElementById("invite-visible-search-clear").addEventListener("click", () => {
+      document.getElementById("invite-visible-search").value = "";
+      document.getElementById("invite-filter-search").value = "";
+      renderInvitations();
+    });
+    document.getElementById("invite-visible-reload-btn").addEventListener("click", loadInvitations);
     document.getElementById("candidate-response-reload-btn").addEventListener("click", () => loadQuestionnaireResponses("candidate", { clearUnseen: true }));
     document.getElementById("candidate-response-filter-search").addEventListener("input", () => renderQuestionnaireResponses("candidate"));
     document.getElementById("employer-response-reload-btn").addEventListener("click", () => loadQuestionnaireResponses("employer", { clearUnseen: true }));
     document.getElementById("employer-response-filter-search").addEventListener("input", () => renderQuestionnaireResponses("employer"));
     document.getElementById("global-watch-open-candidates").addEventListener("click", () => activateTab("candidate-responses"));
     document.getElementById("global-watch-open-employers").addEventListener("click", () => activateTab("employer-responses"));
+    document.getElementById("data-history-reload-btn").addEventListener("click", async () => {
+      if (state.dataHistoryView === "candidate-responses") await loadQuestionnaireResponses("candidate");
+      if (state.dataHistoryView === "employer-responses") await loadQuestionnaireResponses("employer");
+      if (state.dataHistoryView === "matchings") {
+        document.getElementById("filter-status").value = "all";
+        document.getElementById("filter-source").value = "all";
+        await loadMatchings();
+      }
+      if (state.dataHistoryView === "invitations") {
+        document.getElementById("invite-filter-status").value = "all";
+        await loadInvitations();
+      }
+      if (state.dataHistoryView === "home") {
+        await loadQuestionnaireResponses("candidate");
+        await loadQuestionnaireResponses("employer");
+        document.getElementById("filter-status").value = "all";
+        document.getElementById("filter-source").value = "all";
+        await loadMatchings();
+        document.getElementById("invite-filter-status").value = "all";
+        await loadInvitations();
+      }
+    });
+    document.getElementById("data-history-search").addEventListener("input", (event) => {
+      state.dataHistorySearch = event.currentTarget.value || "";
+      renderDataHistoryView();
+    });
+    document.getElementById("data-history-search-clear").addEventListener("click", () => {
+      state.dataHistorySearch = "";
+      document.getElementById("data-history-search").value = "";
+      renderDataHistoryView();
+    });
+    document.getElementById("relations-reload-btn").addEventListener("click", loadRelations);
+    document.getElementById("relations-search").addEventListener("input", (event) => {
+      state.relationsSearch = event.currentTarget.value || "";
+      renderRelationRows();
+    });
+    document.getElementById("relations-search-clear").addEventListener("click", () => {
+      state.relationsSearch = "";
+      document.getElementById("relations-search").value = "";
+      renderRelationRows();
+    });
+    for (const button of document.querySelectorAll("[data-open-relations]")) {
+      button.addEventListener("click", async () => {
+        activateTab("relations");
+        setRelationsView(button.dataset.openRelations);
+        await loadRelations();
+      });
+    }
+    for (const button of document.querySelectorAll("[data-open-admin-data]")) {
+      button.addEventListener("click", () => openAdminList(button.dataset.openAdminData));
+    }
+    for (const button of document.querySelectorAll("[data-open-history]")) {
+      button.addEventListener("click", () => openDataHistoryView(button.dataset.openHistory));
+    }
     document.getElementById("reload-btn").addEventListener("click", async () => {
       await loadBrevoHealth();
       await loadMatchings();
@@ -4536,10 +6119,28 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,</pre>
     document.getElementById("new-job-reload-btn").addEventListener("click", loadNewJobs);
     document.getElementById("new-job-filter-status").addEventListener("change", loadNewJobs);
     document.getElementById("new-job-filter-search").addEventListener("input", renderNewJobRows);
-    for (const button of document.querySelectorAll("[data-tab]")) {
-      button.addEventListener("click", () => activateTab(button.dataset.tab));
+    for (const button of document.querySelectorAll("[data-open-list]")) {
+      button.addEventListener("click", () => openAdminList(button.dataset.openList));
     }
-    activateTab("cockpit");
+    for (const button of document.querySelectorAll("[data-tab]")) {
+      button.addEventListener("click", () => {
+        activateTab(button.dataset.tab);
+        if (button.dataset.tab === "cockpit") {
+          setTechnicalView("health");
+        }
+        if (button.dataset.tab === "invitations") {
+          setInvitationView("dashboard");
+          loadInvitations();
+        }
+        if (button.dataset.tab === "relations") {
+          setRelationsView("to-launch");
+          loadRelations();
+        }
+      });
+    }
+    activateTab("tasks");
+    setTechnicalView("health");
+    setInvitationView("dashboard");
     startQuestionnaireAutoRefresh();
     loadCockpit();
     loadTasks();
@@ -4548,8 +6149,6 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,</pre>
     loadQuestionnaireResponses("employer");
     loadBrevoHealth();
     loadMatchings();
-    loadNoMatch();
-    loadNewJobs();
   </script>
 </body>
 </html>

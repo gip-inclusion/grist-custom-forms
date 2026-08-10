@@ -235,6 +235,25 @@ class BrevoHealthTest(unittest.TestCase):
         self.assertNotIn("Questionnaire candidat EURES beta", html_body)
         self.assertNotIn("Repères de vérification", html_body)
 
+    def test_build_candidate_invitation_email_for_eures_cv_deposit_campaign(self):
+        invitation = {
+            'role': 'candidate',
+            'email': 'candidate@example.org',
+            'language': 'fr',
+            'campaign_type': 'eures_cv_deposit',
+            'invite_token': 'token-demo',
+            'invite_link': 'https://formulaires.inclusion.gouv.fr/forms/eures-beta/questionnaire-candidate?lang=fr&invite_token=token-demo',
+        }
+
+        recipient, subject, text_body, html_body, invite_token, invite_link = app.build_brevo_invitation_email(invitation)
+
+        self.assertEqual(recipient, 'candidate@example.org')
+        self.assertEqual(invite_token, 'token-demo')
+        self.assertIn('Votre CV EURES peut correspondre à des besoins employeurs', subject)
+        self.assertIn('Vous venez de déposer ou d’actualiser votre CV sur EURES', text_body)
+        self.assertIn('Match Europe', text_body)
+        self.assertIn('Compléter mon profil Match Europe', html_body)
+
     @patch.object(app, 'send_brevo_transactional_email')
     @patch.object(app, 'update_eures_invitation_record_by_id')
     @patch.object(app, 'fetch_table_records')
@@ -362,6 +381,41 @@ class BrevoHealthTest(unittest.TestCase):
         self.assertEqual(candidate_call.args[0], 'eric.barthelemy@me.com')
         self.assertTrue(employer_call.args[1].startswith('[TEST] '))
         self.assertTrue(candidate_call.args[1].startswith('[TEST] '))
+
+    @patch.object(app, 'send_brevo_transactional_email')
+    @patch.object(app, 'ensure_brevo_ready')
+    def test_admin_email_test_sends_selected_template_to_requested_recipient(
+        self,
+        ensure_brevo_ready,
+        send_brevo_transactional_email,
+    ):
+        send_brevo_transactional_email.return_value = {'messageId': 'brevo-selected-test'}
+
+        with patch.dict(os.environ, {
+            'ADMIN_USERNAME': 'admin',
+            'ADMIN_PASSWORD': 'AdminEures2026',
+            'BREVO_API_KEY': 'brevo-key',
+            'BREVO_FROM_EMAIL': 'eures@example.org',
+        }, clear=False):
+            response = self.client.post(
+                '/api/forms/eures-beta/admin/email-tests/send',
+                headers=self.admin_auth,
+                json={
+                    'email_type': 'candidate_invitation_eures_cv',
+                    'recipient_email': 'test@example.org',
+                },
+            )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.get_json()
+        self.assertTrue(payload['ok'])
+        self.assertEqual(payload['recipient_email'], 'test@example.org')
+        self.assertEqual(payload['email_type'], 'candidate_invitation_eures_cv')
+        self.assertIn('Votre CV EURES peut correspondre à des besoins employeurs', payload['subject'])
+        ensure_brevo_ready.assert_called_once_with(check_api=True)
+        send_brevo_transactional_email.assert_called_once()
+        self.assertEqual(send_brevo_transactional_email.call_args.args[0], 'test@example.org')
+        self.assertTrue(send_brevo_transactional_email.call_args.args[1].startswith('[TEST] '))
 
 
 if __name__ == '__main__':

@@ -394,6 +394,13 @@ EURES_MATCHING_ADMIN_FIELDS = {
     'employer_whatsapp_confirmed_at',
     'mise_en_relation_at',
     'mise_en_relation_by',
+    'relation_channel',
+    'relation_channel_updated_at',
+    'relation_channel_updated_by',
+    'relation_result',
+    'relation_result_at',
+    'relation_result_by',
+    'relation_result_note',
     'embauche_confirmee_at',
     'embauche_confirmee_by',
 }
@@ -504,10 +511,16 @@ EURES_INVITATION_FIELDS = {
     'duplicate_followup_processed_at',
     'duplicate_followup_processed_by',
     'duplicate_followup_note',
+    'campaign_type',
     'target_job_keys',
     'notes',
 }
 EURES_INVITATION_ALLOWED_ROLES = {'candidate', 'employer'}
+EURES_INVITATION_ALLOWED_CAMPAIGN_TYPES = {
+    '',
+    'generic',
+    'eures_cv_deposit',
+}
 EURES_INVITATION_ALLOWED_STATUSES = {
     'invitation_a_envoyer',
     'invitation_envoyee',
@@ -1235,15 +1248,47 @@ def get_brevo_config() -> dict:
 def get_brevo_health(check_api: bool = False, timeout: int = 8) -> dict:
     """Return a sanitized Brevo health snapshot suitable for admin and health checks."""
     brevo = get_brevo_config()
-    configured = bool(brevo['api_key'] and brevo['from_email'])
+    api_key_configured = bool(brevo['api_key'])
+    from_email_configured = bool(brevo['from_email'])
+    from_name_configured = bool(brevo['from_name'])
+    configured = bool(api_key_configured and from_email_configured)
     result = {
         'configured': configured,
+        'api_key_configured': api_key_configured,
+        'from_email_configured': from_email_configured,
+        'from_name_configured': from_name_configured,
         'from_email': brevo['from_email'],
         'from_name': brevo['from_name'],
         'api_ok': None,
         'http_status': None,
         'status': 'ok' if configured else 'missing_config',
         'message': 'Brevo configuration complete.' if configured else 'BREVO_API_KEY or BREVO_FROM_EMAIL is missing.',
+        'checks': [
+            {
+                'key': 'api_key',
+                'label': 'Clé API Brevo',
+                'status': 'ok' if api_key_configured else 'error',
+                'detail': 'Présente dans la configuration serveur.' if api_key_configured else 'Variable BREVO_API_KEY manquante.',
+            },
+            {
+                'key': 'from_email',
+                'label': 'Adresse expéditrice',
+                'status': 'ok' if from_email_configured else 'error',
+                'detail': brevo['from_email'] or 'Variable BREVO_FROM_EMAIL manquante.',
+            },
+            {
+                'key': 'from_name',
+                'label': 'Nom expéditeur',
+                'status': 'ok' if from_name_configured else 'warning',
+                'detail': brevo['from_name'] or 'Nom expéditeur non configuré.',
+            },
+            {
+                'key': 'api_reachability',
+                'label': 'Connexion à l’API Brevo',
+                'status': 'pending' if check_api and configured else 'not_checked',
+                'detail': 'Vérification en cours.' if check_api and configured else 'Non vérifiée dans cet appel.',
+            },
+        ],
     }
     if not configured or not check_api:
         return result
@@ -1262,6 +1307,12 @@ def get_brevo_health(check_api: bool = False, timeout: int = 8) -> dict:
             result['api_ok'] = True
             result['status'] = 'ok'
             result['message'] = 'Brevo API reachable.'
+            result['checks'][-1] = {
+                'key': 'api_reachability',
+                'label': 'Connexion à l’API Brevo',
+                'status': 'ok',
+                'detail': f'API joignable. Code HTTP {response.status_code}.',
+            }
             return result
 
         result['api_ok'] = False
@@ -1271,11 +1322,23 @@ def get_brevo_health(check_api: bool = False, timeout: int = 8) -> dict:
         except ValueError:
             payload = {}
         result['message'] = str(payload.get('message') or payload.get('error') or f'Brevo API returned HTTP {response.status_code}.')
+        result['checks'][-1] = {
+            'key': 'api_reachability',
+            'label': 'Connexion à l’API Brevo',
+            'status': 'error',
+            'detail': f"{result['message']} Code HTTP {response.status_code}.",
+        }
         return result
     except requests.RequestException as exc:
         result['api_ok'] = False
         result['status'] = 'request_error'
         result['message'] = str(exc)
+        result['checks'][-1] = {
+            'key': 'api_reachability',
+            'label': 'Connexion à l’API Brevo',
+            'status': 'error',
+            'detail': str(exc),
+        }
         return result
 
 
@@ -1344,6 +1407,9 @@ def _matching_workflow_update_fields(target_status: str, actor: str) -> dict:
     elif target_status == 'embauche_confirmee':
         fields['embauche_confirmee_at'] = now
         fields['embauche_confirmee_by'] = actor
+    elif target_status == 'relation_terminee':
+        fields.setdefault('relation_result_at', now)
+        fields.setdefault('relation_result_by', actor)
     return fields
 
 
@@ -1358,6 +1424,7 @@ def _matching_workflow_label(status: str) -> str:
         'refuse_employeur': 'refusé employeur',
         'mise_en_relation_faite': 'mise en relation faite',
         'embauche_confirmee': 'embauche confirmée',
+        'relation_terminee': 'relation terminée',
     }.get(str(status or '').strip().lower(), str(status or '').strip() or 'inconnu')
 
 
@@ -1514,15 +1581,47 @@ def get_brevo_config() -> dict:
 def get_brevo_health(check_api: bool = False, timeout: int = 8) -> dict:
     """Return a sanitized Brevo health snapshot suitable for admin and health checks."""
     brevo = get_brevo_config()
-    configured = bool(brevo['api_key'] and brevo['from_email'])
+    api_key_configured = bool(brevo['api_key'])
+    from_email_configured = bool(brevo['from_email'])
+    from_name_configured = bool(brevo['from_name'])
+    configured = bool(api_key_configured and from_email_configured)
     result = {
         'configured': configured,
+        'api_key_configured': api_key_configured,
+        'from_email_configured': from_email_configured,
+        'from_name_configured': from_name_configured,
         'from_email': brevo['from_email'],
         'from_name': brevo['from_name'],
         'api_ok': None,
         'http_status': None,
         'status': 'ok' if configured else 'missing_config',
         'message': 'Brevo configuration complete.' if configured else 'BREVO_API_KEY or BREVO_FROM_EMAIL is missing.',
+        'checks': [
+            {
+                'key': 'api_key',
+                'label': 'Clé API Brevo',
+                'status': 'ok' if api_key_configured else 'error',
+                'detail': 'Présente dans la configuration serveur.' if api_key_configured else 'Variable BREVO_API_KEY manquante.',
+            },
+            {
+                'key': 'from_email',
+                'label': 'Adresse expéditrice',
+                'status': 'ok' if from_email_configured else 'error',
+                'detail': brevo['from_email'] or 'Variable BREVO_FROM_EMAIL manquante.',
+            },
+            {
+                'key': 'from_name',
+                'label': 'Nom expéditeur',
+                'status': 'ok' if from_name_configured else 'warning',
+                'detail': brevo['from_name'] or 'Nom expéditeur non configuré.',
+            },
+            {
+                'key': 'api_reachability',
+                'label': 'Connexion à l’API Brevo',
+                'status': 'pending' if check_api and configured else 'not_checked',
+                'detail': 'Vérification en cours.' if check_api and configured else 'Non vérifiée dans cet appel.',
+            },
+        ],
     }
     if not configured or not check_api:
         return result
@@ -1541,6 +1640,12 @@ def get_brevo_health(check_api: bool = False, timeout: int = 8) -> dict:
             result['api_ok'] = True
             result['status'] = 'ok'
             result['message'] = 'Brevo API reachable.'
+            result['checks'][-1] = {
+                'key': 'api_reachability',
+                'label': 'Connexion à l’API Brevo',
+                'status': 'ok',
+                'detail': f'API joignable. Code HTTP {response.status_code}.',
+            }
             return result
 
         result['api_ok'] = False
@@ -1550,11 +1655,23 @@ def get_brevo_health(check_api: bool = False, timeout: int = 8) -> dict:
         except ValueError:
             payload = {}
         result['message'] = str(payload.get('message') or payload.get('error') or f'Brevo API returned HTTP {response.status_code}.')
+        result['checks'][-1] = {
+            'key': 'api_reachability',
+            'label': 'Connexion à l’API Brevo',
+            'status': 'error',
+            'detail': f"{result['message']} Code HTTP {response.status_code}.",
+        }
         return result
     except requests.RequestException as exc:
         result['api_ok'] = False
         result['status'] = 'request_error'
         result['message'] = str(exc)
+        result['checks'][-1] = {
+            'key': 'api_reachability',
+            'label': 'Connexion à l’API Brevo',
+            'status': 'error',
+            'detail': str(exc),
+        }
         return result
 
 
@@ -1623,6 +1740,9 @@ def _matching_workflow_update_fields(target_status: str, actor: str) -> dict:
     elif target_status == 'embauche_confirmee':
         fields['embauche_confirmee_at'] = now
         fields['embauche_confirmee_by'] = actor
+    elif target_status == 'relation_terminee':
+        fields.setdefault('relation_result_at', now)
+        fields.setdefault('relation_result_by', actor)
     return fields
 
 
@@ -1637,7 +1757,33 @@ def _matching_workflow_label(status: str) -> str:
         'refuse_employeur': 'refusé employeur',
         'mise_en_relation_faite': 'mise en relation faite',
         'embauche_confirmee': 'embauche confirmée',
+        'relation_terminee': 'relation terminée',
     }.get(str(status or '').strip().lower(), str(status or '').strip() or 'inconnu')
+
+
+EURES_RELATION_CHANNELS = {'whatsapp', 'email', 'telephone', 'autre'}
+
+EURES_RELATION_RESULTS = {
+    'contact_etabli',
+    'entretien_prevu',
+    'entretien_realise',
+    'sans_reponse_candidat',
+    'sans_reponse_employeur',
+    'refus_candidat',
+    'refus_employeur',
+    'sans_suite',
+    'embauche_confirmee',
+    'autre',
+}
+
+
+def _relation_result_workflow_status(result: str) -> str:
+    result = str(result or '').strip().lower()
+    if result == 'embauche_confirmee':
+        return 'embauche_confirmee'
+    if result in {'refus_employeur', 'refus_candidat', 'sans_suite', 'sans_reponse_candidat', 'sans_reponse_employeur'}:
+        return 'relation_terminee'
+    return 'mise_en_relation_faite'
 
 
 def get_eures_mail_signature_name() -> str:
@@ -1912,6 +2058,13 @@ def _normalize_eures_invitation_status(value: str) -> str:
     return ''
 
 
+def _normalize_eures_invitation_campaign_type(value: str) -> str:
+    campaign_type = str(value or '').strip().lower().replace('-', '_').replace(' ', '_')
+    if campaign_type in EURES_INVITATION_ALLOWED_CAMPAIGN_TYPES:
+        return '' if campaign_type == 'generic' else campaign_type
+    return ''
+
+
 def get_eures_invitation_reminder_delay_days() -> int:
     raw = str(os.getenv('EURES_INVITATION_REMINDER_DELAY_DAYS', '7') or '7').strip()
     try:
@@ -2071,6 +2224,9 @@ def _normalize_eures_invitation_row(row: dict, actor: str, batch_id: str) -> dic
         'sponsor_company_name': _coalesce_row_value(row, 'sponsor_company_name'),
         'invited_by_type': _coalesce_row_value(row, 'invited_by_type') or 'admin',
         'invite_scope': _coalesce_row_value(row, 'invite_scope') or '',
+        'campaign_type': _normalize_eures_invitation_campaign_type(
+            _coalesce_row_value(row, 'campaign_type', 'type_campagne', 'campagne_type', 'email_template')
+        ),
         'target_job_keys': _serialize_eures_invitation_target_job_keys(
             _coalesce_row_raw_value(row, 'target_job_keys', 'target_jobs', 'target_job', 'metier_cible', 'metiers_cibles')
         ) if role == 'candidate' else '',
@@ -2113,6 +2269,7 @@ def list_eures_invitations() -> list[dict]:
             'sponsor_company_name': fields.get('sponsor_company_name', ''),
             'invited_by_type': fields.get('invited_by_type', ''),
             'invite_scope': fields.get('invite_scope', ''),
+            'campaign_type': _normalize_eures_invitation_campaign_type(fields.get('campaign_type', '')),
             'target_job_keys': _normalize_eures_invitation_target_job_keys(fields.get('target_job_keys', '')),
             'target_job_labels': _eures_invitation_target_job_labels(fields.get('target_job_keys', ''), fields.get('language', 'fr')),
             'first_submission_at': fields.get('first_submission_at', ''),
@@ -2658,6 +2815,7 @@ def _build_eures_candidate_invitation_email(
     *,
     language: str,
     target_job_key: str,
+    campaign_type: str,
     kind: str,
     invite_link: str,
     privacy_url: str,
@@ -2665,7 +2823,12 @@ def _build_eures_candidate_invitation_email(
     signature_role: str,
     hello: str,
 ) -> tuple[str, str, str]:
-    template = get_candidate_invitation_template(language, target_job_key=target_job_key, kind=kind)
+    template = get_candidate_invitation_template(
+        language,
+        target_job_key=target_job_key,
+        campaign_type=campaign_type,
+        kind=kind,
+    )
     subject = str(template.get('subject') or '').strip()
     preheader = str(template.get('preheader') or '').strip()
     eyebrow = str(template.get('eyebrow') or '').strip()
@@ -2802,6 +2965,7 @@ def build_brevo_invitation_email(invitation_row: dict, kind: str = 'initial') ->
     reminder_mode = kind == 'reminder'
     target_job_keys = _normalize_eures_invitation_target_job_keys(invitation_row.get('target_job_keys', '')) if role == 'candidate' else []
     target_job_labels = _eures_invitation_target_job_labels(target_job_keys, language) if role == 'candidate' else []
+    campaign_type = _normalize_eures_invitation_campaign_type(invitation_row.get('campaign_type', '')) if role == 'candidate' else ''
     if language == 'en':
         hello = "Hello,"
     elif language == 'de':
@@ -2957,6 +3121,7 @@ def build_brevo_invitation_email(invitation_row: dict, kind: str = 'initial') ->
     subject, text_body, html_body = _build_eures_candidate_invitation_email(
         language=language,
         target_job_key=target_job_key,
+        campaign_type=campaign_type,
         kind='reminder' if reminder_mode else 'initial',
         invite_link=invite_link,
         privacy_url=privacy_url,
@@ -4671,11 +4836,12 @@ def _eures_workflow_transition_allowed(current_status: str, target_status: str) 
         'a_valider_admin': {'valide_admin', 'refuse_admin'},
         'valide_admin': {'envoye_employeur', 'refuse_admin'},
         'envoye_employeur': {'accepte_employeur', 'refuse_employeur', 'mise_en_relation_faite'},
-        'accepte_employeur': {'mise_en_relation_faite', 'embauche_confirmee'},
-        'mise_en_relation_faite': {'embauche_confirmee'},
+        'accepte_employeur': {'mise_en_relation_faite', 'embauche_confirmee', 'relation_terminee'},
+        'mise_en_relation_faite': {'embauche_confirmee', 'relation_terminee'},
         'refuse_employeur': set(),
         'refuse_admin': set(),
         'embauche_confirmee': set(),
+        'relation_terminee': set(),
     }
     if current_status == target_status:
         return True
@@ -5924,6 +6090,113 @@ def send_eures_matching_test_emails() -> dict:
     }
 
 
+EURES_ADMIN_EMAIL_TEST_TYPES = {
+    'candidate_invitation_generic',
+    'candidate_invitation_eures_cv',
+    'employer_invitation',
+    'candidate_matching_notification',
+    'employer_matching_proposal',
+    'candidate_no_match',
+    'employer_no_match',
+}
+
+
+def build_eures_admin_email_test_message(test_type: str, recipient_email: str) -> tuple[str, str, str, str]:
+    """Build one safe transactional email test without mutating business data."""
+    normalized_type = str(test_type or '').strip().lower()
+    recipient = normalize_email(recipient_email)
+    if normalized_type not in EURES_ADMIN_EMAIL_TEST_TYPES:
+        raise RuntimeError('Unknown email test type.')
+    if not recipient:
+        raise RuntimeError('A valid recipient email is required.')
+
+    invite_link = (
+        'https://formulaires.inclusion.gouv.fr/forms/eures-beta/questionnaire-candidate'
+        '?lang=fr&invite_token=test-email-only'
+    )
+    if normalized_type == 'candidate_invitation_generic':
+        _, subject, text_body, html_body, _, _ = build_brevo_invitation_email({
+            'role': 'candidate',
+            'email': recipient,
+            'language': 'fr',
+            'invite_token': 'test-email-only',
+            'invite_link': invite_link,
+        })
+        return recipient, subject, text_body, html_body
+
+    if normalized_type == 'candidate_invitation_eures_cv':
+        _, subject, text_body, html_body, _, _ = build_brevo_invitation_email({
+            'role': 'candidate',
+            'email': recipient,
+            'language': 'fr',
+            'campaign_type': 'eures_cv_deposit',
+            'invite_token': 'test-email-only',
+            'invite_link': invite_link,
+        })
+        return recipient, subject, text_body, html_body
+
+    if normalized_type == 'employer_invitation':
+        _, subject, text_body, html_body, _, _ = build_brevo_invitation_email({
+            'role': 'employer',
+            'email': recipient,
+            'language': 'fr',
+            'company_name': 'Entreprise test Match Europe',
+            'invite_token': 'test-email-only',
+            'invite_link': (
+                'https://formulaires.inclusion.gouv.fr/forms/eures-beta/questionnaire-employer'
+                '?lang=fr&invite_token=test-email-only'
+            ),
+        })
+        return recipient, subject, text_body, html_body
+
+    matching_row = build_eures_matching_test_row()
+    matching_row['candidat']['email'] = recipient
+    matching_row['employeur']['email'] = recipient
+    matching_row['employeur']['contact'] = recipient
+    if normalized_type == 'employer_matching_proposal':
+        return build_brevo_matching_email(matching_row)
+    if normalized_type == 'candidate_matching_notification':
+        return build_brevo_candidate_matching_notification_email(matching_row)
+
+    if normalized_type == 'candidate_no_match':
+        return build_brevo_candidate_no_match_email({
+            'payload': {
+                'email': recipient,
+                'nom': 'Candidat test Match Europe',
+            }
+        })
+
+    if normalized_type == 'employer_no_match':
+        return build_brevo_employer_no_match_email({
+            'payload': {
+                'email': recipient,
+                'contact': recipient,
+                'employeur': 'Entreprise test Match Europe',
+                'poste': 'Poste test Match Europe',
+            }
+        })
+
+    raise RuntimeError('Unknown email test type.')
+
+
+def send_eures_admin_email_test(test_type: str, recipient_email: str) -> dict:
+    """Send one selected email test to the requested recipient."""
+    ensure_brevo_ready(check_api=True)
+    to_email, subject, text_body, html_body = build_eures_admin_email_test_message(test_type, recipient_email)
+    result = send_brevo_transactional_email(
+        to_email,
+        f'[TEST] {subject}',
+        text_body,
+        html_body,
+    )
+    return {
+        'email_type': str(test_type or '').strip().lower(),
+        'recipient_email': to_email,
+        'subject': f'[TEST] {subject}',
+        'result': result,
+    }
+
+
 def send_brevo_transactional_email(
     to_email: str,
     subject: str,
@@ -6176,6 +6449,13 @@ def list_eures_admin_matchings(status: str = 'all', include_candidate_cv: bool =
             'employer_whatsapp_confirmed_at': fields.get('employer_whatsapp_confirmed_at', ''),
             'mise_en_relation_at': fields.get('mise_en_relation_at', ''),
             'mise_en_relation_by': fields.get('mise_en_relation_by', ''),
+            'relation_channel': fields.get('relation_channel', ''),
+            'relation_channel_updated_at': fields.get('relation_channel_updated_at', ''),
+            'relation_channel_updated_by': fields.get('relation_channel_updated_by', ''),
+            'relation_result': fields.get('relation_result', ''),
+            'relation_result_at': fields.get('relation_result_at', ''),
+            'relation_result_by': fields.get('relation_result_by', ''),
+            'relation_result_note': fields.get('relation_result_note', ''),
             'embauche_confirmee_at': fields.get('embauche_confirmee_at', ''),
             'embauche_confirmee_by': fields.get('embauche_confirmee_by', ''),
             'candidat': {
@@ -6472,6 +6752,11 @@ def build_eures_cockpit_summary() -> dict:
     )
     relation_count = sum(1 for row in matchings_all if row.get('workflow_status') in {'mise_en_relation_faite', 'embauche_confirmee'})
     hire_count = sum(1 for row in matchings_all if row.get('workflow_status') == 'embauche_confirmee')
+    employer_response_count = sum(
+        1 for row in matchings_all
+        if str(row.get('employer_response') or '').strip()
+        and row.get('workflow_status') == 'accepte_employeur'
+    )
     matchings_today = sum(1 for row in matchings_all if _same_utc_day(row.get('date_calcul'), today))
     manual_sent_today = sum(
         1 for row in matchings_all
@@ -6497,6 +6782,7 @@ def build_eures_cockpit_summary() -> dict:
             'new_job_request': sum(1 for row in tasks_pending if row.get('task_type') == 'new_job_request'),
             'new_employer_alert': sum(1 for row in tasks_pending if row.get('task_type') == 'new_employer_alert'),
             'duplicate_invitation_followup': sum(1 for row in tasks_pending if row.get('task_type') == 'duplicate_invitation_followup'),
+            'employer_response': employer_response_count,
             'invitation_errors': sum(1 for row in invitations if str(row.get('invitation_status') or '') == 'erreur_envoi'),
         },
         'today_flow': {
@@ -8342,6 +8628,7 @@ def admin_eures_invitation_update(form_id: str, record_id: int):
         'language',
         'source',
         'external_ref',
+        'campaign_type',
         'target_job_keys',
         'notes',
         'answered_at',
@@ -8353,6 +8640,8 @@ def admin_eures_invitation_update(form_id: str, record_id: int):
         if field_name in data:
             if field_name == 'target_job_keys':
                 update_fields[field_name] = _serialize_eures_invitation_target_job_keys(data.get(field_name))
+            elif field_name == 'campaign_type':
+                update_fields[field_name] = _normalize_eures_invitation_campaign_type(data.get(field_name))
             else:
                 update_fields[field_name] = str(data.get(field_name) or '').strip()
 
@@ -9421,6 +9710,40 @@ def admin_eures_matching_test_emails(form_id: str):
         return jsonify({'error': str(e)}), 500
 
 
+@app.route('/api/forms/<form_id>/admin/email-tests/send', methods=['POST'])
+@admin_required
+def admin_eures_email_test_send(form_id: str):
+    """Admin API: send one selected test email to a requested recipient."""
+    proxied = maybe_proxy_eures_request(form_id)
+    if proxied:
+        return proxied
+    if form_id != 'eures-beta':
+        return jsonify({'error': f'Unknown email test form: {form_id}'}), 404
+
+    data = request.get_json() or {}
+    test_type = str(data.get('email_type') or '').strip().lower()
+    recipient_email = normalize_email(data.get('recipient_email'))
+
+    try:
+        result = send_eures_admin_email_test(test_type, recipient_email)
+        app.logger.info(
+            'EURES admin email test sent',
+            extra={
+                'form_id': form_id,
+                'email_type': result.get('email_type'),
+                'recipient_email': result.get('recipient_email'),
+                'sent_by': get_admin_actor(form_id),
+            },
+        )
+        return jsonify({
+            'ok': True,
+            **result,
+        }), 200
+    except Exception as e:
+        app.logger.exception('EURES admin email test failed')
+        return jsonify({'error': str(e)}), 500
+
+
 @app.route('/api/forms/<form_id>/admin/matchings/<int:record_id>/decision', methods=['POST'])
 @admin_required
 def admin_eures_matching_decision(form_id: str, record_id: int):
@@ -9608,10 +9931,19 @@ def admin_eures_matching_workflow(form_id: str, record_id: int):
 
     data = request.get_json() or {}
     target_status = str(data.get('workflow_status') or '').strip().lower()
+    relation_channel = str(data.get('relation_channel') or '').strip().lower()
+    relation_result = str(data.get('relation_result') or '').strip().lower()
+    relation_result_note = str(data.get('relation_result_note') or '').strip()
     note = str(data.get('note') or '').strip()
-    allowed_targets = {'mise_en_relation_faite', 'embauche_confirmee', 'envoye_employeur'}
+    if relation_result:
+        if relation_result not in EURES_RELATION_RESULTS:
+            return jsonify({'error': 'Unsupported relation result'}), 400
+        target_status = _relation_result_workflow_status(relation_result)
+    allowed_targets = {'mise_en_relation_faite', 'embauche_confirmee', 'envoye_employeur', 'relation_terminee'}
     if target_status not in allowed_targets:
         return jsonify({'error': 'Unsupported workflow status'}), 400
+    if relation_channel and relation_channel not in EURES_RELATION_CHANNELS:
+        return jsonify({'error': 'Unsupported relation channel'}), 400
 
     config = get_eures_matching_config()
     if not config:
@@ -9631,6 +9963,17 @@ def admin_eures_matching_workflow(form_id: str, record_id: int):
 
         actor = get_admin_actor(form_id)
         update_fields = _matching_workflow_update_fields(target_status, actor)
+        now = _now_iso_utc()
+        if relation_channel:
+            update_fields['relation_channel'] = relation_channel
+            update_fields['relation_channel_updated_at'] = now
+            update_fields['relation_channel_updated_by'] = actor
+        if relation_result:
+            update_fields['relation_result'] = relation_result
+            update_fields['relation_result_at'] = now
+            update_fields['relation_result_by'] = actor
+            if relation_result_note:
+                update_fields['relation_result_note'] = relation_result_note
         if note:
             previous_note = str(existing_fields.get('admin_decision_note') or '').strip()
             update_fields['admin_decision_note'] = f'{previous_note}\n{note}'.strip() if previous_note else note
@@ -9644,6 +9987,9 @@ def admin_eures_matching_workflow(form_id: str, record_id: int):
             'workflow_label': _matching_workflow_label(_matching_workflow_status(updated_fields)),
             'workflow_status_updated_at': updated_fields.get('workflow_status_updated_at', ''),
             'workflow_status_updated_by': updated_fields.get('workflow_status_updated_by', actor),
+            'relation_channel': updated_fields.get('relation_channel', ''),
+            'relation_result': updated_fields.get('relation_result', ''),
+            'relation_result_at': updated_fields.get('relation_result_at', ''),
         }), 200
     except Exception as e:
         app.logger.exception('EURES matching workflow update failed')
