@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Observatoire régional FAGERH</title>
+  <link rel="stylesheet" href="/forms/fagerh/observatoire.css">
+</head>
+<body>
+  <main class="page">
+    <header class="toolbar">
+      <div>
+        <p class="eyebrow">Administration FAGERH</p>
+        <h1>Rapports régionaux de l’Observatoire</h1>
+        <p class="muted">Indicateurs calculés en lecture seule à partir des questionnaires sélectionnés.</p>
+      </div>
+      <div class="toolbar-actions">
+        <a class="button secondary" href="/admin/fagerh/">Retour à l’administration</a>
+        <button id="print-button" class="button" type="button" disabled>Proposer le PDF</button>
+      </div>
+    </header>
+
+    <section class="selector no-print" aria-labelledby="selector-title">
+      <div>
+        <h2 id="selector-title">Choisir la région</h2>
+        <p>Le rapport est recalculé à la demande. Aucune donnée n’est écrite dans Grist.</p>
+      </div>
+      <label>
+        Région
+        <select id="region-select">
+          <option value="france">France entière</option>
+        </select>
+      </label>
+      <label>
+        Questionnaires
+        <select id="completion-select">
+          <option value="all" selected>Tous les questionnaires</option>
+          <option value="completed">Uniquement les terminés</option>
+          <option value="in_progress">Uniquement les non terminés</option>
+        </select>
+      </label>
+      <label>
+        Dispositif
+        <select id="device-select">
+          <option value="all" selected>Tous les dispositifs</option>
+          <option value="esrp">ESRP</option>
+          <option value="espo">ESPO</option>
+          <option value="ueros">UEROS</option>
+          <option value="deac">DEAc</option>
+          <option value="pec">PEC</option>
+          <option value="other_eval">Autres évaluations</option>
+        </select>
+      </label>
+      <button id="generate-button" class="button" type="button" disabled>Générer le rapport</button>
+    </section>
+
+    <p id="status" class="status" role="status">Chargement de la liste des régions…</p>
+
+    <article id="report" class="report" hidden>
+      <section class="cover report-page">
+        <p class="eyebrow">Observatoire FAGERH</p>
+        <h2 id="report-title">Rapport régional</h2>
+        <p class="report-year">Données d’activité 2025</p>
+        <div class="hero-number">
+          <strong id="total-people">—</strong>
+          <span id="total-people-label">volumes de personnes déclarés, non dédupliqués</span>
+        </div>
+        <p id="device-focus-notice" class="focus-notice" hidden></p>
+        <dl class="summary">
+          <div><dt id="questionnaire-count-label">Tous les questionnaires</dt><dd id="questionnaire-count">—</dd></div>
+          <div><dt>Actualisation de la source</dt><dd id="freshness">—</dd></div>
+          <div><dt>Périmètre</dt><dd id="completion-scope-summary">Tous les questionnaires, sans extrapolation</dd></div>
+        </dl>
+      </section>
+
+      <section id="network-section" class="report-page">
+        <h2>Le réseau régional</h2>
+        <div id="network-cards" class="three-columns"></div>
+        <section id="establishments-section">
+          <h3>Établissements et services répondants</h3>
+          <div id="establishments"></div>
+        </section>
+      </section>
+
+      <section id="profile-section" class="report-page">
+        <h2>Profil des personnes accueillies</h2>
+        <div class="three-columns">
+          <section class="metric-panel">
+            <h3>Âge</h3>
+            <p class="big-value" id="mean-age">—</p>
+            <p>âge moyen estimé</p>
+            <div id="age-bars" class="bars"></div>
+          </section>
+          <section class="metric-panel">
+            <h3>Niveau à l’entrée</h3>
+            <p class="big-value" id="low-level-rate">—</p>
+            <p>niveau 4 ou inférieur</p>
+            <div id="level-bars" class="bars"></div>
+          </section>
+          <section class="metric-panel">
+            <h3>Handicap principal</h3>
+            <div id="handicap-bars" class="bars"></div>
+          </section>
+        </div>
+        <p class="method" id="age-method"></p>
+      </section>
+
+      <section id="activity-section" class="report-page">
+        <section id="insertion-section">
+          <h2>Insertion professionnelle ESRP</h2>
+          <div id="insertion-cards" class="cards"></div>
+        </section>
+        <h2>Activité et parcours</h2>
+        <div id="activity-cards" class="cards"></div>
+      </section>
+
+      <section id="information-section" class="report-page">
+        <h2>Information, évaluation et orientation</h2>
+        <div id="modalites-cards" class="cards"></div>
+        <div id="orientation-cards" class="cards"></div>
+      </section>
+
+      <section id="institutional-section" class="report-page">
+        <h2>Participation institutionnelle</h2>
+        <div id="participation-cards" class="cards"></div>
+        <h2>Réseau institutionnel régional</h2>
+        <div id="institutional-network-cards" class="cards"></div>
+      </section>
+
+      <section id="health-section" class="report-page">
+        <h2>Accompagnement à la santé</h2>
+        <p class="method" id="health-method"></p>
+        <div id="health-support-bars" class="bars health-bars"></div>
+        <h2>Hébergement</h2>
+        <div id="accommodation-cards" class="cards"></div>
+        <h2>Indicateurs à compléter</h2>
+        <div id="unavailable-cards" class="cards"></div>
+      </section>
+
+      <footer class="methodology report-page">
+        <h2>Méthodologie et limites</h2>
+        <p id="scope-method"></p>
+        <ul>
+          <li>Les réponses incomplètes ne sont ni corrigées ni extrapolées.</li>
+          <li>Une même personne peut apparaître dans plusieurs activités.</li>
+          <li>Les écarts de saisie sont conservés et signalés ; ils seront améliorés lors de la prochaine campagne.</li>
+          <li>Les indicateurs sans source régionale fiabilisée restent explicitement marqués « non disponible ».</li>
+        </ul>
+        <p class="generated-at" id="generated-at"></p>
+      </footer>
+    </article>
+  </main>
+  <script src="/forms/fagerh/observatoire.js"></script>
+</body>
+</html>

@@ -38,6 +38,17 @@ from eures_beta_email_templates import (
     get_candidate_invitation_template,
     get_candidate_target_job_label,
 )
+from fagerh_analytics.domain import UserContext
+from fagerh_analytics.flask_adapter import create_fagerh_analytics_blueprint
+from fagerh_analytics.health import build_fagerh_analytics_health_probe, check_fagerh_analytics_configuration
+from fagerh_analytics.repositories.grist import GristQuestionnaireRepository
+from fagerh_analytics.auth import (
+    clear_fagerh_analytics_session,
+    get_fagerh_analytics_session_role,
+    is_fagerh_analytics_session_authenticated,
+    is_same_origin_request,
+    mark_fagerh_analytics_session_authenticated,
+)
 
 load_dotenv()
 
@@ -1174,6 +1185,80 @@ def admin_required(fn):
             return denied
         return fn(*args, **kwargs)
     return wrapper
+
+
+def _analytics_auth_error(status_code: int, code: str, message: str, *, challenge: bool = False):
+    payload = {'error': {'code': code, 'message': message}}
+    headers = {}
+    if challenge:
+        headers['WWW-Authenticate'] = 'Basic realm="FAGERH Analytics"'
+    return jsonify(payload), status_code, headers
+
+
+def _ensure_fagerh_analytics_session_configured():
+    """Ensure Flask can issue signed sessions for the analytics browser flow."""
+    if app.secret_key:
+        return None
+    return _analytics_auth_error(500, 'server_misconfigured', 'Flask secret key is not configured.')
+
+
+def _has_valid_admin_auth(form_id: str) -> bool:
+    """Return whether the current request is authenticated for one admin form."""
+    if _current_admin_session(form_id):
+        return True
+    return _require_admin_basic_auth(form_id) is None
+
+
+def get_fagerh_analytics_repository():
+    """Build the read-only Grist repository dedicated to FAGERH analytics."""
+    return GristQuestionnaireRepository(
+        base_url=GRIST_BASE_URL,
+        api_key=get_form_config('fagerh')['api_key'],
+        doc_id=get_form_config('fagerh')['doc_id'],
+        table_id=get_form_config('fagerh')['table_id'],
+    )
+
+
+def get_fagerh_analytics_health_probe():
+    """Build a lightweight health probe for the FAGERH analytics module."""
+    return build_fagerh_analytics_health_probe(
+        repository_factory=lambda: get_fagerh_analytics_repository(),
+        cache_ttl_seconds=int(os.environ.get('FAGERH_ANALYTICS_HEALTH_CACHE_SECONDS', '30')),
+    )
+
+
+def log_fagerh_analytics_startup_status() -> None:
+    """Log a non-blocking startup status for the FAGERH analytics module."""
+    try:
+        check_fagerh_analytics_configuration(os.environ)
+    except Exception as exc:
+        app.logger.warning('FAGERH analytics module is disabled or misconfigured: %s', exc)
+        return
+    app.logger.info('FAGERH analytics module enabled.')
+
+
+def build_analytics_user_context():
+    """Map the existing admin authentication context to analytics permissions."""
+    auth = request.authorization
+    session_role = get_fagerh_analytics_session_role()
+    return UserContext(
+        user_id=(auth.username if auth else None),
+        role=session_role or 'admin_global',
+        allowed_regions=None,
+        allowed_categories=None,
+    )
+
+
+def require_analytics_auth():
+    """Accept FAGERH analytics requests authenticated by Basic auth or signed session."""
+    if _has_valid_admin_auth('fagerh'):
+        return None
+    if is_fagerh_analytics_session_authenticated():
+        if request.method == 'POST' and not is_same_origin_request():
+            return _analytics_auth_error(403, 'permission_denied', 'Cross-site Analytics requests are not allowed.')
+        return None
+    clear_fagerh_analytics_session()
+    return _analytics_auth_error(401, 'permission_denied', 'Authentication required', challenge=True)
 
 
 def get_form_config(form_id: str, role: str | None = None) -> dict:
@@ -11033,6 +11118,52 @@ def serve_admin(form_id: str):
     return send_from_directory(FORMS_DIR / form_id, 'admin.html')
 
 
+@app.route('/admin/<form_id>/analytics/')
+@admin_required
+def serve_admin_analytics(form_id: str):
+    """Serve the read-only analytics overview page for a form."""
+    proxied = maybe_proxy_eures_request(form_id)
+    if proxied:
+        return proxied
+    if form_id == 'fagerh':
+        denied = _ensure_fagerh_analytics_session_configured()
+        if denied is not None:
+            return denied
+        mark_fagerh_analytics_session_authenticated(role='admin_global')
+    return send_from_directory(FORMS_DIR / form_id, 'analytics.html')
+
+
+@app.route('/admin/<form_id>/observatoire/')
+@admin_required
+def serve_admin_observatoire(form_id: str):
+    """Serve the regional FAGERH observatory and printable report."""
+    proxied = maybe_proxy_eures_request(form_id)
+    if proxied:
+        return proxied
+    if form_id == 'fagerh':
+        denied = _ensure_fagerh_analytics_session_configured()
+        if denied is not None:
+            return denied
+        mark_fagerh_analytics_session_authenticated(role='admin_global')
+    return send_from_directory(FORMS_DIR / form_id, 'observatoire.html')
+
+
+@app.route('/admin/<form_id>/livret/')
+@admin_required
+def serve_admin_livret(form_id: str):
+    """Serve the FAGERH observatory booklet page."""
+    proxied = maybe_proxy_eures_request(form_id)
+    if proxied:
+        return proxied
+    if form_id != 'fagerh':
+        return jsonify({'error': 'Livret indisponible pour ce formulaire.'}), 404
+    denied = _ensure_fagerh_analytics_session_configured()
+    if denied is not None:
+        return denied
+    mark_fagerh_analytics_session_authenticated(role='admin_global')
+    return send_from_directory(FORMS_DIR / form_id, 'livret.html')
+
+
 @app.route('/admin/<form_id>/suivi')
 @admin_required
 def serve_admin_tracking(form_id: str):
@@ -11049,6 +11180,16 @@ def serve_admin_tracking(form_id: str):
 def serve_assets(filename: str):
     """Serve static assets (JS, CSS)."""
     return send_from_directory(ASSETS_DIR, filename)
+
+
+app.register_blueprint(create_fagerh_analytics_blueprint(
+    repository_factory=lambda: get_fagerh_analytics_repository(),
+    user_context_factory=lambda: build_analytics_user_context(),
+    auth_guard=lambda: require_analytics_auth(),
+    health_probe=lambda: get_fagerh_analytics_health_probe()(),
+))
+
+log_fagerh_analytics_startup_status()
 
 if fagerh_suivi_app is not None:
     app.wsgi_app = DispatcherMiddleware(

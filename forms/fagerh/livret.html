@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Préparation du livret Observatoire FAGERH</title>
+  <link rel="stylesheet" href="/forms/fagerh/livret.css">
+</head>
+<body>
+  <header class="control no-print">
+    <div>
+      <p class="eyebrow">Administration FAGERH</p>
+      <h1>Préparer le livret Observatoire</h1>
+      <p>Les chiffres viennent de Grist. Les zones orange doivent être relues et validées.</p>
+    </div>
+    <div class="filters">
+      <a class="admin-return" href="/admin/fagerh/">← Revenir à la console d’administration</a>
+      <label>Région<select id="region"><option value="84">Auvergne-Rhône-Alpes</option></select></label>
+      <label>Questionnaires<select id="completion"><option value="all">Tous les questionnaires</option><option value="completed">Uniquement les terminés</option><option value="in_progress">Uniquement les non terminés</option></select></label>
+      <button id="refresh">Actualiser</button>
+      <button id="pdf" disabled>Générer le PDF validé</button>
+    </div>
+    <p id="status" role="status">Chargement…</p>
+  </header>
+
+  <main id="booklet" class="booklet flipbook" hidden>
+    <nav id="book-navigation" class="book-navigation no-print" aria-label="Navigation dans le livret" hidden>
+      <button id="book-prev" type="button" aria-label="Pages précédentes">←</button>
+      <span id="book-position" aria-live="polite">Couverture</span>
+      <button id="book-next" type="button" aria-label="Pages suivantes">→</button>
+    </nav>
+    <section class="sheet cover" data-page="1">
+      <img class="cover-photo" src="/forms/fagerh/model-cover.jpg" alt="Échange entre une personne accompagnée et un professionnel autour d’un ordinateur">
+      <div class="brand">fagerh<small>Accompagner, c’est notre métier.</small></div>
+      <div class="cover-title"><strong>OBSERVATOIRE</strong><strong>2026</strong><span>de la Réadaptation Professionnelle</span><small>Sur les données d’activité 2025</small></div>
+      <div class="cover-region" id="cover-region"></div>
+    </section>
+
+    <section class="sheet" data-page="12">
+      <h2 class="visually-hidden">Les établissements et services</h2>
+      <a id="establishment-source" class="source-tag automatic directory-source" href="https://www.fagerh.fr/centres-formations-prestations-accompagnement?f%5B0%5D=field_region%3A304" target="_blank" rel="noopener">Annuaire officiel FAGERH · 15 établissements</a>
+      <figure class="regional-map-figure">
+        <img class="regional-map" src="/forms/fagerh/aura-establishments-map.svg" alt="Carte numérotée des 15 établissements et services en Auvergne-Rhône-Alpes">
+        <figcaption>Chaque numéro de la carte correspond au même numéro dans la liste ci-dessous.</figcaption>
+      </figure>
+      <div id="establishment-list" class="establishment-grid"></div>
+    </section>
+
+    <section class="sheet dense" data-page="2">
+      <h2>La réadaptation professionnelle</h2>
+      <p class="section-lead">La réadaptation professionnelle permet aux personnes en situation de handicap d’accéder à une formation et à un accompagnement adaptés pour une insertion durable.</p>
+      <div class="three">
+        <article><h3>ESRP</h3><p>Réadaptation professionnelle via des parcours qualifiants ou socio-professionnels.</p></article>
+        <article><h3>ESPO</h3><p>Préorientation pour définir un projet professionnel adapté.</p></article>
+        <article><h3>UEROS</h3><p>Réinsertion pour les personnes avec lésions cérébrales.</p></article>
+      </div>
+      <div class="manual-block" data-field="regional_intro">
+        <span class="source-tag manual">Texte à relire — chiffres 2025 calculés</span>
+        <div class="editable" contenteditable="true">
+          <p>Ces services, <strong>autorisés par l’ARS, financés par l’Assurance Maladie</strong>, délivrent un accompagnement médico-psycho-social pluridisciplinaire.</p>
+          <p>Sur l’ensemble du territoire national, la FAGERH fédère actuellement <strong>168 établissements et services</strong>.</p>
+          <p>L’annuaire officiel FAGERH recense <strong id="official-regional-establishments">—</strong> établissements en Auvergne-Rhône-Alpes. Pour les données d’activité 2025 et le périmètre sélectionné, <strong id="regional-establishments">—</strong> établissements et services répondants ont déclaré <strong id="regional-received-total">—</strong> personnes reçues sur les dispositifs comptabilisés par l’Observatoire (ESRP, ESPO, UEROS, PEC et autres évaluations ; actions d’information et DEAc exclus).</p>
+          <aside class="definition-box boeth"><strong>BOETH</strong><span>Être Bénéficiaire de l’Obligation d’Emploi des Travailleurs Handicapés est essentiel pour bénéficier de l’ensemble de ces dispositifs, assorti d’une décision d’orientation de la MDPH pour certains d’entre eux.</span></aside>
+        </div>
+        <button class="validate">Valider ce contenu</button>
+      </div>
+    </section>
+
+    <section class="sheet" data-page="3">
+      <h2>La typologie du public</h2>
+      <p class="source-tag automatic">Données calculées automatiquement</p>
+      <p>La personne accompagnée « type » est :</p>
+      <ul class="profile-summary">
+        <li>bénéficiaire de l’OETH ;</li>
+        <li>âgée de <strong id="mean-age">—</strong>. L’accueil est possible à partir de 16 ans ;</li>
+        <li>majoritairement titulaire d’un niveau 4 ou inférieur : <strong id="low-level">—</strong> ;</li>
+        <li>principalement concernée par une <strong id="main-disability">—</strong>.</li>
+      </ul>
+      <p id="disability-breakdown" class="generated-comment"></p>
+      <div class="manual-block" data-field="public_comment">
+        <span class="source-tag manual">Formulation à relire — chiffres 2025 calculés</span>
+        <div class="editable" contenteditable="true">
+          <aside class="blue-box"><strong>Fin de parcours - ESRP</strong><span id="employment-summary">Calcul des données 2025 en cours…</span><span class="unavailable-note">Les résultats aux examens 2025 ne sont pas encore disponibles sous une forme régionale fiabilisée : cette partie reste à compléter et à valider.</span></aside>
+        </div>
+        <button class="validate">Valider ce contenu</button>
+      </div>
+      <p class="footnotes"><em>* Troubles Envahissants du Développement</em><br><em>** Statistiques calculées sur le nombre de répondants (<span id="employment-respondents">—</span> personnes)</em></p>
+    </section>
+
+    <section class="sheet" data-page="4">
+      <h2>Les ESRP</h2>
+      <p class="source-tag automatic">Données calculées automatiquement</p>
+      <div class="hero-stat"><strong id="esrp-total">—</strong><span>personnes accompagnées dans l’année</span></div>
+      <div id="esrp-activity" class="cards"></div>
+    </section>
+
+    <section class="sheet" data-page="5">
+      <h2>Les ESPO</h2>
+      <p class="source-tag automatic">Données calculées automatiquement</p>
+      <div class="hero-stat"><strong id="espo-total">—</strong><span>personnes accompagnées dans l’année</span></div>
+      <div class="manual-block" data-field="espo_comment">
+        <span class="source-tag manual">Texte 2024 à actualiser et valider</span>
+        <div class="editable" contenteditable="true">
+          <p>Les <strong>Établissements et Services de Préorientation</strong> accompagnent les personnes en situation de handicap dans l’élaboration de leur projet professionnel par une évaluation et un soutien adaptés.</p>
+          <p>Le parcours est d’une durée de 12 semaines ; il peut être séquencé selon les besoins de la personne. Les personnes accompagnées en ESPO réalisent des périodes d’évaluation, d’application et de découverte en établissements et en entreprises.</p>
+          <aside class="blue-box"><strong>Préconisations d’orientation à l’issue</strong><span>La formation en réadaptation professionnelle (dont DFA) constitue l’orientation la plus fréquente (54 % des personnes), portant à 65 % les préconisations vers un parcours formatif. Les orientations vers l’emploi représentent 19,5 %, tandis que le retour aux soins reste une orientation notable pour 12,6 %.</span></aside>
+        </div>
+        <button class="validate">Valider ce contenu</button>
+      </div>
+    </section>
+
+    <section class="sheet dense" data-page="6">
+      <h2>Les UEROS</h2>
+      <p class="source-tag automatic">Données calculées automatiquement</p>
+      <div class="manual-block" data-field="ueros_comment">
+        <span class="source-tag manual">Texte 2024 à actualiser et valider</span>
+        <div class="editable" contenteditable="true">
+          <h3>Unité d’Évaluation, de Réentraînement et d’Orientation Socio-professionnelle</h3>
+          <p>Les UEROS offrent un accompagnement ciblé qui se traduit, à l’issue des parcours, par des préconisations variées d’orientation.</p>
+          <p>Les UEROS accueillent et accompagnent des personnes dont le handicap est lié à des troubles cognitifs, comportementaux ou de la relation affective, résultant d’un traumatisme crânien ou de toute autre lésion cérébrale acquise.</p>
+          <p>L’objectif de cet accompagnement est de construire un nouveau projet de vie personnel, social et/ou d’élaborer et valider une hypothèse professionnelle.</p>
+          <aside class="outline-box"><strong>Objectifs</strong><span>Permettre aux personnes cérébro-lésées de réintégrer progressivement une vie sociale et professionnelle grâce à un accompagnement spécialisé et adapté à leurs besoins.</span></aside>
+        </div>
+        <button class="validate">Valider ce contenu</button>
+      </div>
+      <div class="ueros-summary">
+        <div><strong id="ueros-establishments">—</strong><span id="ueros-establishments-label">Établissements et services UEROS</span></div>
+        <div class="manual-block compact-manual" data-field="ueros_places">
+          <span class="source-tag manual">2024 à valider</span>
+          <strong class="editable" contenteditable="true">38</strong>
+          <span>Places</span>
+          <button class="validate">Valider</button>
+        </div>
+        <div><strong id="ueros-total">—</strong><span>Personnes<br>accompagnées</span></div>
+      </div>
+      <p class="ueros-share">Les UEROS représentent <strong id="ueros-share">—</strong> des personnes accompagnées en réadaptation professionnelle dans le périmètre sélectionné.</p>
+    </section>
+
+    <section class="sheet" data-page="9">
+      <h2>Les actions d’évaluations courtes</h2>
+      <p class="source-tag automatic">Données calculées automatiquement</p>
+      <div class="stats">
+        <article><strong id="pec-total">—</strong><span>personnes reçues en PEC</span></article>
+        <article><strong id="other-eval-total">—</strong><span>autres évaluations</span></article>
+      </div>
+      <div class="evaluation-share">
+        <svg viewBox="0 0 76 64" aria-hidden="true">
+          <path d="M38 25C27 16 17 9 8 16C-2 24 5 39 38 56C71 39 78 24 68 16C59 9 49 16 38 25Z"/>
+          <path d="M8 44C18 44 25 48 31 51L47 48C53 47 57 51 55 55L35 61C30 62 25 61 21 59L4 51C0 49 1 44 5 44H8Z" class="hand"/>
+          <path d="M17 19C12 14 5 16 5 22C5 28 11 32 17 36C23 32 29 28 29 22C29 16 22 14 17 19Z" class="small-heart"/>
+        </svg>
+        <p>Les évaluations courtes représentent <strong id="evaluation-share">—</strong> de l’ensemble de l’activité <span>(contre 2,15&nbsp;% en 2024).</span></p>
+      </div>
+      <div class="manual-block" data-field="evaluation_comment">
+        <span class="source-tag manual">Texte 2024 à actualiser et valider</span>
+        <div class="editable" contenteditable="true">
+          <h3>Évaluations Médico-Psycho-Sociales</h3>
+          <p><strong>Objectifs :</strong> évaluer les capacités, identifier les besoins et analyser la pertinence et la plus-value d’une orientation vers des prestations de réadaptation.</p>
+          <ul><li>85 % des personnes BOETH ont des évaluations de moins de 3 jours.</li><li>55 % des personnes non BOETH bénéficient d’évaluations de plus de 7 jours.</li></ul>
+          <h3>À ce jour…</h3>
+          <p>L’ensemble des établissements et services de la région délivre des évaluations préliminaires médico-psycho-sociales au sens du décret d’octobre 2020.</p>
+          <aside class="blue-box"><strong>Origine des prescriptions sur l’activité ESMS</strong><span>49 % proviennent des MDPH, 31 % d’autres partenaires, 17 % du service public de l’emploi et 3 % des employeurs publics, privés ou de démarches spontanées.</span></aside>
+        </div>
+        <button class="validate">Valider ce contenu</button>
+      </div>
+    </section>
+
+    <section class="sheet" data-page="8">
+      <h2>Les actions d’information</h2>
+      <div class="manual-block" data-field="information_actions">
+        <span class="source-tag manual">Formulation à relire — chiffres 2025 calculés</span>
+        <div class="editable" contenteditable="true">
+          <aside class="outline-box"><strong>Objectifs</strong><span>Ces actions visent à sensibiliser et informer les publics et partenaires sur les dispositifs existants.</span></aside>
+          <h3>Auprès des personnes</h3>
+          <p>En 2025, <strong id="info-people-collective">—</strong> personnes ont été reçues en information collective sur <strong id="info-people-days">—</strong> journées. L’information individuelle représente <strong id="info-people-hours">—</strong> heures.</p>
+          <h3>Auprès des organismes de formation et des partenaires</h3>
+          <p><strong id="info-training-total" class="inline-number">—</strong> organismes de formation concernés : <span id="info-training-detail">—</span>.</p>
+          <p><strong id="info-partners-total" class="inline-number">—</strong> partenaires concernés : <span id="info-partners-detail">—</span>.</p>
+        </div>
+        <button class="validate">Valider ce contenu</button>
+      </div>
+    </section>
+
+    <section class="sheet" data-page="10">
+      <h2>Le DFA</h2>
+      <div class="manual-block" data-field="dfa">
+        <span class="source-tag manual">Texte 2024 à actualiser et valider</span>
+        <div class="editable" contenteditable="true">
+          <h3>Dispositif Formation Accompagnée</h3>
+          <p>Le DFA est une modalité d’accompagnement mise en œuvre par les équipes des Établissements et Services de Réadaptation Professionnelle (ESRP) à la suite de la réception d’une notification MDPH.</p>
+          <p>Il s’adresse à toute personne bénéficiaire de l’Obligation d’Emploi des Travailleurs Handicapés, <strong>de 16 ans ou plus</strong>, ayant :</p>
+          <ul><li>un <strong>projet de formation</strong> de droit commun ;</li><li>un <strong>besoin d’adaptation et d’accompagnements médico-psycho-sociaux</strong> en amont, pendant et après sa formation.</li></ul>
+          <p>La personne se voit attribuer un référent qui l’accompagnera tout au long de son parcours et sollicitera au besoin l’équipe médico-psycho-sociale interne de l’ESRP.</p>
+          <aside class="blue-box contact-box"><strong>Contact</strong><span>Margaux SALOMÉ<br>Chargée de développement du DFA pour la FAGERH<br>margaux.salome@fagerh.fr</span></aside>
+        </div>
+        <button class="validate">Valider ce contenu</button>
+      </div>
+    </section>
+
+    <section class="sheet" data-page="11">
+      <h2>Réseau</h2>
+      <div class="manual-block" data-field="network">
+        <span class="source-tag manual">Texte 2024 à actualiser et valider</span>
+        <div class="editable" contenteditable="true">
+          <h3>Réseau Pour l’Emploi</h3>
+          <p>Évolution des collaborations avec le Réseau Pour l’Emploi dans le cadre de l’application de la loi plein emploi.</p>
+          <p><strong>13 établissements et services d’Auvergne-Rhône-Alpes adhèrent à la FAGERH.</strong></p>
+          <p><strong>Liste des conventions nationales avec les entreprises :</strong></p>
+          <ul><li>CTI (Centre Technique Informatique)</li><li>SUEZ Eau France</li><li>MNFTC</li><li>Magasins JD (groupe SPODIS)</li></ul>
+          <p><strong>Convention ARS - Conseil Régional Auvergne-Rhône-Alpes - FAGERH.</strong></p>
+          <h3>MDPH</h3>
+          <p>Les établissements et services d’Auvergne-Rhône-Alpes consacrent près de <strong>220 journées</strong> aux équipes pluridisciplinaires des <strong>MDPH</strong>, <strong>34 journées</strong> aux <strong>CDAPH</strong> et <strong>6,5</strong> aux différents groupes de travail.</p>
+          <aside class="outline-box employment-platform"><strong>Plateforme Emploi Accompagné</strong><span>Certains établissements et services interviennent dans le cadre du dispositif emploi accompagné en tant qu’acteurs des plateformes départementales (financements ARS - Agefiph - FIPHFP).</span></aside>
+        </div>
+        <button class="validate">Valider ce contenu</button>
+      </div>
+    </section>
+
+    <section class="sheet health-sheet" data-page="7">
+      <h2>Accompagnement à la santé</h2>
+      <p class="section-lead">L’offre d’accompagnement des ESRP - ESPO s’appuie sur des compétences médico-psycho-sociales variées.</p>
+      <p class="source-tag automatic">Données calculées automatiquement</p>
+      <div id="health-list" class="ranking"></div>
+      <h2>Hébergement</h2>
+      <div class="hero-stat small"><strong id="accommodation-total">—</strong><span>personnes hébergées déclarées</span></div>
+      <aside class="blue-box accommodation-definition"><strong>Hébergement</strong><span>Certains établissements et services offrent des possibilités de restauration et/ou d’hébergement, offrant ainsi aux personnes accompagnées une solution adaptée à leurs besoins spécifiques et favorisant leur confort et leur autonomie.</span></aside>
+    </section>
+
+    <section class="sheet validation-page">
+      <h2>Validation du livret</h2>
+      <p>Le PDF ne peut être généré qu’après validation de toutes les zones éditoriales.</p>
+      <div id="validation-summary"></div>
+      <p class="method">Les chiffres sont déclaratifs, non dédupliqués et calculés à partir du périmètre sélectionné. Les réponses incomplètes ne sont ni corrigées ni extrapolées.</p>
+    </section>
+  </main>
+  <script src="/forms/fagerh/livret.js"></script>
+</body>
+</html>

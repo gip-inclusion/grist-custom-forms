@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Vue d’ensemble Analytics - FAGERH</title>
+  <link rel="stylesheet" href="/forms/fagerh/analytics.css">
+</head>
+<body>
+  <main class="analytics-page">
+    <div class="analytics-shell">
+      <header class="analytics-header">
+        <div class="analytics-header-copy">
+          <p class="analytics-kicker">FAGERH Analytics</p>
+          <h1>Analytics FAGERH</h1>
+          <p class="analytics-subtitle">Observatoire de l’activité des établissements et services du réseau FAGERH.</p>
+          <div class="analytics-meta-row" aria-live="polite">
+            <span id="header-scope" class="analytics-meta-pill">Périmètre : chargement…</span>
+            <span id="header-freshness" class="analytics-meta-pill">Actualisation : en attente</span>
+            <span id="header-source-status" class="analytics-meta-pill">Source : vérification…</span>
+          </div>
+          <div class="analytics-meta-row analytics-meta-row-secondary" id="header-counts" aria-live="polite">
+            <span class="analytics-meta-pill">Questionnaires : --</span>
+            <span class="analytics-meta-pill">Terminés : --</span>
+            <span class="analytics-meta-pill">En cours : --</span>
+          </div>
+          <p class="analytics-header-note" id="data-status">Les données sont chargées exclusivement depuis l’API analytique en lecture seule.</p>
+        </div>
+        <div class="analytics-header-actions">
+          <a class="secondary-link" href="/admin/fagerh/">Retour à la console admin</a>
+          <button id="refresh-btn" class="secondary-button" type="button">Actualiser</button>
+        </div>
+      </header>
+
+      <section class="analytics-card analytics-filters-card" aria-labelledby="filters-title">
+        <div class="analytics-section-heading">
+          <div>
+            <h2 id="filters-title">Filtres</h2>
+            <p class="analytics-section-help">Les filtres s’appliquent à toutes les rubriques sans recharger la page.</p>
+          </div>
+          <div class="analytics-filters-actions">
+            <button id="filters-toggle" class="secondary-button filters-toggle" type="button" aria-expanded="true" aria-controls="filters-panel">Filtres</button>
+            <button id="reset-btn" class="ghost-button" type="button">Réinitialiser les filtres</button>
+          </div>
+        </div>
+        <div id="filters-panel" class="analytics-filters-panel">
+          <form id="filters-form" class="analytics-filters-form" novalidate>
+            <div class="analytics-filter-main">
+              <div class="field">
+                <label for="completion-scope">Périmètre</label>
+                <select id="completion-scope" name="completion_scope">
+                  <option value="all">Tous les questionnaires</option>
+                  <option value="completed">Questionnaires terminés</option>
+                  <option value="in_progress">Questionnaires en cours</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="region-code">Région</label>
+                <select id="region-code" name="region_code">
+                  <option value="">Toutes les régions</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="department-code">Département</label>
+                <select id="department-code" name="department_code">
+                  <option value="">Tous les départements</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="dispositif-filter">Dispositif</label>
+                <select id="dispositif-filter" name="dispositifs">
+                  <option value="">Tous les dispositifs</option>
+                  <option value="esrp">ESRP</option>
+                  <option value="espo">ESPO</option>
+                  <option value="ueros">UEROS</option>
+                  <option value="deac">DEAc</option>
+                </select>
+              </div>
+            </div>
+            <div class="analytics-filter-secondary">
+              <div class="field field-grow">
+                <label for="finess-main">FINESS</label>
+                <input id="finess-main" name="finess_main" type="text" inputmode="numeric" autocomplete="off" placeholder="001234567">
+              </div>
+              <div id="campaign-field" class="field is-disabled">
+                <label for="campaign-year">Campagne</label>
+                <input id="campaign-year" name="campaign_year" type="number" inputmode="numeric" min="2000" step="1" placeholder="Campagne indisponible" disabled aria-disabled="true">
+                <p class="field-help">La campagne n’est pas présente dans la source actuelle.</p>
+              </div>
+              <div class="field field-actions">
+                <button class="primary-button" type="submit">Appliquer</button>
+              </div>
+            </div>
+          </form>
+          <div id="active-filters" class="analytics-active-filters" aria-live="polite"></div>
+        </div>
+      </section>
+
+      <nav class="analytics-card analytics-tabs-card" aria-label="Rubriques Analytics">
+        <div class="analytics-tabs" role="tablist" aria-label="Rubriques Analytics">
+          <button id="tab-overview" class="analytics-tab" type="button" role="tab" aria-selected="true" aria-controls="section-overview" data-tab-target="section-overview">Vue d’ensemble</button>
+          <button id="tab-activity" class="analytics-tab" type="button" role="tab" aria-selected="false" aria-controls="section-activity" data-tab-target="section-activity" tabindex="-1">Activité</button>
+          <button id="tab-network-overview" class="analytics-tab" type="button" role="tab" aria-selected="false" aria-controls="section-network-overview" data-tab-target="section-network-overview" tabindex="-1">Réseau</button>
+          <button id="tab-modalites" class="analytics-tab" type="button" role="tab" aria-selected="false" aria-controls="section-modalites" data-tab-target="section-modalites" tabindex="-1">Accompagnement</button>
+          <button id="tab-insertion" class="analytics-tab" type="button" role="tab" aria-selected="false" aria-controls="section-insertion" data-tab-target="section-insertion" tabindex="-1">Insertion</button>
+          <button id="tab-participation" class="analytics-tab" type="button" role="tab" aria-selected="false" aria-controls="section-participation" data-tab-target="section-participation" tabindex="-1">Participation</button>
+          <button id="tab-internal" class="analytics-tab" type="button" role="tab" aria-selected="false" aria-controls="section-internal" data-tab-target="section-internal" tabindex="-1">Données internes</button>
+        </div>
+      </nav>
+
+      <div class="analytics-panels">
+        <section id="section-overview" class="analytics-card analytics-panel" role="tabpanel" aria-labelledby="tab-overview">
+          <div class="analytics-section-heading">
+            <div>
+              <h2>Vue d’ensemble</h2>
+              <p class="analytics-section-help">Lecture rapide des volumes reçus et du périmètre courant.</p>
+            </div>
+            <div class="analytics-stats-inline" id="overview-meta" aria-live="polite"></div>
+          </div>
+          <div id="overview-status" class="status-banner" role="status" aria-live="polite">Chargement du tableau de bord…</div>
+          <div id="overview-notice" class="notice-banner" hidden></div>
+
+          <section class="analytics-total-hero" aria-labelledby="total-label">
+            <div class="analytics-total-copy">
+              <p id="total-label" class="analytics-kpi-label">Nombre total de personnes reçues</p>
+              <p id="total-value" class="analytics-kpi-value">--</p>
+              <p id="total-unit" class="analytics-kpi-unit">personnes déclarées</p>
+            </div>
+            <div class="analytics-total-aside">
+              <p id="overview-formula" class="analytics-formula">Total = ESRP + ESPO + UEROS + PEC + autres dispositifs d’évaluation</p>
+              <p class="analytics-section-help">Une même personne peut être comptée plusieurs fois. DEAc n’est pas inclus.</p>
+            </div>
+          </section>
+
+          <div id="breakdown-grid" class="analytics-kpi-grid" aria-live="polite"></div>
+
+          <div class="analytics-overview-details">
+            <details class="analytics-accordion" id="preliminary-accordion">
+              <summary>Évaluations préliminaires</summary>
+              <div id="preliminary-card" class="analytics-accordion-body" aria-live="polite"></div>
+            </details>
+            <details class="analytics-accordion" id="other-eval-accordion">
+              <summary>Autres dispositifs d’évaluation</summary>
+              <div id="other-eval-card" class="analytics-accordion-body" aria-live="polite"></div>
+            </details>
+            <details class="analytics-accordion" id="deac-accordion">
+              <summary>DEAc</summary>
+              <div id="deac-card" class="analytics-accordion-body" aria-live="polite"></div>
+            </details>
+            <details class="analytics-accordion analytics-quality-accordion" id="quality-accordion">
+              <summary>Qualité des données</summary>
+              <div class="analytics-accordion-body">
+                <div class="analytics-quality-summary">
+                  <div class="analytics-section-heading compact">
+                    <div>
+                      <h3>Qualité des données</h3>
+                      <p id="quality-status" class="analytics-section-help">Vérification des anomalies visibles dans le périmètre administrateur.</p>
+                    </div>
+                    <p id="quality-level" class="quality-level quality-level-neutral">Chargement…</p>
+                  </div>
+                  <div class="analytics-quality-grid" aria-live="polite">
+                    <article class="analytics-kpi-card is-compact">
+                      <h4>FINESS invalides</h4>
+                      <p id="quality-invalid-finess" class="analytics-compact-value">--</p>
+                    </article>
+                    <article class="analytics-kpi-card is-compact">
+                      <h4>Départements inconnus</h4>
+                      <p id="quality-unknown-departments" class="analytics-compact-value">--</p>
+                    </article>
+                    <article class="analytics-kpi-card is-compact">
+                      <h4>Régions non résolues</h4>
+                      <p id="quality-unresolved-regions" class="analytics-compact-value">--</p>
+                    </article>
+                    <article class="analytics-kpi-card is-compact">
+                      <h4>FINESS normalisés</h4>
+                      <p id="quality-normalized-finess" class="analytics-compact-value">--</p>
+                    </article>
+                  </div>
+                  <ul id="quality-messages" class="analytics-list analytics-list-muted">
+                    <li>Le diagnostic de qualité sera affiché ici.</li>
+                  </ul>
+                </div>
+              </div>
+            </details>
+          </div>
+        </section>
+
+        <section id="section-activity" class="analytics-card analytics-panel" role="tabpanel" aria-labelledby="tab-activity" hidden>
+          <div class="analytics-section-heading">
+            <div>
+              <h2>Activité</h2>
+              <p class="analytics-section-help">Volumes d’activité, évaluations préliminaires et comparaison terminés / en cours.</p>
+            </div>
+          </div>
+
+          <section class="analytics-subsection">
+            <div class="analytics-subsection-heading">
+              <h3>Personnes reçues par dispositif</h3>
+              <p class="analytics-section-help">Vue synthétique des cinq catégories réellement calculées.</p>
+            </div>
+            <div id="activity-grid" class="analytics-kpi-grid" aria-live="polite"></div>
+          </section>
+
+          <section class="analytics-subsection">
+            <div class="analytics-subsection-heading">
+              <h3>Évaluations préliminaires</h3>
+              <p class="analytics-section-help">PEC et autres dispositifs d’évaluation, avec détails repliables.</p>
+            </div>
+            <div id="activity-preliminary-highlights" class="analytics-detail-grid" aria-live="polite"></div>
+          </section>
+
+          <section class="analytics-subsection">
+            <div class="analytics-subsection-heading">
+              <h3>Analyse des ETP</h3>
+              <p class="analytics-section-help">Lecture des ETP déclarés par dispositif et de la répartition métiers quand elle est exploitable.</p>
+            </div>
+            <div id="activity-etp-grid" class="analytics-kpi-grid" aria-live="polite"></div>
+            <div id="activity-etp-details" class="analytics-detail-grid" aria-live="polite"></div>
+          </section>
+
+          <details class="analytics-accordion" id="activity-etp-metiers-accordion">
+            <summary>Répartition métiers déclarée</summary>
+            <div class="analytics-accordion-body">
+              <div id="activity-etp-metiers" class="analytics-detail-grid" aria-live="polite"></div>
+            </div>
+          </details>
+
+          <details class="analytics-accordion" id="activity-esrp-accordion">
+            <summary>Détail des parcours ESRP</summary>
+            <div class="analytics-accordion-body">
+              <p class="analytics-inline-note">Sous-indicateurs non additifs.</p>
+              <div id="activity-details" class="analytics-detail-grid" aria-live="polite"></div>
+            </div>
+          </details>
+
+          <details class="analytics-accordion analytics-table-accordion">
+            <summary>Comparer les questionnaires terminés et en cours</summary>
+            <div class="analytics-accordion-body">
+              <div class="analytics-table-wrap">
+                <table class="analytics-table" id="status-comparison-table">
+                  <thead>
+                    <tr>
+                      <th scope="col">Indicateur</th>
+                      <th scope="col">Tous</th>
+                      <th scope="col">Terminés</th>
+                      <th scope="col">En cours</th>
+                      <th scope="col">Part en cours</th>
+                    </tr>
+                  </thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+            </div>
+          </details>
+        </section>
+
+        <section id="section-network-overview" class="analytics-card analytics-panel" role="tabpanel" aria-labelledby="tab-network-overview" hidden>
+          <div class="analytics-section-heading">
+            <div>
+              <h2>Le réseau en un regard</h2>
+              <p class="analytics-section-help">Comparatif UEROS, ESPO / Pré-orientation et ESRP, structuré comme une fiche d’observatoire.</p>
+            </div>
+          </div>
+          <div id="network-overview-status" class="status-banner" role="status" aria-live="polite">Chargement du comparatif…</div>
+          <div id="network-overview-grid" class="analytics-network-grid" aria-live="polite"></div>
+
+          <details class="analytics-accordion analytics-table-accordion">
+            <summary>Territoires</summary>
+            <div class="analytics-accordion-body">
+              <div class="analytics-table-grid">
+                <div class="analytics-table-block">
+                  <h3>Régions</h3>
+                  <div class="analytics-table-wrap">
+                    <table class="analytics-table" id="regions-table">
+                      <thead>
+                        <tr>
+                          <th scope="col">Région</th>
+                          <th scope="col">Code</th>
+                          <th scope="col">Questionnaires</th>
+                          <th scope="col">Total</th>
+                        </tr>
+                      </thead>
+                      <tbody></tbody>
+                    </table>
+                  </div>
+                </div>
+                <div class="analytics-table-block">
+                  <h3>Départements</h3>
+                  <div class="analytics-table-wrap">
+                    <table class="analytics-table" id="departments-table">
+                      <thead>
+                        <tr>
+                          <th scope="col">Département</th>
+                          <th scope="col">Région</th>
+                          <th scope="col">Questionnaires</th>
+                          <th scope="col">Total</th>
+                        </tr>
+                      </thead>
+                      <tbody></tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+              <div id="unknown-departments" class="analytics-nested-panel" hidden></div>
+            </div>
+          </details>
+
+          <details class="analytics-accordion analytics-table-accordion">
+            <summary>Établissements et services</summary>
+            <div class="analytics-accordion-body">
+              <p class="analytics-section-help">50 premiers FINESS canoniques triés par total courant.</p>
+              <div id="establishments-note" class="notice-banner" hidden></div>
+              <div class="analytics-table-wrap">
+                <table class="analytics-table" id="establishments-table">
+                  <thead>
+                    <tr>
+                      <th scope="col">FINESS</th>
+                      <th scope="col">Dispositifs</th>
+                      <th scope="col">Département</th>
+                      <th scope="col">Région</th>
+                      <th scope="col">Statuts</th>
+                      <th scope="col">Questionnaires</th>
+                      <th scope="col">Total</th>
+                      <th scope="col">ESRP</th>
+                      <th scope="col">ESPO</th>
+                      <th scope="col">UEROS</th>
+                      <th scope="col">PEC</th>
+                      <th scope="col">Autres évaluations</th>
+                    </tr>
+                  </thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+            </div>
+          </details>
+        </section>
+
+        <section id="section-modalites" class="analytics-card analytics-panel" role="tabpanel" aria-labelledby="tab-modalites" hidden>
+          <div class="analytics-section-heading">
+            <div>
+              <h2>Modalités d’accompagnement</h2>
+              <p class="analytics-section-help">Lecture simplifiée des modalités disponibles ou à cartographier : Hors les murs, accompagnement individuel, accompagnement collectif et autres modalités suivies.</p>
+            </div>
+          </div>
+          <div id="modalites-grid" class="analytics-detail-grid" aria-live="polite"></div>
+        </section>
+
+        <section id="section-insertion" class="analytics-card analytics-panel" role="tabpanel" aria-labelledby="tab-insertion" hidden>
+          <div class="analytics-section-heading">
+            <div>
+              <h2>Insertion professionnelle</h2>
+              <p class="analytics-section-help">Volumes, contrats et taux provisoires présentés séparément.</p>
+            </div>
+          </div>
+          <div id="insertion-grid" class="analytics-detail-grid" aria-live="polite"></div>
+        </section>
+
+        <section id="section-participation" class="analytics-card analytics-panel" role="tabpanel" aria-labelledby="tab-participation" hidden>
+          <div class="analytics-section-heading">
+            <div>
+              <h2>Participation institutionnelle</h2>
+              <p class="analytics-section-help">Participations aux instances MDPH et autres instances moins cartographiées.</p>
+            </div>
+          </div>
+          <div id="participation-grid" class="analytics-kpi-grid" aria-live="polite"></div>
+        </section>
+
+        <section id="section-internal" class="analytics-card analytics-panel analytics-panel-internal" role="tabpanel" aria-labelledby="tab-internal" hidden>
+          <div class="analytics-section-heading">
+            <div>
+              <h2>Informations internes</h2>
+              <p class="analytics-section-help">Bloc réservé à l’administration FAGERH, sans impact sur les calculs observatoires.</p>
+            </div>
+          </div>
+          <div class="analytics-detail-grid analytics-internal-grid">
+            <article class="analytics-kpi-card analytics-internal-card">
+              <h3>DUI</h3>
+              <div id="dui-summary" aria-live="polite"></div>
+              <details class="analytics-accordion analytics-accordion-inline">
+                <summary>Voir les DUI utilisés</summary>
+                <div class="analytics-accordion-body">
+                  <ul id="dui-tools" class="analytics-list"></ul>
+                </div>
+              </details>
+            </article>
+            <article class="analytics-kpi-card analytics-internal-card">
+              <h3>Rémunération</h3>
+              <ul id="remuneration-summary" class="analytics-list"></ul>
+            </article>
+          </div>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <script src="/forms/fagerh/analytics.js"></script>
+</body>
+</html>
