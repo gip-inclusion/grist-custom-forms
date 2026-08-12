@@ -5346,6 +5346,7 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,,</pre>
           `;
         } else if (row.task_type === "no_match_followup") {
           const noMatch = row.no_match || {};
+          const noMatchLabel = noMatch.role === "candidate" ? "candidat" : "employeur";
           body = `
             <div class="compare-grid">
               <section class="compare-card">
@@ -5358,13 +5359,14 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,,</pre>
               </section>
               <section class="compare-card">
                 <h3>Action attendue</h3>
-                <p style="margin:0; line-height:1.7;">Notification manuelle à envoyer pour signaler qu’aucun matching immédiat n’a été trouvé.</p>
+                <p style="margin:0 0 0.7rem; line-height:1.7;">Répondre au ${esc(noMatchLabel)} pour indiquer qu’aucun matching immédiat n’a été trouvé.</p>
+                <p style="margin:0; line-height:1.7;">Le commentaire ci-dessous sera ajouté au mail si vous cliquez sur “Envoyer l’email”.</p>
               </section>
             </div>
           `;
           actions = `
-            <button class="btn-accept" type="button" data-task-no-match-action="send" data-role="${esc(noMatch.role)}">Envoyer l’email</button>
-            <button class="btn-refuse" type="button" data-task-no-match-action="dismiss" data-role="${esc(noMatch.role)}">Ignorer</button>
+            <button class="btn-accept" type="button" data-task-no-match-action="send" data-role="${esc(noMatch.role)}">Envoyer l’email avec ce commentaire</button>
+            <button class="btn-refuse" type="button" data-task-no-match-action="dismiss" data-role="${esc(noMatch.role)}">Traiter sans envoyer</button>
           `;
         } else if (row.task_type === "new_job_request") {
           const newJob = row.new_job || {};
@@ -5463,8 +5465,8 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,,</pre>
               <p style="margin:0; line-height:1.7;">${esc(row.summary || "-")}</p>
               ${body}
               <section class="notes-box">
-                <h4>Note admin</h4>
-                <textarea id="${esc(noteId)}" placeholder="Ajouter une note interne...">${esc(row.matching?.admin_decision_note || row.no_match?.note || row.new_job?.note || row.new_employer?.note || row.duplicate_followup?.duplicate_followup_note || "")}</textarea>
+                <h4>${row.task_type === "no_match_followup" ? "Commentaire à ajouter au mail" : "Note admin"}</h4>
+                <textarea id="${esc(noteId)}" placeholder="${row.task_type === "no_match_followup" ? "Optionnel. Ce texte sera ajouté au mail envoyé au destinataire." : "Ajouter une note interne..."}">${esc(row.matching?.admin_decision_note || row.no_match?.note || row.new_job?.note || row.new_employer?.note || row.duplicate_followup?.duplicate_followup_note || "")}</textarea>
                 ${row.task_type === "matching_review" ? `
                 <div class="notes-grid" style="margin-top:0.9rem;">
                   <section class="notes-box" style="margin:0;">
@@ -5591,6 +5593,10 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,,</pre>
       list.innerHTML = filtered.map((row) => {
         const reasonsHtml = bulletList(row.raisons, "Aucun point fort détaillé");
         const weaknessesHtml = bulletList(row.points_faibles, "Aucun point faible majeur détecté");
+        const employerSector = row.employeur?.poste || "";
+        const employerJobTitle = row.employeur?.intitules_poste || employerSector || "Poste non renseigné";
+        const candidateSector = row.candidat?.metier || "";
+        const candidateJobTitle = row.candidat?.intitules_poste || candidateSector || "Intitulé non renseigné";
         const decisionMeta = row.admin_decision_at
           ? `<div class="decision-meta">Dernière décision : <strong>${esc(adminStatusLabel(row.admin_status))}</strong><br>Par : ${esc(row.admin_decision_by || "-")}<br>Le : ${esc(row.admin_decision_at || "-")}<br>Note : ${esc(row.admin_decision_note || "-")}</div>`
           : "";
@@ -5619,8 +5625,8 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,,</pre>
                 </div>
                 <div class="matching-row-cell">
                   <div class="matching-row-label">Poste</div>
-                  <div class="matching-row-main">${esc(row.employeur?.poste || "Poste non renseigné")}</div>
-                  <div class="matching-row-sub">${esc(row.employeur?.date_debut ? `Début : ${row.employeur.date_debut}` : row.besoin_id || "-")}</div>
+                  <div class="matching-row-main">${esc(employerJobTitle)}</div>
+                  <div class="matching-row-sub">${esc(`${employerSector ? `Secteur : ${employerSector}` : "Secteur non renseigné"}${row.employeur?.date_debut ? ` · Début : ${row.employeur.date_debut}` : ""}`)}</div>
                 </div>
                 <div class="matching-row-score">${esc(row.score)}<span>/ 100</span></div>
                 <div class="matching-row-tags">
@@ -5634,8 +5640,8 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,,</pre>
             <div class="matching-body">
               <div class="matching-summary">
                 <div>
-                  <h2>${esc(row.employeur?.poste || "Poste non renseigné")} · ${esc(row.candidat?.nom || "Candidat non renseigné")}</h2>
-                  <p>${esc(row.employeur?.employeur || "Entreprise non renseignée")} · ${esc(row.employeur?.pays || "Lieu non renseigné")}</p>
+                  <h2>${esc(employerJobTitle)} · ${esc(row.candidat?.nom || "Candidat non renseigné")}</h2>
+                  <p>${esc(row.employeur?.employeur || "Entreprise non renseignée")} · ${esc(row.employeur?.pays || "Lieu non renseigné")} · Secteur : ${esc(employerSector || "-")}</p>
                   <div class="summary-tags">
                     <span class="pill">Workflow : ${esc(workflowStatusLabel(row.workflow_status))}</span>
                     <span class="pill ${esc(row.admin_status)}">Décision admin : ${esc(adminStatusLabel(row.admin_status))}</span>
@@ -5667,8 +5673,8 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,,</pre>
                     <div class="detail-row"><dt>Nom</dt><dd>${esc(row.candidat?.nom || "-")}</dd></div>
                     <div class="detail-row"><dt>Email</dt><dd>${esc(row.candidat?.email || "-")}</dd></div>
                     <div class="detail-row"><dt>Pays</dt><dd>${esc(row.candidat?.pays || "-")}</dd></div>
-                    <div class="detail-row"><dt>Métiers</dt><dd>${esc(row.candidat?.metier || "-")}</dd></div>
-                    <div class="detail-row"><dt>Intitulés visés</dt><dd>${esc(row.candidat?.intitules_poste || "-")}</dd></div>
+                    <div class="detail-row"><dt>Secteur recherché</dt><dd>${esc(candidateSector || "-")}</dd></div>
+                    <div class="detail-row"><dt>Intitulé visé</dt><dd>${esc(candidateJobTitle)}</dd></div>
                     <div class="detail-row"><dt>Compétences</dt><dd>${esc(row.candidat?.competences || "-")}</dd></div>
                     <div class="detail-row"><dt>Langues</dt><dd>${esc(row.candidat?.langues || "-")}</dd></div>
                     <div class="detail-row"><dt>Mobilité</dt><dd>${esc(row.candidat?.mobilite || "-")}</dd></div>
@@ -5684,8 +5690,8 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,,</pre>
                     <div class="detail-row"><dt>Téléphone employeur</dt><dd>${esc(row.employer_whatsapp_phone || row.employeur?.telephone || "-")}</dd></div>
                     <div class="detail-row"><dt>Accord WhatsApp employeur</dt><dd>${esc(row.employer_whatsapp_consent === "yes" ? `Oui${row.employer_whatsapp_confirmed_at ? ` · confirmé le ${row.employer_whatsapp_confirmed_at}` : ""}` : row.employer_whatsapp_consent === "no" ? "Non" : "Non renseigné")}</dd></div>
                     <div class="detail-row"><dt>Pays / lieu</dt><dd>${esc(row.employeur?.pays || "-")}</dd></div>
-                    <div class="detail-row"><dt>Poste</dt><dd>${esc(row.employeur?.poste || "-")}</dd></div>
-                    <div class="detail-row"><dt>Intitulés proposés</dt><dd>${esc(row.employeur?.intitules_poste || "-")}</dd></div>
+                    <div class="detail-row"><dt>Secteur d’activité</dt><dd>${esc(employerSector || "-")}</dd></div>
+                    <div class="detail-row"><dt>Intitulé du poste</dt><dd>${esc(employerJobTitle)}</dd></div>
                     <div class="detail-row"><dt>Compétences clés</dt><dd>${esc(row.employeur?.competences_clefs || "-")}</dd></div>
                     <div class="detail-row"><dt>Langues requises</dt><dd>${esc(row.employeur?.langues_requises || "-")}</dd></div>
                     <div class="detail-row"><dt>Date de début</dt><dd>${esc(row.employeur?.date_debut || "-")}</dd></div>
@@ -5781,6 +5787,7 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,,</pre>
         const payload = row.payload || {};
         const note = row.note || "";
         const isCandidate = row.role === "candidate";
+        const roleLabel = isCandidate ? "candidat" : "employeur";
         const details = isCandidate ? `
           <div class="compare-grid">
             <section class="compare-card">
@@ -5789,15 +5796,16 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,,</pre>
                 <div class="detail-row"><dt>Nom</dt><dd>${esc(payload.nom || "-")}</dd></div>
                 <div class="detail-row"><dt>Email</dt><dd>${esc(payload.email || "-")}</dd></div>
                 <div class="detail-row"><dt>Pays</dt><dd>${esc(payload.pays || "-")}</dd></div>
-                <div class="detail-row"><dt>Métiers</dt><dd>${esc(payload.metier || "-")}</dd></div>
+                <div class="detail-row"><dt>Secteur / métier</dt><dd>${esc(payload.metier || "-")}</dd></div>
                 <div class="detail-row"><dt>Langues</dt><dd>${esc(payload.langues || "-")}</dd></div>
                 <div class="detail-row"><dt>Mobilité</dt><dd>${esc(payload.mobilite || "-")}</dd></div>
                 <div class="detail-row"><dt>Disponibilité</dt><dd>${esc(payload.disponibilite || "-")}</dd></div>
               </dl>
             </section>
             <section class="compare-card">
-              <h3>Message prévu</h3>
-              <p>Aucun matching n’a pu être réalisé immédiatement selon ses critères. Le candidat sera recontacté dès qu’une mise en relation pertinente pourra être opérée.</p>
+              <h3>Action attendue</h3>
+              <p style="margin:0 0 0.7rem; line-height:1.7;">Répondre au candidat pour indiquer qu’aucun matching immédiat n’a été trouvé.</p>
+              <p style="margin:0; line-height:1.7;">Le commentaire saisi plus bas sera ajouté au mail si vous cliquez sur “Envoyer l’email”.</p>
             </section>
           </div>
         ` : `
@@ -5807,15 +5815,16 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,,</pre>
               <dl class="detail-list">
                 <div class="detail-row"><dt>Entreprise</dt><dd>${esc(payload.employeur || "-")}</dd></div>
                 <div class="detail-row"><dt>Contact</dt><dd>${esc(payload.contact || "-")}</dd></div>
-                <div class="detail-row"><dt>Poste</dt><dd>${esc(payload.poste || "-")}</dd></div>
+                <div class="detail-row"><dt>Intitulé du poste</dt><dd>${esc(payload.poste || "-")}</dd></div>
                 <div class="detail-row"><dt>Pays</dt><dd>${esc(payload.pays || "-")}</dd></div>
                 <div class="detail-row"><dt>Langues requises</dt><dd>${esc(payload.langues_requises || "-")}</dd></div>
                 <div class="detail-row"><dt>Date de début</dt><dd>${esc(payload.date_debut || "-")}</dd></div>
               </dl>
             </section>
             <section class="compare-card">
-              <h3>Message prévu</h3>
-              <p>Aucun matching n’a pu être généré immédiatement. Une nouvelle recherche de profils sera menée dans la base EURES et l’employeur sera recontacté dès qu’une candidature adaptée pourra être proposée.</p>
+              <h3>Action attendue</h3>
+              <p style="margin:0 0 0.7rem; line-height:1.7;">Répondre à l’employeur pour indiquer qu’aucun matching immédiat n’a été généré.</p>
+              <p style="margin:0; line-height:1.7;">Le commentaire saisi plus bas sera ajouté au mail si vous cliquez sur “Envoyer l’email”.</p>
             </section>
           </div>
         `;
@@ -5839,8 +5848,8 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,,</pre>
                   <span>matching immédiat</span>
                 </div>
                 <div class="decision-actions">
-                  <button class="btn-accept" type="button" data-no-match-action="send">Envoyer l’email</button>
-                  <button class="btn-refuse" type="button" data-no-match-action="dismiss">Ignorer</button>
+                  <button class="btn-accept" type="button" data-no-match-action="send">Envoyer l’email avec ce commentaire</button>
+                  <button class="btn-refuse" type="button" data-no-match-action="dismiss">Traiter sans envoyer</button>
                 </div>
               </div>
             </div>
@@ -5848,8 +5857,8 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,,</pre>
             <div class="matching-body">
               ${details}
               <section class="notes-box">
-                <h4>Note admin</h4>
-                <textarea id="no-match-note-${esc(row.role)}-${esc(row.record_id)}" placeholder="Ajouter une note interne...">${esc(note)}</textarea>
+                <h4>Commentaire à ajouter au mail</h4>
+                <textarea id="no-match-note-${esc(row.role)}-${esc(row.record_id)}" placeholder="Optionnel. Ce texte sera ajouté au mail envoyé au ${esc(roleLabel)}.">${esc(note)}</textarea>
                 <div class="decision-meta">Créé le : ${esc(row.created_at || "-")}<br>Par : ${esc(row.created_by || "-")}<br>Dernier envoi : ${esc(row.sent_at || "-")}</div>
               </section>
             </div>

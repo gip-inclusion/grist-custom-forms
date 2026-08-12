@@ -29,7 +29,7 @@ const checks = [
   ["candidate whatsapp raw json", files.app, "whatsapp: {"],
   ["candidate whatsapp consent field", files.app, "whatsapp_consent: normalized.whatsapp_consent"],
   ["candidate whatsapp phone field", files.app, "whatsapp_phone: normalized.tally_q34"],
-  ["candidate whatsapp form version", files.app, "2026-08-tally-candidate-whatsapp-v3"],
+  ["candidate form version", files.app, "2026-08-tally-candidate-salary-v4"],
 
   // Employer WhatsApp confirmation flow.
   ["employer email whatsapp option", files.appPy, "contact_whatsapp"],

@@ -6483,12 +6483,21 @@ def build_brevo_candidate_no_match_email(row: dict) -> tuple[str, str, str, str]
     if not recipient:
         raise RuntimeError('Candidate email is missing for no-match notification.')
     privacy_url = get_eures_privacy_url('fr')
+    admin_note = str(row.get('note') or '').strip()
+    admin_note_text = f"Message complémentaire :\n{admin_note}\n\n" if admin_note else ""
+    admin_note_html = (
+        "<div style=\"margin:0 0 18px;padding:14px 16px;background:#f8f4ec;border-left:4px solid #004494;border-radius:10px;\">"
+        f"<p style=\"margin:0 0 6px;font-size:14px;line-height:1.5;color:#0f2742;\"><strong>Message complémentaire</strong></p>"
+        f"<p style=\"margin:0;font-size:15px;line-height:1.7;\">{_format_email_multiline(admin_note)}</p>"
+        "</div>"
+    ) if admin_note else ""
     subject = "[EURES beta] Aucune mise en relation immédiate pour le moment"
     body_text = (
         "Bonjour,\n\n"
         "Nous vous confirmons la bonne réception de votre questionnaire EURES beta.\n\n"
         "A ce stade, aucun matching n'a pu être réalisé immédiatement selon vos critères.\n"
         "Votre profil reste pris en compte et vous serez prévenu dès qu'une mise en relation pertinente pourra être opérée.\n\n"
+        f"{admin_note_text}"
         f"Informations sur vos données : {privacy_url}\n\n"
         "Cordialement,\n"
         f"{get_eures_mail_signature_name()}\n"
@@ -6515,6 +6524,7 @@ def build_brevo_candidate_no_match_email(row: dict) -> tuple[str, str, str, str]
                 <p style="margin:0 0 18px;font-size:16px;line-height:1.7;">Nous vous confirmons la bonne réception de votre questionnaire EURES beta.</p>
                 <p style="margin:0 0 18px;font-size:16px;line-height:1.7;">À ce stade, aucun matching n'a pu être réalisé immédiatement selon vos critères.</p>
                 <p style="margin:0 0 18px;font-size:16px;line-height:1.7;">Votre profil reste pris en compte et vous serez prévenu dès qu'une mise en relation pertinente pourra être opérée.</p>
+                {admin_note_html}
                 <p style="margin:18px 0 0;font-size:13px;line-height:1.7;color:#6b6256;">
                   Informations sur le traitement de vos données :
                   <a href="{escape(privacy_url)}" style="color:#004494;">consulter la notice de confidentialité</a>.
@@ -6541,12 +6551,21 @@ def build_brevo_employer_no_match_email(row: dict) -> tuple[str, str, str, str]:
         raise RuntimeError('Employer email is missing for no-match notification.')
     privacy_url = get_eures_privacy_url('fr')
     poste = str(payload.get('poste') or 'votre besoin').strip()
+    admin_note = str(row.get('note') or '').strip()
+    admin_note_text = f"Message complémentaire :\n{admin_note}\n\n" if admin_note else ""
+    admin_note_html = (
+        "<div style=\"margin:0 0 18px;padding:14px 16px;background:#f8f4ec;border-left:4px solid #103a2b;border-radius:10px;\">"
+        f"<p style=\"margin:0 0 6px;font-size:14px;line-height:1.5;color:#103a2b;\"><strong>Message complémentaire</strong></p>"
+        f"<p style=\"margin:0;font-size:15px;line-height:1.7;\">{_format_email_multiline(admin_note)}</p>"
+        "</div>"
+    ) if admin_note else ""
     subject = f"[EURES beta] Suivi de votre besoin de recrutement - {poste}"
     body_text = (
         "Bonjour,\n\n"
         "Nous vous confirmons la bonne réception de votre questionnaire EURES beta.\n\n"
         "A ce stade, aucun matching n'a pu être généré immédiatement pour votre besoin.\n"
         "Nous allons poursuivre la recherche de profils pertinents dans la base EURES et reviendrons vers vous dès qu'une candidature adaptée pourra être proposée.\n\n"
+        f"{admin_note_text}"
         f"Informations sur vos données : {privacy_url}\n\n"
         "Cordialement,\n"
         f"{get_eures_mail_signature_name()}\n"
@@ -6573,6 +6592,7 @@ def build_brevo_employer_no_match_email(row: dict) -> tuple[str, str, str, str]:
                 <p style="margin:0 0 18px;font-size:16px;line-height:1.7;">Nous vous confirmons la bonne réception de votre questionnaire EURES beta.</p>
                 <p style="margin:0 0 18px;font-size:16px;line-height:1.7;">À ce stade, aucun matching n'a pu être généré immédiatement pour votre besoin.</p>
                 <p style="margin:0 0 18px;font-size:16px;line-height:1.7;">Nous allons poursuivre la recherche de profils pertinents dans la base EURES et reviendrons vers vous dès qu'une candidature adaptée pourra être proposée.</p>
+                {admin_note_html}
                 <p style="margin:18px 0 0;font-size:13px;line-height:1.7;color:#6b6256;">
                   Informations sur le traitement de vos données :
                   <a href="{escape(privacy_url)}" style="color:#103a2b;">consulter la notice de confidentialité</a>.
@@ -9518,6 +9538,7 @@ def admin_eures_no_match_send(form_id: str, role: str, record_id: int):
         row = _build_eures_no_match_row(normalized_role, record or {})
         if not row:
             return jsonify({'error': 'No-match entry not found'}), 404
+        row['note'] = note
 
         if normalized_role == 'candidate':
             recipient, subject, text_body, html_body = build_brevo_candidate_no_match_email(row)
