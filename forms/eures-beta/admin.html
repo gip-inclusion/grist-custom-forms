@@ -297,6 +297,87 @@
       gap: 0.65rem;
     }
 
+    #relations-list {
+      gap: 0.45rem;
+    }
+
+    .relation-compact-card {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.94);
+      overflow: hidden;
+    }
+
+    .relation-compact-card > summary {
+      display: grid;
+      grid-template-columns: minmax(180px, 1.2fr) minmax(160px, 1fr) minmax(135px, 0.85fr) minmax(135px, 0.85fr) 64px;
+      gap: 0.75rem;
+      align-items: center;
+      padding: 0.7rem 0.85rem;
+      cursor: pointer;
+      list-style: none;
+    }
+
+    .relation-compact-card > summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .relation-compact-card > summary::before {
+      content: "▶";
+      color: var(--accent);
+      font-size: 0.78rem;
+      transform-origin: center;
+      transition: transform 0.15s ease;
+    }
+
+    .relation-compact-card[open] > summary::before {
+      transform: rotate(90deg);
+    }
+
+    .relation-compact-card > summary {
+      grid-template-columns: 16px minmax(180px, 1.2fr) minmax(160px, 1fr) minmax(135px, 0.85fr) minmax(135px, 0.85fr) 64px;
+    }
+
+    .relation-main strong,
+    .relation-main span,
+    .relation-compact-meta,
+    .relation-score {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .relation-main {
+      display: grid;
+      gap: 0.1rem;
+      min-width: 0;
+    }
+
+    .relation-main strong {
+      color: var(--text);
+      font-size: 1rem;
+    }
+
+    .relation-main span,
+    .relation-compact-meta {
+      color: var(--muted);
+      font-size: 0.9rem;
+      font-weight: 650;
+    }
+
+    .relation-score {
+      color: var(--accent-strong);
+      font-weight: 800;
+      text-align: right;
+    }
+
+    .relation-detail {
+      padding: 0.9rem;
+      border-top: 1px solid var(--line);
+      background: rgba(244, 248, 255, 0.45);
+    }
+
     .matching-compact-card {
       border-radius: 16px;
       overflow: hidden;
@@ -840,6 +921,107 @@
       margin-top: 0.8rem;
     }
 
+    .response-overview {
+      display: grid;
+      gap: 0.7rem;
+      margin-top: 0.85rem;
+    }
+
+    .response-overview-row {
+      display: grid;
+      grid-template-columns: 92px minmax(0, 1fr);
+      gap: 0.75rem;
+      align-items: start;
+    }
+
+    .response-overview-row strong {
+      color: var(--muted);
+      font-size: 0.86rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .history-response-details summary {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      margin: 1rem 1rem 0.9rem;
+      padding: 0.65rem 1rem;
+      cursor: pointer;
+      border: 1px solid rgba(0, 68, 148, 0.18);
+      border-radius: 999px;
+      background: rgba(244, 248, 255, 0.9);
+      color: var(--accent-strong);
+      font-weight: 800;
+    }
+
+    .linked-matching-list {
+      display: grid;
+      gap: 0.25rem;
+    }
+
+    .linked-matching-row {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.9);
+      overflow: hidden;
+    }
+
+    .linked-matching-summary {
+      width: 100%;
+      display: grid;
+      grid-template-columns: minmax(150px, 1fr) minmax(180px, 1.25fr) 64px minmax(105px, 0.75fr);
+      gap: 0.6rem;
+      align-items: center;
+      padding: 0.45rem 0.65rem;
+      color: var(--text);
+      text-align: left;
+    }
+
+    .linked-matching-name {
+      font-weight: 800;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .linked-matching-score {
+      color: var(--accent-strong);
+      font-weight: 800;
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .linked-matching-status {
+      color: var(--muted);
+      font-size: 0.86rem;
+      font-weight: 650;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .linked-matching-sector {
+      color: var(--muted);
+      font-weight: 600;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .linked-matching-detail {
+      padding: 0.65rem 0.9rem 0.75rem 2.1rem;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      line-height: 1.55;
+      font-size: 0.92rem;
+      background: rgba(255, 255, 255, 0.56);
+    }
+
+    .linked-matching-detail[hidden] {
+      display: none;
+    }
+
     .pill {
       display: inline-flex;
       align-items: center;
@@ -1016,6 +1198,89 @@
     .compare-card h3 {
       margin: 0 0 0.9rem;
       font-size: 1.15rem;
+    }
+
+    .profile-section {
+      display: grid;
+      gap: 1rem;
+    }
+
+    .profile-block {
+      border: 1px solid rgba(15, 39, 66, 0.1);
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.62);
+      padding: 0.85rem;
+    }
+
+    .profile-block h4 {
+      margin: 0 0 0.75rem;
+      color: var(--accent-strong);
+      font-size: 0.9rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .key-value {
+      display: grid;
+      gap: 0.55rem;
+    }
+
+    .key-value-row {
+      display: grid;
+      grid-template-columns: 135px minmax(0, 1fr);
+      gap: 0.75rem;
+      align-items: start;
+    }
+
+    .key-value-row span:first-child {
+      color: var(--muted);
+      font-size: 0.88rem;
+    }
+
+    .key-value-row span:last-child {
+      line-height: 1.45;
+    }
+
+    .readable-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+    }
+
+    .readable-token {
+      display: inline-flex;
+      align-items: center;
+      border: 1px solid rgba(0, 68, 148, 0.14);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.72);
+      padding: 0.22rem 0.55rem;
+      color: var(--text);
+      font-size: 0.88rem;
+      line-height: 1.35;
+    }
+
+    .cv-inline-link {
+      display: inline-flex;
+      align-items: center;
+      min-height: 0;
+      margin-left: 0.5rem;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: var(--accent);
+      font-weight: 700;
+      text-decoration: underline;
+      text-underline-offset: 0.18em;
+    }
+
+    .profile-block.is-readability-focus {
+      border-color: rgba(16, 90, 69, 0.18);
+      background: linear-gradient(180deg, rgba(241, 250, 243, 0.92), rgba(255, 255, 255, 0.72));
+    }
+
+    .job-highlight {
+      border-color: rgba(0, 68, 148, 0.22);
+      background: linear-gradient(180deg, rgba(239, 246, 255, 0.92), rgba(255, 255, 255, 0.72));
     }
 
     .matching-card[data-role="candidate"] .compare-card:first-child {
@@ -1400,6 +1665,35 @@
       margin-top: 1rem;
     }
 
+    #history-invitation-list {
+      gap: 0.35rem;
+    }
+
+    .history-invitation-row {
+      display: grid;
+      grid-template-columns: minmax(220px, 1.2fr) minmax(180px, 1fr) minmax(150px, 0.8fr) auto;
+      gap: 0.8rem;
+      align-items: center;
+      padding: 0.55rem 0.7rem;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.9);
+    }
+
+    .history-invitation-row strong,
+    .history-invitation-row span {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .history-invitation-subject,
+    .history-invitation-date {
+      color: var(--muted);
+      font-weight: 650;
+    }
+
     .send-panel {
       display: grid;
       gap: 0.9rem;
@@ -1655,6 +1949,11 @@
       .detail-row {
         grid-template-columns: 1fr;
         gap: 0.25rem;
+      }
+
+      .key-value-row {
+        grid-template-columns: 1fr;
+        gap: 0.2rem;
       }
     }
   </style>
@@ -2092,17 +2391,15 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,,</pre>
         <section class="admin-top admin-workspace">
           <aside class="admin-side-nav" aria-label="Sous-menu Mises en relation">
             <p class="admin-side-title">Mises en relation</p>
-            <button type="button" data-open-relations="to-launch">À lancer</button>
-            <button type="button" data-open-relations="in-progress">En cours</button>
-            <button type="button" data-open-relations="result-needed">Résultats à renseigner</button>
-            <button type="button" data-open-relations="done">Terminées</button>
+            <button type="button" data-open-relations="to-launch">Créer le contact</button>
+            <button type="button" data-open-relations="in-progress">Suivre / renseigner</button>
           </aside>
           <div class="admin-card">
             <div class="toolbar data-history-head">
               <div>
-                <div class="section-title" id="relations-view-title">Mises en relation à lancer</div>
+                <div class="section-title" id="relations-view-title">Contacts à créer</div>
                 <p class="help-text" id="relations-view-copy">
-                  Matchings acceptés par l’employeur pour lesquels il faut organiser le canal de contact.
+                  Matchings acceptés par l’employeur : il faut maintenant créer le contact réel, WhatsApp ou hors WhatsApp.
                 </p>
               </div>
             </div>
@@ -2138,7 +2435,7 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,,</pre>
                 <div class="kpi-value" id="candidate-response-kpi-active">0</div>
               </div>
               <div class="kpi">
-                <div class="kpi-label">Désactivées</div>
+                <div class="kpi-label">Archivées</div>
                 <div class="kpi-value" id="candidate-response-kpi-disabled">0</div>
               </div>
             </div>
@@ -2175,7 +2472,7 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,,</pre>
                 <div class="kpi-value" id="employer-response-kpi-active">0</div>
               </div>
               <div class="kpi">
-                <div class="kpi-label">Désactivées</div>
+                <div class="kpi-label">Archivées</div>
                 <div class="kpi-value" id="employer-response-kpi-disabled">0</div>
               </div>
             </div>
@@ -2279,14 +2576,14 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,,</pre>
                 <div class="cockpit-quick-head">
                   <strong>Réponses candidats</strong>
                 </div>
-                <p>Consulter les questionnaires candidats, désactiver une réponse ou ouvrir les matchings liés.</p>
+                <p>Consulter les questionnaires candidats, archiver une réponse ou ouvrir les matchings liés.</p>
                 <footer><button type="button" data-open-history="candidate-responses">Ouvrir</button></footer>
               </article>
               <article class="cockpit-quick-card">
                 <div class="cockpit-quick-head">
                   <strong>Réponses employeurs</strong>
                 </div>
-                <p>Consulter les besoins employeurs, désactiver une réponse ou ouvrir les matchings liés.</p>
+                <p>Consulter les besoins employeurs, archiver une réponse ou ouvrir les matchings liés.</p>
                 <footer><button type="button" data-open-history="employer-responses">Ouvrir</button></footer>
               </article>
               <article class="cockpit-quick-card">
@@ -2768,6 +3065,772 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,,</pre>
       return String(latest?.record_id || "") === String(row?.record_id || "");
     }
 
+    function responseFieldText(field) {
+      return normalizeText(`${field?.key || ""} ${field?.label || ""}`);
+    }
+
+    function responseFieldValue(field) {
+      return String(field?.value || "").trim();
+    }
+
+    function normalizedDisplayValue(value) {
+      const raw = String(value || "").trim();
+      if (raw === "gross") return "brut";
+      if (raw === "net") return "net";
+      return raw;
+    }
+
+    function isUsefulResponseField(field) {
+      const value = normalizedDisplayValue(responseFieldValue(field));
+      if (!value) return false;
+      const text = responseFieldText(field);
+      if (/salaire|remuneration|rémunération/.test(text) && /^0(?:[,.]0+)?$/.test(value)) return false;
+      if (/salaire|remuneration|rémunération/.test(text) && /^(brut|net|gross)$/.test(value)) return false;
+      return true;
+    }
+
+    function hasVisibleResponseFields(fields) {
+      return (Array.isArray(fields) ? fields : []).some((field) => isUsefulResponseField(field));
+    }
+
+    function takeResponseFields(fields, matcher) {
+      const patterns = Array.isArray(matcher) ? matcher : (matcher?.patterns || []);
+      const excludePatterns = Array.isArray(matcher) ? [] : (matcher?.excludePatterns || []);
+      const taken = [];
+      const remaining = [];
+      for (const field of fields) {
+        const text = responseFieldText(field);
+        const excluded = excludePatterns.some((pattern) => pattern.test(text));
+        const matched = !excluded && patterns.some((pattern) => pattern.test(text));
+        if (matched) {
+          taken.push(field);
+        } else {
+          remaining.push(field);
+        }
+      }
+      return { taken, remaining };
+    }
+
+    function renderReadableValue(value, compact = false) {
+      const raw = normalizedDisplayValue(value);
+      if (!raw) return "-";
+      const parts = raw
+        .split(/\s*(?:\||;|,\s(?=[A-ZÀ-ÖØ-Þ0-9]))\s*/u)
+        .map((part) => part.trim())
+        .filter(Boolean);
+      if (!compact || parts.length < 2 || parts.length > 14) {
+        return esc(raw);
+      }
+      return `
+        <span class="readable-list">
+          ${parts.map((part) => `<span class="readable-token">${esc(part)}</span>`).join("")}
+        </span>
+      `;
+    }
+
+    function displayFieldLabel(field, options = {}) {
+      const raw = String(field?.label || field?.key || "-").trim();
+      const stripParentheses = (value) => String(value || "").replace(/\s*\([^)]*\)/g, "").replace(/\s{2,}/g, " ").trim();
+      const sectorLabelAliases = (value) => {
+        const cleaned = stripParentheses(value);
+        const aliases = [cleaned];
+        if (/industrie|production/i.test(cleaned)) aliases.push("Production industrielle", "Industrie et production");
+        if (/hôtellerie|hotellerie|restauration/i.test(cleaned)) aliases.push("Hôtellerie et restauration", "Hotellerie et restauration");
+        if (/nettoyage|entretien/i.test(cleaned)) aliases.push("Nettoyage et entretien");
+        if (/agriculture|récolte|recolte/i.test(cleaned)) aliases.push("Agriculture et récolte", "Agriculture et recolte");
+        if (/vente|commerce/i.test(cleaned)) aliases.push("Vente et commerce");
+        return [...new Set(aliases.filter(Boolean))];
+      };
+      if (options.shortLanguageLabels) {
+        return raw
+          .replace(/^comp[ée]tences?\s+linguistiques?\s*[·:.-]\s*/i, "")
+          .replace(/^langues?\s*[·:.-]\s*/i, "")
+          .trim() || raw;
+      }
+      if (options.projectSectorLabel) {
+        let cleanedRaw = stripParentheses(raw);
+        for (const sectorAlias of sectorLabelAliases(options.projectSectorLabel)) {
+          const escapedSector = sectorAlias.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+          cleanedRaw = cleanedRaw
+            .replace(new RegExp(`\\s*[·:.-]\\s*${escapedSector}\\s*$`, "i"), "")
+            .replace(new RegExp(`^${escapedSector}\\s*[·:.-]\\s*`, "i"), "")
+            .trim();
+        }
+        return cleanedRaw || stripParentheses(raw) || raw;
+      }
+      return raw;
+    }
+
+    function renderFieldRows(fields, options = {}) {
+      const visible = (Array.isArray(fields) ? fields : []).filter((field) => isUsefulResponseField(field));
+      if (!visible.length) {
+        return `<div class="empty-state">Aucune information renseignée dans ce bloc.</div>`;
+      }
+      return `
+        <div class="key-value">
+          ${visible.map((field) => `
+            <div class="key-value-row">
+              <span>${esc(displayFieldLabel(field, options))}</span>
+              <span>${renderReadableValue(responseFieldValue(field), Boolean(options.compactValues))}</span>
+            </div>
+          `).join("")}
+        </div>
+      `;
+    }
+
+    function fieldsWithoutLanguageSummaryDuplicates(fields) {
+      const source = Array.isArray(fields) ? fields : [];
+      const hasDetailedLanguageFields = source.some((field) => /competences linguistiques|compétences linguistiques/.test(responseFieldText(field)));
+      if (!hasDetailedLanguageFields) return source;
+      return source.filter((field) => !/^langues?$/i.test(String(field?.label || field?.key || "").trim()));
+    }
+
+    function salaryFieldType(field) {
+      const label = normalizeText(field?.label || field?.key || "");
+      const value = normalizeText(responseFieldValue(field));
+      if (!/salaire|remuneration|rémunération/.test(label)) return "";
+      if (/type de salaire|periodicite|périodicité/.test(label)) return "period";
+      if (/brut ou net|brut\/net/.test(label) || /^(gross|brut|net)$/.test(value)) return "gross_net";
+      if (/montant|minimum|maximum|salaire/.test(label)) return "amount";
+      return "";
+    }
+
+    function readableSalaryPeriod(value) {
+      const normalized = normalizeText(value);
+      if (/mois|mensuel/.test(normalized)) return "mensuel";
+      if (/an|annuel/.test(normalized)) return "annuel";
+      if (/heure|horaire/.test(normalized)) return "horaire";
+      return normalizedDisplayValue(value);
+    }
+
+    function readableGrossNet(value) {
+      const normalized = normalizeText(value);
+      if (/gross|brut/.test(normalized)) return "brut";
+      if (/net/.test(normalized)) return "net";
+      return normalizedDisplayValue(value);
+    }
+
+    function isZeroSalaryValue(value) {
+      return /^0(?:[,.]0+)?$/.test(normalizeText(value));
+    }
+
+    function fieldsWithMergedSalary(fields) {
+      const source = Array.isArray(fields) ? fields : [];
+      const salary = {
+        min: "",
+        max: "",
+        period: "",
+        grossNet: "",
+      };
+      const kept = [];
+      for (const field of source) {
+        const type = salaryFieldType(field);
+        const label = normalizeText(field?.label || field?.key || "");
+        const value = normalizedDisplayValue(responseFieldValue(field));
+        if (!type || !value) {
+          kept.push(field);
+          continue;
+        }
+        if (type === "amount" && !/^(brut|net|gross)$/.test(normalizeText(value)) && !isZeroSalaryValue(value)) {
+          if (/maximum|max/.test(label) && !salary.max) {
+            salary.max = value;
+          } else if (!salary.min) {
+            salary.min = value;
+          } else if (!salary.max && value !== salary.min) {
+            salary.max = value;
+          }
+        } else if (type === "period" && !salary.period) {
+          salary.period = readableSalaryPeriod(value);
+        } else if (type === "gross_net" && !salary.grossNet) {
+          salary.grossNet = readableGrossNet(value);
+        }
+      }
+      let amount = "";
+      if (salary.min && salary.max) {
+        amount = `${salary.min} à ${salary.max}`;
+      } else {
+        amount = salary.min || salary.max;
+      }
+      const numericAmount = Number(String(amount).replace(",", ".").match(/\d+(?:[.,]\d+)?/)?.[0] || "");
+      const looksSuspicious = numericAmount > 1000000;
+      const salaryParts = [amount, salary.period, salary.grossNet].filter(Boolean);
+      if (salaryParts.length) {
+        kept.push({
+          label: "Salaire",
+          value: looksSuspicious ? `À vérifier : ${salaryParts.join(" ")}` : salaryParts.join(" "),
+        });
+      }
+      return kept;
+    }
+
+    function renderDocumentsBlock(row, fields) {
+      const seen = new Set();
+      const cleanDocumentLabel = (field) => {
+        const rawLabel = String(field?.label || field?.key || "-")
+          .replace(/^préparation des documents\s*[·:.-]\s*/i, "")
+          .replace(/^preparation des documents\s*[·:.-]\s*/i, "")
+          .trim();
+        const normalizedLabel = normalizeText(rawLabel);
+        if (/affiliation|securite sociale|sécurité sociale/.test(normalizedLabel)) {
+          if (/luxembourg|luxembourgeois/.test(normalizedLabel)) return "Affiliation sécurité sociale Luxembourg";
+          if (/allemand|allemagne/.test(normalizedLabel)) return "Affiliation sécurité sociale Allemagne";
+          return "Affiliation sécurité sociale";
+        }
+        return rawLabel;
+      };
+      const documentFields = (Array.isArray(fields) ? fields : [])
+        .map((field) => ({
+          label: cleanDocumentLabel(field),
+          value: normalizedDisplayValue(responseFieldValue(field)),
+        }))
+        .filter((field) => {
+          const labelKey = normalizeText(field.label);
+          const valueKey = normalizeText(field.value);
+          if (/cv transmis|cv .*recu|cv .*reçu|cv .*nom du fichier|nom du fichier/.test(labelKey)) return false;
+          if (
+            /affiliation.*(securite sociale|sécurité sociale)/.test(labelKey) &&
+            !/(france|luxembourg|luxembourgeois|allemagne|allemand)/.test(labelKey)
+          ) return false;
+          const duplicateKey = `${labelKey}:${valueKey}`;
+          if (seen.has(duplicateKey)) return false;
+          seen.add(duplicateKey);
+          return Boolean(field.value);
+        });
+      if (row?.cv_download_url) {
+        documentFields.unshift({
+          label: "CV du candidat",
+          value: "CV disponible",
+          downloadUrl: row.cv_download_url,
+        });
+      }
+      if (!hasVisibleResponseFields(documentFields) && !row?.cv_download_url) return "";
+      return `
+        <section class="profile-block">
+          <h4>Documents</h4>
+          <div class="key-value">
+            ${documentFields.map((field) => {
+              const normalizedValue = normalizeText(field.value);
+              const isChecklistValue = /^(je l.?ai|oui|yes|true)$/.test(normalizedValue);
+              const isMissingValue = /^(non|no|false|je ne l.?ai pas|manquant)$/.test(normalizedValue);
+              const displayValue = isChecklistValue ? "✅" : (isMissingValue ? "❌" : field.value);
+              const displayHtml = field.downloadUrl
+                ? `✅ <a class="cv-inline-link" href="${esc(field.downloadUrl)}" target="_blank" rel="noopener noreferrer">Télécharger</a>`
+                : esc(displayValue);
+              return `
+                <div class="key-value-row">
+                  <span>${esc(field.label)}</span>
+                  <span>${displayHtml}</span>
+                </div>
+              `;
+            }).join("")}
+          </div>
+        </section>
+      `;
+    }
+
+    function identityFieldType(field) {
+      const label = normalizeText(field?.label || field?.key || "");
+      if (/^prenom$|^prénom$/.test(label)) return "first_name";
+      if (/^nom$/.test(label)) return "last_name";
+      if (/adresse e-mail|adresse email|^email$|^mail$/.test(label)) return "email";
+      if (/telephone|téléphone|^phone$/.test(label) && !/whatsapp/.test(label)) return "phone";
+      if (/ville de residence|ville de résidence|^ville$/.test(label)) return "city";
+      if (/pays de residence|pays de résidence/.test(label)) return "country";
+      if (/whatsapp consent|accord whatsapp|consentement whatsapp/.test(label)) return "whatsapp_consent";
+      if (/whatsapp phone|telephone whatsapp|téléphone whatsapp/.test(label)) return "whatsapp_phone";
+      if (/cv|curriculum/.test(label)) return "cv";
+      if (/^nom complet$|nom et prenom|nom et prénom/.test(label)) return "full_name";
+      return "other";
+    }
+
+    function identityFieldPriority(field) {
+      const priorities = {
+        first_name: 10,
+        last_name: 20,
+        email: 30,
+        phone: 40,
+        city: 50,
+        country: 60,
+        whatsapp_consent: 70,
+        whatsapp_phone: 80,
+        cv: 90,
+        full_name: 100,
+        other: 200,
+      };
+      return priorities[identityFieldType(field)] || priorities.other;
+    }
+
+    function cleanIdentityFields(fields) {
+      const source = Array.isArray(fields) ? fields : [];
+      const seen = new Set();
+      const hasSeparateFirstAndLastName = source.some((field) => identityFieldType(field) === "first_name")
+        && source.some((field) => identityFieldType(field) === "last_name");
+      return source
+        .filter((field) => {
+          const type = identityFieldType(field);
+          const value = normalizeText(responseFieldValue(field));
+          if (!value) return false;
+          if (type === "full_name") return false;
+          if (type === "cv") return false;
+          if (type === "last_name" && hasSeparateFirstAndLastName) {
+            const valueWords = value.split(/\s+/).filter(Boolean);
+            if (valueWords.length > 1) return false;
+          }
+          const duplicateKey = `${type}:${value}`;
+          if (["email", "phone", "whatsapp_phone"].includes(type) && seen.has(duplicateKey)) return false;
+          seen.add(duplicateKey);
+          return true;
+        })
+        .sort((a, b) => identityFieldPriority(a) - identityFieldPriority(b));
+    }
+
+    function mobilityFieldType(field) {
+      const label = normalizeText(field?.label || field?.key || "");
+      if (/^mobilite$|^mobilité$|type de mobilite|type de mobilité/.test(label)) return "mobility_type";
+      if (/pays de travail acceptes|pays de travail acceptés/.test(label)) return "work_countries";
+      if (/moyens? de deplacement|moyens? de déplacement|transport/.test(label)) return "transport";
+      if (/autorisation particuliere|autorisation particulière/.test(label)) return "permit_extra";
+      if (/permis \/ autorisations? possedes|permis \/ autorisations? possédés|permis b|permis/.test(label)) return "permit";
+      if (/temps de trajet|duree de trajet|durée de trajet|trajet|distance/.test(label)) return "commute_time";
+      return "other";
+    }
+
+    function mobilityFieldPriority(field) {
+      const priorities = {
+        mobility_type: 10,
+        work_countries: 20,
+        commute_time: 30,
+        transport: 40,
+        permit: 50,
+        permit_extra: 60,
+        other: 200,
+      };
+      return priorities[mobilityFieldType(field)] || priorities.other;
+    }
+
+    function cleanMobilityFields(fields) {
+      const source = Array.isArray(fields) ? fields : [];
+      const seenTypeValue = new Set();
+      const hasPermitDetails = source.some((field) => mobilityFieldType(field) === "permit" && /permis b|permis/.test(normalizeText(responseFieldValue(field))));
+      return source
+        .filter((field) => {
+          const type = mobilityFieldType(field);
+          const value = normalizeText(responseFieldValue(field));
+          if (!value) return false;
+          if (type === "permit_extra" && /^(yes|oui|o)$/.test(value)) return false;
+          if (type === "permit_extra" && hasPermitDetails && /^(yes|oui|o)$/.test(value)) return false;
+          const duplicateKey = `${type}:${value}`;
+          if (["mobility_type", "permit"].includes(type) && seenTypeValue.has(duplicateKey)) return false;
+          seenTypeValue.add(duplicateKey);
+          return true;
+        })
+        .sort((a, b) => mobilityFieldPriority(a) - mobilityFieldPriority(b));
+    }
+
+    function availabilityFieldType(field) {
+      const label = normalizeText(field?.label || field?.key || "");
+      if (/^disponibilite$|^disponibilité$/.test(label)) return "summary";
+      if (/date de disponibilite|date de disponibilité/.test(label)) return "date";
+      if (/types? de contrats? acceptes|types? de contrats? acceptés|contrat/.test(label)) return "contract";
+      if (/disponibilites? horaires?|disponibilités? horaires?|horaire/.test(label)) return "schedule";
+      if (/contraintes? de travail|contrainte/.test(label)) return "constraints";
+      return "other";
+    }
+
+    function availabilityFieldPriority(field) {
+      const priorities = {
+        date: 10,
+        contract: 20,
+        schedule_constraints: 30,
+        schedule: 40,
+        constraints: 50,
+        summary: 90,
+        other: 200,
+      };
+      return priorities[availabilityFieldType(field)] || priorities.other;
+    }
+
+    function splitReadableParts(value) {
+      return normalizedDisplayValue(value)
+        .split(/\s*(?:\||;|·|,\s(?=[A-ZÀ-ÖØ-Þ0-9]))\s*/u)
+        .map((part) => part.trim())
+        .filter(Boolean);
+    }
+
+    function shortBusinessLabel(value) {
+      return String(value || "")
+        .replace(/\s*\([^)]*\)/g, "")
+        .replace(/\s{2,}/g, " ")
+        .trim();
+    }
+
+    function cleanAvailabilityFields(fields) {
+      const source = Array.isArray(fields) ? fields : [];
+      const hasDetailedAvailability = source.some((field) => ["date", "contract", "schedule", "constraints"].includes(availabilityFieldType(field)));
+      const seenTypeValue = new Set();
+      let scheduleValue = "";
+      const workConditionParts = [];
+      const filtered = source
+        .filter((field) => {
+          const type = availabilityFieldType(field);
+          const displayValue = normalizedDisplayValue(responseFieldValue(field));
+          const value = normalizeText(displayValue);
+          if (!displayValue) return false;
+          if (type === "summary" && hasDetailedAvailability) return false;
+          if (type === "schedule" || type === "constraints") {
+            if (type === "schedule") {
+              scheduleValue = /horaires? varies?|horaires? variés?|disponible sur des horaires? varies?|disponible sur des horaires? variés?/.test(value)
+                ? "Pas de contraintes horaires"
+                : displayValue;
+            } else {
+              splitReadableParts(displayValue).forEach((part) => {
+                const normalizedPart = normalizeText(part);
+                if (!normalizedPart || /aucune condition particuliere|aucune condition particulière/.test(normalizedPart)) return;
+                if (!workConditionParts.some((existing) => normalizeText(existing) === normalizedPart)) {
+                  workConditionParts.push(part);
+                }
+              });
+              if (!workConditionParts.length) {
+                workConditionParts.push("Pas de conditions particulières");
+              }
+            }
+            return false;
+          }
+          const duplicateKey = `${type}:${value}`;
+          if (seenTypeValue.has(duplicateKey)) return false;
+          seenTypeValue.add(duplicateKey);
+          return true;
+        });
+      if (source.some((field) => availabilityFieldType(field) === "schedule")) {
+        filtered.push({
+          label: "Horaires",
+          value: scheduleValue || "Pas de contraintes horaires",
+          display_type: "schedule",
+        });
+      }
+      if (workConditionParts.length) {
+        filtered.push({
+          label: "Conditions de travail",
+          value: workConditionParts.join(" | "),
+          display_type: "work_conditions",
+        });
+      }
+      return filtered
+        .sort((a, b) => availabilityFieldPriority(a) - availabilityFieldPriority(b));
+    }
+
+    function projectFieldGroupsForResponse(role) {
+      const common = [
+        {
+          title: "Agriculture et récolte",
+          patterns: [/agriculture/, /recolte/, /récolte/, /maraichage/, /maraîchage/, /viticulture/, /cueillette/],
+        },
+        {
+          title: "Nettoyage et entretien",
+          patterns: [/nettoyage/, /entretien/, /proprete/, /propreté/, /espaces collectifs/],
+        },
+        {
+          title: "Hôtellerie et restauration",
+          patterns: [/hotellerie/, /hôtellerie/, /restauration/, /plonge/, /service/, /cuisine/],
+        },
+        {
+          title: "Vente et commerce",
+          patterns: [/vente/, /commerce/, /pret a porter/, /prêt-à-porter/, /chaussure/, /commercial/],
+        },
+        {
+          title: "Transport et logistique",
+          patterns: [/transport/, /logistique/, /chauffeur/, /livraison/, /magasinier/, /cariste/],
+        },
+        {
+          title: "Industrie et production",
+          patterns: [/industrie/, /production/, /operateur/, /opérateur/, /usine/, /maintenance/],
+        },
+        {
+          title: "Bâtiment et travaux",
+          patterns: [/batiment/, /bâtiment/, /btp/, /travaux/, /chantier/, /macon/, /maçon/],
+        },
+      ];
+      if (role === "employer") {
+        return common.map((group) => ({ ...group, title: `Besoin métier — ${group.title}` }));
+      }
+      return common.map((group) => ({ ...group, title: `Projet métier — ${group.title}` }));
+    }
+
+    function selectedProjectGroupTitles(fields, role) {
+      const fieldTexts = (Array.isArray(fields) ? fields : [])
+        .filter((field) => isUsefulResponseField(field))
+        .map((field) => `${responseFieldText(field)} ${normalizeText(responseFieldValue(field))}`);
+      return projectFieldGroupsForResponse(role)
+        .filter((group) => fieldTexts.some((text) => group.patterns.some((pattern) => pattern.test(text))))
+        .map((group) => group.title);
+    }
+
+    function extractCandidateResidenceFromMobility(fields) {
+      const residenceFields = [];
+      const workCountries = [];
+      const remainingFields = [];
+      for (const field of Array.isArray(fields) ? fields : []) {
+        const label = String(field.label || field.key || "");
+        const text = responseFieldText(field);
+        const value = normalizedDisplayValue(responseFieldValue(field));
+        const isCountryMobilityField = /projet de mobilite par pays|projet de mobilité par pays/.test(text);
+        if (!isCountryMobilityField) {
+          remainingFields.push(field);
+          continue;
+        }
+        if (/j.?y habite/.test(normalizeText(value))) {
+          const country = label
+            .split(/[·:|-]/)
+            .map((part) => part.trim())
+            .filter(Boolean)
+            .pop();
+          if (country) {
+            residenceFields.push({
+              label: "Pays de résidence",
+              value: country,
+            });
+          }
+        } else if (/je veux y travailler/.test(normalizeText(value))) {
+          const country = label
+            .split(/[·:|-]/)
+            .map((part) => part.trim())
+            .filter(Boolean)
+            .pop();
+          if (country && !workCountries.some((existing) => normalizeText(existing) === normalizeText(country))) {
+            workCountries.push(country);
+          }
+        }
+      }
+      const workCountryField = workCountries.length ? [{
+        label: "Pays de travail acceptés",
+        value: workCountries.join(" | "),
+      }] : [];
+      return [...residenceFields, ...workCountryField, ...remainingFields];
+    }
+
+    function renderHistoryResponseStructuredFields(row, role) {
+      let remaining = Array.isArray(row.fields) ? [...row.fields] : [];
+      if (!remaining.length) {
+        return `<div class="empty-state">Aucun champ détaillé disponible pour cette réponse.</div>`;
+      }
+      const isCandidate = role === "candidate";
+      if (isCandidate) {
+        remaining = extractCandidateResidenceFromMobility(remaining);
+      }
+      const commonGroups = isCandidate ? [
+        {
+          title: "Identité et contact",
+          patterns: [/nom\b/, /prenom/, /email/, /mail/, /telephone/, /phone/, /whatsapp/, /ville/, /adresse/, /pays de residence/, /pays de résidence/],
+        },
+        {
+          title: "Langues",
+          patterns: [/langue/, /linguistique/],
+        },
+        {
+          title: "Mobilité",
+          patterns: [/mobilite/, /mobilité/, /deplacement/, /déplacement/, /permis/, /vehicule/, /véhicule/, /frontiere/, /frontière/, /trajet/, /distance/, /pays de travail acceptes/, /pays de travail acceptés/],
+          excludePatterns: [/projet de mobilite par pays/, /projet de mobilité par pays/],
+        },
+      ] : [
+        {
+          title: "Entreprise et contact",
+          patterns: [/entreprise/, /employeur/, /structure/, /contact/, /email/, /mail/, /telephone/, /phone/],
+        },
+        {
+          title: "Localisation et calendrier général",
+          patterns: [/pays/, /lieu/, /ville/, /localisation/, /date de debut/, /date de début/, /debut souhaite/, /début souhaité/],
+        },
+        {
+          title: "Communication",
+          patterns: [/whatsapp/, /contact/, /telephone/, /phone/, /mail/, /email/],
+        },
+      ];
+      const renderedGroups = [];
+      for (const group of commonGroups) {
+        const result = takeResponseFields(remaining, group);
+        remaining = result.remaining;
+        let displayFields = result.taken;
+        if (group.title === "Identité et contact") {
+          displayFields = cleanIdentityFields(displayFields);
+        }
+        if (group.title === "Langues") {
+          displayFields = fieldsWithoutLanguageSummaryDuplicates(displayFields);
+        }
+        if (group.title === "Mobilité") {
+          displayFields = cleanMobilityFields(displayFields);
+        }
+        if (!hasVisibleResponseFields(displayFields)) continue;
+        const isReadabilityFocus = group.title === "Langues" || group.title === "Mobilité";
+        renderedGroups.push(`
+          <section class="profile-block ${group.highlight ? "job-highlight" : ""} ${isReadabilityFocus ? "is-readability-focus" : ""}">
+            <h4>${esc(group.title)}</h4>
+            ${renderFieldRows(displayFields, { compactValues: isReadabilityFocus, shortLanguageLabels: group.title === "Langues" })}
+          </section>
+        `);
+      }
+      for (const group of projectFieldGroupsForResponse(role)) {
+        const result = takeResponseFields(remaining, group);
+        remaining = result.remaining;
+        const projectFields = fieldsWithMergedSalary(result.taken);
+        if (!hasVisibleResponseFields(projectFields)) continue;
+        const projectSectorLabel = group.title.replace(/^Projet métier — |^Besoin métier — /, "");
+        renderedGroups.push(`
+          <section class="profile-block job-highlight">
+            <h4>${esc(group.title)}</h4>
+            ${renderFieldRows(projectFields, { projectSectorLabel })}
+          </section>
+        `);
+      }
+      const genericProjectResult = takeResponseFields(remaining, [/metier/, /métier/, /secteur/, /poste/, /intitule/, /intitulé/, /emploi/, /competence/, /compétence/, /mission/, /experience/, /expérience/, /formation/]);
+      remaining = genericProjectResult.remaining;
+      const genericConditionsResult = takeResponseFields(remaining, [/disponibilite/, /disponibilité/, /debut/, /début/, /contrat/, /horaire/, /temps/, /salaire/, /remuneration/, /rémunération/, /contrainte/]);
+      remaining = genericConditionsResult.remaining;
+      const displayConditionFields = isCandidate ? cleanAvailabilityFields(genericConditionsResult.taken) : genericConditionsResult.taken;
+      if (hasVisibleResponseFields(displayConditionFields)) {
+        renderedGroups.push(`
+          <section class="profile-block">
+            <h4>${esc(isCandidate ? "Disponibilité et contraintes générales" : "Conditions générales du poste")}</h4>
+            ${renderFieldRows(displayConditionFields)}
+          </section>
+        `);
+      }
+      if (isCandidate) {
+        const documentsResult = takeResponseFields(remaining, [/cv/, /curriculum/, /document/, /fichier/, /piece/, /pièce/, /justificatif/, /affiliation/, /sécurité sociale/, /securite sociale/]);
+        const documentFieldsForOtherInfo = documentsResult.taken.filter((field) => /cv transmis|cv .*recu|cv .*reçu|cv .*nom du fichier|nom du fichier/.test(responseFieldText(field)));
+        const documentFieldsForBlock = documentsResult.taken.filter((field) => !documentFieldsForOtherInfo.includes(field));
+        remaining = [...documentsResult.remaining, ...documentFieldsForOtherInfo];
+        const documentsBlock = renderDocumentsBlock(row, documentFieldsForBlock);
+        if (documentsBlock) renderedGroups.push(documentsBlock);
+      }
+      if (hasVisibleResponseFields(remaining)) {
+        renderedGroups.push(`
+          <section class="profile-block">
+            <h4>Autres informations</h4>
+            ${renderFieldRows(remaining)}
+          </section>
+        `);
+      }
+      return `
+        <section class="notes-box">
+          <h4>${esc(isCandidate ? "Lecture structurée de la réponse candidat" : "Lecture structurée de la réponse employeur")}</h4>
+          <div class="profile-section">
+            ${renderedGroups.join("") || `<div class="empty-state">Aucun champ détaillé disponible pour cette réponse.</div>`}
+          </div>
+        </section>
+      `;
+    }
+
+    function readableResponseDate(value) {
+      if (!value) return "-";
+      const parsed = new Date(value);
+      if (Number.isNaN(parsed.getTime())) return value;
+      return parsed.toLocaleString("fr-FR", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    }
+
+    function responseOverviewParts(row, isCandidate) {
+      const parts = splitReadableParts(row.subtitle || "");
+      const cleanOverviewLabel = (value) => shortBusinessLabel(value);
+      const sectors = [];
+      const countries = [];
+      for (const part of parts) {
+        const cleanPart = cleanOverviewLabel(part);
+        const normalized = normalizeText(cleanPart);
+        if (!cleanPart) continue;
+        if (/allemagne|france|luxembourg|autre pays|union europeenne|hors ue|ue$/.test(normalized)) {
+          countries.push(cleanPart);
+        } else {
+          sectors.push(cleanPart);
+        }
+      }
+      const fallbackSubtitle = row.subtitle && !parts.length ? cleanOverviewLabel(row.subtitle) : "";
+      return {
+        typeLabel: isCandidate ? "Candidat" : "Employeur",
+        statusLabel: row.is_active === false ? "Archivée" : "Active",
+        statusClass: row.is_active === false ? "refused" : "accepted",
+        responseDate: readableResponseDate(row.response_received_at || row.submitted_at || ""),
+        sectors: sectors.length ? sectors : (fallbackSubtitle ? [fallbackSubtitle] : []),
+        countries,
+      };
+    }
+
+    function renderResponseOverview(row, isCandidate) {
+      const overview = responseOverviewParts(row, isCandidate);
+      const hasSectors = overview.sectors.length > 0;
+      const hasCountries = overview.countries.length > 0;
+      return `
+        <div class="summary-tags">
+          <span class="pill ${isCandidate ? "role-candidate" : "role-employer"}">${esc(overview.typeLabel)}</span>
+          <span class="pill ${overview.statusClass}">${esc(overview.statusLabel)}</span>
+          <span class="pill">Réponse : ${esc(overview.responseDate)}</span>
+          <span class="pill">${esc(row.matching_count || 0)} matching(s)</span>
+          ${row.cv_download_url ? `<span class="pill accepted">CV disponible</span>` : ""}
+        </div>
+        ${(hasSectors || hasCountries) ? `
+          <div class="response-overview">
+            ${hasSectors ? `
+              <div class="response-overview-row">
+                <strong>${esc(isCandidate ? "Secteurs" : "Besoin")}</strong>
+                <div class="readable-list">${overview.sectors.map((sector) => `<span class="readable-token">${esc(sector)}</span>`).join("")}</div>
+              </div>
+            ` : ""}
+            ${hasCountries ? `
+              <div class="response-overview-row">
+                <strong>Pays</strong>
+                <div class="readable-list">${overview.countries.map((country) => `<span class="readable-token">${esc(country)}</span>`).join("")}</div>
+              </div>
+            ` : ""}
+          </div>
+        ` : ""}
+      `;
+    }
+
+    function linkedMatchingShortParts(matching) {
+      const subtitleParts = splitReadableParts(matching.counterpart_subtitle || "").map(shortBusinessLabel).filter(Boolean);
+      const sectors = [];
+      const locations = [];
+      for (const part of subtitleParts) {
+        const normalized = normalizeText(part);
+        if (/allemagne|france|luxembourg|autre pays|union europeenne|hors ue|ue$/.test(normalized)) {
+          locations.push(part);
+        } else {
+          sectors.push(part);
+        }
+      }
+      return {
+        name: matching.counterpart_name || "-",
+        sector: sectors.join(" · ") || "-",
+        location: locations.join(" · "),
+        score: matching.score ?? "-",
+        status: workflowStatusLabel(matching.workflow_status),
+      };
+    }
+
+    function renderLinkedMatchings(matchings) {
+      return `
+        <div class="linked-matching-list">
+          ${matchings.map((matching) => {
+            const parts = linkedMatchingShortParts(matching);
+            return `
+              <article class="linked-matching-row">
+                <div class="linked-matching-summary">
+                  <span class="linked-matching-name">${esc(parts.name)}</span>
+                  <span class="linked-matching-sector" title="${esc(parts.sector)}">${esc(parts.sector)}</span>
+                  <span class="linked-matching-score">${esc(parts.score)}/100</span>
+                  <span class="linked-matching-status" title="${esc(parts.status)}">${esc(parts.status)}</span>
+                </div>
+              </article>
+            `;
+          }).join("")}
+        </div>
+      `;
+    }
+
     function renderHistoryQuestionnaireRows(role) {
       const isCandidate = role === "candidate";
       const search = normalizeText(state.dataHistorySearch || "");
@@ -2800,27 +3863,22 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,,</pre>
           <div class="matching-summary">
             <div>
               <h2>${esc(row.title || (isCandidate ? "Candidat" : "Employeur"))}</h2>
-              <p>${esc(row.subtitle || "-")}</p>
-              <div class="summary-tags">
-                <span class="pill ${isCandidate ? "role-candidate" : "role-employer"}">${esc(isCandidate ? "Candidat" : "Employeur")}</span>
-                <span class="pill ${row.is_active === false ? "refused" : "accepted"}">${esc(row.is_active === false ? "Désactivée" : "Active")}</span>
-                <span class="pill">Réponse : ${esc(row.response_received_at || row.submitted_at || "-")}</span>
-                <span class="pill">${esc(row.matching_count || 0)} matching(s)</span>
-                ${hasDuplicates ? `<span class="pill warning">Doublon email : ${esc(duplicates.length + 1)} réponses</span>` : ""}
-                ${hasDuplicates ? `<span class="pill ${latestForEmail ? "accepted" : "refused"}">${esc(latestForEmail ? "Réponse la plus récente" : "Ancienne réponse")}</span>` : ""}
-              </div>
+              ${renderResponseOverview(row, isCandidate)}
+              ${hasDuplicates ? `<div class="summary-tags">
+                <span class="pill warning">Doublon email : ${esc(duplicates.length + 1)} réponses</span>
+                <span class="pill ${latestForEmail ? "accepted" : "refused"}">${esc(latestForEmail ? "Réponse la plus récente" : "Ancienne réponse")}</span>
+              </div>` : ""}
             </div>
           </div>
           <details class="history-response-details">
-            <summary>${esc(isCandidate ? "Déplier la réponse candidat" : "Déplier la réponse employeur")}</summary>
+            <summary>${esc(isCandidate ? "Voir la fiche candidat" : "Voir la fiche employeur")}</summary>
             <div class="history-response-content">
-              ${row.summary ? `<p style="margin:0; color:var(--muted); line-height:1.7;">${esc(row.summary)}</p>` : ""}
-              ${row.response_disabled_reason ? `<p style="margin:0; line-height:1.7;"><strong>Motif de désactivation :</strong> ${esc(row.response_disabled_reason)}</p>` : ""}
+              ${row.response_disabled_reason ? `<p style="margin:0; line-height:1.7;"><strong>Motif d’archivage :</strong> ${esc(row.response_disabled_reason)}</p>` : ""}
               ${hasDuplicates ? `
                 <section class="notes-box">
                   <h4>Doublons détectés sur cet email</h4>
                   <p style="margin:0 0 0.8rem; color:var(--muted); line-height:1.7;">
-                    Règle pilote : garder la réponse la plus récente et désactiver les anciennes si elles ne doivent plus servir aux matchings.
+                    Règle pilote : garder la réponse la plus récente et archiver les anciennes si elles ne doivent plus servir aux matchings.
                   </p>
                   <div class="detail-list">
                     ${duplicates.map((duplicate) => `
@@ -2829,7 +3887,7 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,,</pre>
                           <strong>${esc(duplicate.title || duplicate.email || "-")}</strong>
                           <div style="color:var(--muted); margin-top:0.2rem;">
                             Réponse : ${esc(duplicate.response_received_at || duplicate.submitted_at || "-")} ·
-                            ${esc(duplicate.is_active === false ? "désactivée" : "active")} ·
+                            ${esc(duplicate.is_active === false ? "archivée" : "active")} ·
                             ${esc(duplicate.matching_count || 0)} matching(s)
                           </div>
                         </div>
@@ -2842,48 +3900,21 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,,</pre>
               ${Array.isArray(row.matchings) && row.matchings.length ? `
                 <section class="notes-box">
                   <h4>${esc(isCandidate ? "Matchings liés" : "Matchings liés")}</h4>
-                  <div class="detail-list">
-                    ${row.matchings.map((matching) => `
-                      <div class="detail-row" style="grid-template-columns:minmax(0, 1fr) auto; align-items:center;">
-                        <div>
-                          <strong>${esc(matching.counterpart_name || "-")}</strong>
-                          <div style="color:var(--muted); margin-top:0.2rem;">${esc(matching.counterpart_subtitle || "-")}</div>
-                          <div class="summary-tags" style="margin-top:0.45rem;">
-                            <span class="pill">Score : ${esc(matching.score ?? 0)}</span>
-                            <span class="pill">${esc(matching.workflow_status || "-")}</span>
-                          </div>
-                        </div>
-                        <button class="btn-neutral" type="button" data-open-matching="${esc(matching.matching_record_id)}">Voir</button>
-                      </div>
-                    `).join("")}
-                  </div>
+                  ${renderLinkedMatchings(row.matchings)}
                 </section>
               ` : ""}
-              ${row.cv_download_url ? `
-                <section class="notes-box">
-                  <h4>CV du candidat</h4>
-                  <p style="margin:0; color:var(--muted); line-height:1.7;">${esc(row.cv_file_name || "CV")}</p>
-                  <div class="hero-actions" style="margin-top:0.8rem;">
-                    <a class="btn-neutral" href="${esc(row.cv_download_url)}" target="_blank" rel="noopener noreferrer">Télécharger le CV</a>
-                  </div>
-                </section>
-              ` : ""}
-              <dl class="detail-list">
-                ${(Array.isArray(row.fields) && row.fields.length ? row.fields : []).map((field) => `
-                  <div class="detail-row">
-                    <dt>${esc(field.label || field.key || "-")}</dt>
-                    <dd>${esc(field.value || "-")}</dd>
-                  </div>
-                `).join("") || `<div class="empty-state">Aucun champ détaillé disponible pour cette réponse.</div>`}
-              </dl>
+              ${renderHistoryResponseStructuredFields(row, role)}
               <section class="notes-box">
                 <h4>Gestion de cette réponse</h4>
+                <p style="margin:0 0 0.8rem; color:var(--muted); line-height:1.7;">
+                  Archiver retire cette réponse des nouveaux matchings, sans la supprimer de l’historique.
+                </p>
                 <div class="compact-response-actions">
-                  <input id="history-response-note-${esc(role)}-${esc(row.record_id)}" type="text" placeholder="Motif optionnel" value="${esc(row.response_disabled_reason || (hasDuplicates && !latestForEmail ? "Ancienne réponse remplacée par une réponse plus récente." : ""))}">
+                  <input id="history-response-note-${esc(role)}-${esc(row.record_id)}" type="text" placeholder="Motif d’archivage optionnel" value="${esc(row.response_disabled_reason || (hasDuplicates && !latestForEmail ? "Ancienne réponse remplacée par une réponse plus récente." : ""))}">
                   <div class="hero-actions">
                     ${row.is_active === false
                       ? `<button type="button" data-history-response-status-action="active" data-role="${esc(role)}" data-record-id="${esc(row.record_id)}">Réactiver</button>`
-                      : `<button class="btn-refuse" type="button" data-history-response-status-action="disabled" data-role="${esc(role)}" data-record-id="${esc(row.record_id)}">Désactiver cette réponse</button>`
+                      : `<button class="btn-refuse" type="button" data-history-response-status-action="disabled" data-role="${esc(role)}" data-record-id="${esc(row.record_id)}">Archiver cette réponse</button>`
                     }
                   </div>
                 </div>
@@ -2981,15 +4012,13 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,,</pre>
         return;
       }
       list.innerHTML = rows.map((row) => `
-        <article class="invitation-row">
-          <div>
-            <strong>${esc(row.email || "-")}</strong>
-            <div class="invitation-meta">
-              ${esc(row.role === "employer" ? "Employeur" : "Candidat")}
-              · ${esc(row.company_name || [row.first_name, row.last_name].filter(Boolean).join(" ") || "-")}
-              · ${esc(row.sent_at || row.invitation_status_updated_at || "-")}
-            </div>
-          </div>
+        <article class="history-invitation-row">
+          <strong title="${esc(row.email || "-")}">${esc(row.email || "-")}</strong>
+          <span class="history-invitation-subject" title="${esc(row.company_name || [row.first_name, row.last_name].filter(Boolean).join(" ") || "-")}">
+            ${esc(row.role === "employer" ? "Employeur" : "Candidat")}
+            · ${esc(row.company_name || [row.first_name, row.last_name].filter(Boolean).join(" ") || "-")}
+          </span>
+          <span class="history-invitation-date">${esc(readableResponseDate(row.sent_at || row.invitation_status_updated_at || ""))}</span>
           <span class="pill ${esc(invitationStatusClass(row.invitation_status))}">${esc(invitationStatusLabel(row.invitation_status))}</span>
         </article>
       `).join("");
@@ -3207,8 +4236,6 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,,</pre>
       const map = {
         "to-launch": "to-launch",
         "in-progress": "in-progress",
-        "result-needed": "result-needed",
-        done: "done",
       };
       return map[target] || "";
     }
@@ -3216,20 +4243,12 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,,</pre>
     function relationViewCopy(view) {
       const copy = {
         "to-launch": {
-          title: "Mises en relation à lancer",
-          text: "Matchings acceptés par l’employeur pour lesquels il faut organiser le canal de contact."
+          title: "Contacts à créer",
+          text: "Matchings acceptés par l’employeur : il faut maintenant créer le contact réel, WhatsApp ou hors WhatsApp."
         },
         "in-progress": {
-          title: "Mises en relation en cours",
-          text: "Contacts déjà lancés. Il faut suivre l’échange jusqu’à un résultat exploitable."
-        },
-        "result-needed": {
-          title: "Résultats à renseigner",
-          text: "Mises en relation faites pour lesquelles il faut renseigner l’issue métier. Version actuelle : les résultats fins nécessitent encore une évolution des données."
-        },
-        done: {
-          title: "Mises en relation terminées",
-          text: "Historique des mises en relation arrivées à un statut final connu."
+          title: "Relations à suivre ou clôturer",
+          text: "Contacts déjà lancés : suivre l’échange et renseigner l’issue dès qu’elle est connue."
         },
       };
       return copy[view] || copy["to-launch"];
@@ -3255,12 +4274,6 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,,</pre>
       if (state.relationsView === "in-progress") {
         return rows.filter((row) => row.workflow_status === "mise_en_relation_faite");
       }
-      if (state.relationsView === "result-needed") {
-        return rows.filter((row) => row.workflow_status === "mise_en_relation_faite");
-      }
-      if (state.relationsView === "done") {
-        return rows.filter((row) => ["embauche_confirmee", "relation_terminee", "refuse_employeur", "refuse_admin"].includes(row.workflow_status));
-      }
       return rows;
     }
 
@@ -3283,16 +4296,10 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,,</pre>
           text: "L’employeur a accepté le candidat mais n’a pas répondu sur WhatsApp. Décide si tu relances WhatsApp ou si tu traites hors WhatsApp."
         };
       }
-      if (state.relationsView === "result-needed") {
-        return {
-          title: "Action attendue : renseigner le résultat",
-          text: "La relation est lancée. Renseigne le résultat réel pour pouvoir comparer les parcours WhatsApp et hors WhatsApp."
-        };
-      }
       if (state.relationsView === "in-progress") {
         return {
-          title: "Action attendue : suivre l’échange",
-          text: "Surveille si le contact aboutit à un entretien, une embauche ou une clôture sans suite."
+          title: "Action attendue : suivre puis renseigner l’issue",
+          text: "Surveille l’échange. Dès qu’un résultat est connu, renseigne-le pour comparer les parcours WhatsApp et hors WhatsApp."
         };
       }
       return {
@@ -3329,77 +4336,75 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,,</pre>
         const action = relationActionBox(row);
         const whatsappMessage = `Bonjour, je crée ce groupe pour faciliter la mise en relation entre ${row.candidat?.nom || "le candidat"} et ${row.employeur?.employeur || "l’employeur"} dans le cadre de Match Europe.`;
         const canMarkRelationDone = ["to-launch"].includes(state.relationsView);
-        const canSetResult = ["in-progress", "result-needed"].includes(state.relationsView);
+        const canSetResult = ["in-progress"].includes(state.relationsView);
         return `
-          <article class="matching-card" data-record-id="${esc(row.record_id)}">
-            <div class="matching-summary">
-              <div>
-                <h2>${esc(row.candidat?.nom || "Candidat")} · ${esc(row.employeur?.employeur || "Employeur")}</h2>
-                <p>${esc(row.employeur?.poste || "-")} · ${esc(row.employeur?.pays || "-")}</p>
-                <div class="summary-tags">
-                  <span class="pill">Canal : ${esc(relationChannel(row))}</span>
-                  <span class="pill">Résultat : ${esc(relationResultLabel(row.relation_result))}</span>
-                  <span class="pill">Workflow : ${esc(workflowStatusLabel(row.workflow_status))}</span>
-                  ${employerWhatsappBadge(row)}
-                  <span class="pill">Employeur : ${esc(employerResponseLabel(row.employer_response))}</span>
-                </div>
+          <details class="relation-compact-card" data-record-id="${esc(row.record_id)}">
+            <summary>
+              <span class="relation-main">
+                <strong>${esc(row.candidat?.nom || "Candidat")} · ${esc(row.employeur?.employeur || "Employeur")}</strong>
+                <span>${esc(row.employeur?.poste || "-")} · ${esc(row.employeur?.pays || "-")}</span>
+              </span>
+              <span class="relation-compact-meta">Canal : ${esc(relationChannel(row))}</span>
+              <span class="relation-compact-meta">Résultat : ${esc(relationResultLabel(row.relation_result))}</span>
+              <span class="relation-compact-meta">${esc(employerResponseLabel(row.employer_response))}</span>
+              <span class="relation-score">${esc(row.score ?? "-")}/100</span>
+            </summary>
+            <div class="relation-detail">
+              <div class="summary-tags" style="margin-bottom:0.8rem;">
+                <span class="pill">Workflow : ${esc(workflowStatusLabel(row.workflow_status))}</span>
+                ${employerWhatsappBadge(row)}
+                <span class="pill">Employeur : ${esc(employerResponseLabel(row.employer_response))}</span>
               </div>
-              <div class="summary-score">
-                <div class="score-box">
-                  <strong>${esc(row.score ?? "-")}</strong>
-                  <span>score global / 100</span>
-                </div>
-              </div>
-            </div>
-            <section class="next-action-box">
-              <strong>${esc(action.title)}</strong>
-              <p>${esc(action.text)}</p>
-            </section>
-            <div class="compare-grid">
-              <section class="compare-card">
-                <h3>Contact</h3>
-                <dl class="detail-list">
-                  <div class="detail-row"><dt>Candidat</dt><dd>${esc(row.candidat?.nom || "-")} · ${esc(row.candidat?.email || "-")}</dd></div>
-                  <div class="detail-row"><dt>Employeur</dt><dd>${esc(row.employeur?.contact || row.employeur?.employeur || "-")}</dd></div>
-                  <div class="detail-row"><dt>Téléphone employeur</dt><dd>${esc(row.employer_whatsapp_phone || row.employeur?.telephone || "-")}</dd></div>
-                  <div class="detail-row"><dt>Mise en relation</dt><dd>${esc(row.mise_en_relation_at || "-")}</dd></div>
-                  <div class="detail-row"><dt>Résultat</dt><dd>${esc(relationResultLabel(row.relation_result))}${row.relation_result_at ? ` · ${esc(row.relation_result_at)}` : ""}</dd></div>
-                </dl>
+              <section class="next-action-box">
+                <strong>${esc(action.title)}</strong>
+                <p>${esc(action.text)}</p>
               </section>
-              <section class="compare-card">
-                <h3>Message WhatsApp à copier</h3>
-                <p class="microcopy">${esc(whatsappMessage)}</p>
+              <div class="compare-grid" style="margin-top:0.8rem;">
+                <section class="compare-card">
+                  <h3>Contact</h3>
+                  <dl class="detail-list">
+                    <div class="detail-row"><dt>Candidat</dt><dd>${esc(row.candidat?.nom || "-")} · ${esc(row.candidat?.email || "-")}</dd></div>
+                    <div class="detail-row"><dt>Employeur</dt><dd>${esc(row.employeur?.contact || row.employeur?.employeur || "-")}</dd></div>
+                    <div class="detail-row"><dt>Téléphone employeur</dt><dd>${esc(row.employer_whatsapp_phone || row.employeur?.telephone || "-")}</dd></div>
+                    <div class="detail-row"><dt>Mise en relation</dt><dd>${esc(row.mise_en_relation_at || "-")}</dd></div>
+                    <div class="detail-row"><dt>Résultat</dt><dd>${esc(relationResultLabel(row.relation_result))}${row.relation_result_at ? ` · ${esc(row.relation_result_at)}` : ""}</dd></div>
+                  </dl>
+                </section>
+                <section class="compare-card">
+                  <h3>Message WhatsApp à copier</h3>
+                  <p class="microcopy">${esc(whatsappMessage)}</p>
+                </section>
+              </div>
+              <section class="notes-box" style="margin-top:1rem;">
+                <h4>Note interne</h4>
+                <div class="form-grid">
+                  <label class="field">
+                    <span>Canal réel utilisé</span>
+                    <select id="relation-channel-${esc(row.record_id)}">
+                      ${relationChannelOptions(row)}
+                    </select>
+                  </label>
+                  <label class="field">
+                    <span>Résultat</span>
+                    <select id="relation-result-${esc(row.record_id)}">
+                      ${relationResultOptions(row.relation_result || "")}
+                    </select>
+                  </label>
+                </div>
+                <textarea id="relation-note-${esc(row.record_id)}" placeholder="Optionnel. Note interne conservée dans l’admin.">${esc(row.admin_decision_note || "")}</textarea>
+                <textarea id="relation-result-note-${esc(row.record_id)}" placeholder="Optionnel. Précision sur le résultat.">${esc(row.relation_result_note || "")}</textarea>
+                <div class="hero-actions">
+                  ${canMarkRelationDone ? `<button class="btn-neutral" type="button" data-relation-workflow="mise_en_relation_faite">Mise en relation faite</button>` : ""}
+                  ${canSetResult ? `<button class="btn-neutral" type="button" data-relation-result-action>Enregistrer le résultat</button>` : ""}
+                </div>
               </section>
             </div>
-            <section class="notes-box" style="margin-top:1rem;">
-              <h4>Note interne</h4>
-              <div class="form-grid">
-                <label class="field">
-                  <span>Canal réel utilisé</span>
-                  <select id="relation-channel-${esc(row.record_id)}">
-                    ${relationChannelOptions(row)}
-                  </select>
-                </label>
-                <label class="field">
-                  <span>Résultat</span>
-                  <select id="relation-result-${esc(row.record_id)}">
-                    ${relationResultOptions(row.relation_result || "")}
-                  </select>
-                </label>
-              </div>
-              <textarea id="relation-note-${esc(row.record_id)}" placeholder="Optionnel. Note interne conservée dans l’admin.">${esc(row.admin_decision_note || "")}</textarea>
-              <textarea id="relation-result-note-${esc(row.record_id)}" placeholder="Optionnel. Précision sur le résultat.">${esc(row.relation_result_note || "")}</textarea>
-              <div class="hero-actions">
-                ${canMarkRelationDone ? `<button class="btn-neutral" type="button" data-relation-workflow="mise_en_relation_faite">Mise en relation faite</button>` : ""}
-                ${canSetResult ? `<button class="btn-neutral" type="button" data-relation-result-action>Enregistrer le résultat</button>` : ""}
-              </div>
-            </section>
-          </article>
+          </details>
         `;
       }).join("");
       for (const button of list.querySelectorAll("[data-relation-workflow]")) {
         button.addEventListener("click", async (event) => {
-          const card = event.currentTarget.closest(".matching-card");
+          const card = event.currentTarget.closest("[data-record-id]");
           const recordId = card?.dataset.recordId;
           const workflowStatus = event.currentTarget.dataset.relationWorkflow;
           const relationChannelValue = document.getElementById(`relation-channel-${recordId}`)?.value || "";
@@ -3410,7 +4415,7 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,,</pre>
       }
       for (const button of list.querySelectorAll("[data-relation-result-action]")) {
         button.addEventListener("click", async (event) => {
-          const card = event.currentTarget.closest(".matching-card");
+          const card = event.currentTarget.closest("[data-record-id]");
           const recordId = card?.dataset.recordId;
           const relationChannelValue = document.getElementById(`relation-channel-${recordId}`)?.value || "";
           const relationResultValue = document.getElementById(`relation-result-${recordId}`)?.value || "";
@@ -3981,7 +4986,7 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,,</pre>
               <p>${esc(row.subtitle || (isCandidate ? "Réponse candidat" : "Réponse employeur"))}</p>
               <div class="summary-tags">
                 <span class="pill ${isCandidate ? "role-candidate" : "role-employer"}">${esc(isCandidate ? "Candidat" : "Employeur")}</span>
-                <span class="pill ${row.is_active === false ? "refused" : "accepted"}">${esc(row.is_active === false ? "Désactivée" : "Active")}</span>
+                <span class="pill ${row.is_active === false ? "refused" : "accepted"}">${esc(row.is_active === false ? "Archivée" : "Active")}</span>
                 <span class="pill">Réponse reçue le : ${esc(row.response_received_at || row.submitted_at || "-")}</span>
                 <span class="pill">Clé : ${esc(row.record_key || row.record_id || "-")}</span>
                 <span class="pill">${esc(row.matching_count || 0)} matching(s)</span>
@@ -4028,7 +5033,7 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,,</pre>
                   </div>
                 </section>
               ` : ""}
-              ${row.response_disabled_reason ? `<p style="margin:0 0 0.8rem; line-height:1.7;"><strong>Motif de désactivation :</strong> ${esc(row.response_disabled_reason)}</p>` : ""}
+              ${row.response_disabled_reason ? `<p style="margin:0 0 0.8rem; line-height:1.7;"><strong>Motif d’archivage :</strong> ${esc(row.response_disabled_reason)}</p>` : ""}
               <details>
                 <summary style="cursor:pointer; font-weight:700; margin-bottom:0.9rem;">
                   ${esc(isCandidate ? "Afficher la réponse complète du candidat" : "Afficher la réponse complète de l’employeur")}
@@ -4044,12 +5049,15 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,,</pre>
               </details>
               <section class="notes-box" style="margin-top:1rem;">
                 <h4>Gestion de la réponse</h4>
+                <p style="margin:0 0 0.8rem; color:var(--muted); line-height:1.7;">
+                  Archiver retire cette réponse des nouveaux matchings, sans la supprimer de l’historique.
+                </p>
                 <div class="compact-response-actions">
-                  <input id="response-note-${esc(role)}-${esc(row.record_id)}" type="text" placeholder="Motif optionnel" value="${esc(row.response_disabled_reason || "")}">
+                  <input id="response-note-${esc(role)}-${esc(row.record_id)}" type="text" placeholder="Motif d’archivage optionnel" value="${esc(row.response_disabled_reason || "")}">
                   <div class="hero-actions">
                     ${row.is_active === false
                       ? `<button type="button" data-response-status-action="active" data-role="${esc(role)}" data-record-id="${esc(row.record_id)}">Réactiver</button>`
-                      : `<button class="btn-refuse" type="button" data-response-status-action="disabled" data-role="${esc(role)}" data-record-id="${esc(row.record_id)}">Désactiver</button>`
+                      : `<button class="btn-refuse" type="button" data-response-status-action="disabled" data-role="${esc(role)}" data-record-id="${esc(row.record_id)}">Archiver</button>`
                     }
                     <button class="btn-refuse" type="button" data-response-delete="${esc(row.record_id)}" data-role="${esc(role)}">Supprimer</button>
                   </div>
@@ -4167,7 +5175,7 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,,</pre>
     async function updateQuestionnaireResponseStatus(role, recordId, status, reason) {
       const isCandidate = role === "candidate";
       const statusId = isCandidate ? "candidate-response-status-line" : "employer-response-status-line";
-      setStatus(statusId, status === "disabled" ? "Désactivation de la réponse..." : "Réactivation de la réponse...");
+      setStatus(statusId, status === "disabled" ? "Archivage de la réponse..." : "Réactivation de la réponse...");
       try {
         const response = await fetch(apiUrl(`/admin/questionnaires/${role}/${recordId}/status`), {
           method: "POST",
@@ -4186,7 +5194,7 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,,</pre>
         await loadMatchings();
         await loadTasks();
         await loadCockpit();
-        setStatus(statusId, status === "disabled" ? "Réponse désactivée." : "Réponse réactivée.");
+        setStatus(statusId, status === "disabled" ? "Réponse archivée." : "Réponse réactivée.");
       } catch (error) {
         setStatus(statusId, `Erreur : ${error.message || "mise à jour impossible"}`);
       }
@@ -5669,34 +6677,71 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,,</pre>
               <div class="compare-grid">
                 <section class="compare-card">
                   <h3>Candidat</h3>
-                  <dl class="detail-list">
-                    <div class="detail-row"><dt>Nom</dt><dd>${esc(row.candidat?.nom || "-")}</dd></div>
-                    <div class="detail-row"><dt>Email</dt><dd>${esc(row.candidat?.email || "-")}</dd></div>
-                    <div class="detail-row"><dt>Pays</dt><dd>${esc(row.candidat?.pays || "-")}</dd></div>
-                    <div class="detail-row"><dt>Secteur recherché</dt><dd>${esc(candidateSector || "-")}</dd></div>
-                    <div class="detail-row"><dt>Intitulé visé</dt><dd>${esc(candidateJobTitle)}</dd></div>
-                    <div class="detail-row"><dt>Compétences</dt><dd>${esc(row.candidat?.competences || "-")}</dd></div>
-                    <div class="detail-row"><dt>Langues</dt><dd>${esc(row.candidat?.langues || "-")}</dd></div>
-                    <div class="detail-row"><dt>Mobilité</dt><dd>${esc(row.candidat?.mobilite || "-")}</dd></div>
-                    <div class="detail-row"><dt>Disponibilité</dt><dd>${esc(row.candidat?.disponibilite || "-")}</dd></div>
-                  </dl>
+                  <div class="profile-section">
+                    <section class="profile-block">
+                      <h4>Identité et contact</h4>
+                      <div class="key-value">
+                        <div class="key-value-row"><span>Nom</span><span>${esc(row.candidat?.nom || "-")}</span></div>
+                        <div class="key-value-row"><span>Email</span><span>${esc(row.candidat?.email || "-")}</span></div>
+                        <div class="key-value-row"><span>Téléphone</span><span>${esc(row.candidat?.telephone || "-")}</span></div>
+                        <div class="key-value-row"><span>Pays</span><span>${esc(row.candidat?.pays || "-")}</span></div>
+                      </div>
+                    </section>
+                    <section class="profile-block job-highlight">
+                      <h4>Projet métier</h4>
+                      <div class="key-value">
+                        <div class="key-value-row"><span>Secteur</span><span>${esc(candidateSector || "-")}</span></div>
+                        <div class="key-value-row"><span>Intitulé visé</span><span>${esc(candidateJobTitle)}</span></div>
+                        <div class="key-value-row"><span>Compétences</span><span>${esc(row.candidat?.competences || "-")}</span></div>
+                      </div>
+                    </section>
+                    <section class="profile-block">
+                      <h4>Conditions de disponibilité</h4>
+                      <div class="key-value">
+                        <div class="key-value-row"><span>Langues</span><span>${esc(row.candidat?.langues || "-")}</span></div>
+                        <div class="key-value-row"><span>Mobilité</span><span>${esc(row.candidat?.mobilite || "-")}</span></div>
+                        <div class="key-value-row"><span>Disponibilité</span><span>${esc(row.candidat?.disponibilite || "-")}</span></div>
+                      </div>
+                    </section>
+                  </div>
                 </section>
 
                 <section class="compare-card">
                   <h3>Employeur / besoin</h3>
-                  <dl class="detail-list">
-                    <div class="detail-row"><dt>Entreprise</dt><dd>${esc(row.employeur?.employeur || "-")}</dd></div>
-                    <div class="detail-row"><dt>Contact</dt><dd>${esc(row.employeur?.contact || "-")}</dd></div>
-                    <div class="detail-row"><dt>Téléphone employeur</dt><dd>${esc(row.employer_whatsapp_phone || row.employeur?.telephone || "-")}</dd></div>
-                    <div class="detail-row"><dt>Accord WhatsApp employeur</dt><dd>${esc(row.employer_whatsapp_consent === "yes" ? `Oui${row.employer_whatsapp_confirmed_at ? ` · confirmé le ${row.employer_whatsapp_confirmed_at}` : ""}` : row.employer_whatsapp_consent === "no" ? "Non" : "Non renseigné")}</dd></div>
-                    <div class="detail-row"><dt>Pays / lieu</dt><dd>${esc(row.employeur?.pays || "-")}</dd></div>
-                    <div class="detail-row"><dt>Secteur d’activité</dt><dd>${esc(employerSector || "-")}</dd></div>
-                    <div class="detail-row"><dt>Intitulé du poste</dt><dd>${esc(employerJobTitle)}</dd></div>
-                    <div class="detail-row"><dt>Compétences clés</dt><dd>${esc(row.employeur?.competences_clefs || "-")}</dd></div>
-                    <div class="detail-row"><dt>Langues requises</dt><dd>${esc(row.employeur?.langues_requises || "-")}</dd></div>
-                    <div class="detail-row"><dt>Date de début</dt><dd>${esc(row.employeur?.date_debut || "-")}</dd></div>
-                    <div class="detail-row"><dt>Contraintes</dt><dd>${esc(row.employeur?.contraintes_travail || "-")}</dd></div>
-                  </dl>
+                  <div class="profile-section">
+                    <section class="profile-block">
+                      <h4>Entreprise et contact</h4>
+                      <div class="key-value">
+                        <div class="key-value-row"><span>Entreprise</span><span>${esc(row.employeur?.employeur || "-")}</span></div>
+                        <div class="key-value-row"><span>Contact</span><span>${esc(row.employeur?.contact || "-")}</span></div>
+                        <div class="key-value-row"><span>Email</span><span>${esc(row.employeur?.email || "-")}</span></div>
+                        <div class="key-value-row"><span>Téléphone</span><span>${esc(row.employer_whatsapp_phone || row.employeur?.telephone || "-")}</span></div>
+                      </div>
+                    </section>
+                    <section class="profile-block job-highlight">
+                      <h4>Besoin métier</h4>
+                      <div class="key-value">
+                        <div class="key-value-row"><span>Secteur</span><span>${esc(employerSector || "-")}</span></div>
+                        <div class="key-value-row"><span>Intitulé</span><span>${esc(employerJobTitle)}</span></div>
+                        <div class="key-value-row"><span>Compétences clés</span><span>${esc(row.employeur?.competences_clefs || "-")}</span></div>
+                      </div>
+                    </section>
+                    <section class="profile-block">
+                      <h4>Conditions du besoin</h4>
+                      <div class="key-value">
+                        <div class="key-value-row"><span>Pays / lieu</span><span>${esc(row.employeur?.pays || "-")}</span></div>
+                        <div class="key-value-row"><span>Date de début</span><span>${esc(row.employeur?.date_debut || "-")}</span></div>
+                        <div class="key-value-row"><span>Langues requises</span><span>${esc(row.employeur?.langues_requises || "-")}</span></div>
+                        <div class="key-value-row"><span>Contraintes</span><span>${esc(row.employeur?.contraintes_travail || "-")}</span></div>
+                      </div>
+                    </section>
+                    <section class="profile-block">
+                      <h4>Communication</h4>
+                      <div class="key-value">
+                        <div class="key-value-row"><span>Accord WhatsApp employeur</span><span>${esc(row.employer_whatsapp_consent === "yes" ? `Oui${row.employer_whatsapp_confirmed_at ? ` · confirmé le ${row.employer_whatsapp_confirmed_at}` : ""}` : row.employer_whatsapp_consent === "no" ? "Non" : "Non renseigné")}</span></div>
+                      </div>
+                    </section>
+                  </div>
                 </section>
               </div>
 

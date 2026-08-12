@@ -1369,8 +1369,7 @@ const candidateTallyMeta = {
     { field: "tally_q10_f01", label: "Carte d'identité ou passeport (en cours de validité)" },
     { field: "tally_q10_f02", label: "CV à jour" },
     { field: "tally_q10_f03", label: "Vos diplômes ou qualifications professionnelles" },
-    { field: "tally_q10_f04", label: "Compte bancaire / IBAN" },
-    { field: "tally_q10_f05", label: "Attestation d'affiliation à la sécurité sociale" }
+    { field: "tally_q10_f04", label: "Compte bancaire / IBAN" }
   ],
   languageColumns: [
     "Langue maternelle",
@@ -1450,8 +1449,7 @@ const candidateTallyCopy = {
       "Carte d'identité ou passeport (en cours de validité)",
       "CV à jour",
       "Vos diplômes ou qualifications professionnelles",
-      "Compte bancaire / IBAN",
-      "Attestation d'affiliation à la sécurité sociale"
+      "Compte bancaire / IBAN"
     ],
     languageColumns: [
       "Langue maternelle",
@@ -1686,8 +1684,7 @@ const candidateTallyCopy = {
       "Identity card or passport (valid)",
       "Up-to-date CV",
       "Your diplomas or professional qualifications",
-      "Bank account / IBAN",
-      "Social security affiliation certificate"
+      "Bank account / IBAN"
     ],
     languageColumns: [
       "Native language",
@@ -1849,8 +1846,7 @@ const candidateTallyCopy = {
       "Personalausweis oder Reisepass (gültig)",
       "Aktueller Lebenslauf",
       "Ihre Diplome oder beruflichen Qualifikationen",
-      "Bankkonto / IBAN",
-      "Bescheinigung über die Sozialversicherungszugehörigkeit"
+      "Bankkonto / IBAN"
     ],
     languageColumns: [
       "Muttersprache",
@@ -5462,9 +5458,9 @@ function toggleConditionBlocks(form) {
     transfrontaliere,
     expatriation,
     "horaire-precis": horairePrecis,
-    "show-lu-social": q01lu.includes("Je veux y travailler") && !q01lu.includes("J'y habite"),
-    "show-de-social": q01de.includes("Je veux y travailler") && !q01de.includes("J'y habite"),
-    "show-fr-social": q01fr.includes("Je veux y travailler") && !q01fr.includes("J'y habite"),
+    "show-lu-social": q01lu.includes("Je veux y travailler"),
+    "show-de-social": q01de.includes("Je veux y travailler"),
+    "show-fr-social": q01fr.includes("Je veux y travailler"),
     "candidate-permits-details": candidatePermits,
     "candidate-permits-other": candidatePermits && candidatePermitOther,
     "sector-vente": selectedSectors.includes(candidateTallyMeta.sectors[0]),
@@ -5530,7 +5526,6 @@ function humanizeCandidateRawAnswers(fields, fileMeta, rankingSummary) {
         cv: fields.tally_q10_f02 || [],
         diplomes: fields.tally_q10_f03 || [],
         iban: fields.tally_q10_f04 || [],
-        securite_sociale: fields.tally_q10_f05 || []
       },
       secu_lux: fields.tally_q11 || "",
       secu_de: fields.raw_tally_q12 || "",
