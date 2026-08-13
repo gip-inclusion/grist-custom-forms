@@ -6565,6 +6565,11 @@ def send_brevo_transactional_email(
         'subject': subject,
         'textContent': text_body,
         'htmlContent': html_body,
+        'headers': {
+            'X-Mailin-Track': 'false',
+            'X-Mailin-Track-Clicks': 'false',
+            'X-Mailin-Track-Opens': 'false',
+        },
     }
     if brevo.get('reply_to_email'):
         payload['replyTo'] = {
