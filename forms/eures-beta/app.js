@@ -6,8 +6,8 @@ const DEFAULT_LANG = "fr";
 const copy = {
   fr: {
     common: {
-      brandTitle: "EURES beta",
-      brandSubtitle: "Mobilité, matching et accompagnement transfrontalier",
+      brandTitle: "Match Europe",
+      brandSubtitle: "Service numérique France Travail / EURES",
       navHome: "Accueil",
       navCandidate: "Candidat",
       navEmployer: "Employeur",
@@ -18,7 +18,7 @@ const copy = {
       privacyLink: "Protection des données",
       partnersLabel: "Partenaires",
       tagsLabel: "Repères",
-      footer: "Expérimentation EURES beta pour faciliter la mobilité professionnelle et les recrutements dans la Grande Région.",
+      footer: "Expérimentation Match Europe pour faciliter la mobilité professionnelle et les recrutements dans la Grande Région.",
       ctaStartCandidate: "Commencer côté candidat",
       ctaStartEmployer: "Commencer côté employeur",
       ctaBackHome: "Retour à l’accueil",
@@ -55,7 +55,7 @@ const copy = {
     home: {
       eyebrow: "Une expérimentation dans la Grande Région",
       title: "Faciliter les recrutements et la mobilité professionnelle dans la Grande Région",
-      lede: "EURES beta expérimente une nouvelle façon de rapprocher les besoins des employeurs et les projets de mobilité des candidats dans un espace économique transfrontalier.",
+      lede: "Match Europe expérimente une nouvelle façon de rapprocher les besoins des employeurs et les projets de mobilité des candidats dans un espace économique transfrontalier.",
       storyTitle: "Un marché du travail transfrontalier encore fragmenté",
       storyText: "Le marché du travail dépasse les frontières nationales, mais les recrutements et les recherches d'emploi restent encore largement organisés pays par pays.\n\nLe projet vise à mieux identifier les besoins, les intentions de mobilité et les opportunités afin de favoriser des mises en relation plus pertinentes et plus rapides.\n\nDans la Grande Région, plusieurs centaines de milliers de personnes travaillent déjà au-delà des frontières. Pourtant, les offres d'emploi et les candidatures circulent encore difficilement entre les pays.\n\nDes employeurs rencontrent des difficultés de recrutement tandis que des candidats ouverts à la mobilité ne repèrent pas toujours les opportunités qui pourraient leur correspondre.",
       statsTitle: "Quelques repères sur la Grande Région",
@@ -264,8 +264,8 @@ const copy = {
     },
     statPage: {
       eyebrow: "Observatoire public de l'expérimentation",
-      title: "Suivi de l'expérimentation EURES beta",
-      lede: "Cette page présente les principaux indicateurs de suivi de l'expérimentation EURES beta.\n\nLes données publiées sont agrégées et anonymisées. Elles permettent de suivre l'activité du projet et les premiers enseignements issus des usages.",
+      title: "Suivi de l'expérimentation Match Europe",
+      lede: "Cette page présente les principaux indicateurs de suivi de l'expérimentation Match Europe.\n\nLes données publiées sont agrégées et anonymisées. Elles permettent de suivre l'activité du projet et les premiers enseignements issus des usages.",
       updatedPrefix: "Dernière mise à jour",
       methodologyTitle: "Méthodologie",
       methodology: "Les données publiées sont agrégées et anonymisées. Elles permettent de suivre l'activité de l'expérimentation sans afficher de données personnelles.",
@@ -371,8 +371,8 @@ const copy = {
     },
     matchingPage: {
       eyebrow: "Transparence",
-      title: "Comment fonctionne le matching EURES beta",
-      intro: "Le matching EURES beta rapproche un besoin employeur et un profil candidat à partir d'informations déclarées dans les questionnaires. L'objectif est d'aider à prioriser les dossiers, pas de remplacer l'appréciation humaine.",
+      title: "Comment fonctionne le matching Match Europe",
+      intro: "Le matching Match Europe rapproche un besoin employeur et un profil candidat à partir d'informations déclarées dans les questionnaires. L'objectif est d'aider à prioriser les dossiers, pas de remplacer l'appréciation humaine.",
       criteriaTitle: "Critères pris en compte",
       criteriaLead: "Le score global est calculé sur 100 points. Chaque bloc produit un sous-score explicable.",
       criteria: [
@@ -403,8 +403,8 @@ const copy = {
     },
     privacyPage: {
       eyebrow: "Protection des données",
-      title: "Mentions d'information EURES beta",
-      intro: "Cette page résume la manière dont les données personnelles sont utilisées dans le cadre de l'expérimentation EURES beta.",
+      title: "Mentions d'information Match Europe",
+      intro: "Cette page résume la manière dont les données personnelles sont utilisées dans le cadre de l'expérimentation Match Europe.",
       sections: {
         controller: "Qui traite les données ?",
         purposes: "Pourquoi les données sont-elles collectées ?",
@@ -414,7 +414,7 @@ const copy = {
         matching: "Comment fonctionne le matching ?"
       },
       retentionColumns: ["Catégorie", "Durée"],
-      controllerText: "Les données sont traitées dans le cadre de l'expérimentation EURES beta par les équipes habilitées du projet. Elles sont utilisées uniquement pour le suivi des candidatures, des besoins employeurs et des mises en relation proposées.",
+      controllerText: "Les données sont traitées dans le cadre de l'expérimentation Match Europe par les équipes habilitées du projet. Elles sont utilisées uniquement pour le suivi des candidatures, des besoins employeurs et des mises en relation proposées.",
       purposesList: [
         "Qualifier les profils candidats et les besoins employeurs.",
         "Calculer des rapprochements candidats / employeurs.",
@@ -442,8 +442,8 @@ const copy = {
   },
   en: {
     common: {
-      brandTitle: "EURES beta",
-      brandSubtitle: "Cross-border mobility, matching and support",
+      brandTitle: "Match Europe",
+      brandSubtitle: "France Travail / EURES digital service",
       navHome: "Home",
       navCandidate: "Candidate",
       navEmployer: "Employer",
@@ -454,7 +454,7 @@ const copy = {
       privacyLink: "Data protection",
       partnersLabel: "Partners",
       tagsLabel: "Tags",
-      footer: "EURES beta experiment to support professional mobility and recruitment across the Greater Region.",
+      footer: "Match Europe experiment to support professional mobility and recruitment across the Greater Region.",
       ctaStartCandidate: "Start as candidate",
       ctaStartEmployer: "Start as employer",
       ctaBackHome: "Back to home",
@@ -491,7 +491,7 @@ const copy = {
     home: {
       eyebrow: "An experiment in the Greater Region",
       title: "Making recruitment and professional mobility easier across the Greater Region",
-      lede: "EURES beta is testing a new way to bring together employers' needs and candidates' mobility plans in a cross-border economic area.",
+      lede: "Match Europe is testing a new way to bring together employers' needs and candidates' mobility plans in a cross-border economic area.",
       storyTitle: "A cross-border labour market that remains fragmented",
       storyText: "The labour market goes beyond national borders, yet recruitment and job search are still largely organised country by country.\n\nThe project aims to better identify needs, mobility intentions and opportunities in order to support more relevant and faster introductions.\n\nAcross the Greater Region, several hundred thousand people already work beyond national borders. Even so, job offers and applications still circulate with difficulty between countries.\n\nSome employers face recruitment difficulties, while candidates open to mobility do not always spot the opportunities that could match them.",
       statsTitle: "A few key markers across the Greater Region",
@@ -700,8 +700,8 @@ const copy = {
     },
     statPage: {
       eyebrow: "Public observatory of the experiment",
-      title: "Tracking the EURES beta experiment",
-      lede: "This page presents the main monitoring indicators for the EURES beta experiment.\n\nPublished data is aggregated and anonymized. It helps track project activity and the first lessons emerging from use.",
+      title: "Tracking the Match Europe experiment",
+      lede: "This page presents the main monitoring indicators for the Match Europe experiment.\n\nPublished data is aggregated and anonymized. It helps track project activity and the first lessons emerging from use.",
       updatedPrefix: "Last updated",
       methodologyTitle: "Methodology",
       methodology: "Published data is aggregated and anonymized. It helps monitor the experiment without displaying personal data.",
@@ -807,8 +807,8 @@ const copy = {
     },
     matchingPage: {
       eyebrow: "Transparency",
-      title: "How EURES beta matching works",
-      intro: "EURES beta matching compares an employer need with a candidate profile using self-declared questionnaire information. The goal is to help prioritise cases, not to replace human judgement.",
+      title: "How Match Europe matching works",
+      intro: "Match Europe matching compares an employer need with a candidate profile using self-declared questionnaire information. The goal is to help prioritise cases, not to replace human judgement.",
       criteriaTitle: "Criteria used",
       criteriaLead: "The global score is calculated out of 100 points. Each block generates an explainable sub-score.",
       criteria: [
@@ -839,8 +839,8 @@ const copy = {
     },
     privacyPage: {
       eyebrow: "Data protection",
-      title: "EURES beta privacy notice",
-      intro: "This page summarizes how personal data is used within the EURES beta experiment.",
+      title: "Match Europe privacy notice",
+      intro: "This page summarizes how personal data is used within the Match Europe experiment.",
       sections: {
         controller: "Who processes the data?",
         purposes: "Why is the data collected?",
@@ -850,7 +850,7 @@ const copy = {
         matching: "How does matching work?"
       },
       retentionColumns: ["Category", "Retention period"],
-      controllerText: "Data is processed within the EURES beta experiment by the authorized project teams. It is used only to manage candidate profiles, employer needs and proposed introductions.",
+      controllerText: "Data is processed within the Match Europe experiment by the authorized project teams. It is used only to manage candidate profiles, employer needs and proposed introductions.",
       purposesList: [
         "Qualify candidate profiles and employer needs.",
         "Calculate candidate / employer matches.",
@@ -878,8 +878,8 @@ const copy = {
   },
   de: {
     common: {
-      brandTitle: "EURES beta",
-      brandSubtitle: "Grenzüberschreitende Mobilität, Matching und Begleitung",
+      brandTitle: "Match Europe",
+      brandSubtitle: "Digitaler Dienst von France Travail / EURES",
       navHome: "Start",
       navCandidate: "Kandidaten",
       navEmployer: "Arbeitgeber",
@@ -890,7 +890,7 @@ const copy = {
       privacyLink: "Datenschutz",
       partnersLabel: "Partner",
       tagsLabel: "Stichworte",
-      footer: "EURES-beta-Experiment zur Unterstützung beruflicher Mobilität und Rekrutierung in der Großregion.",
+      footer: "Match-Europe-Experiment zur Unterstützung beruflicher Mobilität und Rekrutierung in der Großregion.",
       ctaStartCandidate: "Als Kandidat starten",
       ctaStartEmployer: "Als Arbeitgeber starten",
       ctaBackHome: "Zur Startseite",
@@ -927,7 +927,7 @@ const copy = {
     home: {
       eyebrow: "Ein Experiment in der Großregion",
       title: "Rekrutierung und berufliche Mobilität in der Großregion erleichtern",
-      lede: "EURES beta erprobt einen neuen Weg, um den Bedarf von Arbeitgebern und die Mobilitätspläne von Kandidatinnen und Kandidaten in einem grenzüberschreitenden Wirtschaftsraum besser zusammenzubringen.",
+      lede: "Match Europe erprobt einen neuen Weg, um den Bedarf von Arbeitgebern und die Mobilitätspläne von Kandidatinnen und Kandidaten in einem grenzüberschreitenden Wirtschaftsraum besser zusammenzubringen.",
       storyTitle: "Ein grenzüberschreitender Arbeitsmarkt, der noch immer fragmentiert ist",
       storyText: "Der Arbeitsmarkt geht über nationale Grenzen hinaus, doch Stellensuche und Rekrutierung sind noch immer weitgehend von Land zu Land organisiert.\n\nDas Projekt soll Bedarfe, Mobilitätsabsichten und Chancen besser sichtbar machen, um passendere und schnellere Vermittlungen zu ermöglichen.\n\nIn der Großregion arbeiten bereits mehrere hunderttausend Menschen jenseits nationaler Grenzen. Trotzdem zirkulieren Stellenangebote und Bewerbungen noch immer nur schwer zwischen den Ländern.\n\nEinige Arbeitgeber haben Rekrutierungsschwierigkeiten, während mobilitätsbereite Kandidatinnen und Kandidaten passende Chancen nicht immer erkennen.",
       statsTitle: "Einige Orientierungspunkte in der Großregion",
@@ -1243,8 +1243,8 @@ const copy = {
     },
     matchingPage: {
       eyebrow: "Transparenz",
-      title: "Wie das Matching in EURES beta funktioniert",
-      intro: "Das Matching von EURES beta vergleicht einen Personalbedarf mit einem Kandidatenprofil anhand der im Fragebogen gemachten Angaben. Ziel ist es, Fälle zu priorisieren, nicht menschliches Urteil zu ersetzen.",
+      title: "Wie das Matching in Match Europe funktioniert",
+      intro: "Das Matching von Match Europe vergleicht einen Personalbedarf mit einem Kandidatenprofil anhand der im Fragebogen gemachten Angaben. Ziel ist es, Fälle zu priorisieren, nicht menschliches Urteil zu ersetzen.",
       criteriaTitle: "Berücksichtigte Kriterien",
       criteriaLead: "Der Gesamtscore wird auf 100 Punkte berechnet. Jeder Block erzeugt einen nachvollziehbaren Teilscore.",
       criteria: [
@@ -1275,7 +1275,7 @@ const copy = {
     },
     privacyPage: {
       eyebrow: "Datenschutz",
-      title: "Datenschutzhinweise EURES beta",
+      title: "Datenschutzhinweise Match Europe",
       intro: "Diese Seite fasst zusammen, wie personenbezogene Daten im Rahmen des EURES-beta-Experiments verwendet werden.",
       sections: {
         controller: "Wer verarbeitet die Daten?",
@@ -2143,7 +2143,7 @@ const employerTallyCopy = {
       salaryMin: "Montant minimum proposé, en euros bruts ou nets",
       salaryMax: "Montant maximum proposé, en euros bruts ou nets",
       q21Title: "Protection des données",
-      q21Text: "Les informations transmises permettront à l’équipe EURES beta de mieux comprendre votre besoin de recrutement et les conditions proposées afin d’identifier des profils susceptibles de correspondre.",
+      q21Text: "Les informations transmises permettront à l’équipe Match Europe de mieux comprendre votre besoin de recrutement et les conditions proposées afin d’identifier des profils susceptibles de correspondre.",
       q21Text2: "Si des profils compatibles avec votre recherche sont identifiés, vous pourrez être recontacté prochainement.",
       q21Text3: "Pensez à répondre aux appels masqués ou inconnus et à vérifier régulièrement vos courriers indésirables (spams).",
       consent: "J’accepte que les informations transmises soient utilisées par les équipes et partenaires EURES dans le cadre des mises en relation et des échanges liés au recrutement. Les données transmises seront utilisées uniquement dans le cadre des échanges liés au recrutement et conformément à la réglementation européenne sur la protection des données (RGPD)."
@@ -2239,7 +2239,7 @@ const employerTallyCopy = {
       salaryMin: "Minimum amount offered, in gross or net euros",
       salaryMax: "Maximum amount offered, in gross or net euros",
       q21Title: "Data protection",
-      q21Text: "The information provided will allow the EURES beta team to better understand your hiring need and the conditions offered in order to identify profiles that may match.",
+      q21Text: "The information provided will allow the Match Europe team to better understand your hiring need and the conditions offered in order to identify profiles that may match.",
       q21Text2: "If profiles compatible with your search are identified, you may be contacted again soon.",
       q21Text3: "Please remember to answer hidden or unknown calls and to check your junk mail regularly.",
       consent: "I agree that the information provided may be used by EURES teams and partners for introductions and exchanges related to recruitment. The data provided will only be used within the framework of recruitment exchanges and in accordance with European data protection rules (GDPR)."
@@ -2785,7 +2785,7 @@ function nav(page, lang, t) {
     <header class="site-header">
       <div class="shell">
         <div class="brand" aria-label="${t.common.brandTitle}">
-          <img class="brand-lockup" src="/assets/eures-email-header.png" alt="République Française, France Travail et EURES">
+          <img class="brand-lockup brand-logo-match" src="/assets/match-europe-logo.png" alt="Match Europe">
           <span class="brand-copy">
             <strong>${t.common.brandTitle}</strong>
             <span>${t.common.brandSubtitle}</span>

@@ -119,6 +119,13 @@ textarea {
   flex: 0 0 auto;
 }
 
+.brand-logo-match {
+  width: clamp(58px, 7vw, 82px);
+  max-width: none;
+  border-radius: 18px;
+  box-shadow: 0 12px 30px rgba(0, 68, 148, 0.16);
+}
+
 .brand-copy strong {
   display: block;
   font-size: 1rem;
