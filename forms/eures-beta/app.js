@@ -3360,6 +3360,20 @@ const projectContentByLang = {
 
 const journalEntriesFR = [
   {
+    sort_date: "2026-08-13",
+    date: "13 août 2026",
+    title: "Renforcer l’identité publique et tester un canal d’invitation plus rassurant",
+    observed: "Les premiers tests d’email montrent que la confiance ne dépend pas seulement du contenu du message. Même lorsque l’URL cible est bien celle de Match Europe, certains outils d’envoi réécrivent les liens avec un domaine technique de tracking. Pour un candidat ou un employeur, ce type de lien peut susciter une méfiance immédiate.",
+    decided: "Configurer le domaine public matcheurope.beta.francetravail.fr comme adresse de référence, renforcer l’identité visible du service sur les pages publiques et tester en parallèle des invitations envoyées directement depuis la boîte professionnelle France Travail, avec des URL lisibles et rassurantes.",
+    changed: [
+      "Les pages publiques affichent désormais Match Europe comme nom principal du service.",
+      "Le logo Match Europe est intégré dans l’en-tête public.",
+      "Les liens de test et d’accès administrateur utilisent l’URL publique France Travail.",
+      "Un modèle d’invitation candidat est préparé pour un test d’envoi depuis Outlook professionnel."
+    ],
+    next: "Comparer les réponses issues des invitations Brevo et des invitations envoyées depuis la boîte professionnelle, puis décider du canal à privilégier pour la prochaine vague."
+  },
+  {
     sort_date: "2026-08-10",
     date: "10 août 2026",
     title: "Tester la candidature spontanée auprès d’un nouvel employeur",
@@ -3478,6 +3492,20 @@ const journalEntriesFR = [
 
 const journalEntriesEN = [
   {
+    sort_date: "2026-08-13",
+    date: "August 13, 2026",
+    title: "Strengthen the public identity and test a more reassuring invitation channel",
+    observed: "The first email tests show that trust does not depend only on the wording of the message. Even when the target URL is the Match Europe domain, some sending tools rewrite links through a technical tracking domain. For a candidate or an employer, this can immediately look suspicious.",
+    decided: "Use matcheurope.beta.francetravail.fr as the public reference address, strengthen the visible identity of the service on public pages, and test invitations sent directly from the France Travail professional mailbox with readable and reassuring URLs.",
+    changed: [
+      "Public pages now display Match Europe as the main service name.",
+      "The Match Europe logo is integrated into the public header.",
+      "Test links and admin access links use the France Travail public URL.",
+      "A candidate invitation template is prepared for testing through professional Outlook."
+    ],
+    next: "Compare responses from Brevo invitations and from invitations sent through the professional mailbox, then decide which channel should be used for the next wave."
+  },
+  {
     sort_date: "2026-08-10",
     date: "August 10, 2026",
     title: "Test unsolicited applications with a new employer",
@@ -3595,6 +3623,20 @@ const journalEntriesEN = [
 ];
 
 const journalEntriesDE = [
+  {
+    sort_date: "2026-08-13",
+    date: "13. August 2026",
+    title: "Die öffentliche Identität stärken und einen vertrauenswürdigeren Einladungskanal testen",
+    observed: "Die ersten E-Mail-Tests zeigen, dass Vertrauen nicht nur vom Inhalt der Nachricht abhängt. Auch wenn die Zieladresse tatsächlich zur Match-Europe-Domain führt, schreiben manche Versandwerkzeuge Links über eine technische Tracking-Domain um. Für Kandidaten oder Arbeitgeber kann dies sofort verdächtig wirken.",
+    decided: "matcheurope.beta.francetravail.fr als öffentliche Referenzadresse verwenden, die sichtbare Identität des Dienstes auf den öffentlichen Seiten stärken und parallel Einladungen direkt über das berufliche France-Travail-Postfach mit lesbaren und vertrauenswürdigen URLs testen.",
+    changed: [
+      "Die öffentlichen Seiten zeigen nun Match Europe als Hauptnamen des Dienstes.",
+      "Das Match-Europe-Logo ist im öffentlichen Seitenkopf integriert.",
+      "Testlinks und administrative Zugangslinks verwenden die öffentliche France-Travail-URL.",
+      "Eine Kandidaten-Einladungsvorlage wird für einen Test über das berufliche Outlook vorbereitet."
+    ],
+    next: "Antworten aus Brevo-Einladungen und aus Einladungen über das berufliche Postfach vergleichen und anschließend entscheiden, welcher Kanal für die nächste Welle bevorzugt wird."
+  },
   {
     sort_date: "2026-08-10",
     date: "10. August 2026",
