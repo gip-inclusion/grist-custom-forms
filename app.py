@@ -1131,6 +1131,13 @@ def build_admin_magic_link_email(form_id: str, email: str, login_link: str) -> t
     return normalize_email(email), subject, text_body, html_body
 
 
+def build_admin_magic_login_link(form_id: str, token: str) -> str:
+    path = url_for('admin_magic_link_consume', form_id=form_id, token=token)
+    if form_id == 'eures-beta':
+        return f"{get_public_app_base_url()}{path}"
+    return url_for('admin_magic_link_consume', form_id=form_id, token=token, _external=True)
+
+
 def _render_admin_login_page(form_id: str, message: str = '', error: str = '') -> Response:
     html = f"""<!doctype html>
 <html lang="fr">
@@ -11047,7 +11054,7 @@ def admin_login(form_id: str):
                 'email': email,
                 'jti': secrets.token_urlsafe(16),
             })
-            login_link = url_for('admin_magic_link_consume', form_id=form_id, token=token, _external=True)
+            login_link = build_admin_magic_login_link(form_id, token)
             recipient, subject, text_body, html_body = build_admin_magic_link_email(form_id, email, login_link)
             send_brevo_transactional_email(recipient, subject, text_body, html_body)
             _ADMIN_MAGIC_LINK_REQUESTS[throttle_key] = now
