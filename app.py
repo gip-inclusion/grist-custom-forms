@@ -568,6 +568,8 @@ EURES_INVITATION_ALLOWED_STATUSES = {
 }
 EURES_INVITATION_SENDABLE_STATUSES = {'invitation_a_envoyer', 'erreur_envoi'}
 EURES_DUPLICATE_FOLLOWUP_ALLOWED_STATUSES = {'pending', 'reminded', 'ignored'}
+EURES_MANUAL_FT_INVITATION_SOURCES = {'ft_manual_email', 'france_travail_manual_email'}
+EURES_MANUAL_FT_INVITATION_SENDERS = {'admin_ft_email_manual', 'france_travail_email_manual'}
 EURES_SECTOR_CANONICAL_MAP = {
     'vente': 'vente',
     'commerce': 'vente',
@@ -2343,6 +2345,9 @@ def _normalize_eures_invitation_row(row: dict, actor: str, batch_id: str) -> dic
         'import_batch_id': batch_id,
         'imported_at': _now_iso_utc(),
         'imported_by': actor,
+        'sent_at': _coalesce_row_value(row, 'sent_at', 'sent_date', 'date_envoi'),
+        'sent_by': _coalesce_row_value(row, 'sent_by', 'sender', 'envoye_par'),
+        'brevo_message_id': _coalesce_row_value(row, 'brevo_message_id'),
         'sponsor_invitation_record_id': _coalesce_row_value(row, 'sponsor_invitation_record_id'),
         'sponsor_email': normalize_email(_coalesce_row_value(row, 'sponsor_email')),
         'sponsor_company_name': _coalesce_row_value(row, 'sponsor_company_name'),
@@ -2384,6 +2389,8 @@ def list_eures_invitations() -> list[dict]:
             'invite_link': fields.get('invite_link', ''),
             'invitation_status': fields.get('invitation_status', 'invitation_a_envoyer'),
             'sent_at': fields.get('sent_at', ''),
+            'sent_by': fields.get('sent_by', ''),
+            'brevo_message_id': fields.get('brevo_message_id', ''),
             'answered_at': fields.get('answered_at', ''),
             'reminder_count': _safe_int(fields.get('reminder_count')),
             'last_reminder_at': fields.get('last_reminder_at', ''),
@@ -2799,6 +2806,8 @@ def send_eures_invitation_reminder_by_record_id(record_id: int, actor: str, head
     current_status = str(fields.get('invitation_status') or '').strip().lower()
     if current_status != 'invitation_envoyee':
         raise RuntimeError("La relance n'est possible que pour une invitation déjà envoyée.")
+    if _is_manual_ft_invitation(fields):
+        raise RuntimeError("Cette invitation a été envoyée manuellement depuis l'adresse France Travail ; elle ne doit pas être relancée par Brevo.")
     if str(fields.get('answered_at') or '').strip():
         raise RuntimeError('Le questionnaire a déjà été reçu pour cette invitation.')
     recipient, subject, text_body, html_body, invite_token, invite_link = build_brevo_invitation_email(fields, kind='reminder')
@@ -3948,6 +3957,8 @@ def _eures_invitation_needs_reminder(fields: dict, now: datetime | None = None) 
         return False
     if str(fields.get('invitation_status') or '').strip().lower() != 'invitation_envoyee':
         return False
+    if _is_manual_ft_invitation(fields):
+        return False
     if str(fields.get('answered_at') or '').strip():
         return False
     sent_at = fields.get('sent_at')
@@ -3955,6 +3966,14 @@ def _eures_invitation_needs_reminder(fields: dict, now: datetime | None = None) 
     if days_since_sent is None:
         return False
     return days_since_sent >= get_eures_invitation_reminder_delay_days()
+
+
+def _is_manual_ft_invitation(fields: dict) -> bool:
+    if not isinstance(fields, dict):
+        return False
+    source = str(fields.get('source') or '').strip().lower()
+    sent_by = str(fields.get('sent_by') or '').strip().lower()
+    return source in EURES_MANUAL_FT_INVITATION_SOURCES or sent_by in EURES_MANUAL_FT_INVITATION_SENDERS
 
 
 def _duration_hours(start_value, end_value) -> float | None:
@@ -9311,6 +9330,13 @@ def admin_eures_invitations_remind(form_id: str):
                     'record_id': record_id,
                     'email': fields.get('email', ''),
                     'reason': 'already_answered',
+                })
+                continue
+            if _is_manual_ft_invitation(fields):
+                skipped.append({
+                    'record_id': record_id,
+                    'email': fields.get('email', ''),
+                    'reason': 'manual_ft_email',
                 })
                 continue
             try:

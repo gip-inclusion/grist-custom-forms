@@ -2257,8 +2257,9 @@
               </div>
               <div class="inline-actions">
                 <button id="single-save-btn" type="button">Ajouter l’invitation</button>
+                <button id="single-save-ft-manual-btn" class="btn-secondary" type="button">Enregistrer comme envoyée depuis FT</button>
               </div>
-              <p class="help-text">Cette action crée une ligne dans la table <code>Invitations</code> avec le statut <code>invitation_a_envoyer</code>.</p>
+              <p class="help-text">“Ajouter l’invitation” crée une ligne à envoyer par Brevo. “Envoyée depuis FT” crée une invitation candidat déjà envoyée manuellement depuis l’adresse France Travail, sans envoi Brevo.</p>
             </div>
 
             <div class="invitation-panel" id="csv-invitation-panel" data-invitation-compose="import">
@@ -4003,6 +4004,8 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,,</pre>
           row.last_name,
           row.invitation_status,
           invitationStatusLabel(row.invitation_status),
+          invitationDeliveryLabel(row),
+          invitationDeliveryChannel(row),
           row.sent_at,
           row.invitation_status_updated_at,
         ].join(" ")).includes(search);
@@ -4019,7 +4022,7 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,,</pre>
             · ${esc(row.company_name || [row.first_name, row.last_name].filter(Boolean).join(" ") || "-")}
           </span>
           <span class="history-invitation-date">${esc(readableResponseDate(row.sent_at || row.invitation_status_updated_at || ""))}</span>
-          <span class="pill ${esc(invitationStatusClass(row.invitation_status))}">${esc(invitationStatusLabel(row.invitation_status))}</span>
+          <span class="pill ${esc(invitationStatusClass(row.invitation_status))}">${esc(invitationDeliveryLabel(row))}</span>
         </article>
       `).join("");
     }
@@ -4604,6 +4607,26 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,,</pre>
       return "pending";
     }
 
+    function isManualFtInvitation(row) {
+      const source = String(row?.source || "").trim().toLowerCase();
+      const sentBy = String(row?.sent_by || "").trim().toLowerCase();
+      return ["ft_manual_email", "france_travail_manual_email"].includes(source)
+        || ["admin_ft_email_manual", "france_travail_email_manual"].includes(sentBy);
+    }
+
+    function invitationDeliveryLabel(row) {
+      if (row?.invitation_status === "invitation_envoyee" && isManualFtInvitation(row)) {
+        return "envoyée depuis FT";
+      }
+      return invitationStatusLabel(row?.invitation_status);
+    }
+
+    function invitationDeliveryChannel(row) {
+      if (isManualFtInvitation(row)) return "Adresse France Travail (manuel)";
+      if (row?.brevo_message_id) return "Brevo";
+      return "-";
+    }
+
     function updateInvitationKpis(stats = {}) {
       document.getElementById("invite-kpi-total").textContent = stats.total ?? 0;
       document.getElementById("invite-kpi-pending").textContent = stats.invitation_a_envoyer ?? 0;
@@ -4718,6 +4741,8 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,,</pre>
           row.company_name,
           row.external_ref,
           row.source,
+          row.sent_by,
+          invitationDeliveryChannel(row),
           Array.isArray(row.target_job_labels) ? row.target_job_labels.join(" ") : "",
           row.notes,
         ].map(normalizeText).join(" ");
@@ -4746,11 +4771,15 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,,</pre>
                 <p>${esc(subtitleBits.join(" · "))}</p>
               </div>
               <div class="summary-tags">
-                <span class="pill ${invitationStatusClass(row.invitation_status)}">${esc(invitationStatusLabel(row.invitation_status))}</span>
+                <span class="pill ${invitationStatusClass(row.invitation_status)}">${esc(invitationDeliveryLabel(row))}</span>
                 ${row.duplicate_followup_status ? `<span class="pill">${esc(duplicateFollowupLabel(row.duplicate_followup_status))}</span>` : ""}
               </div>
             </div>
             <div class="invitation-meta">
+              <div class="meta-box">
+                <strong>Canal</strong>
+                <span>${esc(invitationDeliveryChannel(row))}</span>
+              </div>
               <div class="meta-box">
                 <strong>Source</strong>
                 <span>${esc(row.source || "-")}</span>
@@ -4833,7 +4862,7 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,,</pre>
                 <button class="btn-refuse" type="button" data-delete-invitation="${esc(row.record_id)}">Supprimer cette erreur</button>
               </div>
             ` : ""}
-            ${row.invitation_status === "invitation_envoyee" && !row.answered_at && row.duplicate_followup_status !== "pending" ? `
+            ${row.invitation_status === "invitation_envoyee" && !row.answered_at && row.duplicate_followup_status !== "pending" && !isManualFtInvitation(row) ? `
               <div class="inline-actions" style="margin-top:0.9rem;">
                 <button type="button" data-remind-invitation="${esc(row.record_id)}">${row.needs_reminder ? "Relancer maintenant" : "Envoyer une relance"}</button>
               </div>
@@ -5884,15 +5913,20 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,,</pre>
       }
     }
 
-    function buildSingleInvitationPayload() {
+    function buildSingleInvitationPayload(manualFtSent = false) {
       const role = document.getElementById("single-role").value;
       const email = document.getElementById("single-email").value.trim();
       if (!email) {
         throw new Error("Email requis");
       }
+      if (manualFtSent && role !== "candidate") {
+        throw new Error("L’enregistrement “envoyée depuis FT” est réservé aux invitations candidat.");
+      }
       const selectedTargetJob = role === "candidate"
         ? document.getElementById("single-target-job").value.trim()
         : "";
+      const notes = document.getElementById("single-notes").value.trim();
+      const manualFtNote = "Invitation envoyée manuellement depuis l’adresse France Travail. Aucun envoi Brevo.";
       return {
         rows: [{
           role,
@@ -5901,12 +5935,15 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,,</pre>
           last_name: document.getElementById("single-last-name").value.trim(),
           company_name: document.getElementById("single-company").value.trim(),
           language: document.getElementById("single-language").value.trim() || "fr",
-          source: document.getElementById("single-source").value.trim() || "admin_manual",
+          source: manualFtSent ? "ft_manual_email" : (document.getElementById("single-source").value.trim() || "admin_manual"),
           external_ref: document.getElementById("single-external-ref").value.trim(),
           campaign_type: role === "candidate" ? document.getElementById("single-campaign-type").value.trim() : "",
           target_job_keys: selectedTargetJob ? [selectedTargetJob] : [],
-          notes: document.getElementById("single-notes").value.trim(),
-          invitation_status: "invitation_a_envoyer",
+          notes: manualFtSent ? [notes, manualFtNote].filter(Boolean).join("\n\n") : notes,
+          invitation_status: manualFtSent ? "invitation_envoyee" : "invitation_a_envoyer",
+          sent_at: manualFtSent ? new Date().toISOString() : "",
+          sent_by: manualFtSent ? "admin_ft_email_manual" : "",
+          brevo_message_id: "",
         }],
       };
     }
@@ -5919,6 +5956,8 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,,</pre>
       const isCandidate = role === "candidate";
       targetBlock.hidden = !isCandidate;
       if (campaignBlock) campaignBlock.hidden = !isCandidate;
+      const manualFtButton = document.getElementById("single-save-ft-manual-btn");
+      if (manualFtButton) manualFtButton.hidden = !isCandidate;
       if (!isCandidate) {
         const select = document.getElementById("single-target-job");
         if (select) select.value = "";
@@ -7328,7 +7367,14 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,,</pre>
 
     document.getElementById("single-save-btn").addEventListener("click", async () => {
       try {
-        await importInvitations(buildSingleInvitationPayload());
+        await importInvitations(buildSingleInvitationPayload(false));
+      } catch (error) {
+        setStatus("invite-status-line", `Erreur : ${error.message || "création impossible"}`);
+      }
+    });
+    document.getElementById("single-save-ft-manual-btn").addEventListener("click", async () => {
+      try {
+        await importInvitations(buildSingleInvitationPayload(true));
       } catch (error) {
         setStatus("invite-status-line", `Erreur : ${error.message || "création impossible"}`);
       }
