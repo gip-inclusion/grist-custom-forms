@@ -6425,7 +6425,7 @@ def build_eures_admin_email_test_message(test_type: str, recipient_email: str) -
         raise RuntimeError('A valid recipient email is required.')
 
     invite_link = (
-        'https://formulaires.inclusion.gouv.fr/forms/eures-beta/questionnaire-candidate'
+        f'{get_public_app_base_url()}/forms/eures-beta/questionnaire-candidate'
         '?lang=fr&invite_token=test-email-only'
     )
     if normalized_type == 'candidate_invitation_generic':
@@ -6457,7 +6457,7 @@ def build_eures_admin_email_test_message(test_type: str, recipient_email: str) -
             'company_name': 'Entreprise test Match Europe',
             'invite_token': 'test-email-only',
             'invite_link': (
-                'https://formulaires.inclusion.gouv.fr/forms/eures-beta/questionnaire-employer'
+                f'{get_public_app_base_url()}/forms/eures-beta/questionnaire-employer'
                 '?lang=fr&invite_token=test-email-only'
             ),
         })
