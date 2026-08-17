@@ -748,6 +748,35 @@
       color: var(--accent-strong);
     }
 
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 0.8rem;
+    }
+
+    .kpi-card {
+      display: grid;
+      gap: 0.35rem;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.92);
+      padding: 0.9rem 1rem;
+      min-height: 86px;
+      align-content: center;
+    }
+
+    .kpi-card span {
+      color: var(--muted);
+      font-size: 0.9rem;
+      line-height: 1.25;
+    }
+
+    .kpi-card strong {
+      color: var(--accent-strong);
+      font-size: clamp(1.8rem, 4vw, 2.6rem);
+      line-height: 1;
+    }
+
     .technical-check-list {
       display: grid;
       gap: 0.65rem;
@@ -788,6 +817,11 @@
     .technical-check-status.ok {
       background: rgba(31, 127, 83, 0.12);
       color: #14623e;
+    }
+
+    .technical-check-status.warning {
+      background: rgba(177, 108, 35, 0.12);
+      color: #8a4b09;
     }
 
     .technical-check-status.warning {
@@ -1873,6 +1907,10 @@
         grid-template-columns: repeat(2, minmax(0, 1fr));
       }
 
+      .kpi-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
       .compare-grid,
       .notes-grid,
       .matching-summary,
@@ -1910,6 +1948,7 @@
       }
 
       .kpis,
+      .kpi-grid,
       .subscores-grid,
       .toolbar,
       .data-history-controls,
@@ -4128,6 +4167,9 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,,</pre>
       const pageRows = pages.length
         ? pages.map((item) => `<li>${esc(item.page || "inconnue")} : <strong>${esc(item.count || 0)}</strong></li>`).join("")
         : "<li>Aucune page enregistrée.</li>";
+      const storageDurable = Boolean(summary?.storage?.durable);
+      const storageLabel = storageDurable ? "Durable" : "Temporaire";
+      const storageClass = storageDurable ? "ok" : "warning";
       details.innerHTML = `
         <div class="technical-check-item">
           <div>
@@ -4148,7 +4190,7 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,,</pre>
             <strong>Stockage</strong>
             <p>${esc(summary?.storage?.warning || "Stockage temporaire serveur.")}</p>
           </div>
-          <span class="technical-check-status warning">Temporaire</span>
+          <span class="technical-check-status ${storageClass}">${storageLabel}</span>
         </div>
       `;
       setStatus("visit-analytics-status-line", `Visites chargées sur ${Number(summary?.days || 30)} jours.`);
