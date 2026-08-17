@@ -777,6 +777,45 @@
       line-height: 1;
     }
 
+    .visit-page-table {
+      display: grid;
+      gap: 0.45rem;
+      margin-top: 0.65rem;
+    }
+
+    .visit-page-row {
+      display: grid;
+      grid-template-columns: minmax(180px, 1.4fr) repeat(4, minmax(72px, 0.45fr));
+      gap: 0.65rem;
+      align-items: center;
+      border: 1px solid rgba(15, 39, 66, 0.09);
+      border-radius: 14px;
+      background: rgba(247, 250, 255, 0.86);
+      padding: 0.65rem 0.75rem;
+    }
+
+    .visit-page-row.header {
+      background: transparent;
+      border-color: transparent;
+      padding-top: 0;
+      padding-bottom: 0.15rem;
+      color: var(--muted);
+      font-size: 0.78rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .visit-page-row strong {
+      color: var(--accent-strong);
+    }
+
+    .visit-page-row span:not(:first-child) {
+      justify-self: start;
+      font-weight: 800;
+      color: var(--text);
+    }
+
     .technical-check-list {
       display: grid;
       gap: 0.65rem;
@@ -1911,6 +1950,10 @@
         grid-template-columns: repeat(2, minmax(0, 1fr));
       }
 
+      .visit-page-row {
+        grid-template-columns: minmax(160px, 1fr) repeat(4, minmax(58px, auto));
+      }
+
       .compare-grid,
       .notes-grid,
       .matching-summary,
@@ -1993,6 +2036,14 @@
       .key-value-row {
         grid-template-columns: 1fr;
         gap: 0.2rem;
+      }
+
+      .visit-page-table {
+        overflow-x: auto;
+      }
+
+      .visit-page-row {
+        min-width: 620px;
       }
     }
   </style>
@@ -4160,13 +4211,32 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,,</pre>
       document.getElementById("visit-analytics-submitted").textContent = Number(events.questionnaire_submitted || 0);
       const details = document.getElementById("visit-analytics-details");
       const sources = Array.isArray(summary?.sources) ? summary.sources.slice(0, 8) : [];
-      const pages = Array.isArray(summary?.pages) ? summary.pages.slice(0, 8) : [];
+      const pageBreakdown = Array.isArray(summary?.page_breakdown) ? summary.page_breakdown.slice(0, 12) : [];
       const sourceRows = sources.length
         ? sources.map((item) => `<li>${esc(item.source || "direct")} : <strong>${esc(item.count || 0)}</strong></li>`).join("")
         : "<li>Aucune source enregistrée.</li>";
-      const pageRows = pages.length
-        ? pages.map((item) => `<li>${esc(item.page || "inconnue")} : <strong>${esc(item.count || 0)}</strong></li>`).join("")
-        : "<li>Aucune page enregistrée.</li>";
+      const pageRows = pageBreakdown.length
+        ? `
+          <div class="visit-page-table">
+            <div class="visit-page-row header">
+              <span>Page</span>
+              <span>Visites</span>
+              <span>Clics</span>
+              <span>Commencés</span>
+              <span>Envoyés</span>
+            </div>
+            ${pageBreakdown.map((item) => `
+              <div class="visit-page-row">
+                <strong>${esc(item.page || "inconnue")}</strong>
+                <span>${esc(item.page_view || 0)}</span>
+                <span>${esc(item.cta_click || 0)}</span>
+                <span>${esc(item.questionnaire_started || 0)}</span>
+                <span>${esc(item.questionnaire_submitted || 0)}</span>
+              </div>
+            `).join("")}
+          </div>
+        `
+        : "<p>Aucune page enregistrée.</p>";
       const storageDurable = Boolean(summary?.storage?.durable);
       const storageLabel = storageDurable ? "Durable" : "Temporaire";
       const storageClass = storageDurable ? "ok" : "warning";
@@ -4180,8 +4250,8 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,,</pre>
         </div>
         <div class="technical-check-item">
           <div>
-            <strong>Pages vues</strong>
-            <ul>${pageRows}</ul>
+            <strong>Pages distinguées</strong>
+            ${pageRows}
           </div>
           <span class="technical-check-status ok">${esc(summary?.total_events || 0)} événements</span>
         </div>

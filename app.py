@@ -11187,7 +11187,10 @@ def _build_eures_visit_analytics_summary(days: int = 30) -> dict:
     source_counts = Counter(str(event.get('source') or event.get('referrer_host') or 'direct') for event in events if event.get('event_type') == 'page_view')
     campaign_counts = Counter(str(event.get('campaign') or 'sans campagne') for event in events if event.get('campaign'))
     daily = defaultdict(Counter)
+    page_breakdown = defaultdict(Counter)
     for event in events:
+        page_key = str(event.get('page') or event.get('path') or 'inconnue')
+        page_breakdown[page_key][str(event.get('event_type') or 'unknown')] += 1
         day = str(event.get('occurred_at') or '')[:10] or 'inconnu'
         daily[day][str(event.get('event_type') or 'unknown')] += 1
     return {
@@ -11203,6 +11206,21 @@ def _build_eures_visit_analytics_summary(days: int = 30) -> dict:
         'total_events': len(events),
         'events': dict(event_counts),
         'pages': [{'page': key, 'count': value} for key, value in page_counts.most_common(20)],
+        'page_breakdown': [
+            {
+                'page': page,
+                'page_view': counter.get('page_view', 0),
+                'cta_click': counter.get('cta_click', 0),
+                'questionnaire_started': counter.get('questionnaire_started', 0),
+                'questionnaire_submitted': counter.get('questionnaire_submitted', 0),
+                'total': sum(counter.values()),
+            }
+            for page, counter in sorted(
+                page_breakdown.items(),
+                key=lambda item: (item[1].get('page_view', 0), sum(item[1].values())),
+                reverse=True,
+            )
+        ],
         'sources': [{'source': key, 'count': value} for key, value in source_counts.most_common(20)],
         'campaigns': [{'campaign': key, 'count': value} for key, value in campaign_counts.most_common(20)],
         'daily': [
