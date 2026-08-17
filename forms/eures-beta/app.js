@@ -3360,6 +3360,20 @@ const projectContentByLang = {
 
 const journalEntriesFR = [
   {
+    sort_date: "2026-08-17",
+    date: "17 août 2026",
+    title: "Clarifier le rôle de Match Europe dans un marché du recrutement saturé par l’automatisation",
+    observed: "Un article publié le 17 août 2026 dans Le Point décrit un marché du recrutement de plus en plus saturé par l’usage symétrique de l’intelligence artificielle : des candidats optimisent leurs CV et leurs candidatures pour franchir les filtres, tandis que les recruteurs utilisent des outils automatisés pour traiter des volumes de candidatures devenus difficiles à gérer. Cette mécanique augmente le bruit, favorise les profils standardisés, affaiblit la qualité du signal CV et renforce l’importance du réseau, de la mobilité interne et de la confiance dans la mise en relation.",
+    decided: "Utiliser cette lecture comme hypothèse produit, sans la traiter comme une preuve statistique officielle : Match Europe ne doit pas chercher à ajouter un flux supplémentaire de candidatures, mais à organiser des mises en relation qualifiées, explicables, sobres et humaines. Le service doit aider à comprendre pourquoi un profil est proposé, à sécuriser le premier contact et à suivre ce qui se passe réellement après la transmission.",
+    changed: [
+      "Le CV reste une pièce utile, mais il ne doit pas devenir le seul signal de décision.",
+      "Les réponses structurées des candidats et des employeurs doivent être davantage mises en avant : disponibilité, mobilité, langues, conditions de travail, documents, salaire, canal de contact et consentement.",
+      "Le matching doit rester explicable et supervisé, avec une décision humaine avant transmission.",
+      "Le suivi des suites données devient un indicateur produit central : contact réel, échange, entretien, refus, abandon, recrutement et raison de non-suite."
+    ],
+    next: "Renforcer l’administration autour de trois objectifs : mieux lire les profils, mieux expliquer les propositions de matching et mieux mesurer les résultats des mises en relation, notamment pour comparer les canaux de contact."
+  },
+  {
     sort_date: "2026-08-13",
     date: "13 août 2026",
     title: "Renforcer l’identité publique et tester un canal d’invitation plus rassurant",
