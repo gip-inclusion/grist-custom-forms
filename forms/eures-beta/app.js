@@ -2440,7 +2440,7 @@ function getEmployerTallyContent(lang) {
 
 function currentLang() {
   const params = new URLSearchParams(window.location.search);
-  const lang = params.get("lang");
+  const lang = (params.get("lang") || "").replace(/[^a-z-]/gi, "").slice(0, 2);
   return LANGS.includes(lang) ? lang : DEFAULT_LANG;
 }
 
@@ -2486,9 +2486,10 @@ function sendAnalyticsEvent(eventType, extra = {}) {
     return;
   }
   const params = new URLSearchParams(window.location.search);
+  const page = normalizeAnalyticsPage(document.body?.dataset?.page || "", window.location.pathname);
   const payload = {
     event_type: eventType,
-    page: document.body?.dataset?.page || "",
+    page,
     path: window.location.pathname,
     lang: currentLang(),
     source: getAnalyticsSource(params),
@@ -2519,24 +2520,66 @@ function sendAnalyticsEvent(eventType, extra = {}) {
   }).catch(() => {});
 }
 
+function normalizeAnalyticsPage(page, path) {
+  const rawPage = String(page || "").trim();
+  if (rawPage) {
+    return rawPage;
+  }
+  const rawPath = String(path || "");
+  if (rawPath.includes("/questionnaire-candidate")) return "candidate-questionnaire";
+  if (rawPath.includes("/questionnaire-employer")) return "employer-questionnaire";
+  if (rawPath.includes("/candidate")) return "candidate-landing";
+  if (rawPath.includes("/employer")) return "employer-landing";
+  if (rawPath.includes("/privacy")) return "privacy";
+  if (rawPath.includes("/stat")) return "stat";
+  if (rawPath.includes("/le-projet")) return "project";
+  if (rawPath.includes("/journal")) return "journal";
+  return "home";
+}
+
+function questionnaireRoleFromHref(href) {
+  const value = String(href || "");
+  try {
+    const url = new URL(value, window.location.origin);
+    if (url.pathname.includes("/questionnaire-employer")) return "employer";
+    if (url.pathname.includes("/questionnaire-candidate")) return "candidate";
+  } catch {
+    if (value.includes("questionnaire-employer")) return "employer";
+    if (value.includes("questionnaire-candidate")) return "candidate";
+  }
+  return "";
+}
+
+function trackQuestionnaireCta(link) {
+  if (!link || link.dataset.analyticsCtaSent === "1") {
+    return;
+  }
+  const href = link.getAttribute("href") || "";
+  const role = questionnaireRoleFromHref(href);
+  if (!role) {
+    return;
+  }
+  link.dataset.analyticsCtaSent = "1";
+  sendAnalyticsEvent("cta_click", {
+    target: href,
+    role
+  });
+}
+
 function attachAnalyticsBehavior() {
   sendAnalyticsEvent("page_view");
 
+  document.addEventListener("pointerdown", (event) => {
+    const link = event.target?.closest?.("a[href]");
+    trackQuestionnaireCta(link);
+  }, { capture: true });
+
   document.addEventListener("click", (event) => {
     const link = event.target?.closest?.("a[href]");
-    if (!link) {
-      return;
-    }
-    const href = link.getAttribute("href") || "";
-    if (href.includes("questionnaire-candidate") || href.includes("questionnaire-employer")) {
-      sendAnalyticsEvent("cta_click", {
-        target: href,
-        role: href.includes("questionnaire-employer") ? "employer" : "candidate"
-      });
-    }
+    trackQuestionnaireCta(link);
   });
 
-  const startedKey = `matchEuropeQuestionnaireStarted:${document.body?.dataset?.page || ""}`;
+  const startedKey = `matchEuropeQuestionnaireStarted:${normalizeAnalyticsPage(document.body?.dataset?.page || "", window.location.pathname)}`;
   document.addEventListener("input", (event) => {
     const page = document.body?.dataset?.page || "";
     if (page !== "candidate-questionnaire" && page !== "employer-questionnaire") {

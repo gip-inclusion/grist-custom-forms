@@ -781,11 +781,12 @@
       display: grid;
       gap: 0.45rem;
       margin-top: 0.65rem;
+      overflow-x: auto;
     }
 
     .visit-page-row {
       display: grid;
-      grid-template-columns: minmax(180px, 1.4fr) repeat(4, minmax(72px, 0.45fr));
+      grid-template-columns: minmax(120px, 1.2fr) repeat(4, minmax(58px, 0.45fr));
       gap: 0.65rem;
       align-items: center;
       border: 1px solid rgba(15, 39, 66, 0.09);
@@ -814,6 +815,10 @@
       justify-self: start;
       font-weight: 800;
       color: var(--text);
+    }
+
+    .visit-analytics-kpi-grid {
+      grid-template-columns: repeat(auto-fit, minmax(135px, 1fr));
     }
 
     .technical-check-list {
@@ -2153,7 +2158,7 @@
             <article class="admin-card" data-technical-section="visit-analytics" hidden>
               <div class="section-title">Visites site</div>
               <p class="microcopy">Suivi minimal des pages publiques Match Europe : visites, clics vers les questionnaires, débuts de saisie et questionnaires envoyés. Aucune IP ni donnée saisie n’est enregistrée ici.</p>
-              <div class="kpi-grid" style="margin-top:0.9rem;">
+              <div class="kpi-grid visit-analytics-kpi-grid" style="margin-top:0.9rem;">
                 <div class="kpi-card"><span>Visites</span><strong id="visit-analytics-page-views">0</strong></div>
                 <div class="kpi-card"><span>Clics questionnaire</span><strong id="visit-analytics-cta-clicks">0</strong></div>
                 <div class="kpi-card"><span>Questionnaires commencés</span><strong id="visit-analytics-started">0</strong></div>
