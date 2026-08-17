@@ -785,7 +785,7 @@
 
     .visit-page-row {
       display: grid;
-      grid-template-columns: minmax(120px, 1.2fr) repeat(4, minmax(58px, 0.45fr));
+      grid-template-columns: minmax(120px, 1fr);
       gap: 0.65rem;
       align-items: center;
       border: 1px solid rgba(15, 39, 66, 0.09);
@@ -794,26 +794,39 @@
       padding: 0.65rem 0.75rem;
     }
 
-    .visit-page-row.header {
-      background: transparent;
-      border-color: transparent;
-      padding-top: 0;
-      padding-bottom: 0.15rem;
-      color: var(--muted);
-      font-size: 0.78rem;
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-    }
-
     .visit-page-row strong {
       color: var(--accent-strong);
     }
 
-    .visit-page-row span:not(:first-child) {
-      justify-self: start;
+    .visit-page-metrics {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(82px, 1fr));
+      gap: 0.45rem;
+      min-width: 0;
+    }
+
+    .visit-page-metric {
+      display: grid;
+      gap: 0.15rem;
+      min-width: 0;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.72);
+      padding: 0.45rem 0.55rem;
+    }
+
+    .visit-page-metric em {
+      color: var(--muted);
+      font-size: 0.66rem;
       font-weight: 800;
+      font-style: normal;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      white-space: nowrap;
+    }
+
+    .visit-page-metric span {
       color: var(--text);
+      font-weight: 800;
     }
 
     .visit-analytics-kpi-grid {
@@ -1954,10 +1967,6 @@
         grid-template-columns: repeat(2, minmax(0, 1fr));
       }
 
-      .visit-page-row {
-        grid-template-columns: minmax(160px, 1fr) repeat(4, minmax(58px, auto));
-      }
-
       .compare-grid,
       .notes-grid,
       .matching-summary,
@@ -2046,36 +2055,8 @@
         overflow-x: visible;
       }
 
-      .visit-page-row {
-        min-width: 0;
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-        gap: 0.45rem;
-      }
-
-      .visit-page-row.header {
-        display: none;
-      }
-
-      .visit-page-row strong {
-        grid-column: 1 / -1;
-        padding-bottom: 0.25rem;
-        border-bottom: 1px solid rgba(15, 39, 66, 0.08);
-      }
-
-      .visit-page-row span:not(:first-child) {
-        display: grid;
-        justify-items: start;
-        gap: 0.15rem;
-        min-width: 0;
-      }
-
-      .visit-page-row span:not(:first-child)::before {
-        content: attr(data-label);
-        color: var(--muted);
-        font-size: 0.62rem;
-        font-weight: 800;
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
+      .visit-page-metrics {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
       }
     }
   </style>
@@ -4250,20 +4231,15 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,,</pre>
       const pageRows = pageBreakdown.length
         ? `
           <div class="visit-page-table">
-            <div class="visit-page-row header">
-              <span>Page</span>
-              <span>Visites</span>
-              <span>Clics</span>
-              <span>Commencés</span>
-              <span>Envoyés</span>
-            </div>
             ${pageBreakdown.map((item) => `
               <div class="visit-page-row">
                 <strong>${esc(item.page || "inconnue")}</strong>
-                <span data-label="Visites">${esc(item.page_view || 0)}</span>
-                <span data-label="Clics">${esc(item.cta_click || 0)}</span>
-                <span data-label="Commencés">${esc(item.questionnaire_started || 0)}</span>
-                <span data-label="Envoyés">${esc(item.questionnaire_submitted || 0)}</span>
+                <div class="visit-page-metrics">
+                  <div class="visit-page-metric"><em>Visites</em><span>${esc(item.page_view || 0)}</span></div>
+                  <div class="visit-page-metric"><em>Clics</em><span>${esc(item.cta_click || 0)}</span></div>
+                  <div class="visit-page-metric"><em>Commencés</em><span>${esc(item.questionnaire_started || 0)}</span></div>
+                  <div class="visit-page-metric"><em>Envoyés</em><span>${esc(item.questionnaire_submitted || 0)}</span></div>
+                </div>
               </div>
             `).join("")}
           </div>
