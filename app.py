@@ -77,6 +77,7 @@ _ADMIN_MAGIC_LINK_REQUESTS: dict[tuple[str, str], float] = {}
 _ADMIN_MAGIC_LINK_USED: dict[str, float] = {}
 _EURES_PUBLIC_WRITE_ATTEMPTS: dict[tuple[str, str], list[float]] = {}
 _EURES_TRACKING_SAVE_LOCK = threading.Lock()
+_EURES_VISIT_ANALYTICS_LOCK = threading.Lock()
 
 GRIST_BASE_URL = os.environ.get('GRIST_BASE_URL', 'https://grist.numerique.gouv.fr').rstrip('/')
 APP_MODE = os.environ.get('APP_MODE', '').strip().lower()
@@ -90,6 +91,14 @@ EURES_STATS_TABLE_DEFAULT = 'Pilotage_EURES_Mensuel'
 EURES_TRACKING_TABLE_DEFAULT = 'Suivi_Projet'
 EURES_SPONTANEOUS_TABLE_DEFAULT = 'Candidatures_spontanees'
 EURES_PUBLIC_PROXY_BASE_URL = os.environ.get('EURES_PUBLIC_PROXY_BASE_URL', 'https://eures-beta.osc-fr1.scalingo.io').rstrip('/')
+EURES_VISIT_ANALYTICS_ENABLED = str(os.environ.get('EURES_VISIT_ANALYTICS_ENABLED', 'true')).strip().lower() not in {'0', 'false', 'no', 'off'}
+EURES_VISIT_ANALYTICS_FILE = Path(os.environ.get('EURES_VISIT_ANALYTICS_FILE', '/tmp/eures_beta_visit_analytics.jsonl'))
+EURES_VISIT_ANALYTICS_EVENT_TYPES = {
+    'page_view',
+    'cta_click',
+    'questionnaire_started',
+    'questionnaire_submitted',
+}
 EURES_TRACKING_STATUSES = (
     'a_qualifier',
     'a_faire',
@@ -8637,6 +8646,20 @@ def save_record(form_id: str):
                     'queued': True,
                     'status': 'pending',
                 }
+            try:
+                _record_eures_visit_analytics_event('questionnaire_submitted', {
+                    'page': str(fields.get('source_page') or ''),
+                    'path': request.path,
+                    'lang': str(fields.get('ui_language') or ''),
+                    'role': str(fields.get('flow_role') or ''),
+                    'session_id': str(fields.get('analytics_session_id') or ''),
+                    'metadata': {
+                        'action': action,
+                        'record_id': saved_record.get('id'),
+                    },
+                })
+            except Exception:
+                app.logger.exception('EURES questionnaire submission analytics failed')
 
         return jsonify({
             'ok': True,
@@ -10953,6 +10976,156 @@ def public_stats(form_id: str):
         return jsonify(build_eures_public_stats()), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+
+def _clean_visit_analytics_value(value, max_len: int = 160) -> str:
+    cleaned = re.sub(r'\s+', ' ', str(value or '')).strip()
+    return cleaned[:max_len]
+
+
+def _visit_analytics_referrer_host(value) -> str:
+    raw = _clean_visit_analytics_value(value, 300)
+    if not raw:
+        return ''
+    try:
+        parsed = urlparse(raw)
+        return _clean_visit_analytics_value(parsed.netloc or '', 120)
+    except Exception:
+        return ''
+
+
+def _record_eures_visit_analytics_event(event_type: str, payload: dict | None = None) -> dict:
+    """Store a minimal, non-identifying Match Europe visit event.
+
+    This intentionally avoids storing IP addresses, full user agents or form answers.
+    The default file target is /tmp, so it is suitable for short production tests only.
+    """
+    if not EURES_VISIT_ANALYTICS_ENABLED:
+        return {'ok': True, 'stored': False, 'reason': 'disabled'}
+    event_type = _clean_visit_analytics_value(event_type, 60)
+    if event_type not in EURES_VISIT_ANALYTICS_EVENT_TYPES:
+        return {'ok': False, 'stored': False, 'reason': 'unsupported_event_type'}
+    payload = payload if isinstance(payload, dict) else {}
+    event = {
+        'event_id': secrets.token_urlsafe(12),
+        'event_type': event_type,
+        'occurred_at': _now_iso_utc(),
+        'form_id': 'eures-beta',
+        'page': _clean_visit_analytics_value(payload.get('page'), 120),
+        'path': _clean_visit_analytics_value(payload.get('path'), 220),
+        'lang': _clean_visit_analytics_value(payload.get('lang'), 12),
+        'source': _clean_visit_analytics_value(payload.get('source'), 80),
+        'medium': _clean_visit_analytics_value(payload.get('medium'), 80),
+        'campaign': _clean_visit_analytics_value(payload.get('campaign'), 120),
+        'content': _clean_visit_analytics_value(payload.get('content'), 120),
+        'term': _clean_visit_analytics_value(payload.get('term'), 120),
+        'target': _clean_visit_analytics_value(payload.get('target'), 220),
+        'role': _clean_visit_analytics_value(payload.get('role'), 40),
+        'session_id': _clean_visit_analytics_value(payload.get('session_id'), 80),
+        'referrer_host': _visit_analytics_referrer_host(payload.get('referrer')),
+    }
+    metadata = payload.get('metadata') if isinstance(payload.get('metadata'), dict) else {}
+    if metadata:
+        event['metadata'] = {
+            _clean_visit_analytics_value(key, 50): _clean_visit_analytics_value(value, 180)
+            for key, value in metadata.items()
+            if _clean_visit_analytics_value(key, 50)
+        }
+    try:
+        EURES_VISIT_ANALYTICS_FILE.parent.mkdir(parents=True, exist_ok=True)
+        with _EURES_VISIT_ANALYTICS_LOCK:
+            with EURES_VISIT_ANALYTICS_FILE.open('a', encoding='utf-8') as handle:
+                handle.write(json.dumps(event, ensure_ascii=False, separators=(',', ':')) + '\n')
+        return {'ok': True, 'stored': True, 'event_id': event['event_id']}
+    except Exception as e:
+        app.logger.exception('EURES visit analytics write failed')
+        return {'ok': False, 'stored': False, 'reason': str(e)}
+
+
+def _read_eures_visit_analytics_events(days: int = 30, limit: int = 50000) -> list[dict]:
+    if days <= 0:
+        days = 30
+    since = datetime.now(timezone.utc) - timedelta(days=min(days, 365))
+    if not EURES_VISIT_ANALYTICS_FILE.exists():
+        return []
+    events: list[dict] = []
+    try:
+        with EURES_VISIT_ANALYTICS_FILE.open('r', encoding='utf-8') as handle:
+            lines = handle.readlines()[-limit:]
+    except Exception:
+        return []
+    for line in lines:
+        try:
+            event = json.loads(line)
+        except Exception:
+            continue
+        if not isinstance(event, dict):
+            continue
+        occurred_raw = str(event.get('occurred_at') or '')
+        try:
+            occurred = datetime.fromisoformat(occurred_raw.replace('Z', '+00:00'))
+        except Exception:
+            occurred = None
+        if occurred and occurred < since:
+            continue
+        events.append(event)
+    return events
+
+
+def _build_eures_visit_analytics_summary(days: int = 30) -> dict:
+    events = _read_eures_visit_analytics_events(days=days)
+    event_counts = Counter(str(event.get('event_type') or 'unknown') for event in events)
+    page_counts = Counter(str(event.get('page') or event.get('path') or 'inconnue') for event in events if event.get('event_type') == 'page_view')
+    source_counts = Counter(str(event.get('source') or event.get('referrer_host') or 'direct') for event in events if event.get('event_type') == 'page_view')
+    campaign_counts = Counter(str(event.get('campaign') or 'sans campagne') for event in events if event.get('campaign'))
+    daily = defaultdict(Counter)
+    for event in events:
+        day = str(event.get('occurred_at') or '')[:10] or 'inconnu'
+        daily[day][str(event.get('event_type') or 'unknown')] += 1
+    return {
+        'enabled': EURES_VISIT_ANALYTICS_ENABLED,
+        'storage': {
+            'kind': 'temporary_file',
+            'durable': False,
+            'path': str(EURES_VISIT_ANALYTICS_FILE),
+            'warning': "Stockage temporaire serveur : utile pour tester, à basculer vers Grist ou une base durable pour l'historique.",
+        },
+        'days': days,
+        'total_events': len(events),
+        'events': dict(event_counts),
+        'pages': [{'page': key, 'count': value} for key, value in page_counts.most_common(20)],
+        'sources': [{'source': key, 'count': value} for key, value in source_counts.most_common(20)],
+        'campaigns': [{'campaign': key, 'count': value} for key, value in campaign_counts.most_common(20)],
+        'daily': [
+            {'date': day, **dict(counter)}
+            for day, counter in sorted(daily.items())
+        ],
+    }
+
+
+@app.route('/api/forms/<form_id>/analytics/event', methods=['POST'])
+def eures_visit_analytics_event(form_id: str):
+    """Collect a minimal public Match Europe visit event."""
+    if form_id != 'eures-beta':
+        return jsonify({'error': f'Unknown analytics form: {form_id}'}), 404
+    data = request.get_json(silent=True) or {}
+    event_type = data.get('event_type')
+    result = _record_eures_visit_analytics_event(str(event_type or ''), data)
+    status = 200 if result.get('ok') else 400
+    return jsonify(result), status
+
+
+@app.route('/api/forms/<form_id>/admin/visit-analytics', methods=['GET'])
+@admin_required
+def admin_eures_visit_analytics(form_id: str):
+    """Admin summary for Match Europe public visit analytics."""
+    if form_id != 'eures-beta':
+        return jsonify({'error': f'Unknown analytics form: {form_id}'}), 404
+    try:
+        days = int(request.args.get('days') or 30)
+    except Exception:
+        days = 30
+    return jsonify(_build_eures_visit_analytics_summary(days=days)), 200
 
 
 @app.route('/health')

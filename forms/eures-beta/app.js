@@ -2450,6 +2450,115 @@ function currentInviteToken() {
   return inviteToken || "";
 }
 
+function getAnalyticsSessionId() {
+  const key = "matchEuropeAnalyticsSessionId";
+  try {
+    let value = window.sessionStorage.getItem(key);
+    if (!value) {
+      value = crypto?.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+      window.sessionStorage.setItem(key, value);
+    }
+    return value;
+  } catch {
+    return "";
+  }
+}
+
+function getAnalyticsSource(params) {
+  const source = (params.get("utm_source") || "").trim();
+  if (source) {
+    return source;
+  }
+  const referrer = document.referrer || "";
+  try {
+    const host = new URL(referrer).hostname.toLowerCase();
+    if (host.includes("linkedin")) return "linkedin";
+    if (host.includes("brevo") || host.includes("sendib") || host.includes("sibforms")) return "brevo";
+    if (host.includes("francetravail")) return "france-travail";
+    return host || "referral";
+  } catch {
+    return "direct";
+  }
+}
+
+function sendAnalyticsEvent(eventType, extra = {}) {
+  if (FORM_ID !== "eures-beta") {
+    return;
+  }
+  const params = new URLSearchParams(window.location.search);
+  const payload = {
+    event_type: eventType,
+    page: document.body?.dataset?.page || "",
+    path: window.location.pathname,
+    lang: currentLang(),
+    source: getAnalyticsSource(params),
+    medium: (params.get("utm_medium") || "").trim(),
+    campaign: (params.get("utm_campaign") || "").trim(),
+    content: (params.get("utm_content") || "").trim(),
+    term: (params.get("utm_term") || "").trim(),
+    referrer: document.referrer || "",
+    session_id: getAnalyticsSessionId(),
+    ...extra
+  };
+  const body = JSON.stringify(payload);
+  const url = `/api/forms/${FORM_ID}/analytics/event`;
+  try {
+    if (navigator.sendBeacon) {
+      const blob = new Blob([body], { type: "application/json" });
+      navigator.sendBeacon(url, blob);
+      return;
+    }
+  } catch {
+    // Fall back to fetch below.
+  }
+  fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Accept: "application/json" },
+    body,
+    keepalive: true
+  }).catch(() => {});
+}
+
+function attachAnalyticsBehavior() {
+  sendAnalyticsEvent("page_view");
+
+  document.addEventListener("click", (event) => {
+    const link = event.target?.closest?.("a[href]");
+    if (!link) {
+      return;
+    }
+    const href = link.getAttribute("href") || "";
+    if (href.includes("questionnaire-candidate") || href.includes("questionnaire-employer")) {
+      sendAnalyticsEvent("cta_click", {
+        target: href,
+        role: href.includes("questionnaire-employer") ? "employer" : "candidate"
+      });
+    }
+  });
+
+  const startedKey = `matchEuropeQuestionnaireStarted:${document.body?.dataset?.page || ""}`;
+  document.addEventListener("input", (event) => {
+    const page = document.body?.dataset?.page || "";
+    if (page !== "candidate-questionnaire" && page !== "employer-questionnaire") {
+      return;
+    }
+    if (!event.target?.closest?.("form")) {
+      return;
+    }
+    try {
+      if (window.sessionStorage.getItem(startedKey)) {
+        return;
+      }
+      window.sessionStorage.setItem(startedKey, "1");
+    } catch {
+      // If sessionStorage is unavailable, still record at most once per page load.
+    }
+    sendAnalyticsEvent("questionnaire_started", {
+      role: page === "employer-questionnaire" ? "employer" : "candidate"
+    });
+  }, { once: false });
+}
+
 const writeTokenCache = new Map();
 
 async function getWriteToken(role, t) {
@@ -6677,6 +6786,7 @@ function attachQuestionnaireBehavior(page, lang, t) {
     fields.source_page = page;
     fields.submitted_at = new Date().toISOString();
     fields.form_version = "2026-06-home-landing-v1";
+    fields.analytics_session_id = getAnalyticsSessionId();
 
     saveBtn.disabled = true;
     setStatus(t.common.saving);
@@ -6798,3 +6908,4 @@ function render() {
 }
 
 render();
+attachAnalyticsBehavior();
