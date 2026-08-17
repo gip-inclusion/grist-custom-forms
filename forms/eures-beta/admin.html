@@ -850,6 +850,10 @@
       padding: 0.85rem 1rem;
     }
 
+    .technical-check-item.wide {
+      grid-template-columns: minmax(0, 1fr) auto;
+    }
+
     .technical-check-item strong {
       color: var(--accent-strong);
     }
@@ -4256,7 +4260,7 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,,</pre>
           </div>
           <span class="technical-check-status ok">30 jours</span>
         </div>
-        <div class="technical-check-item">
+        <div class="technical-check-item wide">
           <div>
             <strong>Pages distinguées</strong>
             ${pageRows}
