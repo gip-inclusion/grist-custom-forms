@@ -2550,6 +2550,10 @@ function questionnaireRoleFromHref(href) {
   return "";
 }
 
+function currentAnalyticsPage() {
+  return normalizeAnalyticsPage(document.body?.dataset?.page || "", window.location.pathname);
+}
+
 function trackQuestionnaireCta(link) {
   if (!link || link.dataset.analyticsCtaSent === "1") {
     return;
@@ -2560,14 +2564,44 @@ function trackQuestionnaireCta(link) {
     return;
   }
   link.dataset.analyticsCtaSent = "1";
+  try {
+    window.sessionStorage.setItem("matchEuropePendingQuestionnaireCta", JSON.stringify({
+      target: href,
+      role,
+      from_page: currentAnalyticsPage(),
+      created_at: new Date().toISOString()
+    }));
+  } catch {
+    // Do not block navigation if storage is unavailable.
+  }
+}
+
+function flushPendingQuestionnaireCta() {
+  const page = currentAnalyticsPage();
+  if (page !== "candidate-questionnaire" && page !== "employer-questionnaire") {
+    return;
+  }
+  let pending = null;
+  try {
+    pending = JSON.parse(window.sessionStorage.getItem("matchEuropePendingQuestionnaireCta") || "null");
+    window.sessionStorage.removeItem("matchEuropePendingQuestionnaireCta");
+  } catch {
+    pending = null;
+  }
+  const expectedRole = page === "employer-questionnaire" ? "employer" : "candidate";
+  if (!pending || pending.role !== expectedRole) {
+    return;
+  }
   sendAnalyticsEvent("cta_click", {
-    target: href,
-    role
+    target: pending.target || window.location.pathname,
+    role: pending.role,
+    from_page: pending.from_page || ""
   });
 }
 
 function attachAnalyticsBehavior() {
   sendAnalyticsEvent("page_view");
+  flushPendingQuestionnaireCta();
 
   document.addEventListener("pointerdown", (event) => {
     const link = event.target?.closest?.("a[href]");
@@ -2579,7 +2613,7 @@ function attachAnalyticsBehavior() {
     trackQuestionnaireCta(link);
   });
 
-  const startedKey = `matchEuropeQuestionnaireStarted:${normalizeAnalyticsPage(document.body?.dataset?.page || "", window.location.pathname)}`;
+  const startedKey = `matchEuropeQuestionnaireStarted:${currentAnalyticsPage()}`;
   document.addEventListener("input", (event) => {
     const page = document.body?.dataset?.page || "";
     if (page !== "candidate-questionnaire" && page !== "employer-questionnaire") {
