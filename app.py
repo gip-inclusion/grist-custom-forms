@@ -90,6 +90,7 @@ EURES_INVITATIONS_TABLE_DEFAULT = 'Invitations'
 EURES_STATS_TABLE_DEFAULT = 'Pilotage_EURES_Mensuel'
 EURES_TRACKING_TABLE_DEFAULT = 'Suivi_Projet'
 EURES_SPONTANEOUS_TABLE_DEFAULT = 'Candidatures_spontanees'
+EURES_VISIT_ANALYTICS_TABLE_DEFAULT = 'Visites_Match_Europe'
 EURES_PUBLIC_PROXY_BASE_URL = os.environ.get('EURES_PUBLIC_PROXY_BASE_URL', 'https://eures-beta.osc-fr1.scalingo.io').rstrip('/')
 EURES_VISIT_ANALYTICS_ENABLED = str(os.environ.get('EURES_VISIT_ANALYTICS_ENABLED', 'true')).strip().lower() not in {'0', 'false', 'no', 'off'}
 EURES_VISIT_ANALYTICS_FILE = Path(os.environ.get('EURES_VISIT_ANALYTICS_FILE', '/tmp/eures_beta_visit_analytics.jsonl'))
@@ -98,6 +99,25 @@ EURES_VISIT_ANALYTICS_EVENT_TYPES = {
     'cta_click',
     'questionnaire_started',
     'questionnaire_submitted',
+}
+EURES_VISIT_ANALYTICS_TABLE_COLUMNS = {
+    'event_id': 'Text',
+    'event_type': 'Text',
+    'occurred_at': 'Text',
+    'form_id': 'Text',
+    'page': 'Text',
+    'path': 'Text',
+    'lang': 'Text',
+    'source': 'Text',
+    'medium': 'Text',
+    'campaign': 'Text',
+    'content': 'Text',
+    'term': 'Text',
+    'target': 'Text',
+    'role': 'Text',
+    'session_id': 'Text',
+    'referrer_host': 'Text',
+    'metadata_json': 'Text',
 }
 EURES_TRACKING_STATUSES = (
     'a_qualifier',
@@ -1706,6 +1726,18 @@ def get_eures_tracking_config() -> dict | None:
     return {
         'doc_id': base['doc_id'],
         'table_id': os.environ.get('GRIST_TABLE_EURES_BETA_TRACKING', EURES_TRACKING_TABLE_DEFAULT),
+        'api_key': base.get('api_key'),
+    }
+
+
+def get_eures_visit_analytics_config() -> dict | None:
+    """Get configuration for the durable Match Europe public visit analytics table."""
+    base = get_form_config('eures-beta', 'candidate') or get_form_config('eures-beta')
+    if not base:
+        return None
+    return {
+        'doc_id': base['doc_id'],
+        'table_id': os.environ.get('GRIST_TABLE_EURES_BETA_VISIT_ANALYTICS', EURES_VISIT_ANALYTICS_TABLE_DEFAULT),
         'api_key': base.get('api_key'),
     }
 
@@ -10994,19 +11026,12 @@ def _visit_analytics_referrer_host(value) -> str:
         return ''
 
 
-def _record_eures_visit_analytics_event(event_type: str, payload: dict | None = None) -> dict:
-    """Store a minimal, non-identifying Match Europe visit event.
-
-    This intentionally avoids storing IP addresses, full user agents or form answers.
-    The default file target is /tmp, so it is suitable for short production tests only.
-    """
-    if not EURES_VISIT_ANALYTICS_ENABLED:
-        return {'ok': True, 'stored': False, 'reason': 'disabled'}
+def _eures_visit_analytics_event_fields(event_type: str, payload: dict | None = None) -> dict | None:
     event_type = _clean_visit_analytics_value(event_type, 60)
     if event_type not in EURES_VISIT_ANALYTICS_EVENT_TYPES:
-        return {'ok': False, 'stored': False, 'reason': 'unsupported_event_type'}
+        return None
     payload = payload if isinstance(payload, dict) else {}
-    event = {
+    fields = {
         'event_id': secrets.token_urlsafe(12),
         'event_type': event_type,
         'occurred_at': _now_iso_utc(),
@@ -11023,26 +11048,99 @@ def _record_eures_visit_analytics_event(event_type: str, payload: dict | None = 
         'role': _clean_visit_analytics_value(payload.get('role'), 40),
         'session_id': _clean_visit_analytics_value(payload.get('session_id'), 80),
         'referrer_host': _visit_analytics_referrer_host(payload.get('referrer')),
+        'metadata_json': '',
     }
     metadata = payload.get('metadata') if isinstance(payload.get('metadata'), dict) else {}
     if metadata:
-        event['metadata'] = {
+        clean_metadata = {
             _clean_visit_analytics_value(key, 50): _clean_visit_analytics_value(value, 180)
             for key, value in metadata.items()
             if _clean_visit_analytics_value(key, 50)
         }
+        fields['metadata_json'] = json.dumps(clean_metadata, ensure_ascii=False, separators=(',', ':'))
+    return fields
+
+
+def _write_eures_visit_analytics_fallback(event: dict) -> bool:
     try:
         EURES_VISIT_ANALYTICS_FILE.parent.mkdir(parents=True, exist_ok=True)
         with _EURES_VISIT_ANALYTICS_LOCK:
             with EURES_VISIT_ANALYTICS_FILE.open('a', encoding='utf-8') as handle:
                 handle.write(json.dumps(event, ensure_ascii=False, separators=(',', ':')) + '\n')
-        return {'ok': True, 'stored': True, 'event_id': event['event_id']}
-    except Exception as e:
-        app.logger.exception('EURES visit analytics write failed')
-        return {'ok': False, 'stored': False, 'reason': str(e)}
+        return True
+    except Exception:
+        app.logger.exception('EURES visit analytics fallback write failed')
+        return False
 
 
-def _read_eures_visit_analytics_events(days: int = 30, limit: int = 50000) -> list[dict]:
+def _record_eures_visit_analytics_event(event_type: str, payload: dict | None = None) -> dict:
+    """Store a minimal, non-identifying Match Europe visit event.
+
+    This intentionally avoids storing IP addresses, full user agents or form answers.
+    Grist is the durable target; a temporary file is kept as fallback.
+    """
+    if not EURES_VISIT_ANALYTICS_ENABLED:
+        return {'ok': True, 'stored': False, 'reason': 'disabled'}
+    fields = _eures_visit_analytics_event_fields(event_type, payload)
+    if not fields:
+        return {'ok': False, 'stored': False, 'reason': 'unsupported_event_type'}
+
+    config = get_eures_visit_analytics_config()
+    if config and config.get('doc_id') and config.get('api_key'):
+        try:
+            headers = _tracking_admin_headers(config)
+            _ensure_grist_table(config, headers, EURES_VISIT_ANALYTICS_TABLE_COLUMNS)
+            url = f"{GRIST_BASE_URL}/api/docs/{config['doc_id']}/tables/{config['table_id']}/records"
+            resp = write_grist_records('POST', url, {'records': [{'fields': fields}]}, headers)
+            if resp.status_code == 200:
+                return {'ok': True, 'stored': True, 'storage': 'grist', 'event_id': fields['event_id']}
+            app.logger.warning('EURES visit analytics Grist write failed: HTTP %s - %s', resp.status_code, resp.text)
+        except Exception:
+            app.logger.exception('EURES visit analytics Grist write failed')
+
+    fallback_ok = _write_eures_visit_analytics_fallback(fields)
+    if fallback_ok:
+        return {'ok': True, 'stored': True, 'storage': 'temporary_file', 'event_id': fields['event_id'], 'warning': 'grist_unavailable'}
+    return {'ok': False, 'stored': False, 'reason': 'storage_unavailable'}
+
+
+def _read_eures_visit_analytics_events_from_grist(days: int = 30, limit: int = 50000) -> list[dict]:
+    config = get_eures_visit_analytics_config()
+    if not config or not config.get('doc_id') or not config.get('api_key'):
+        return []
+    try:
+        headers = _tracking_admin_headers(config)
+        _ensure_grist_table(config, headers, EURES_VISIT_ANALYTICS_TABLE_COLUMNS)
+        url = f"{GRIST_BASE_URL}/api/docs/{config['doc_id']}/tables/{config['table_id']}/records"
+        resp = requests.get(url, headers=headers, params={'limit': str(limit)})
+        if resp.status_code != 200:
+            app.logger.warning('EURES visit analytics Grist read failed: HTTP %s - %s', resp.status_code, resp.text)
+            return []
+        records = resp.json().get('records', [])
+    except Exception:
+        app.logger.exception('EURES visit analytics Grist read failed')
+        return []
+
+    if days <= 0:
+        days = 30
+    since = datetime.now(timezone.utc) - timedelta(days=min(days, 365))
+    events: list[dict] = []
+    for rec in records:
+        fields = rec.get('fields', {}) if isinstance(rec, dict) else {}
+        if not isinstance(fields, dict):
+            continue
+        occurred_raw = str(fields.get('occurred_at') or '')
+        try:
+            occurred = datetime.fromisoformat(occurred_raw.replace('Z', '+00:00'))
+        except Exception:
+            occurred = None
+        if occurred and occurred < since:
+            continue
+        events.append(fields)
+    return events
+
+
+def _read_eures_visit_analytics_events_from_file(days: int = 30, limit: int = 50000) -> list[dict]:
     if days <= 0:
         days = 30
     since = datetime.now(timezone.utc) - timedelta(days=min(days, 365))
@@ -11073,7 +11171,17 @@ def _read_eures_visit_analytics_events(days: int = 30, limit: int = 50000) -> li
 
 
 def _build_eures_visit_analytics_summary(days: int = 30) -> dict:
-    events = _read_eures_visit_analytics_events(days=days)
+    events = _read_eures_visit_analytics_events_from_grist(days=days)
+    storage_kind = 'grist'
+    storage_durable = True
+    storage_warning = "Stockage durable dans Grist."
+    if not events:
+        file_events = _read_eures_visit_analytics_events_from_file(days=days)
+        if file_events:
+            events = file_events
+            storage_kind = 'temporary_file'
+            storage_durable = False
+            storage_warning = "Lecture du fallback temporaire : Grist ne contient pas encore d'événement ou est indisponible."
     event_counts = Counter(str(event.get('event_type') or 'unknown') for event in events)
     page_counts = Counter(str(event.get('page') or event.get('path') or 'inconnue') for event in events if event.get('event_type') == 'page_view')
     source_counts = Counter(str(event.get('source') or event.get('referrer_host') or 'direct') for event in events if event.get('event_type') == 'page_view')
@@ -11085,10 +11193,11 @@ def _build_eures_visit_analytics_summary(days: int = 30) -> dict:
     return {
         'enabled': EURES_VISIT_ANALYTICS_ENABLED,
         'storage': {
-            'kind': 'temporary_file',
-            'durable': False,
-            'path': str(EURES_VISIT_ANALYTICS_FILE),
-            'warning': "Stockage temporaire serveur : utile pour tester, à basculer vers Grist ou une base durable pour l'historique.",
+            'kind': storage_kind,
+            'durable': storage_durable,
+            'table': EURES_VISIT_ANALYTICS_TABLE_DEFAULT,
+            'fallback_path': str(EURES_VISIT_ANALYTICS_FILE),
+            'warning': storage_warning,
         },
         'days': days,
         'total_events': len(events),
