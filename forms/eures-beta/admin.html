@@ -781,7 +781,6 @@
       display: grid;
       gap: 0.45rem;
       margin-top: 0.65rem;
-      overflow-x: auto;
     }
 
     .visit-page-row {
@@ -2044,11 +2043,39 @@
       }
 
       .visit-page-table {
-        overflow-x: auto;
+        overflow-x: visible;
       }
 
       .visit-page-row {
-        min-width: 620px;
+        min-width: 0;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 0.45rem;
+      }
+
+      .visit-page-row.header {
+        display: none;
+      }
+
+      .visit-page-row strong {
+        grid-column: 1 / -1;
+        padding-bottom: 0.25rem;
+        border-bottom: 1px solid rgba(15, 39, 66, 0.08);
+      }
+
+      .visit-page-row span:not(:first-child) {
+        display: grid;
+        justify-items: start;
+        gap: 0.15rem;
+        min-width: 0;
+      }
+
+      .visit-page-row span:not(:first-child)::before {
+        content: attr(data-label);
+        color: var(--muted);
+        font-size: 0.62rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
       }
     }
   </style>
@@ -4233,10 +4260,10 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,,</pre>
             ${pageBreakdown.map((item) => `
               <div class="visit-page-row">
                 <strong>${esc(item.page || "inconnue")}</strong>
-                <span>${esc(item.page_view || 0)}</span>
-                <span>${esc(item.cta_click || 0)}</span>
-                <span>${esc(item.questionnaire_started || 0)}</span>
-                <span>${esc(item.questionnaire_submitted || 0)}</span>
+                <span data-label="Visites">${esc(item.page_view || 0)}</span>
+                <span data-label="Clics">${esc(item.cta_click || 0)}</span>
+                <span data-label="Commencés">${esc(item.questionnaire_started || 0)}</span>
+                <span data-label="Envoyés">${esc(item.questionnaire_submitted || 0)}</span>
               </div>
             `).join("")}
           </div>
