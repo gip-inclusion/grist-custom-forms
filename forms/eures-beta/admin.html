@@ -2383,6 +2383,7 @@
                 <button id="single-save-btn" type="button">Ajouter l’invitation</button>
                 <button id="single-save-ft-manual-btn" class="btn-secondary" type="button">Enregistrer comme envoyée depuis FT</button>
               </div>
+              <p class="status-line" id="single-invitation-status-line" role="status" aria-live="polite"></p>
               <p class="help-text">“Ajouter l’invitation” crée une ligne à envoyer par Brevo. “Envoyée depuis FT” crée une invitation candidat déjà envoyée manuellement depuis l’adresse France Travail, sans envoi Brevo.</p>
             </div>
 
@@ -5949,10 +5950,12 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,,</pre>
         }
         const skippedCount = Array.isArray(result.skipped) ? result.skipped.length : 0;
         const skippedNote = skippedCount ? `, ${skippedCount} ignorée(s)` : "";
-        setStatus("invite-status-line", `Import terminé : ${result.created || 0} créée(s), ${result.updated || 0} mise(s) à jour${skippedNote}.`);
         await loadInvitations();
+        setStatus("invite-status-line", `Import terminé : ${result.created || 0} créée(s), ${result.updated || 0} mise(s) à jour${skippedNote}.`);
+        return result;
       } catch (error) {
         setStatus("invite-status-line", `Erreur : ${error.message || "import impossible"}`);
+        return null;
       }
     }
 
@@ -6151,6 +6154,21 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,,</pre>
         const campaignSelect = document.getElementById("single-campaign-type");
         if (campaignSelect) campaignSelect.value = "";
       }
+    }
+
+    function resetSingleInvitationForm() {
+      document.getElementById("single-role").value = "candidate";
+      document.getElementById("single-language").value = "fr";
+      document.getElementById("single-email").value = "";
+      document.getElementById("single-company").value = "";
+      document.getElementById("single-first-name").value = "";
+      document.getElementById("single-last-name").value = "";
+      document.getElementById("single-external-ref").value = "";
+      document.getElementById("single-source").value = "admin_manual";
+      document.getElementById("single-campaign-type").value = "";
+      document.getElementById("single-target-job").value = "";
+      document.getElementById("single-notes").value = "";
+      updateSingleInvitationRoleUI();
     }
 
     function sampleCsv() {
@@ -7575,10 +7593,30 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,,</pre>
       }
     });
     document.getElementById("single-save-ft-manual-btn").addEventListener("click", async () => {
+      const button = document.getElementById("single-save-ft-manual-btn");
       try {
-        await importInvitations(buildSingleInvitationPayload(true));
+        const payload = buildSingleInvitationPayload(true);
+        const savedEmail = payload.rows[0].email;
+        button.disabled = true;
+        setStatus("single-invitation-status-line", "Enregistrement en cours...");
+        const result = await importInvitations(payload);
+        const savedCount = Number(result?.created || 0) + Number(result?.updated || 0);
+        if (!result) {
+          setStatus("single-invitation-status-line", "Échec de l’enregistrement. Le formulaire est conservé pour permettre une nouvelle tentative.");
+          return;
+        }
+        if (!savedCount) {
+          setStatus("single-invitation-status-line", "Aucune invitation n’a été enregistrée. Le formulaire est conservé.");
+          return;
+        }
+        resetSingleInvitationForm();
+        setStatus("single-invitation-status-line", `Invitation de ${savedEmail} enregistrée comme envoyée depuis FT. Le formulaire a été remis à zéro.`);
+        document.getElementById("single-email").focus();
       } catch (error) {
+        setStatus("single-invitation-status-line", `Échec de l’enregistrement : ${error.message || "création impossible"}. Le formulaire est conservé.`);
         setStatus("invite-status-line", `Erreur : ${error.message || "création impossible"}`);
+      } finally {
+        button.disabled = false;
       }
     });
     document.getElementById("single-role").addEventListener("change", updateSingleInvitationRoleUI);
