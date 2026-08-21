@@ -6622,7 +6622,10 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,,</pre>
                         <strong>${esc(title || "Rapprochement à examiner")}</strong>
                         ${explanation.length ? `<p>${esc(explanation.slice(0, 2).join(" · "))}</p>` : ""}
                       </div>
-                      <span class="pill pending">Score : ${esc(matching.score ?? "-")}/100</span>
+                      <div class="decision-actions" style="margin-left:auto;">
+                        <span class="pill pending">Score : ${esc(matching.score ?? "-")}/100</span>
+                        <button class="btn-accept" type="button" data-borderline-send-matching="${esc(matching.record_id)}">Envoyer ce matching</button>
+                      </div>
                     </div>
                   `;
                 }).join("")}
@@ -6779,6 +6782,21 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,,</pre>
           if (!recordId || !decision) return;
           const sendEmails = event.currentTarget.dataset.sendEmails !== "false";
           await submitDecision(recordId, decision, note, employerEmailComment, candidateEmailComment, sendEmails);
+          await loadTasks();
+          await loadCockpit();
+        });
+      }
+      for (const button of list.querySelectorAll("[data-borderline-send-matching]")) {
+        button.addEventListener("click", async (event) => {
+          const card = event.currentTarget.closest(".matching-card");
+          const noMatchRecordId = card?.dataset.recordId;
+          const matchingRecordId = event.currentTarget.dataset.borderlineSendMatching;
+          const note = document.getElementById(`task-note-no_match_followup-${noMatchRecordId}`)?.value || "";
+          if (!noMatchRecordId || !matchingRecordId) return;
+          const sent = await submitDecision(matchingRecordId, "accepted", note, "", "", true);
+          if (sent) {
+            await submitNoMatchDismiss("candidate", noMatchRecordId, "Matching limite envoyé à l’employeur.");
+          }
           await loadTasks();
           await loadCockpit();
         });
@@ -7131,7 +7149,10 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,,</pre>
                       <strong>${esc(title || "Rapprochement à examiner")}</strong>
                       ${explanation.length ? `<p>${esc(explanation.slice(0, 2).join(" · "))}</p>` : ""}
                     </div>
-                    <span class="pill pending">Score : ${esc(matching.score ?? "-")}/100</span>
+                    <div class="decision-actions" style="margin-left:auto;">
+                      <span class="pill pending">Score : ${esc(matching.score ?? "-")}/100</span>
+                      <button class="btn-accept" type="button" data-borderline-send-matching="${esc(matching.record_id)}">Envoyer ce matching</button>
+                    </div>
                   </div>
                 `;
               }).join("")}
@@ -7217,6 +7238,23 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,,</pre>
         `;
       }).join("");
 
+      for (const button of list.querySelectorAll("[data-borderline-send-matching]")) {
+        button.addEventListener("click", async (event) => {
+          const card = event.currentTarget.closest(".matching-card");
+          const noMatchRecordId = card?.dataset.recordId;
+          const role = card?.dataset.role || "candidate";
+          const matchingRecordId = event.currentTarget.dataset.borderlineSendMatching;
+          const note = document.getElementById(`no-match-note-${role}-${noMatchRecordId}`)?.value || "";
+          if (!noMatchRecordId || !matchingRecordId || !role) return;
+          const sent = await submitDecision(matchingRecordId, "accepted", note, "", "", true);
+          if (sent) {
+            await submitNoMatchDismiss(role, noMatchRecordId, "Matching limite envoyé à l’employeur.");
+          }
+          await loadNoMatch();
+          await loadTasks();
+          await loadCockpit();
+        });
+      }
       for (const button of list.querySelectorAll("[data-no-match-action]")) {
         button.addEventListener("click", async (event) => {
           const card = event.currentTarget.closest(".matching-card");
@@ -7461,8 +7499,10 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,,</pre>
         await loadMatchings();
         await loadTasks();
         await loadCockpit();
+        return true;
       } catch (error) {
         setStatus("status-line", `Erreur : ${error.message || "mise à jour impossible"}`);
+        return false;
       }
     }
 
