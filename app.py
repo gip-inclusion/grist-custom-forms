@@ -5193,7 +5193,7 @@ def queue_eures_no_match_notification(role: str, record_id: int):
     )
 
 
-def _build_eures_no_match_row(role: str, rec: dict) -> dict | None:
+def _build_eures_no_match_row(role: str, rec: dict, borderline_by_candidate: dict[str, list[dict]] | None = None) -> dict | None:
     fields = rec.get('fields', {}) if isinstance(rec, dict) else {}
     if not isinstance(fields, dict):
         return None
@@ -5210,10 +5210,11 @@ def _build_eures_no_match_row(role: str, rec: dict) -> dict | None:
         str(fields.get('employeur') or fields.get('poste') or recipient or 'Employeur')
     )
     subtitle = str(fields.get('metier') or '') if is_candidate else str(fields.get('poste') or '')
+    candidate_key = str(fields.get('id_tally') or fields.get('uuid') or '').strip() if is_candidate else ''
     return {
         'role': normalized_role,
         'record_id': rec.get('id'),
-        'record_key': fields.get('id_tally') or fields.get('uuid') or '',
+        'record_key': candidate_key or fields.get('id_tally') or fields.get('uuid') or '',
         'notification_status': status,
         'reason': fields.get('no_match_notification_reason', ''),
         'created_at': fields.get('no_match_notification_created_at', ''),
@@ -5242,12 +5243,62 @@ def _build_eures_no_match_row(role: str, rec: dict) -> dict | None:
             'langues_requises': fields.get('langues_requises', ''),
             'date_debut': fields.get('date_debut', ''),
         },
+        'borderline_matchings': list((borderline_by_candidate or {}).get(candidate_key, [])) if is_candidate else [],
     }
 
 
 def list_eures_admin_no_match_notifications(status: str = 'all') -> list[dict]:
     """Return candidate/employer rows needing a no-match email review."""
     rows = []
+    borderline_by_candidate: dict[str, list[dict]] = defaultdict(list)
+    try:
+        matching_config = get_eures_matching_config()
+        employer_config = get_form_config('eures-beta', 'employer')
+        if not matching_config or not employer_config:
+            raise RuntimeError('EURES beta matching configuration is incomplete.')
+        matching_headers = _eures_admin_headers(matching_config)
+        employer_headers = _eures_admin_headers(employer_config)
+        besoins_by_id = {
+            str((rec.get('fields') or {}).get('id_tally') or (rec.get('fields') or {}).get('uuid') or '').strip(): rec.get('fields', {})
+            for rec in fetch_table_records(employer_config['doc_id'], EURES_BESOINS_TABLE, employer_headers)
+            if isinstance(rec, dict) and _is_eures_response_active((rec.get('fields') or {}))
+        }
+
+        for rec in fetch_table_records(matching_config['doc_id'], EURES_MATCHINGS_TABLE, matching_headers):
+            fields = rec.get('fields', {}) if isinstance(rec, dict) else {}
+            score = _safe_int(fields.get('score'))
+            if score < 50 or score >= 55:
+                continue
+            candidat_id = str(fields.get('candidat_id') or '').strip()
+            besoin_id = str(fields.get('besoin_id') or '').strip()
+            if not candidat_id or not besoin_id:
+                continue
+            besoin = besoins_by_id.get(besoin_id, {})
+            if not besoin:
+                continue
+            employeur_job_titles = ' | '.join(
+                str(besoin.get(field_name) or '').strip()
+                for field_name in EURES_EMPLOYEUR_SECTOR_JOB_TITLE_FIELDS.values()
+                if str(besoin.get(field_name) or '').strip()
+            )
+            borderline_by_candidate[candidat_id].append({
+                'record_id': rec.get('id'),
+                'score': score,
+                'scoring_status': fields.get('statut', ''),
+                'workflow_status': _matching_workflow_status(fields),
+                'employeur': besoin.get('employeur', ''),
+                'poste': employeur_job_titles or besoin.get('poste', ''),
+                'secteur': besoin.get('poste', ''),
+                'pays': besoin.get('pays', ''),
+                'raisons': _split_matching_text(fields.get('raisons'))[:3],
+                'points_faibles': _split_matching_text(fields.get('points_faibles'))[:3],
+            })
+        for candidate_rows in borderline_by_candidate.values():
+            candidate_rows.sort(key=lambda item: (-_safe_int(item.get('score')), -int(item.get('record_id') or 0)))
+            del candidate_rows[3:]
+    except Exception as exc:
+        logger.warning('Unable to enrich EURES no-match rows with borderline matchings: %s', exc)
+
     for role in ('candidate', 'employer'):
         config = _get_eures_role_table_config(role)
         if not config:
@@ -5257,7 +5308,7 @@ def list_eures_admin_no_match_notifications(status: str = 'all') -> list[dict]:
             fields = rec.get('fields', {}) if isinstance(rec, dict) else {}
             if not _is_eures_response_active(fields):
                 continue
-            row = _build_eures_no_match_row(role, rec)
+            row = _build_eures_no_match_row(role, rec, borderline_by_candidate)
             if not row:
                 continue
             if status in EURES_NO_MATCH_ALLOWED_STATUSES and row['notification_status'] != status:
