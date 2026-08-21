@@ -6599,6 +6599,36 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,,</pre>
         } else if (row.task_type === "no_match_followup") {
           const noMatch = row.no_match || {};
           const noMatchLabel = noMatch.role === "candidate" ? "candidat" : "employeur";
+          const borderlineMatchings = Array.isArray(noMatch.borderline_matchings) ? noMatch.borderline_matchings : [];
+          const borderlineBlock = noMatch.role === "candidate" && borderlineMatchings.length ? `
+            <section class="compare-card" style="margin-top:1rem;">
+              <h3>Matchings à la limite</h3>
+              <p style="margin:0 0 0.75rem; line-height:1.6;">
+                Aucun matching automatiquement exploitable n’a été trouvé. Ces rapprochements sont proches du seuil et peuvent être réexaminés manuellement.
+              </p>
+              <div class="linked-matching-list">
+                ${borderlineMatchings.map((matching) => {
+                  const title = [
+                    shortBusinessLabel(matching.employeur || ""),
+                    shortBusinessLabel(matching.poste || matching.secteur || ""),
+                    shortBusinessLabel(matching.pays || "")
+                  ].filter(Boolean).join(" · ");
+                  const weaknesses = Array.isArray(matching.points_faibles) ? matching.points_faibles : [];
+                  const reasons = Array.isArray(matching.raisons) ? matching.raisons : [];
+                  const explanation = weaknesses.length ? weaknesses : reasons;
+                  return `
+                    <div class="linked-matching-row">
+                      <div>
+                        <strong>${esc(title || "Rapprochement à examiner")}</strong>
+                        ${explanation.length ? `<p>${esc(explanation.slice(0, 2).join(" · "))}</p>` : ""}
+                      </div>
+                      <span class="pill pending">Score : ${esc(matching.score ?? "-")}/100</span>
+                    </div>
+                  `;
+                }).join("")}
+              </div>
+            </section>
+          ` : "";
           body = `
             <div class="compare-grid">
               <section class="compare-card">
@@ -6615,6 +6645,7 @@ employer,bob@company.com,Bob,Dupont,ACME,fr,campagne_juin,EMP-001,,,</pre>
                 <p style="margin:0; line-height:1.7;">Le commentaire ci-dessous sera ajouté au mail si vous cliquez sur “Envoyer l’email”.</p>
               </section>
             </div>
+            ${borderlineBlock}
           `;
           actions = `
             <button class="btn-accept" type="button" data-task-no-match-action="send" data-role="${esc(noMatch.role)}">Envoyer l’email avec ce commentaire</button>
